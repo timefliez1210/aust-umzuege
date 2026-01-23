@@ -14,7 +14,7 @@
         heading = "Ihr Partner für Umzüge, Haushaltsauflösungen und Montagen",
         subheading = "Unverbindlich anfragen und ein kostenloses Angebot erhalten",
         ctaText = "Jetzt anfragen",
-        ctaHref = "/angebot",
+        ctaHref = "/kostenloses-angebot",
         backgroundImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.jpg",
     }: Props = $props();
 </script>

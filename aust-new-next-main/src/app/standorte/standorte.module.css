@@ -1,0 +1,182 @@
+.standorte-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  box-sizing: border-box;
+}
+
+.content-container {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.location-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.location-card h2 {
+  font-family: 'Lato', sans-serif;
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #ff6600;
+  word-wrap: break-word;
+}
+
+.contact-info {
+  background-color: #f8f8f8;
+  padding: 1.5rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.contact-info p {
+  margin: 0.5rem 0;
+  font-family: 'Roboto', sans-serif;
+  word-wrap: break-word;
+}
+
+.description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: #555;
+  font-family: 'Roboto', sans-serif;
+  word-wrap: break-word;
+}
+
+.city-info {
+  margin-top: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.city-info h3 {
+  font-family: 'Lato', sans-serif;
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1rem;
+  word-wrap: break-word;
+}
+
+.city-info p {
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 1.5rem;
+  white-space: pre-line;
+  word-wrap: break-word;
+}
+
+.fun-facts {
+  background-color: #fff8f3;
+  padding: 1.5rem;
+  border-radius: 4px;
+  border-left: 4px solid #ff6600;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fun-facts h4 {
+  font-family: 'Lato', sans-serif;
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 1rem;
+  word-wrap: break-word;
+}
+
+.fun-facts ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.fun-facts li {
+  font-family: 'Roboto', sans-serif;
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.fun-facts li:before {
+  content: "•";
+  color: #ff6600;
+  position: absolute;
+  left: 0;
+}
+
+@media (max-width: 768px) {
+  .standorte-container {
+    padding: 0 0.75rem;
+  }
+  
+  .content-container {
+    padding: 1.5rem 0;
+    gap: 1.5rem;
+  }
+
+  .location-card {
+    padding: 1.5rem;
+  }
+
+  .location-card h2 {
+    font-size: 1.75rem;
+  }
+
+  .contact-info {
+    padding: 1rem;
+  }
+
+  .fun-facts {
+    padding: 1rem;
+    border-left-width: 3px;
+  }
+  
+  .city-info h3 {
+    font-size: 1.3rem;
+  }
+  
+  .fun-facts h4 {
+    font-size: 1.1rem;
+  }
+  
+  .description {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .standorte-container {
+    padding: 0 0.5rem;
+  }
+  
+  .location-card {
+    padding: 1.25rem;
+  }
+  
+  .location-card h2 {
+    font-size: 1.5rem;
+  }
+  
+  .city-info p {
+    white-space: normal;
+  }
+  
+  .fun-facts li {
+    padding-left: 1.25rem;
+  }
+}

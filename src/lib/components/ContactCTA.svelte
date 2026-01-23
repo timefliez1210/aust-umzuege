@@ -55,7 +55,7 @@
             </a>
 
             <!-- Kostenloses Angebot -->
-            <a href="/angebot" class="contact-cta__box">
+            <a href="/kostenloses-angebot" class="contact-cta__box">
                 <div class="contact-cta__icon">
                     <CheckCircle size={28} strokeWidth={2} />
                 </div>

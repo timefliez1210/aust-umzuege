@@ -74,7 +74,7 @@
         </ul>
 
         <!-- CTA Button -->
-        <a href="/angebot" class="navbar__cta">
+        <a href="/kostenloses-angebot" class="navbar__cta">
             Kostenfreies Angebot
             <svg
                 width="16"
@@ -124,7 +124,7 @@
             {/each}
             <li>
                 <a
-                    href="/angebot"
+                    href="/kostenloses-angebot"
                     class="navbar__mobile-cta"
                     onclick={closeMobileMenu}
                 >

@@ -1,0 +1,88 @@
+/* Container für die Checkliste */
+.checklist-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto', sans-serif;
+  color: #555;
+}
+
+.listItem a {
+  color: #1a1a1a;
+}
+
+.listItem a:hover {
+  color: #333;
+}
+
+.unorderedList {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 2rem;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.listItem input[type="checkbox"] {
+  margin-right: 0.75rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.listItem label {
+  cursor: pointer;
+}
+
+.print-button {
+  display: block;
+  width: 200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .print-button {
+    width: auto;
+  }
+}
+
+/* Mobile Optimierung */
+@media (max-width: 768px) {
+  .checklist-container {
+    padding: 1rem;
+    margin: 1rem;
+  }
+  .heading1 {
+    font-size: 1.75rem;
+  }
+  .paragraph,
+  .listItem {
+    font-size: 0.95rem;
+  }
+  .print-button {
+    width: auto;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Druckoptimierung */
+@media print {
+  .print-button {
+    display: none;
+  }
+  .checklist-container {
+    box-shadow: none;
+    border: none;
+    margin: 0;
+    padding: 0.5rem;
+  }
+}

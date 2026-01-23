@@ -1,0 +1,122 @@
+.navbar {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.brand-text {
+  font-family: 'Lato', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  transition: color 0.3s ease;
+}
+
+.brand-text:hover {
+  color: #ff6600;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.hamburger {
+  font-size: 1.5rem;
+}
+
+.ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ul li {
+  margin-left: 1.5rem;
+}
+
+.ul li a:not(.buttonLink) {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s ease;
+  font-family: 'Lato', sans-serif;
+}
+
+.ul li a:not(.buttonLink):hover {
+  color: #ff6600;
+}
+
+.buttonLink {
+  background-color: #cc4d00; /* Example button background color */
+  color: #ffffff !important; /* Text color: white */
+  padding: 0.75rem 1.25rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.buttonLink:hover {
+  background-color: #e65c00; /* Darker shade on hover */
+  color: #000000 !important; /* Text color: black on hover */
+}
+
+@media (max-width: 768px) {
+  .brand-text {
+    font-size: 1.5rem;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .ul {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background-color: #ffffff;
+    position: absolute;
+    top: 70px;
+    left: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .ul.active {
+    display: flex;
+  }
+
+  .ul li {
+    margin: 0;
+    text-align: center;
+  }
+
+  .ul li a {
+    display: block;
+    padding: 1rem;
+  }
+
+  .ul li .buttonLink {
+    margin: 1rem auto;
+    display: inline-block; /* To center the button in mobile view */
+  }
+}

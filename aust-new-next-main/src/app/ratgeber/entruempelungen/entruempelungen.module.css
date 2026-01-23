@@ -1,0 +1,45 @@
+.faq-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Roboto', sans-serif;
+  color: #555;
+  line-height: 1.6;
+}
+
+.faq-container p a {
+  color: #1a1a1a;
+}
+
+.faq-container p a:hover {
+  color: #333;
+}
+
+.back-link {
+  display: block;
+  text-align: center;
+  margin-top: 2rem;
+  font-family: 'Roboto', sans-serif;
+  color: #007BFF;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.back-link:hover {
+  color: #0056b3;
+}
+
+@media (max-width: 768px) {
+  .faq-container {
+    padding: 1rem;
+  }
+  .heading1 {
+    font-size: 1.75rem;
+  }
+  .heading3 {
+    font-size: 1.3rem;
+  }
+  .paragraph {
+    font-size: 0.95rem;
+  }
+}

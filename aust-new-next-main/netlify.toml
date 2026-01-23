@@ -1,0 +1,3 @@
+[build]
+command = "npm run build" # Or "yarn build" or "pnpm build"
+publish = ".next"         # Or "out" if you're using next export

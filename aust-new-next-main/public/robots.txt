@@ -1,3 +1,0 @@
-User-agent: *
-
-Sitemap: https://www.aufraeumhelden.com/sitemap.xml

@@ -1,14 +1,15 @@
 <script lang="ts">
     // VolumeCalculator - Two-panel volume calculator with room categories and items
+    // RE (Raumeinheit) values from Alltransport 24 Umzüge standard list
+    // Conversion: 1 RE = 0.1 m³
     import {
         Sofa,
         UtensilsCrossed,
-        WashingMachine,
+        Bath,
         Bed,
         Briefcase,
-        Car,
+        Baby,
         Package,
-        CornerUpLeft,
         Search,
         Plus,
         Minus,
@@ -17,7 +18,7 @@
     interface Item {
         name: string;
         quantity: number;
-        volumePerUnit: number;
+        volumePerUnit: number; // in m³ (RE * 0.1)
     }
 
     interface Category {
@@ -26,144 +27,573 @@
         items: Item[];
     }
 
-    // Initial categories with all items from the original system
+    // RE to m³ conversion factor
+    const RE_TO_M3 = 0.1;
+
+    // Initial categories with items from Alltransport 24 Umzüge spreadsheet
     const initialCategories: Category[] = [
         {
             name: "Wohnzimmer",
             icon: Sofa,
             items: [
-                { name: "2-Sitzer Sofa", quantity: 0, volumePerUnit: 0.6 },
-                { name: "3-Sitzer Sofa", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Beistelltisch", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Buffetschrank", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Ecksofa", quantity: 0, volumePerUnit: 1.2 },
                 {
-                    name: "Elektrogeräte (z.B. Stereoanlage)",
+                    name: "Anbauwand b. 38cm Tiefe je angef. m",
                     quantity: 0,
-                    volumePerUnit: 0.2,
+                    volumePerUnit: 8 * RE_TO_M3,
                 },
-                { name: "Fernseher", quantity: 0, volumePerUnit: 0.3 },
                 {
-                    name: "Fernsehkommode (Lowboard)",
+                    name: "Anbauwand ü. 38cm Tiefe je angef. m",
                     quantity: 0,
-                    volumePerUnit: 0.5,
+                    volumePerUnit: 10 * RE_TO_M3,
                 },
-                { name: "Flügel", quantity: 0, volumePerUnit: 1.0 },
-                { name: "Heimorgel", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Klavier", quantity: 0, volumePerUnit: 1.2 },
+                {
+                    name: "Bilder bis 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Bilder über 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Brücke", quantity: 0, volumePerUnit: 1 * RE_TO_M3 },
+                {
+                    name: "Bücherregal zerlegbar je angef. m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Buffet mit Aufsatz",
+                    quantity: 0,
+                    volumePerUnit: 18 * RE_TO_M3,
+                },
+                {
+                    name: "Buffet ohne Aufsatz",
+                    quantity: 0,
+                    volumePerUnit: 15 * RE_TO_M3,
+                },
+                {
+                    name: "Deckenlampe",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Fernseher", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                { name: "Flügel", quantity: 0, volumePerUnit: 20 * RE_TO_M3 },
+                {
+                    name: "Heimorgel",
+                    quantity: 0,
+                    volumePerUnit: 10 * RE_TO_M3,
+                },
+                { name: "Klavier", quantity: 0, volumePerUnit: 15 * RE_TO_M3 },
+                { name: "Lüster", quantity: 0, volumePerUnit: 5 * RE_TO_M3 },
+                {
+                    name: "Musikschrank / Turm",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Nähmaschine (Schrank)",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Schreibtisch bis 1,6 m",
+                    quantity: 0,
+                    volumePerUnit: 12 * RE_TO_M3,
+                },
+                {
+                    name: "Schreibtisch über 1,6 m",
+                    quantity: 0,
+                    volumePerUnit: 17 * RE_TO_M3,
+                },
                 {
                     name: "Sessel mit Armlehnen",
                     quantity: 0,
-                    volumePerUnit: 0.5,
+                    volumePerUnit: 8 * RE_TO_M3,
                 },
                 {
                     name: "Sessel ohne Armlehnen",
                     quantity: 0,
-                    volumePerUnit: 0.4,
-                },
-                { name: "Sideboard groß", quantity: 0, volumePerUnit: 0.9 },
-                { name: "Sideboard klein", quantity: 0, volumePerUnit: 0.7 },
-                { name: "Stehlampe", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Stereoanlage", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Stuhl", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Teppich", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Couchtisch", quantity: 0, volumePerUnit: 0.4 },
-                {
-                    name: "Wohnzimmerschrank (pro Meter)",
-                    quantity: 0,
-                    volumePerUnit: 0.4,
+                    volumePerUnit: 4 * RE_TO_M3,
                 },
                 {
-                    name: "Umzugskarton (gepackt)",
+                    name: "Sideboard groß",
                     quantity: 0,
-                    volumePerUnit: 0.1,
-                },
-            ],
-        },
-        {
-            name: "Küche/Esszimmer",
-            icon: UtensilsCrossed,
-            items: [
-                { name: "Kühlschrank", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Gefrierschrank", quantity: 0, volumePerUnit: 0.7 },
-                {
-                    name: "Geschirrspülmaschine",
-                    quantity: 0,
-                    volumePerUnit: 0.7,
-                },
-                { name: "Herd", quantity: 0, volumePerUnit: 0.6 },
-                { name: "Mikrowelle", quantity: 0, volumePerUnit: 0.2 },
-                {
-                    name: "Küchenoberschrank (pro Tür)",
-                    quantity: 0,
-                    volumePerUnit: 0.15,
+                    volumePerUnit: 12 * RE_TO_M3,
                 },
                 {
-                    name: "Küchenunterschrank (pro Tür)",
+                    name: "Sideboard klein",
                     quantity: 0,
-                    volumePerUnit: 0.15,
+                    volumePerUnit: 6 * RE_TO_M3,
                 },
-                { name: "Esstisch bis 1,2m", quantity: 0, volumePerUnit: 0.7 },
-                { name: "Esstisch über 1,2m", quantity: 0, volumePerUnit: 0.9 },
-                { name: "Esszimmerstuhl", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Eckbank (je Sitz)", quantity: 0, volumePerUnit: 0.3 },
                 {
-                    name: "Vitrine (Glasschrank)",
+                    name: "Sitzlandschaft (Element) je Sitz",
                     quantity: 0,
-                    volumePerUnit: 0.8,
+                    volumePerUnit: 4 * RE_TO_M3,
                 },
-                { name: "Sideboard", quantity: 0, volumePerUnit: 0.7 },
                 {
-                    name: "Umzugskarton (gepackt)",
+                    name: "Sofa, Couch, Liege je Sitz",
                     quantity: 0,
-                    volumePerUnit: 0.1,
+                    volumePerUnit: 4 * RE_TO_M3,
                 },
-            ],
-        },
-        {
-            name: "Waschraum",
-            icon: WashingMachine,
-            items: [
-                { name: "Waschmaschine", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Trockner", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Wäschekorb", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Wäscheständer", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Bügelbrett", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Regal", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Toilettenschrank", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Badezimmerschrank", quantity: 0, volumePerUnit: 0.4 },
+                { name: "Standuhr", quantity: 0, volumePerUnit: 4 * RE_TO_M3 },
+                { name: "Stehlampe", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                {
+                    name: "Stereoanlage",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                { name: "Stuhl", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                {
+                    name: "Stuhl mit Armlehnen",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                { name: "Teppich", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                {
+                    name: "Tisch bis 0,6 m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,0 m",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch über 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "TV-Schrank",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Video / DVD-Player",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Wohnzimmerschrank zerlegbar je angef. m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
+                },
             ],
         },
         {
             name: "Schlafzimmer",
             icon: Bed,
             items: [
+                { name: "Bettumbau", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
                 {
-                    name: "Einzelbett komplett",
+                    name: "Bettzeug je Betteinheit",
                     quantity: 0,
-                    volumePerUnit: 0.9,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                {
+                    name: "Bilder bis 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Bilder über 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Deckenlampe",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
                 },
                 {
                     name: "Doppelbett komplett",
                     quantity: 0,
-                    volumePerUnit: 1.2,
+                    volumePerUnit: 20 * RE_TO_M3,
                 },
                 {
-                    name: "Kleiderschrank (pro Meter)",
+                    name: "Einzelbett komplett",
                     quantity: 0,
-                    volumePerUnit: 0.4,
+                    volumePerUnit: 10 * RE_TO_M3,
                 },
-                { name: "Kommode", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Nachttisch", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Frisierkommode", quantity: 0, volumePerUnit: 0.7 },
-                { name: "Spiegel", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Fernseher", quantity: 0, volumePerUnit: 0.3 },
-                { name: "TV-Schrank", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Teppich", quantity: 0, volumePerUnit: 0.5 },
+                { name: "Fernseher", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
                 {
-                    name: "Umzugskarton (gepackt)",
+                    name: "Französisches Bett komplett",
                     quantity: 0,
-                    volumePerUnit: 0.1,
+                    volumePerUnit: 15 * RE_TO_M3,
+                },
+                {
+                    name: "Frisierkommode (mit Spiegel)",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Kleiderbehältnis",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                { name: "Kommode", quantity: 0, volumePerUnit: 7 * RE_TO_M3 },
+                {
+                    name: "Nachttisch",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Schrank bis 2 Türen, nicht zerlegbar",
+                    quantity: 0,
+                    volumePerUnit: 15 * RE_TO_M3,
+                },
+                {
+                    name: "Schrank zerlegbar je angefang. m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Spiegel über 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Stuhl, Hocker",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Teppich", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                {
+                    name: "TV-Schrank",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Wäschetruhe",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
+                },
+            ],
+        },
+        {
+            name: "Esszimmer",
+            icon: UtensilsCrossed,
+            items: [
+                {
+                    name: "Bilder bis 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Bilder über 0,8 m",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Brücke", quantity: 0, volumePerUnit: 1 * RE_TO_M3 },
+                {
+                    name: "Deckenlampe",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Eckbank je Sitz",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Hausbar", quantity: 0, volumePerUnit: 5 * RE_TO_M3 },
+                { name: "Sekretär", quantity: 0, volumePerUnit: 12 * RE_TO_M3 },
+                {
+                    name: "Sideboard groß",
+                    quantity: 0,
+                    volumePerUnit: 12 * RE_TO_M3,
+                },
+                {
+                    name: "Sideboard klein",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                { name: "Stehlampe", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                { name: "Stuhl", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                {
+                    name: "Stuhl mit Armlehnen",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                {
+                    name: "Teewagen (nicht zerlegbar)",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                { name: "Teppich", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                {
+                    name: "Tisch bis 0,6 m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,0 m",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch über 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Vitrine (Glasschrank)",
+                    quantity: 0,
+                    volumePerUnit: 10 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
+                },
+            ],
+        },
+        {
+            name: "Küche",
+            icon: UtensilsCrossed,
+            items: [
+                {
+                    name: "Arbeitsplatte nicht unterb. je angef. m",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Besenschrank",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Buffet mit Aufsätzen",
+                    quantity: 0,
+                    volumePerUnit: 18 * RE_TO_M3,
+                },
+                {
+                    name: "Deckenlampe",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Eckbank je Sitz",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Geschirrspülmaschine",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                { name: "Herd", quantity: 0, volumePerUnit: 5 * RE_TO_M3 },
+                {
+                    name: "Kühlschrank / Truhe bis 120 l",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Kühlschrank / Truhe über 120 l",
+                    quantity: 0,
+                    volumePerUnit: 10 * RE_TO_M3,
+                },
+                {
+                    name: "Mikrowelle",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Oberteil je Tür",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                { name: "Stuhl", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                { name: "Teppich", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                {
+                    name: "Tisch bis 0,6 m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,0 m",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch über 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Unterteil je Tür",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Waschmaschine / Trockner",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
+                },
+            ],
+        },
+        {
+            name: "Kinderzimmer",
+            icon: Baby,
+            items: [
+                {
+                    name: "Anbauwand b. 38cm Tiefe je ang. m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Anbauwand ü. 38cm Tiefe je ang. m",
+                    quantity: 0,
+                    volumePerUnit: 10 * RE_TO_M3,
+                },
+                {
+                    name: "Bett komplett",
+                    quantity: 0,
+                    volumePerUnit: 10 * RE_TO_M3,
+                },
+                {
+                    name: "Bettzeug je Betteinheit",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                { name: "Brücke", quantity: 0, volumePerUnit: 1 * RE_TO_M3 },
+                {
+                    name: "Deckenlampe",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Etagenbett komplett",
+                    quantity: 0,
+                    volumePerUnit: 16 * RE_TO_M3,
+                },
+                {
+                    name: "Kinderbett komplett",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Kleiderbehältnis",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                { name: "Kommode", quantity: 0, volumePerUnit: 7 * RE_TO_M3 },
+                {
+                    name: "Laufgitter",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Nachttisch",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Schrank bis 2 Türen nicht zerlegbar",
+                    quantity: 0,
+                    volumePerUnit: 15 * RE_TO_M3,
+                },
+                {
+                    name: "Schrank zerlegbar je angef. m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Schreibpult",
+                    quantity: 0,
+                    volumePerUnit: 7 * RE_TO_M3,
+                },
+                {
+                    name: "Spielzeugkiste",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Stuhl, Hocker",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Teppich", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                {
+                    name: "Tisch bis 0,6 m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,0 m",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch über 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
                 },
             ],
         },
@@ -172,81 +602,265 @@
             icon: Briefcase,
             items: [
                 {
-                    name: "Schreibtisch bis 1,6m",
+                    name: "Aktenschrank je angefangener m",
                     quantity: 0,
-                    volumePerUnit: 0.6,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                { name: "Brücke", quantity: 0, volumePerUnit: 1 * RE_TO_M3 },
+                {
+                    name: "Bücherregal zerlegbar je angef. m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
                 },
                 {
-                    name: "Schreibtisch über 1,6m",
+                    name: "Computer: PC / EDV-Anlage",
                     quantity: 0,
-                    volumePerUnit: 0.8,
+                    volumePerUnit: 5 * RE_TO_M3,
                 },
-                { name: "Bürostuhl", quantity: 0, volumePerUnit: 0.4 },
-                { name: "Aktenschrank", quantity: 0, volumePerUnit: 0.5 },
                 {
-                    name: "Bücherregal (pro Meter)",
+                    name: "Deckenlampe",
                     quantity: 0,
-                    volumePerUnit: 0.5,
+                    volumePerUnit: 2 * RE_TO_M3,
                 },
-                { name: "Computer/PC", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Drucker", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Monitor", quantity: 0, volumePerUnit: 0.15 },
-                { name: "Stehlampe", quantity: 0, volumePerUnit: 0.3 },
                 {
-                    name: "Umzugskarton (gepackt)",
+                    name: "Schreibtisch bis 1,6 m",
                     quantity: 0,
-                    volumePerUnit: 0.1,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Schreibtisch über 1,6 m",
+                    quantity: 0,
+                    volumePerUnit: 12 * RE_TO_M3,
+                },
+                {
+                    name: "Schreibtischcontainer",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                {
+                    name: "Schreibtischstuhl",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                {
+                    name: "Sessel mit Armlehnen",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Sessel ohne Armlehnen",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                { name: "Stehlampe", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                { name: "Teppich", quantity: 0, volumePerUnit: 3 * RE_TO_M3 },
+                {
+                    name: "Tisch bis 0,6 m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,0 m",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch bis 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 6 * RE_TO_M3,
+                },
+                {
+                    name: "Tisch über 1,2 m",
+                    quantity: 0,
+                    volumePerUnit: 8 * RE_TO_M3,
+                },
+                {
+                    name: "Tischkopierer",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Winkelkombination",
+                    quantity: 0,
+                    volumePerUnit: 12 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
                 },
             ],
         },
         {
-            name: "Garage/Garten",
-            icon: Car,
+            name: "Bad",
+            icon: Bath,
             items: [
-                { name: "Fahrrad", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Motorrad", quantity: 0, volumePerUnit: 1.0 },
-                { name: "Autoreifen (Satz)", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Rasenmäher", quantity: 0, volumePerUnit: 0.6 },
-                { name: "Gartengeräte", quantity: 0, volumePerUnit: 0.6 },
-                { name: "Gartentisch", quantity: 0, volumePerUnit: 0.7 },
-                { name: "Gartenstuhl", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Sonnenschirm", quantity: 0, volumePerUnit: 0.3 },
-                { name: "Grill", quantity: 0, volumePerUnit: 0.7 },
-                { name: "Werkzeugschrank", quantity: 0, volumePerUnit: 0.7 },
-                { name: "Leiter", quantity: 0, volumePerUnit: 0.3 },
+                {
+                    name: "Deckenlampe",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Kleiderablage",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Stuhl, Hocker",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Toilettenschrank",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Truhe, Kommode",
+                    quantity: 0,
+                    volumePerUnit: 7 * RE_TO_M3,
+                },
+                {
+                    name: "Wäschekorb",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
+                },
             ],
         },
         {
             name: "Sonstiges",
             icon: Package,
             items: [
-                { name: "Kinderwagen", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Kinderbett", quantity: 0, volumePerUnit: 0.9 },
-                { name: "Wickelkommode", quantity: 0, volumePerUnit: 0.6 },
-                { name: "Spielzeugkiste", quantity: 0, volumePerUnit: 0.4 },
-                { name: "Staubsauger", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Koffer", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Sportgeräte", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Tischtennisplatte", quantity: 0, volumePerUnit: 1.2 },
-                { name: "Heimtrainer", quantity: 0, volumePerUnit: 0.8 },
-                { name: "Aquarium", quantity: 0, volumePerUnit: 0.6 },
-            ],
-        },
-        {
-            name: "Gang/Flur",
-            icon: CornerUpLeft,
-            items: [
-                { name: "Garderobe", quantity: 0, volumePerUnit: 0.5 },
-                { name: "Schuhschrank", quantity: 0, volumePerUnit: 0.4 },
-                { name: "Spiegel", quantity: 0, volumePerUnit: 0.2 },
-                { name: "Kleiderständer", quantity: 0, volumePerUnit: 0.3 },
                 {
-                    name: "Konsole/Beistelltisch",
+                    name: "Autoreifen",
                     quantity: 0,
-                    volumePerUnit: 0.3,
+                    volumePerUnit: 1 * RE_TO_M3,
                 },
-                { name: "Deckenlampe", quantity: 0, volumePerUnit: 0.05 },
-                { name: "Teppich/Läufer", quantity: 0, volumePerUnit: 0.3 },
+                {
+                    name: "Blumenkübel / Kasten",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Bügelbrett",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Dreirad / Kinderrad",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Fahrrad / Moped",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Gartengeräte",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Gartengrill",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                {
+                    name: "Kinderwagen",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Klapptisch / Klappstuhl",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                { name: "Koffer", quantity: 0, volumePerUnit: 1 * RE_TO_M3 },
+                {
+                    name: "Leiter je angefangener m",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                { name: "Motorrad", quantity: 0, volumePerUnit: 8 * RE_TO_M3 },
+                { name: "Mülltonne", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                {
+                    name: "Rasenmäher Hand",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Rasenmäher Motor",
+                    quantity: 0,
+                    volumePerUnit: 5 * RE_TO_M3,
+                },
+                {
+                    name: "Regal zerlegbar je angef. m",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                { name: "Schlitten", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                {
+                    name: "Schubkarre",
+                    quantity: 0,
+                    volumePerUnit: 4 * RE_TO_M3,
+                },
+                { name: "Ski", quantity: 0, volumePerUnit: 2 * RE_TO_M3 },
+                {
+                    name: "Sonnenbank",
+                    quantity: 0,
+                    volumePerUnit: 10 * RE_TO_M3,
+                },
+                {
+                    name: "Sonnenschirm",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Staubsauger",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Tischtennisplatte",
+                    quantity: 0,
+                    volumePerUnit: 3 * RE_TO_M3,
+                },
+                {
+                    name: "Werkzeugkoffer",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Werkzeugschrank",
+                    quantity: 0,
+                    volumePerUnit: 2 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton bis 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1 * RE_TO_M3,
+                },
+                {
+                    name: "Umzugskarton über 80 l (gepackt)",
+                    quantity: 0,
+                    volumePerUnit: 1.5 * RE_TO_M3,
+                },
             ],
         },
     ];
@@ -308,8 +922,8 @@
 <div class="volume-calculator">
     <div class="volume-calculator__info">
         <p>
-            <strong>Beispiel:</strong> Ihr Sofa ist 2m lang, 1m breit und 1,20m hoch.
-            Sie rechnen also 2 × 1 × 1,20 = 2,4 m³.
+            <strong>Hinweis:</strong> Wählen Sie Ihre Gegenstände aus den Kategorien
+            aus. Das Volumen wird automatisch in m³ berechnet.
         </p>
     </div>
 
@@ -318,6 +932,7 @@
         <aside class="volume-calculator__sidebar">
             {#each categories as category, index}
                 <button
+                    type="button"
                     class="volume-calculator__category"
                     class:active={activeCategoryIndex === index && !searchQuery}
                     onclick={() => selectCategory(index)}
@@ -325,20 +940,20 @@
                     <span class="volume-calculator__category-icon">
                         {#if category.name === "Wohnzimmer"}
                             <Sofa size={20} />
-                        {:else if category.name === "Küche/Esszimmer"}
-                            <UtensilsCrossed size={20} />
-                        {:else if category.name === "Waschraum"}
-                            <WashingMachine size={20} />
                         {:else if category.name === "Schlafzimmer"}
                             <Bed size={20} />
+                        {:else if category.name === "Esszimmer"}
+                            <UtensilsCrossed size={20} />
+                        {:else if category.name === "Küche"}
+                            <UtensilsCrossed size={20} />
+                        {:else if category.name === "Kinderzimmer"}
+                            <Baby size={20} />
                         {:else if category.name === "Arbeitszimmer"}
                             <Briefcase size={20} />
-                        {:else if category.name === "Garage/Garten"}
-                            <Car size={20} />
+                        {:else if category.name === "Bad"}
+                            <Bath size={20} />
                         {:else if category.name === "Sonstiges"}
                             <Package size={20} />
-                        {:else if category.name === "Gang/Flur"}
-                            <CornerUpLeft size={20} />
                         {/if}
                     </span>
                     <span class="volume-calculator__category-name"
@@ -362,6 +977,7 @@
                                 <div class="volume-calculator__item-counter">
                                     {#if categories[result.catIndex].items[result.itemIndex].quantity > 0}
                                         <button
+                                            type="button"
                                             class="volume-calculator__counter-btn volume-calculator__counter-btn--minus"
                                             onclick={() =>
                                                 decrement(
@@ -381,6 +997,7 @@
                                         </span>
                                     {/if}
                                     <button
+                                        type="button"
                                         class="volume-calculator__counter-btn volume-calculator__counter-btn--plus"
                                         onclick={() =>
                                             increment(
@@ -411,6 +1028,7 @@
                             <div class="volume-calculator__item-counter">
                                 {#if item.quantity > 0}
                                     <button
+                                        type="button"
                                         class="volume-calculator__counter-btn volume-calculator__counter-btn--minus"
                                         onclick={() =>
                                             decrement(
@@ -427,6 +1045,7 @@
                                     >
                                 {/if}
                                 <button
+                                    type="button"
                                     class="volume-calculator__counter-btn volume-calculator__counter-btn--plus"
                                     onclick={() =>
                                         increment(

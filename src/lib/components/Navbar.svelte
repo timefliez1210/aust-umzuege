@@ -282,9 +282,8 @@
 
     .navbar__logo img {
         width: auto;
-        height: 60px;
+        height: 76px;
         object-fit: contain;
-        margin-block: 5px;
     }
 
     .navbar__links {

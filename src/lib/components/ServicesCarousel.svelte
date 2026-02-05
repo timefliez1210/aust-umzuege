@@ -45,7 +45,7 @@
             },
             {
                 image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.webp",
-                title: "Haushaltsauflösungen & Entrümpelung",
+                title: "Haushaltsauflösungen",
                 description:
                     "Wir lösen Haushalte diskret auf und entrümpeln Keller, Dachboden oder Garage. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
                 href: "/leistungen/haushaltsaufloesung",

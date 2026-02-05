@@ -11,11 +11,11 @@
 
     let {
         services = [
-            { title: "Umzüge Privat & Gewerbe", href: "/leistungen/umzuege" },
-            { title: "Montagen & Demontagen", href: "/leistungen/montagen" },
+            { title: "Umzüge Privat & Gewerbe", href: "/leistungen/privatumzug" },
+            { title: "Montagen & Demontagen", href: "/leistungen/montage" },
             {
                 title: "Haushaltsauflösungen",
-                href: "/leistungen/haushaltsaufloesungen",
+                href: "/leistungen/haushaltsaufloesung",
             },
             { title: "Weitere Leistungen", href: "/leistungen" },
         ],

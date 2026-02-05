@@ -27,6 +27,14 @@
         items: Item[];
     }
 
+    interface Props {
+        volumeM3?: number;
+        itemSummary?: string;
+    }
+
+    // Bindable props to expose data to parent
+    let { volumeM3 = $bindable(0), itemSummary = $bindable("") }: Props = $props();
+
     // RE to m³ conversion factor
     const RE_TO_M3 = 0.1;
 
@@ -886,6 +894,25 @@
             0,
         ),
     );
+
+    // Generate item summary for form submission
+    const selectedItemsSummary = $derived(() => {
+        const items: string[] = [];
+        categories.forEach((cat) => {
+            cat.items.forEach((item) => {
+                if (item.quantity > 0) {
+                    items.push(`${item.quantity}x ${item.name} (${(item.quantity * item.volumePerUnit).toFixed(2)} m³)`);
+                }
+            });
+        });
+        return items.join("\n");
+    });
+
+    // Update bindable props when values change
+    $effect(() => {
+        volumeM3 = totalVolume;
+        itemSummary = selectedItemsSummary();
+    });
 
     const searchResults = $derived(() => {
         const query = searchQuery.toLowerCase().trim();

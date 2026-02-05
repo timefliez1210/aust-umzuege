@@ -1,0 +1,43 @@
+<!--
+  This file is used by Netlify to detect and register forms during build.
+  The forms are rendered dynamically by SvelteKit, but Netlify needs to see
+  the form structure in static HTML to enable form handling.
+-->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Netlify Forms Detection</title>
+</head>
+<body>
+    <!-- Kostenloses Angebot Form -->
+    <form name="kostenloses-angebot" netlify netlify-honeypot="bot-field" hidden>
+        <input name="form-name" type="hidden" value="kostenloses-angebot" />
+        <input name="bot-field" />
+        <input name="name" type="text" />
+        <input name="email" type="email" />
+        <input name="phone" type="tel" />
+        <input name="wunschtermin" type="date" />
+        <input name="auszugsadresse" type="text" />
+        <select name="etage-auszug"></select>
+        <input name="einzugsadresse" type="text" />
+        <select name="etage-einzug"></select>
+        <input name="umzugsvolumen-m3" type="text" />
+        <textarea name="gegenstaende-liste"></textarea>
+        <input name="zusatzleistungen" type="text" />
+        <textarea name="nachricht"></textarea>
+        <input name="datenschutz-akzeptiert" type="checkbox" />
+    </form>
+
+    <!-- Kontakt Form -->
+    <form name="kontakt" netlify netlify-honeypot="bot-field" hidden>
+        <input name="form-name" type="hidden" value="kontakt" />
+        <input name="bot-field" />
+        <input name="name" type="text" />
+        <input name="email" type="email" />
+        <input name="phone" type="tel" />
+        <textarea name="nachricht"></textarea>
+        <input name="datenschutz-akzeptiert" type="checkbox" />
+    </form>
+</body>
+</html>

@@ -9,6 +9,10 @@
         privacyAccepted: false,
     });
 
+    let isSubmitting = $state(false);
+    let submitSuccess = $state(false);
+    let submitError = $state("");
+
     const isFormValid = $derived(
         formData.name !== "" &&
             formData.email !== "" &&
@@ -16,23 +20,41 @@
             formData.privacyAccepted,
     );
 
-    function handleSubmit(e: Event) {
+    async function handleSubmit(e: Event) {
         e.preventDefault();
-        if (!isFormValid) return;
+        if (!isFormValid || isSubmitting) return;
 
-        // Simulate form submission
-        alert(
-            "Vielen Dank! Ihre Nachricht wurde gesendet. Wir melden uns umgehend bei Ihnen.",
-        );
+        isSubmitting = true;
+        submitError = "";
 
-        // Reset form
-        formData = {
-            name: "",
-            email: "",
-            phone: "",
-            message: "",
-            privacyAccepted: false,
-        };
+        const form = e.target as HTMLFormElement;
+        const formDataObj = new FormData(form);
+
+        try {
+            const response = await fetch("/", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(formDataObj as any).toString(),
+            });
+
+            if (response.ok) {
+                submitSuccess = true;
+                // Reset form
+                formData = {
+                    name: "",
+                    email: "",
+                    phone: "",
+                    message: "",
+                    privacyAccepted: false,
+                };
+            } else {
+                submitError = "Es gab einen Fehler. Bitte versuchen Sie es erneut.";
+            }
+        } catch (error) {
+            submitError = "Es gab einen Fehler. Bitte versuchen Sie es erneut.";
+        } finally {
+            isSubmitting = false;
+        }
     }
 </script>
 
@@ -51,6 +73,15 @@
         </header>
 
         <section class="contact-form-section">
+            {#if submitSuccess}
+                <div class="contact-form__success">
+                    <h2>Vielen Dank für Ihre Nachricht!</h2>
+                    <p>Wir melden uns umgehend bei Ihnen.</p>
+                    <button type="button" class="submit-button" onclick={() => submitSuccess = false}>
+                        Neue Nachricht senden
+                    </button>
+                </div>
+            {:else}
             <h2 class="contact-form__heading">
                 Füllen Sie einfach das Kontaktformular aus. <br
                     class="mobile-break"
@@ -58,11 +89,23 @@
                 Wir melden uns umgehend bei Ihnen.
             </h2>
 
-            <form class="contact-form" onsubmit={handleSubmit}>
+            <form
+                class="contact-form"
+                onsubmit={handleSubmit}
+                name="kontakt"
+                method="POST"
+                data-netlify="true"
+                netlify-honeypot="bot-field"
+            >
+                <!-- Netlify form detection -->
+                <input type="hidden" name="form-name" value="kontakt" />
+                <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
+
                 <div class="contact-form__group">
                     <input
                         type="text"
                         id="name"
+                        name="name"
                         bind:value={formData.name}
                         placeholder="Ihr Name:"
                         required
@@ -73,6 +116,7 @@
                     <input
                         type="email"
                         id="email"
+                        name="email"
                         bind:value={formData.email}
                         placeholder="Ihre E-Mail-Adresse:"
                         required
@@ -83,6 +127,7 @@
                     <input
                         type="tel"
                         id="phone"
+                        name="phone"
                         bind:value={formData.phone}
                         placeholder="Ihre Telefonnummer:"
                     />
@@ -91,6 +136,7 @@
                 <div class="contact-form__group">
                     <textarea
                         id="message"
+                        name="nachricht"
                         bind:value={formData.message}
                         rows="4"
                         placeholder="Ihre Nachricht:"
@@ -102,6 +148,7 @@
                     <label class="checkbox-label">
                         <input
                             type="checkbox"
+                            name="datenschutz-akzeptiert"
                             bind:checked={formData.privacyAccepted}
                             required
                         />
@@ -114,23 +161,57 @@
                     </label>
                 </div>
 
+                {#if submitError}
+                    <p class="contact-form__error">{submitError}</p>
+                {/if}
+
                 <button
                     type="submit"
                     class="submit-button"
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || isSubmitting}
                 >
-                    JETZT ANFRAGEN
+                    {#if isSubmitting}
+                        WIRD GESENDET...
+                    {:else}
+                        JETZT ANFRAGEN
+                    {/if}
                 </button>
             </form>
+            {/if}
         </section>
     </div>
 </main>
 
 <style>
+    .hidden {
+        display: none;
+    }
+
     .contact-page {
         background-color: #ffffff;
         min-height: 80vh;
         padding-block: var(--space-12);
+    }
+
+    .contact-form__success {
+        text-align: center;
+        padding: var(--space-10);
+    }
+
+    .contact-form__success h2 {
+        color: var(--color-info-bar);
+        margin: 0 0 var(--space-4);
+    }
+
+    .contact-form__success p {
+        color: #4a5568;
+        margin: 0 0 var(--space-6);
+    }
+
+    .contact-form__error {
+        color: #dc2626;
+        font-size: var(--text-sm);
+        margin: 0 0 var(--space-4);
     }
 
     .contact-page__container {

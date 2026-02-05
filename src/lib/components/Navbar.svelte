@@ -105,7 +105,7 @@
         <!-- Logo -->
         <a href="/" class="navbar__logo" aria-label="Zur Startseite">
             <img
-                src="/umzuege-hildesheim-logo-aust.png"
+                src="/LogoName_transparent.png"
                 alt="Aust Umzüge Logo"
                 width="150"
                 height="50"

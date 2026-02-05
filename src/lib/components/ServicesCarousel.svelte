@@ -23,11 +23,18 @@
         ctaHref = "/leistungen",
         services = [
             {
-                image: "/umzuege-hildesheim-carousel-1.webp",
-                title: "Umzüge, Privat und Gewerbe",
+                image: "/privatumzuege-hildesheim-carousel-1.webp",
+                title: "Privatumzüge",
                 description:
-                    "Ob Privatumzug oder Firmenumzug – wir übernehmen die komplette Planung und Durchführung. Von Hildesheim aus bundesweit und europaweit.",
+                    "Ihr Privatumzug in professionellen Händen – von der Planung bis zum Einräumen. Von Hildesheim aus bundesweit und europaweit.",
                 href: "/leistungen/privatumzug",
+            },
+            {
+                image: "/umzuege-hildesheim-carousel-1.webp",
+                title: "Gewerbe & Firmenumzüge",
+                description:
+                    "Firmenumzüge mit minimaler Ausfallzeit. Wir planen und koordinieren den Umzug Ihres Unternehmens – termingerecht und zuverlässig.",
+                href: "/leistungen/firmenumzug",
             },
             {
                 image: "/montagen-demontagen-carousel-2.webp",
@@ -38,16 +45,9 @@
             },
             {
                 image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.webp",
-                title: "Haushaltsauflösungen",
+                title: "Haushaltsauflösungen & Entrümpelung",
                 description:
-                    "Wir lösen Haushalte diskret und zuverlässig auf. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
-                href: "/leistungen/haushaltsaufloesung",
-            },
-            {
-                image: "/entruempelung-carousel4.webp",
-                title: "Entrümpelung",
-                description:
-                    "Keller, Dachboden oder Garage – wir entrümpeln schnell und sauber. Faire Preise, umweltgerechte Entsorgung, auch kurzfristig.",
+                    "Wir lösen Haushalte diskret auf und entrümpeln Keller, Dachboden oder Garage. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
                 href: "/leistungen/haushaltsaufloesung",
             },
             {

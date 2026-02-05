@@ -23,42 +23,42 @@
         ctaHref = "/leistungen",
         services = [
             {
-                image: "/umzuege-hildesheim-carousel-1.JPG",
+                image: "/umzuege-hildesheim-carousel-1.webp",
                 title: "Umzüge, Privat und Gewerbe",
                 description:
                     "Ob Privatumzug oder Firmenumzug – wir übernehmen die komplette Planung und Durchführung. Von Hildesheim aus bundesweit und europaweit.",
                 href: "/leistungen/privatumzug",
             },
             {
-                image: "/montagen-demontagen-carousel-2.jpg",
+                image: "/montagen-demontagen-carousel-2.webp",
                 title: "Montagen & Demontagen",
                 description:
                     "Unsere Monteure bauen auch komplexe Küchen und Möbelsysteme fachgerecht ab und am neuen Standort wieder auf – inklusive Anpassungen.",
                 href: "/leistungen/montage",
             },
             {
-                image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.jpg",
+                image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.webp",
                 title: "Haushaltsauflösungen",
                 description:
                     "Wir lösen Haushalte diskret und zuverlässig auf. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
                 href: "/leistungen/haushaltsaufloesung",
             },
             {
-                image: "/entruempelung-carousel4.JPG",
+                image: "/entruempelung-carousel4.webp",
                 title: "Entrümpelung",
                 description:
                     "Keller, Dachboden oder Garage – wir entrümpeln schnell und sauber. Faire Preise, umweltgerechte Entsorgung, auch kurzfristig.",
                 href: "/leistungen/haushaltsaufloesung",
             },
             {
-                image: "/einlagerung-service-hildesheim-carousel-4.jpg",
+                image: "/einlagerung-service-hildesheim-carousel-4.webp",
                 title: "Lagerung & Einlagerung",
                 description:
                     "Sichere Lagerung für Ihre Möbel – ob kurzfristig oder langfristig. Flexible Laufzeiten, faire Konditionen.",
                 href: "/leistungen/lagerung",
             },
             {
-                image: "/seniorenumzuege-hildesheim-carousel-6.jpg",
+                image: "/seniorenumzuege-hildesheim-carousel-6.webp",
                 title: "Seniorenumzüge",
                 description:
                     "Wir begleiten den Umzug ins betreute Wohnen mit Geduld und Sorgfalt. Vom Einpacken bis zum Einrichten – alles aus einer Hand.",
@@ -141,6 +141,8 @@
                                 alt={service.title}
                                 class="service-card__image"
                                 loading="lazy"
+                                width="800"
+                                height="600"
                             />
                             <a
                                 href={service.href}
@@ -230,7 +232,7 @@
     }
 
     .services-carousel__tagline {
-        color: var(--color-nav-accent);
+        color: #c44a00; /* Darker orange for WCAG AA contrast */
         font-size: var(--text-sm);
         font-weight: var(--font-semibold);
         text-transform: uppercase;
@@ -275,24 +277,39 @@
     }
 
     .services-carousel__dot {
-        width: 10px;
-        height: 10px;
+        width: 24px;
+        height: 24px;
         border-radius: var(--radius-full);
-        background-color: #cbd5e1;
+        background-color: transparent;
         border: none;
         cursor: pointer;
         transition:
             background-color var(--transition-fast),
             transform var(--transition-fast);
+        position: relative;
     }
 
-    .services-carousel__dot:hover {
+    /* Visual dot inside touch target */
+    .services-carousel__dot::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 10px;
+        height: 10px;
+        border-radius: var(--radius-full);
+        background-color: #cbd5e1;
+        transition: background-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .services-carousel__dot:hover::after {
         background-color: #94a3b8;
     }
 
-    .services-carousel__dot.active {
+    .services-carousel__dot.active::after {
         background-color: var(--color-info-bar);
-        transform: scale(1.2);
+        transform: translate(-50%, -50%) scale(1.2);
     }
 
     .services-carousel__wrapper {

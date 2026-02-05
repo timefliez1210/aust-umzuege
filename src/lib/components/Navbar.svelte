@@ -99,6 +99,7 @@
     }
 </script>
 
+<header>
 <nav class="navbar" aria-label="Hauptnavigation">
     <div class="navbar__container">
         <!-- Logo -->
@@ -250,6 +251,7 @@
         </ul>
     </div>
 </nav>
+</header>
 
 <style>
     .navbar {

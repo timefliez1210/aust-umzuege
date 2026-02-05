@@ -11,13 +11,13 @@
     }: Props = $props();
 </script>
 
-<div class="info-bar">
+<div class="info-bar" role="banner" aria-label="Kontaktinformationen">
     <div class="info-bar__container">
         <p class="info-bar__contact">
             Haben Sie Fragen? Rufen Sie uns gerne an:
-            <a href="tel:+4951217558379" class="info-bar__phone">{phone}</a>
+            <a href="tel:+4951217558379" class="info-bar__phone" aria-label="Telefon: {phone}">{phone}</a>
         </p>
-        <p class="info-bar__hours">{hours}</p>
+        <p class="info-bar__hours" aria-label="Öffnungszeiten">{hours}</p>
     </div>
 </div>
 

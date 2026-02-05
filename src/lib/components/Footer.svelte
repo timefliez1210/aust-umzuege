@@ -107,7 +107,7 @@
             <p class="footer__copyright">
                 Aust Umzüge und Haushaltsauflösungen
             </p>
-            <nav class="footer__legal">
+            <nav class="footer__legal" aria-label="Rechtliche Links">
                 <a href="/impressum">Impressum</a>
                 <span class="footer__legal-divider">|</span>
                 <a href="/datenschutz">Datenschutz</a>

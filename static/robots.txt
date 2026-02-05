@@ -1,3 +1,10 @@
-# allow crawling everything by default
+# robots.txt for Aust Umzüge
+
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://www.aust-umzuege.de/sitemap.xml
+
+# Disallow admin/internal paths if any
+Disallow: /api/

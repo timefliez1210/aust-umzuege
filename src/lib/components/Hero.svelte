@@ -15,17 +15,19 @@
         subheading = "Unverbindlich anfragen und ein kostenloses Angebot erhalten",
         ctaText = "Jetzt anfragen",
         ctaHref = "/kostenloses-angebot",
-        backgroundImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.jpg",
+        backgroundImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.webp",
     }: Props = $props();
 </script>
 
 <section class="hero">
     <img
         src={backgroundImage}
-        alt=""
+        alt="Aust Umzüge Team bei der Arbeit in Hildesheim"
         class="hero__background"
         loading="eager"
         fetchpriority="high"
+        width="1920"
+        height="1080"
     />
     <div class="hero__overlay"></div>
 

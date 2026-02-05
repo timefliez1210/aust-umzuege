@@ -11,11 +11,12 @@
 
     let {
         tagline = "Umzüge und Haushaltsauflösungen",
-        heading = "Wir realisieren Ihren Umzug in Hildesheim und Umgebung",
+        heading = "Mehr als nur Umzug – Ihr Spezialist für die schwierigen Fälle",
         paragraphs = [
-            "Sie planen gerade Ihren Umzug und wissen nicht, womit Sie zuerst beginnen sollen? Es gibt jede Menge zu planen und organisieren. Doch keine Sorge, Ihren Umzug müssen Sie nicht alleine bewerkstelligen.",
-            "Wir von Aust Umzüge organisieren und erledigen Ihren Umzug in Hildesheim und Umgebung für Sie. Ein Umzug kostet viel Zeit und bedarf ein wenig Organisationsgeschick.",
-            "Denn eine gute Planung und Organisation im Vorfeld spart Ihnen am Ende nicht nur Zeit ein, sondern auch viel Geld. Planen Sie Ihren Umzug mit uns und sparen Sie sich unnötige Kosten und Stress bei Ihrem Umzug.",
+            "Sie suchen einen Umzugspartner, der mehr kann als nur tragen? Aust Umzüge verbindet professionelle Umzüge und Haushaltsauflösungen mit echtem Fachwissen – dort, wo andere an ihre Grenzen stoßen.",
+            "Ihre Einbauküche muss nicht nur ab-, sondern auch wieder fachgerecht aufgebaut werden? Unsere erfahrenen Monteure übernehmen komplexe Küchenmontagen inklusive Arbeitsplatten-Anpassung, Wasser- und Elektroanschluss. Ihre Eltern ziehen ins betreute Wohnen und brauchen mehr als nur einen Transporter? Wir begleiten Seniorenumzüge mit Geduld, Einfühlungsvermögen und einem Komplett-Service vom Einpacken bis zum Einräumen. Sie besitzen hochwertige Möbel, die beim Transport besondere Sorgfalt verlangen? Wir wissen, wie man empfindliche Stücke sicher ans Ziel bringt.",
+            "Ob Privatumzug, Firmenumzug oder Haushaltsauflösung – bei uns bekommen Sie alles aus einer Hand: Planung, Organisation, Transport, Montage und auf Wunsch auch die fachgerechte Entsorgung. Von Hildesheim aus arbeiten wir bundesweit und europaweit.",
+            "Was uns unterscheidet? Wir nehmen uns Zeit. Für eine ehrliche Beratung vor Ort, für Ihre individuellen Wünsche und für die Details, die einen guten Umzug von einem stressfreien unterscheiden.",
         ],
         imageSrc = "/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig.jpg",
         imageAlt = "Aust Umzüge Mitarbeiter beim Umzug",

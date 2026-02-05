@@ -40,7 +40,7 @@
             <p>
                 Die Vertragskündigung bedarf der Schriftform. Bei einer
                 Kündigung ohne wichtigen Grund wird eine Rücktrittszahlung von
-                30% des veranschlagten Entgelts erhoben. Ab 3 Tage vor
+                30% des veranschlagten Entgelts erhoben. Ab 7 Tage vor
                 Auftragstermin ist eine Kündigung nicht mehr möglich. Es wird
                 der Gesamtbruttopreis in Rechnung gestellt. Bei einem Auftrag
                 auf Stundenbasis werden in diesen Fällen 8 Stunden berechnet.

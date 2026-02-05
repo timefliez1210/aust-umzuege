@@ -239,7 +239,7 @@
                     volumePerUnit: 15 * RE_TO_M3,
                 },
                 {
-                    name: "Frisierkommode (mit Spiegel)",
+                    name: "Schminktisch (mit Spiegel)",
                     quantity: 0,
                     volumePerUnit: 6 * RE_TO_M3,
                 },
@@ -462,7 +462,7 @@
                     volumePerUnit: 8 * RE_TO_M3,
                 },
                 {
-                    name: "Unterteil je Tür",
+                    name: "Küchenunterschrank",
                     quantity: 0,
                     volumePerUnit: 4 * RE_TO_M3,
                 },
@@ -1175,6 +1175,31 @@
         flex: 1;
         overflow-y: auto;
         max-height: 350px;
+    }
+
+    /* Custom scrollbar - always visible */
+    .volume-calculator__items-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .volume-calculator__items-list::-webkit-scrollbar-track {
+        background: #e2e8f0;
+        border-radius: 4px;
+    }
+
+    .volume-calculator__items-list::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 4px;
+    }
+
+    .volume-calculator__items-list::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    /* Firefox */
+    .volume-calculator__items-list {
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #e2e8f0;
     }
 
     .volume-calculator__item {

@@ -9,6 +9,7 @@
         MessageSquare,
         Wrench,
         Trash2,
+        Warehouse,
         ArrowRight,
         Mail,
     } from "lucide-svelte";
@@ -76,6 +77,13 @@
                 "Besenreine Räumung und fachgerechte Entsorgung von Sperrmüll und Altlasten.",
             icon: Trash2,
             link: "/leistungen/haushaltsaufloesung",
+        },
+        {
+            title: "Lagerung & Einlagerung",
+            description:
+                "Sichere Lagerung für Ihre Möbel – ob kurzfristig beim Umzug oder langfristig.",
+            icon: Warehouse,
+            link: "/leistungen/lagerung",
         },
     ];
 </script>
@@ -315,12 +323,22 @@
         color: #64748b;
     }
 
+    /* Stretched link - makes entire card clickable */
+    .service-card__link.details::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+
     .service-card__link.details:hover {
         color: var(--color-info-bar);
     }
 
     .service-card__link.contact {
         color: var(--color-nav-accent);
+        position: relative;
+        z-index: 2; /* Above the stretched link */
     }
 
     .service-card__link.contact:hover {

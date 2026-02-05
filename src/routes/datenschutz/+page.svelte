@@ -122,7 +122,7 @@
                 Website ist:
             </p>
             <p>
-                Alexander Aust<br />
+                Alex Aust<br />
                 Telefon:
                 <a href="tel:+4951217558379">+49 (0) 5121- 7558379</a><br />
                 E-Mail:

@@ -23,46 +23,46 @@
         ctaHref = "/leistungen",
         services = [
             {
-                image: "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.jpg",
+                image: "/umzuege-hildesheim-carousel-1.JPG",
                 title: "Umzüge, Privat und Gewerbe",
                 description:
-                    "Wir haben schon unzählige Umzüge in und um Hildesheim realisiert. Wir bieten Ihnen nicht nur fleißige und ortskundige Umzugshelfer und den Transporter, sondern auch das Umzugsmaterial.",
-                href: "/leistungen/umzuege",
+                    "Ob Privatumzug oder Firmenumzug – wir übernehmen die komplette Planung und Durchführung. Von Hildesheim aus bundesweit und europaweit.",
+                href: "/leistungen/privatumzug",
             },
             {
-                image: "/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig.jpg",
+                image: "/montagen-demontagen-carousel-2.jpg",
                 title: "Montagen & Demontagen",
                 description:
-                    "Alles aus einer Hand. Wir übernehmen Ihre komplette Möbeldemontage und Möbelmontage! Aust Umzüge Hildesheim, hat schon viele Umzüge problemlos gemeistert.",
-                href: "/leistungen/montagen",
+                    "Unsere Monteure bauen auch komplexe Küchen und Möbelsysteme fachgerecht ab und am neuen Standort wieder auf – inklusive Anpassungen.",
+                href: "/leistungen/montage",
             },
             {
-                image: "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.jpg",
+                image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.jpg",
                 title: "Haushaltsauflösungen",
                 description:
-                    "Als professionelles Umzugsunternehmen aus Hildesheim kümmern wir uns nicht nur um Umzüge und der Gleichen sondern führen auch Haushaltsauflösungen jeder Art durch.",
-                href: "/leistungen/haushaltsaufloesungen",
+                    "Wir lösen Haushalte diskret und zuverlässig auf. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
+                href: "/leistungen/haushaltsaufloesung",
             },
             {
-                image: "/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig.jpg",
+                image: "/entruempelung-carousel4.JPG",
                 title: "Entrümpelung",
                 description:
-                    "Professionelle Entrümpelung von Wohnungen, Häusern und Gewerbeobjekten. Schnell, sauber und zuverlässig – wir kümmern uns um alles.",
-                href: "/leistungen/entruempelung",
+                    "Keller, Dachboden oder Garage – wir entrümpeln schnell und sauber. Faire Preise, umweltgerechte Entsorgung, auch kurzfristig.",
+                href: "/leistungen/haushaltsaufloesung",
             },
             {
-                image: "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.jpg",
+                image: "/einlagerung-service-hildesheim-carousel-4.jpg",
                 title: "Lagerung & Einlagerung",
                 description:
-                    "Sichere Lagerung Ihrer Möbel und persönlichen Gegenstände. Flexible Laufzeiten und klimatisierte Räumlichkeiten für Ihren Besitz.",
+                    "Sichere Lagerung für Ihre Möbel – ob kurzfristig oder langfristig. Flexible Laufzeiten, faire Konditionen.",
                 href: "/leistungen/lagerung",
             },
             {
-                image: "/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig.jpg",
+                image: "/seniorenumzuege-hildesheim-carousel-6.jpg",
                 title: "Seniorenumzüge",
                 description:
-                    "Einfühlsame und sorgfältige Umzüge für Senioren. Wir nehmen uns Zeit und sorgen für einen stressfreien Übergang in Ihr neues Zuhause.",
-                href: "/leistungen/seniorenumzuege",
+                    "Wir begleiten den Umzug ins betreute Wohnen mit Geduld und Sorgfalt. Vom Einpacken bis zum Einrichten – alles aus einer Hand.",
+                href: "/leistungen/seniorenumzug",
             },
         ],
         visibleCards = 3,

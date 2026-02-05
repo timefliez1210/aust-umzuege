@@ -50,6 +50,10 @@
                         label: "Haushaltsauflösungen",
                         href: "/leistungen/haushaltsaufloesung",
                     },
+                    {
+                        label: "Lagerung & Einlagerung",
+                        href: "/leistungen/lagerung",
+                    },
                 ],
             },
             {
@@ -100,7 +104,7 @@
         <!-- Logo -->
         <a href="/" class="navbar__logo" aria-label="Zur Startseite">
             <img
-                src="/umzuege-hildesheim-logo-aust.webp"
+                src="/umzuege-hildesheim-logo-aust.png"
                 alt="Aust Umzüge Logo"
                 width="150"
                 height="50"
@@ -276,8 +280,9 @@
 
     .navbar__logo img {
         width: auto;
-        height: 78px;
+        height: 60px;
         object-fit: contain;
+        margin-block: 5px;
     }
 
     .navbar__links {

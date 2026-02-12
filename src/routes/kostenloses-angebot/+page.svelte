@@ -92,7 +92,7 @@
         const formDataObj = new FormData(form);
 
         try {
-            const response = await fetch("/", {
+            const response = await fetch("/_forms.html", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams(formDataObj as any).toString(),

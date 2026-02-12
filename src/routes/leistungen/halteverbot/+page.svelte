@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { SignpostBig, CheckCircle, ArrowLeft } from "lucide-svelte";
+    import { Ban, CheckCircle, ArrowLeft } from "lucide-svelte";
 </script>
 
 <svelte:head>
@@ -19,7 +19,7 @@
 
         <header class="service-header">
             <div class="icon-wrapper">
-                <SignpostBig size={48} strokeWidth={1.5} />
+                <Ban size={48} strokeWidth={1.5} />
             </div>
             <h1 class="service-title">Halteverbot</h1>
             <p class="service-subtitle">

@@ -5,7 +5,7 @@
         Globe,
         HeartHandshake,
         Users,
-        SignpostBig,
+        Ban,
         MessageSquare,
         Wrench,
         Trash2,
@@ -54,7 +54,7 @@
             title: "Halteverbot",
             description:
                 "Beantragung und Einrichtung offizieller Halteverbotszonen für einen reibungslosen Ablauf.",
-            icon: SignpostBig,
+            icon: Ban,
             link: "/leistungen/halteverbot",
         },
         {

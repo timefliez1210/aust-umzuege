@@ -27,8 +27,10 @@
         phone: "",
         startAddress: "",
         startFloor: "",
+        halteverbotAuszug: false,
         endAddress: "",
         endFloor: "",
+        halteverbotEinzug: false,
         date: "",
         message: "",
         selectedServices: [] as string[],
@@ -106,8 +108,10 @@
                     phone: "",
                     startAddress: "",
                     startFloor: "",
+                    halteverbotAuszug: false,
                     endAddress: "",
                     endFloor: "",
+                    halteverbotEinzug: false,
                     date: "",
                     message: "",
                     selectedServices: [],
@@ -260,6 +264,17 @@
                         </select>
                     </div>
 
+                    <div class="angebot-page__form-group angebot-page__form-group--full">
+                        <label class="angebot-page__checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="halteverbot-auszug"
+                                bind:checked={formData.halteverbotAuszug}
+                            />
+                            <span>Halteverbot benötigt? (optional)</span>
+                        </label>
+                    </div>
+
                     <div class="angebot-page__form-group">
                         <label for="endAddress">Einzugsadresse *</label>
                         <input
@@ -284,6 +299,17 @@
                                 <option value={option.value}>{option.label}</option>
                             {/each}
                         </select>
+                    </div>
+
+                    <div class="angebot-page__form-group angebot-page__form-group--full">
+                        <label class="angebot-page__checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="halteverbot-einzug"
+                                bind:checked={formData.halteverbotEinzug}
+                            />
+                            <span>Halteverbot benötigt? (optional)</span>
+                        </label>
                     </div>
                 </div>
             </section>
@@ -531,6 +557,34 @@
     .angebot-page__form-group textarea {
         resize: vertical;
         min-height: 120px;
+    }
+
+    .angebot-page__checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background-color: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .angebot-page__checkbox-label:hover {
+        background-color: #edf2f7;
+    }
+
+    .angebot-page__checkbox-label input[type="checkbox"] {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+
+    .angebot-page__checkbox-label span {
+        color: #4a5568;
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
     }
 
     /* Services Grid */

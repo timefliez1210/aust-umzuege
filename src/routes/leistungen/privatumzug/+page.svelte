@@ -55,7 +55,7 @@
                     <li>
                         <CheckCircle size={20} class="check-icon" />
                         <span
-                            >Professioneller Ein- und Auspackservice (auf
+                            >Professioneller Einpackservice (auf
                             Wunsch)</span
                         >
                     </li>

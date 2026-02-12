@@ -41,7 +41,6 @@
 
     const additionalServices = [
         { id: "packing", label: "Einpackservice" },
-        { id: "unpacking", label: "Auspackservice" },
         { id: "assembly", label: "Möbelmontage" },
         { id: "disassembly", label: "Möbeldemontage" },
         { id: "storage", label: "Einlagerung" },

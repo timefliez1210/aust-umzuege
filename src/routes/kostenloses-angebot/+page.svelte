@@ -28,6 +28,10 @@
         startAddress: "",
         startFloor: "",
         halteverbotAuszug: false,
+        hasZwischenstopp: false,
+        zwischenstoppAddress: "",
+        zwischenstoppFloor: "",
+        halteverbotZwischenstopp: false,
         endAddress: "",
         endFloor: "",
         halteverbotEinzug: false,
@@ -109,6 +113,10 @@
                     startAddress: "",
                     startFloor: "",
                     halteverbotAuszug: false,
+                    hasZwischenstopp: false,
+                    zwischenstoppAddress: "",
+                    zwischenstoppFloor: "",
+                    halteverbotZwischenstopp: false,
                     endAddress: "",
                     endFloor: "",
                     halteverbotEinzug: false,
@@ -274,6 +282,63 @@
                             <span>Halteverbot benötigt? (optional)</span>
                         </label>
                     </div>
+
+                    <!-- Zwischenstopp Toggle -->
+                    <div class="angebot-page__form-group angebot-page__form-group--full">
+                        <button
+                            type="button"
+                            class="angebot-page__zwischenstopp-toggle"
+                            onclick={() => formData.hasZwischenstopp = !formData.hasZwischenstopp}
+                        >
+                            {#if formData.hasZwischenstopp}
+                                <span>− Zwischenstopp entfernen</span>
+                            {:else}
+                                <span>+ Zwischenstopp hinzufügen (optional)</span>
+                            {/if}
+                        </button>
+                    </div>
+
+                    <!-- Zwischenstopp Fields (conditional) -->
+                    {#if formData.hasZwischenstopp}
+                        <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__zwischenstopp-section">
+                            <h3 class="angebot-page__subsection-title">Zwischenstopp</h3>
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label for="zwischenstoppAddress">Zwischenstopp-Adresse</label>
+                            <input
+                                type="text"
+                                id="zwischenstoppAddress"
+                                name="zwischenstopp-adresse"
+                                bind:value={formData.zwischenstoppAddress}
+                                placeholder="Straße, Nr., PLZ, Ort"
+                            />
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label for="zwischenstoppFloor">Etage Zwischenstopp</label>
+                            <select
+                                id="zwischenstoppFloor"
+                                name="etage-zwischenstopp"
+                                bind:value={formData.zwischenstoppFloor}
+                            >
+                                {#each floorOptions as option}
+                                    <option value={option.value}>{option.label}</option>
+                                {/each}
+                            </select>
+                        </div>
+
+                        <div class="angebot-page__form-group angebot-page__form-group--full">
+                            <label class="angebot-page__checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="halteverbot-zwischenstopp"
+                                    bind:checked={formData.halteverbotZwischenstopp}
+                                />
+                                <span>Halteverbot benötigt? (optional)</span>
+                            </label>
+                        </div>
+                    {/if}
 
                     <div class="angebot-page__form-group">
                         <label for="endAddress">Einzugsadresse *</label>
@@ -585,6 +650,39 @@
         color: #4a5568;
         font-size: var(--text-sm);
         font-weight: var(--font-medium);
+    }
+
+    /* Zwischenstopp Toggle Button */
+    .angebot-page__zwischenstopp-toggle {
+        width: 100%;
+        padding: var(--space-3) var(--space-4);
+        background-color: #f0f9ff;
+        border: 2px dashed #3b82f6;
+        border-radius: var(--radius-md);
+        color: #1e40af;
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        text-align: center;
+    }
+
+    .angebot-page__zwischenstopp-toggle:hover {
+        background-color: #dbeafe;
+        border-color: #2563eb;
+    }
+
+    .angebot-page__zwischenstopp-section {
+        margin-top: var(--space-2);
+        padding-top: var(--space-4);
+        border-top: 2px solid #e2e8f0;
+    }
+
+    .angebot-page__subsection-title {
+        color: #1e40af;
+        font-size: var(--text-base);
+        font-weight: var(--font-semibold);
+        margin: 0;
     }
 
     /* Services Grid */

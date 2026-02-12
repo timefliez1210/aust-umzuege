@@ -160,9 +160,9 @@
             <div class="angebot-page__success">
                 <h2>Vielen Dank für Ihre Anfrage!</h2>
                 <p>Wir haben Ihre Anfrage erhalten und werden uns schnellstmöglich bei Ihnen melden.</p>
-                <button type="button" class="angebot-page__submit" onclick={() => submitSuccess = false}>
-                    Neue Anfrage stellen
-                </button>
+                <a href="/" class="angebot-page__submit angebot-page__submit--centered">
+                    Zur Startseite
+                </a>
             </div>
         {:else}
         <form
@@ -795,6 +795,11 @@
         font-weight: var(--font-semibold);
         cursor: pointer;
         transition: all var(--transition-fast);
+        text-decoration: none;
+    }
+
+    .angebot-page__submit--centered {
+        margin-inline: auto;
     }
 
     .angebot-page__submit:hover:not(:disabled) {

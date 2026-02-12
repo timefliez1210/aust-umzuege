@@ -39,7 +39,7 @@
 
             <!-- Anfahrt -->
             <a
-                href="https://maps.google.com/?q=Kaiserstr.+32,+31134+Hildesheim"
+                href="https://maps.app.goo.gl/KUs8ajSyfU6iwEqw9"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="contact-cta__box"

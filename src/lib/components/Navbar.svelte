@@ -105,7 +105,7 @@
         <!-- Logo -->
         <a href="/" class="navbar__logo" aria-label="Zur Startseite">
             <img
-                src="/LogoName_transparent.png"
+                src="/LogoName_transparent.webp"
                 alt="Aust Umzüge Logo"
                 width="150"
                 height="50"

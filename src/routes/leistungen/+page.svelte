@@ -233,10 +233,13 @@
         border: 1px solid #f1f5f9;
         position: relative;
         overflow: hidden;
+        /* Performance optimizations */
+        will-change: transform;
+        contain: layout style paint;
     }
 
     .service-card:hover {
-        transform: translateY(-5px);
+        transform: translate3d(0, -5px, 0);
         box-shadow:
             0 10px 15px -3px rgba(0, 0, 0, 0.1),
             0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -251,13 +254,14 @@
         width: 100%;
         height: 4px;
         background-color: var(--color-info-bar);
-        transform: scaleX(0);
+        transform: scale3d(0, 1, 1);
         transform-origin: left;
         transition: transform var(--transition-normal);
+        will-change: transform;
     }
 
     .service-card:hover::before {
-        transform: scaleX(1);
+        transform: scale3d(1, 1, 1);
     }
 
     .service-card__icon-wrapper {
@@ -273,6 +277,7 @@
         transition:
             background-color var(--transition-fast),
             color var(--transition-fast);
+        will-change: background-color;
     }
 
     .service-card:hover .service-card__icon-wrapper {
@@ -381,10 +386,11 @@
         transition:
             background-color var(--transition-fast),
             transform var(--transition-fast);
+        will-change: transform;
     }
 
     .cta-button:hover {
         background-color: #d84a00;
-        transform: translateY(-2px);
+        transform: translate3d(0, -2px, 0);
     }
 </style>

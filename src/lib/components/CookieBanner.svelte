@@ -1,7 +1,6 @@
 <script lang="ts">
 	// DSGVO-compliant cookie consent banner
 	import { cookieConsent } from '$lib/stores/cookieConsent';
-	import { fade, fly } from 'svelte/transition';
 
 	let showBanner = $state(false);
 	let showSettings = $state(false);
@@ -44,7 +43,7 @@
 
 {#if showBanner}
 	<!-- Backdrop -->
-	<div class="cookie-banner__backdrop" transition:fade={{ duration: 200 }}></div>
+	<div class="cookie-banner__backdrop"></div>
 
 	<!-- Banner -->
 	<aside
@@ -52,7 +51,6 @@
 		role="dialog"
 		aria-labelledby="cookie-banner-title"
 		aria-modal="true"
-		transition:fly={{ y: 100, duration: 300 }}
 	>
 		<div class="cookie-banner__container">
 			<div class="cookie-banner__content">
@@ -101,7 +99,6 @@
 	<!-- Settings Modal -->
 	<div
 		class="cookie-settings__backdrop"
-		transition:fade={{ duration: 200 }}
 		onclick={() => (showSettings = false)}
 		role="presentation"
 	></div>
@@ -111,7 +108,6 @@
 		role="dialog"
 		aria-labelledby="cookie-settings-title"
 		aria-modal="true"
-		transition:fly={{ y: 50, duration: 300 }}
 	>
 		<div class="cookie-settings__header">
 			<h2 id="cookie-settings-title" class="cookie-settings__title">
@@ -213,6 +209,36 @@
 {/if}
 
 <style>
+	/* Animations */
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes slideUp {
+		from {
+			transform: translateY(100%);
+		}
+		to {
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes scaleIn {
+		from {
+			opacity: 0;
+			transform: translate(-50%, -50%) scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1);
+		}
+	}
+
 	/* Banner Backdrop */
 	.cookie-banner__backdrop {
 		position: fixed;
@@ -222,6 +248,7 @@
 		bottom: 0;
 		background-color: rgba(0, 0, 0, 0.5);
 		z-index: 9998;
+		animation: fadeIn 0.2s ease-out;
 	}
 
 	/* Cookie Banner */
@@ -234,6 +261,7 @@
 		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
 		z-index: 9999;
 		padding: 1.5rem;
+		animation: slideUp 0.3s ease-out;
 	}
 
 	.cookie-banner__container {
@@ -253,19 +281,20 @@
 
 	.cookie-banner__text {
 		margin: 0 0 0.5rem 0;
-		color: #4a5568;
+		color: #2d3748;
 		font-size: 0.95rem;
 		line-height: 1.6;
 	}
 
 	.cookie-banner__link {
-		color: #e65100;
+		color: #c44100;
 		text-decoration: underline;
 		font-size: 0.9rem;
+		font-weight: 600;
 	}
 
 	.cookie-banner__link:hover {
-		color: #ff6b00;
+		color: #e65100;
 	}
 
 	.cookie-banner__actions {
@@ -327,6 +356,7 @@
 		bottom: 0;
 		background-color: rgba(0, 0, 0, 0.6);
 		z-index: 10000;
+		animation: fadeIn 0.2s ease-out;
 	}
 
 	/* Settings Modal */
@@ -344,6 +374,7 @@
 		max-height: 85vh;
 		display: flex;
 		flex-direction: column;
+		animation: scaleIn 0.3s ease-out;
 	}
 
 	.cookie-settings__header {

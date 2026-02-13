@@ -136,11 +136,15 @@
                 {#each services as service}
                     <article class="service-card">
                         <div class="service-card__image-wrapper">
+                            {@const imageName = service.image.replace('.webp', '')}
                             <img
                                 src={service.image}
+                                srcset="{imageName}-400w.webp 400w, {imageName}-600w.webp 600w, {imageName}-800w.webp 800w"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                 alt={service.title}
                                 class="service-card__image"
                                 loading="lazy"
+                                decoding="async"
                                 width="800"
                                 height="600"
                             />

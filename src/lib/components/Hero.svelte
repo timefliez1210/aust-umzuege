@@ -20,12 +20,16 @@
 </script>
 
 <section class="hero">
+    {@const imageName = backgroundImage.replace('.webp', '')}
     <img
         src={backgroundImage}
+        srcset="{imageName}-640w.webp 640w, {imageName}-1024w.webp 1024w, {imageName}-1536w.webp 1536w, {imageName}-1920w.webp 1920w"
+        sizes="100vw"
         alt="Aust Umzüge Team bei der Arbeit in Hildesheim"
         class="hero__background"
         loading="eager"
         fetchpriority="high"
+        decoding="sync"
         width="1920"
         height="1080"
     />

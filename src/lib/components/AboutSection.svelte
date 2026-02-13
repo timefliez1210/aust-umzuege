@@ -38,11 +38,15 @@
 
         <div class="about-section__image-wrapper">
             <div class="about-section__image-container">
+                {@const imageName = imageSrc.replace('.webp', '')}
                 <img
                     src={imageSrc}
+                    srcset="{imageName}-400w.webp 400w, {imageName}-500w.webp 500w, {imageName}-600w.webp 600w"
+                    sizes="(max-width: 900px) 100vw, 50vw"
                     alt={imageAlt}
                     class="about-section__image"
                     loading="lazy"
+                    decoding="async"
                     width="500"
                     height="375"
                 />

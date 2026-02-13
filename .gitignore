@@ -24,3 +24,8 @@ vite.config.ts.timestamp-*
 
 # Lighthouse Reports
 lighthouse-reports/
+
+# Lighthouse CI
+.lighthouseci/
+lighthouse-reports/
+lighthouse-output.log

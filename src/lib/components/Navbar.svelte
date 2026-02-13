@@ -323,7 +323,7 @@
     }
 
     .navbar__link.active {
-        color: #fff; /* White for sufficient contrast on dark background */
+        color: #ffa94d; /* Light orange for excellent contrast on dark background */
         font-weight: var(--font-semibold);
     }
 

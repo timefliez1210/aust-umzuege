@@ -465,13 +465,14 @@
     }
 
     .agb__section a {
-        color: var(--color-nav-accent);
-        text-decoration: none;
+        color: var(--color-info-bar); /* Blue for better contrast */
+        text-decoration: underline; /* Always underlined for accessibility */
         transition: color var(--transition-fast);
+        font-weight: var(--font-semibold); /* Slightly bolder for visibility */
     }
 
     .agb__section a:hover {
-        color: #d84a00;
+        color: var(--color-nav-accent);
         text-decoration: underline;
     }
 

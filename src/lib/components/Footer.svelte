@@ -200,13 +200,14 @@
     }
 
     .footer__text a {
-        color: rgba(255, 255, 255, 0.75);
-        text-decoration: none;
+        color: #fff; /* Full white for better contrast */
+        text-decoration: underline; /* Always underlined for accessibility */
         transition: color var(--transition-fast);
     }
 
     .footer__text a:hover {
-        color: var(--color-text);
+        color: var(--color-nav-accent);
+        text-decoration: underline;
     }
 
     .footer__badge {
@@ -246,14 +247,15 @@
     }
 
     .footer__legal a {
-        color: var(--color-primary);
+        color: #fff; /* White for WCAG AA contrast on dark background */
         font-size: var(--text-sm);
-        text-decoration: none;
+        text-decoration: underline; /* Always underlined for accessibility */
         transition: color var(--transition-fast);
     }
 
     .footer__legal a:hover {
         color: var(--color-nav-accent);
+        text-decoration: underline; /* Maintain underline on hover */
     }
 
     .footer__legal-divider {

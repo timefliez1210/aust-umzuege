@@ -249,10 +249,11 @@
     }
 
     .footer__legal a {
-        color: #fff; /* White for WCAG AA contrast on dark background */
+        color: var(--color-info-bar); /* Blue for contrast on light background */
         font-size: var(--text-sm);
         text-decoration: underline; /* Always underlined for accessibility */
         transition: color var(--transition-fast);
+        font-weight: var(--font-medium); /* Better visibility */
     }
 
     .footer__legal a:hover {

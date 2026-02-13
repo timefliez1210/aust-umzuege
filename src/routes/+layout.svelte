@@ -104,6 +104,10 @@
 <ConsentManager />
 
 <style>
+  #main-content {
+    padding-top: 80px; /* Height of fixed navbar */
+  }
+
   .skip-link {
     position: absolute;
     top: -100%;

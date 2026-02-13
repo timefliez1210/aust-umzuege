@@ -264,9 +264,12 @@
 <style>
     .navbar {
         background-color: var(--color-text);
-        position: sticky;
+        position: fixed;
         top: 0;
-        z-index: var(--z-sticky);
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 1000; /* High z-index to stay above all content */
         box-shadow: var(--shadow-sm);
     }
 

@@ -69,6 +69,14 @@
                         label: "Verpackungstipps",
                         href: "/ratgeber/verpackungstipps",
                     },
+                    {
+                        label: "Haushaltsauflösungen",
+                        href: "/ratgeber/haushaltsaufloesungen-entruempelungen",
+                    },
+                    {
+                        label: "Seriöse Umzugsfirma erkennen",
+                        href: "/ratgeber/seriose-umzugsfirma",
+                    },
                 ],
             },
             { label: "Kontakt", href: "/kontakt" },

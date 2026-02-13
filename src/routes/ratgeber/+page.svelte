@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, Package, ArrowRight } from "lucide-svelte";
+    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight } from "lucide-svelte";
 
     const guides = [
         {
@@ -15,6 +15,20 @@
                 "So verpacken Sie Gläser, Geschirr und Bücher sicher. Tipps für schadenfreies Ankommen.",
             icon: Package,
             link: "/ratgeber/verpackungstipps",
+        },
+        {
+            title: "Haushaltsauflösungen und Entrümpelungen",
+            description:
+                "Praktischer Ratgeber für die komplette Wohnungsräumung. Von der Planung über Transport bis zur Entsorgung.",
+            icon: Home,
+            link: "/ratgeber/haushaltsaufloesungen-entruempelungen",
+        },
+        {
+            title: "Wie erkenne ich eine seriöse Umzugsfirma?",
+            description:
+                "Red Flags erkennen, die richtigen Fragen stellen und schwarze Schafe vermeiden. Praktischer Ratgeber mit Checkliste.",
+            icon: ShieldCheck,
+            link: "/ratgeber/seriose-umzugsfirma",
         },
     ];
 </script>

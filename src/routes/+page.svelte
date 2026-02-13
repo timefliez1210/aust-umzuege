@@ -1,6 +1,7 @@
 <script lang="ts">
   import Hero from "$lib/components/Hero.svelte";
   import ServiceBoxes from "$lib/components/ServiceBoxes.svelte";
+  // import ReviewsSection from "$lib/components/ReviewsSection.svelte";
   import AboutSection from "$lib/components/AboutSection.svelte";
   import ServicesCarousel from "$lib/components/ServicesCarousel.svelte";
 </script>
@@ -16,6 +17,7 @@
 <main>
   <Hero />
   <ServiceBoxes />
+  <!-- <ReviewsSection /> -->
   <AboutSection />
   <ServicesCarousel />
 

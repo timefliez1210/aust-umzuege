@@ -70,9 +70,36 @@
 
     let currentIndex = $state(0);
     let carouselRef: HTMLElement;
+    let windowWidth = $state(0);
 
-    const maxIndex = $derived(Math.max(0, services.length - visibleCards));
+    // Responsive visible cards based on screen width
+    const actualVisibleCards = $derived(() => {
+        if (windowWidth === 0) return visibleCards; // Server-side fallback
+        if (windowWidth <= 640) return 1; // Mobile: 1 card
+        if (windowWidth <= 1024) return 2; // Tablet: 2 cards
+        return visibleCards; // Desktop: 3 cards
+    });
+
+    const maxIndex = $derived(Math.max(0, services.length - actualVisibleCards()));
     const dots = $derived(Array.from({ length: maxIndex + 1 }, (_, i) => i));
+
+    // Update window width on mount and resize
+    $effect(() => {
+        if (typeof window === 'undefined') return;
+
+        windowWidth = window.innerWidth;
+
+        const handleResize = () => {
+            windowWidth = window.innerWidth;
+            // Reset to first slide if current index is out of bounds
+            if (currentIndex > maxIndex) {
+                currentIndex = maxIndex;
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    });
 
     // Touch/swipe state
     let touchStartX = $state(0);
@@ -177,7 +204,7 @@
         >
             <div
                 class="services-carousel__track"
-                style="transform: translateX(calc(-{currentIndex} * (100% / {visibleCards} + var(--gap) / {visibleCards})))"
+                style="transform: translateX(calc(-{currentIndex} * (100% / {actualVisibleCards()} + var(--gap) / {actualVisibleCards()})))"
             >
                 {#each services as service}
                     <article class="service-card">

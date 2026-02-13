@@ -113,6 +113,8 @@
                 <a href="/datenschutz">Datenschutz</a>
                 <span class="footer__legal-divider">|</span>
                 <a href="/agb">AGB</a>
+                <span class="footer__legal-divider">|</span>
+                <a href="/cookie-einstellungen">Cookie-Einstellungen</a>
             </nav>
         </div>
     </div>

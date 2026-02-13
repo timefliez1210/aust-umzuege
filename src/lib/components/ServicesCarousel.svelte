@@ -74,6 +74,11 @@
     const maxIndex = $derived(Math.max(0, services.length - visibleCards));
     const dots = $derived(Array.from({ length: maxIndex + 1 }, (_, i) => i));
 
+    // Touch/swipe state
+    let touchStartX = $state(0);
+    let touchEndX = $state(0);
+    let isSwiping = $state(false);
+
     function next() {
         currentIndex = Math.min(currentIndex + 1, maxIndex);
     }
@@ -84,6 +89,39 @@
 
     function goTo(index: number) {
         currentIndex = Math.min(Math.max(index, 0), maxIndex);
+    }
+
+    // Touch handlers for mobile swipe
+    function handleTouchStart(e: TouchEvent) {
+        touchStartX = e.touches[0].clientX;
+        isSwiping = true;
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+        if (!isSwiping) return;
+        touchEndX = e.touches[0].clientX;
+    }
+
+    function handleTouchEnd() {
+        if (!isSwiping) return;
+        isSwiping = false;
+
+        const swipeThreshold = 50; // Minimum swipe distance in pixels
+        const swipeDistance = touchStartX - touchEndX;
+
+        if (Math.abs(swipeDistance) > swipeThreshold) {
+            if (swipeDistance > 0) {
+                // Swiped left - go to next
+                next();
+            } else {
+                // Swiped right - go to previous
+                prev();
+            }
+        }
+
+        // Reset touch positions
+        touchStartX = 0;
+        touchEndX = 0;
     }
 </script>
 
@@ -128,7 +166,15 @@
             </svg>
         </button>
 
-        <div class="services-carousel__viewport" bind:this={carouselRef}>
+        <div
+            class="services-carousel__viewport"
+            bind:this={carouselRef}
+            ontouchstart={handleTouchStart}
+            ontouchmove={handleTouchMove}
+            ontouchend={handleTouchEnd}
+            role="region"
+            aria-label="Leistungen Karussell"
+        >
             <div
                 class="services-carousel__track"
                 style="transform: translateX(calc(-{currentIndex} * (100% / {visibleCards} + var(--gap) / {visibleCards})))"
@@ -357,6 +403,12 @@
     .services-carousel__viewport {
         flex: 1;
         overflow: hidden;
+        touch-action: pan-y pinch-zoom; /* Allow vertical scroll, prevent horizontal browser gestures */
+        cursor: grab;
+    }
+
+    .services-carousel__viewport:active {
+        cursor: grabbing;
     }
 
     .services-carousel__track {

@@ -243,7 +243,9 @@
     .footer__legal {
         display: flex;
         align-items: center;
+        flex-wrap: wrap; /* Allow links to wrap on smaller screens */
         gap: var(--space-3);
+        justify-content: center; /* Center links when wrapped */
     }
 
     .footer__legal a {
@@ -283,6 +285,19 @@
         .footer__bottom-content {
             flex-direction: column;
             text-align: center;
+        }
+
+        .footer__legal {
+            gap: var(--space-2); /* Tighter gap on mobile */
+            row-gap: var(--space-3); /* Vertical spacing when wrapped */
+        }
+
+        .footer__legal a {
+            font-size: 0.8rem; /* Slightly smaller on mobile */
+        }
+
+        .footer__legal-divider {
+            display: none; /* Hide dividers on mobile when links wrap */
         }
     }
 </style>

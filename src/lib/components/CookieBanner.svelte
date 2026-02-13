@@ -46,7 +46,7 @@
 	<div class="cookie-banner__backdrop"></div>
 
 	<!-- Banner -->
-	<aside
+	<div
 		class="cookie-banner"
 		role="dialog"
 		aria-labelledby="cookie-banner-title"
@@ -92,7 +92,7 @@
 				</button>
 			</div>
 		</div>
-	</aside>
+	</div>
 {/if}
 
 {#if showSettings}

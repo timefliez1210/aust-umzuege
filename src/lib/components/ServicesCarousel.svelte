@@ -170,7 +170,7 @@
                         <p class="service-card__description">
                             {service.description}
                         </p>
-                        <a href={service.href} class="service-card__link">
+                        <a href={service.href} class="service-card__link" aria-label="Mehr erfahren über {service.title}">
                             Hier mehr erfahren
                             <svg
                                 width="16"

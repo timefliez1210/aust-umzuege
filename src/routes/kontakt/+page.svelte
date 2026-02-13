@@ -341,11 +341,12 @@
 
     .checkbox-label a {
         color: #d14452; /* Reddish tone from screenshot 'Datenschutzerklärung' */
-        text-decoration: none;
+        text-decoration: underline; /* Always underlined for accessibility */
     }
 
     .checkbox-label a:hover {
         text-decoration: underline;
+        opacity: 0.8; /* Slight opacity change on hover */
     }
 
     /* Submit Button */

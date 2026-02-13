@@ -318,9 +318,13 @@
         transition: color var(--transition-fast);
     }
 
-    .navbar__link:hover,
-    .navbar__link.active {
+    .navbar__link:hover {
         color: var(--color-nav-accent, #e65100);
+    }
+
+    .navbar__link.active {
+        color: #fff; /* White for sufficient contrast on dark background */
+        font-weight: var(--font-semibold);
     }
 
     .navbar__chevron {

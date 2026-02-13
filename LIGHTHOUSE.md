@@ -89,7 +89,7 @@ The build will **warn** or **error** if these thresholds aren't met:
 
 ## Configuration
 
-Edit `lighthouserc.js` to:
+Edit `lighthouserc.cjs` to:
 - Change tested URLs
 - Adjust thresholds
 - Add/remove assertions
@@ -155,7 +155,7 @@ npm run build
 ### Inconsistent scores
 Run more times for better average:
 ```javascript
-numberOfRuns: 5,  // in lighthouserc.js
+numberOfRuns: 5,  // in lighthouserc.cjs
 ```
 
 ## Best Practices

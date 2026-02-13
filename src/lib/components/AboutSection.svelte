@@ -38,10 +38,9 @@
 
         <div class="about-section__image-wrapper">
             <div class="about-section__image-container">
-                {@const imageName = imageSrc.replace('.webp', '')}
                 <img
                     src={imageSrc}
-                    srcset="{imageName}-400w.webp 400w, {imageName}-500w.webp 500w, {imageName}-600w.webp 600w"
+                    srcset="{imageSrc.replace('.webp', '')}-400w.webp 400w, {imageSrc.replace('.webp', '')}-500w.webp 500w, {imageSrc.replace('.webp', '')}-600w.webp 600w"
                     sizes="(max-width: 900px) 100vw, 50vw"
                     alt={imageAlt}
                     class="about-section__image"

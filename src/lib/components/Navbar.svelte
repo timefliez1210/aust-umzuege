@@ -265,12 +265,19 @@
     .navbar {
         background-color: var(--color-text);
         position: fixed;
-        top: 0;
+        top: 40px; /* Below InfoBar (InfoBar height ~40px) */
         left: 0;
         right: 0;
         width: 100%;
-        z-index: 1000; /* High z-index to stay above all content */
+        z-index: 1000; /* Below InfoBar but above content */
         box-shadow: var(--shadow-sm);
+    }
+
+    /* On mobile, InfoBar is hidden, so navbar goes to top:0 */
+    @media (max-width: 767px) {
+        .navbar {
+            top: 0;
+        }
     }
 
     .navbar__container {

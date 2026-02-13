@@ -105,7 +105,14 @@
 
 <style>
   #main-content {
-    padding-top: 80px; /* Height of fixed navbar */
+    padding-top: 120px; /* Height of fixed InfoBar (~40px) + Navbar (80px) */
+  }
+
+  /* On mobile, InfoBar is hidden */
+  @media (max-width: 767px) {
+    #main-content {
+      padding-top: 80px; /* Only navbar height */
+    }
   }
 
   .skip-link {

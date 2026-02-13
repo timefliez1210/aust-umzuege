@@ -26,6 +26,12 @@
         background-color: var(--color-info-bar, #1e3a5f);
         padding-block: var(--space-2);
         font-size: var(--text-sm);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 1001; /* Above navbar */
     }
 
     .info-bar__container {

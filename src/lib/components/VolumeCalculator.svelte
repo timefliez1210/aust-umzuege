@@ -5,6 +5,7 @@
     import {
         Sofa,
         UtensilsCrossed,
+        ChefHat,
         Bath,
         Bed,
         Briefcase,
@@ -394,7 +395,7 @@
         },
         {
             name: "Küche",
-            icon: UtensilsCrossed,
+            icon: ChefHat,
             items: [
                 {
                     name: "Arbeitsplatte nicht unterb. je angef. m",

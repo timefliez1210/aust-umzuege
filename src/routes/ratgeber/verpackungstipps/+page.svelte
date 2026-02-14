@@ -272,6 +272,7 @@
 
     .content-section p {
         margin-bottom: var(--space-4);
+        color: #1a202c;
     }
 
     .content-section ul {

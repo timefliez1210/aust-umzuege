@@ -67,7 +67,7 @@
                     </div>
                     <div class="guide-card__actions">
                         <a href={guide.link} class="guide-card__link">
-                            Weiterlesen
+                            {guide.title} lesen
                             <ArrowRight size={16} />
                         </a>
                     </div>

@@ -537,6 +537,7 @@
 	.article-content p {
 		margin-bottom: var(--space-4);
 		font-size: 1.0625rem;
+		color: #1a202c;
 	}
 
 	.article-content ul {

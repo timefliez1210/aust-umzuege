@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Firmenumzug" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet ein Firmenumzug in Hildesheim?",
+            answer: "Die Kosten hängen von der Bürogröße, Anzahl der Arbeitsplätze und benötigten Zusatzleistungen ab. Wir erstellen nach einer Besichtigung ein detailliertes Festpreisangebot, damit Sie die Kosten exakt budgetieren können."
+        },
+        {
+            question: "Wie minimieren Sie die Ausfallzeit unseres Unternehmens?",
+            answer: "Wir planen Firmenumzüge bevorzugt am Wochenende oder nach Feierabend. Durch professionelle Vorbereitung, klare Ablaufpläne und ein erfahrenes Team sorgen wir dafür, dass Ihr Betrieb am Montag wieder voll einsatzbereit ist."
+        },
+        {
+            question: "Können Sie auch IT-Equipment und Server transportieren?",
+            answer: "Ja, wir haben Erfahrung im Transport sensibler IT-Infrastruktur. Computer, Server und Netzwerktechnik werden fachgerecht demontiert, beschriftet, gesichert transportiert und am neuen Standort wieder angeschlossen."
+        },
+        {
+            question: "Bieten Sie eine Umzugsplanung und Projektkoordination an?",
+            answer: "Selbstverständlich. Wir stellen Ihnen einen persönlichen Umzugskoordinator, der alle Details plant, Mitarbeiter informiert, Zeitpläne erstellt und als Ansprechpartner für Ihr Team zur Verfügung steht."
+        },
+        {
+            question: "Wie gehen Sie mit vertraulichen Dokumenten um?",
+            answer: "Vertrauliche Unterlagen können Sie selbst transportieren oder wir packen diese in versiegelte Behälter, die nur von autorisierten Personen geöffnet werden. Diskretion und Datenschutz haben bei uns höchste Priorität."
+        },
+        {
+            question: "Können Sie auch Aktenarchive und Lagerbestände umziehen?",
+            answer: "Ja, wir transportieren auch große Aktenmengen, Lagerbestände und Waren. Auf Wunsch organisieren wir die Zwischenlagerung und stellen sicher, dass alles systematisch beschriftet und am neuen Standort schnell auffindbar ist."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -117,6 +145,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

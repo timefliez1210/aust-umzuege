@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Montage & Demontage" }
     ]);
+
+    const faqs = [
+        {
+            question: "Welche Möbel können Sie montieren?",
+            answer: "Wir montieren alle gängigen Möbelsysteme: PAX-, IKEA-, Nolte-, Hülsta-Schränke, Wohnwände, Regale, Betten, Einbauküchen und vieles mehr. Unsere Monteure haben jahrelange Erfahrung mit allen bekannten Herstellern."
+        },
+        {
+            question: "Was kostet die Möbelmontage?",
+            answer: "Die Kosten hängen vom Aufwand ab. Einfache Regalmontagen starten bei ca. 50 €, komplexe Küchenmontagen können mehrere hundert Euro kosten. Bei einem Umzug können wir die Montage meist zu einem vergünstigten Paketpreis anbieten."
+        },
+        {
+            question: "Können Sie auch Küchen an- und abschließen (Wasser, Strom)?",
+            answer: "Ja, wir haben zertifizierte Fachkräfte im Team, die Wasseranschlüsse und elektrische Geräte fachgerecht anschließen dürfen. Für größere Elektroarbeiten vermitteln wir bei Bedarf einen Elektriker."
+        },
+        {
+            question: "Was passiert mit den alten Schrauben und Dübeln?",
+            answer: "Beim Abbau sammeln wir alle Schrauben, Dübel und Kleinteile in beschrifteten Tüten, damit beim Aufbau nichts fehlt. Sollten Teile fehlen oder beschädigt sein, haben wir Ersatzmaterial dabei."
+        },
+        {
+            question: "Können Sie auch Neuware aufbauen (z.B. nach IKEA-Lieferung)?",
+            answer: "Ja, wir bieten auch reine Montageservices für neu gekaufte Möbel an. Egal ob vom Möbelhaus geliefert oder selbst abgeholt – wir bauen Ihre neuen Möbel fachgerecht auf und entsorgen das Verpackungsmaterial."
+        },
+        {
+            question: "Wie lange dauert eine Küchenmontage?",
+            answer: "Eine Standardküche (ca. 3-4 Meter) montieren wir in der Regel in 4-6 Stunden. Bei größeren Küchen mit vielen Geräten und Arbeitsplattenanpassungen kann es auch ein ganzer Tag werden. Den genauen Zeitrahmen klären wir bei der Besichtigung."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -109,6 +137,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

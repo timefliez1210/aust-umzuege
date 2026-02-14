@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Umzugshelfer" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kosten Umzugshelfer pro Stunde?",
+            answer: "Die Kosten richten sich nach der Anzahl der benötigten Helfer und der Dauer des Einsatzes. In der Regel liegt der Stundensatz zwischen 25-35 € pro Helfer. Nach einem kurzen Telefonat können wir Ihnen ein konkretes Angebot machen."
+        },
+        {
+            question: "Wie viele Umzugshelfer brauche ich?",
+            answer: "Das hängt von der Wohnungsgröße und dem Umfang des Umzugs ab. Für eine 2-Zimmer-Wohnung reichen meist 2 Helfer, für größere Wohnungen oder bei vielen schweren Möbeln empfehlen wir 3-4 Helfer. Wir beraten Sie gerne telefonisch."
+        },
+        {
+            question: "Sind die Umzugshelfer versichert?",
+            answer: "Ja, alle unsere Umzugshelfer sind über unsere Betriebshaftpflicht versichert. Sollte es zu Schäden am Inventar oder Gebäude kommen, sind Sie abgesichert – anders als bei privaten Helfern."
+        },
+        {
+            question: "Kann ich auch nur für einzelne Aufgaben Helfer buchen?",
+            answer: "Selbstverständlich. Ob Sie nur Hilfe beim Beladen des Transporters, beim Tragen schwerer Einzelstücke (Klavier, Tresor) oder beim kompletten Be- und Entladen benötigen – wir passen uns flexibel Ihrem Bedarf an."
+        },
+        {
+            question: "Wie kurzfristig kann ich Umzugshelfer buchen?",
+            answer: "Bei freien Kapazitäten können wir auch kurzfristig (24-48 Stunden im Voraus) Helfer stellen. Für eine sichere Planung empfehlen wir jedoch eine Buchung mindestens 1-2 Wochen im Voraus, besonders am Monatsende."
+        },
+        {
+            question: "Bringen die Helfer eigenes Werkzeug mit?",
+            answer: "Ja, unsere Helfer sind mit Tragegurten, Möbeldecken, Sackkarren und grundlegendem Montagewerkzeug ausgestattet. Falls spezielle Werkzeuge benötigt werden, sprechen wir das vorab mit Ihnen ab."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -112,6 +140,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

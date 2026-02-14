@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Lagerung & Einlagerung" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet die Lagerung pro Monat?",
+            answer: "Die Kosten richten sich nach dem benötigten Lagerraum (Kubikmeter). Ein durchschnittlicher 2-Zimmer-Haushalt (ca. 15-20 m³) kostet etwa 150-250 € pro Monat. Nach einer Besichtigung können wir Ihnen ein genaues Angebot erstellen."
+        },
+        {
+            question: "Wie sicher ist mein Lagergut?",
+            answer: "Unsere Lagerräume sind trocken, sauber und gegen Feuchtigkeit geschützt. Alle Gegenstände sind über unsere Versicherung abgedeckt. Auf Wunsch können Sie zusätzlich eine Wertsachenversicherung abschließen."
+        },
+        {
+            question: "Gibt es eine Mindestmietdauer?",
+            answer: "Nein, wir bieten flexible Laufzeiten ohne lange Vertragsbindung. Sie können monatlich kündigen. Für längere Lagerzeiten (ab 6 Monaten) gewähren wir Rabatte."
+        },
+        {
+            question: "Kann ich jederzeit auf mein Lagergut zugreifen?",
+            answer: "Ja, nach Terminabsprache können Sie Ihr Lagergut jederzeit abholen oder Teile davon entnehmen. Wir empfehlen eine Voranmeldung von 24 Stunden, damit wir alles vorbereiten können."
+        },
+        {
+            question: "Wie wird mein Umzugsgut eingelagert?",
+            answer: "Wir lagern Ihre Möbel und Kartons auf Paletten oder in Regalen, geschützt vor Bodenfeuchtigkeit. Empfindliche Gegenstände werden zusätzlich mit Decken oder Folie abgedeckt. Sie erhalten eine Inventarliste aller eingelagerten Gegenstände."
+        },
+        {
+            question: "Können Sie mein Lagergut auch direkt zur neuen Wohnung bringen?",
+            answer: "Selbstverständlich. Wir holen Ihre Sachen ab, lagern sie ein und liefern sie später direkt an die neue Adresse – auch bundesweit. So sparen Sie sich doppelte Fahrten und Stress."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -108,6 +136,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

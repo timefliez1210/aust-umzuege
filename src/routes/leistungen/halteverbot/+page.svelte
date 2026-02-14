@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Halteverbot" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet eine Halteverbotszone für den Umzug?",
+            answer: "Die Kosten liegen je nach Stadt und Dauer bei ca. 100-200 € pro Halteverbotszone (inkl. Genehmigung, Schilder und Aufstellung). In Hildesheim können wir Ihnen nach Absprache ein konkretes Angebot erstellen."
+        },
+        {
+            question: "Wie lange vor dem Umzug muss das Halteverbot beantragt werden?",
+            answer: "Die Schilder müssen mindestens 72 Stunden vor dem Umzugstermin aufgestellt werden, damit parkende Autos rechtzeitig umparken können. Wir empfehlen eine Beauftragung mindestens 2 Wochen im Voraus, da die behördliche Genehmigung Zeit braucht."
+        },
+        {
+            question: "Wer stellt die Halteverbotsschilder auf?",
+            answer: "Wir übernehmen das Aufstellen und Abbau der Schilder für Sie. Die Schilder werden mit Ständern befestigt und müssen fristgerecht (72h vorher) positioniert werden. Nach dem Umzug holen wir sie wieder ab."
+        },
+        {
+            question: "Was passiert, wenn trotzdem jemand in der Halteverbotszone parkt?",
+            answer: "Ordnungswidrig parkende Fahrzeuge dürfen abgeschleppt werden. Die Kosten trägt der Falschparker. Sollte dies nötig sein, kontaktieren wir für Sie das Ordnungsamt oder die Polizei."
+        },
+        {
+            question: "Brauche ich auch für die neue Wohnung ein Halteverbot?",
+            answer: "Ja, idealerweise sollten Sie sowohl an der alten als auch an der neuen Adresse eine Halteverbotszone einrichten lassen. So haben Sie an beiden Orten kurze Laufwege und der Umzug läuft deutlich schneller."
+        },
+        {
+            question: "Kann ich auch als Privatperson ohne Umzugsfirma ein Halteverbot beantragen?",
+            answer: "Ja, grundsätzlich kann jeder ein Halteverbot beantragen. Allerdings ist der Prozess zeitaufwendig und fehleranfällig. Wir kümmern uns professionell um alle Formalitäten und sparen Ihnen den Behördengang."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -103,6 +131,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

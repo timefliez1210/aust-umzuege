@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Umzugsberatung" }
     ]);
+
+    const faqs = [
+        {
+            question: "Ist die Umzugsberatung wirklich kostenlos?",
+            answer: "Ja, die Vor-Ort-Besichtigung und Beratung sind komplett kostenlos und unverbindlich. Sie gehen keinerlei Verpflichtung ein. Erst wenn Sie unser Angebot annehmen, entstehen Kosten."
+        },
+        {
+            question: "Wie lange dauert eine Besichtigung?",
+            answer: "In der Regel dauert eine Besichtigung 30-45 Minuten. Wir nehmen uns Zeit, alle Räume anzusehen, Besonderheiten zu notieren und Ihre Fragen zu beantworten. Größere Objekte oder komplexe Umzüge können auch etwas länger dauern."
+        },
+        {
+            question: "Kann die Beratung auch telefonisch oder per Video erfolgen?",
+            answer: "Für eine grobe Kostenschätzung reicht ein Telefonat oft aus. Für ein verbindliches Festpreisangebot empfehlen wir jedoch eine Vor-Ort-Besichtigung, da nur so alle Details erfasst werden können und es am Umzugstag keine Überraschungen gibt."
+        },
+        {
+            question: "Was sollte ich zur Besichtigung vorbereiten?",
+            answer: "Sie müssen nichts vorbereiten. Hilfreich ist, wenn Sie bereits wissen, welche Möbel mitgenommen und welche entsorgt werden sollen. Auch Informationen zu Parkplatzsituation und Stockwerk an alter und neuer Adresse sind nützlich."
+        },
+        {
+            question: "Wann erhalte ich das Angebot nach der Besichtigung?",
+            answer: "In der Regel erstellen wir Ihr individuelles Festpreisangebot innerhalb von 24-48 Stunden nach der Besichtigung. Sie erhalten es per E-Mail mit allen Details transparent aufgeschlüsselt."
+        },
+        {
+            question: "Bin ich an das Angebot gebunden, wenn ich die Beratung nutze?",
+            answer: "Nein, Sie haben keinerlei Verpflichtung. Die Beratung ist unverbindlich. Vergleichen Sie in Ruhe Angebote und entscheiden Sie sich für den Partner, der am besten zu Ihren Bedürfnissen passt."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -107,6 +135,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

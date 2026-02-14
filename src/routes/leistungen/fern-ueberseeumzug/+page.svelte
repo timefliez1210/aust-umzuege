@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Fern- & Überseeumzug" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet ein internationaler Umzug?",
+            answer: "Die Kosten variieren stark je nach Zielland, Transportart (LKW, See- oder Luftfracht), Umzugsgut-Volumen und benötigten Zusatzleistungen. Nach einer Besichtigung erstellen wir Ihnen ein genaues Angebot mit allen Kosten transparent aufgeschlüsselt."
+        },
+        {
+            question: "Wie lange dauert ein Überseeumzug?",
+            answer: "Ein Umzug per Seefracht dauert je nach Zielland 4-12 Wochen. Luftfracht ist schneller (1-2 Wochen), aber deutlich teurer. Innerhalb Europas erfolgt der Transport per LKW meist innerhalb von 3-7 Tagen. Die genaue Dauer besprechen wir im Vorfeld."
+        },
+        {
+            question: "Wer kümmert sich um die Zollformalitäten?",
+            answer: "Wir koordinieren mit unseren Partneragenturen vor Ort und unterstützen Sie bei allen notwendigen Dokumenten. Dazu gehören Inventarlisten, Zollanmeldungen und Einfuhrgenehmigungen. In vielen Fällen können wir die Verzollung komplett für Sie übernehmen."
+        },
+        {
+            question: "Brauche ich eine spezielle Versicherung für den Überseetransport?",
+            answer: "Ja, für Überseetransporte empfehlen wir eine Transportversicherung, die Schäden durch See- oder Luftfracht abdeckt. Wir beraten Sie zu passenden Versicherungsoptionen und vermitteln auf Wunsch entsprechende Policen."
+        },
+        {
+            question: "Wie wird das Umzugsgut für den Seetransport verpackt?",
+            answer: "Für Überseetransporte verwenden wir spezielle Exportverpackungen: Seefeste Kisten, Luftpolsterfolie, Antikorrosionsschutz und containergerechte Ladungssicherung. Empfindliche Gegenstände werden zusätzlich in Spezialkartons verpackt."
+        },
+        {
+            question: "Kann ich auch nur Teilleistungen buchen (z.B. nur Transport ohne Verpackung)?",
+            answer: "Ja, Sie können unseren Service modular buchen. Wenn Sie selbst packen möchten, organisieren wir nur den Transport. Oder wir übernehmen die komplette Abwicklung von der Verpackung bis zur Montage am Zielort – ganz nach Ihrem Bedarf."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -112,6 +140,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

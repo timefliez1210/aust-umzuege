@@ -111,6 +111,62 @@
                         <span>Ideal bei Umzug, Renovierung oder Auslandsaufenthalt</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">So funktioniert unsere Möbellagerung</h2>
+                <p>
+                    Lagerung ist mehr als nur ein leerer Raum. Bei uns erhalten Sie einen professionellen Service, der Ihre Möbel schützt und Ihnen volle Flexibilität bietet.
+                </p>
+                <p>
+                    <strong>1. Beratung und Volumenberechnung:</strong> Wie viel Platz brauchen Sie? Wir besichtigen Ihr Lagergut oder schätzen anhand von Fotos den benötigten Raum. So zahlen Sie nur für den Platz, den Sie wirklich nutzen.
+                </p>
+                <p>
+                    <strong>2. Abholung und Transport:</strong> Wir holen Ihre Möbel direkt bei Ihnen ab, verpacken sie fachgerecht und transportieren sie in unser Lager. Sie müssen sich um nichts kümmern – kein Transporter mieten, kein Schleppen, kein Organisieren.
+                </p>
+                <p>
+                    <strong>3. Professionelle Lagerung:</strong> Ihre Möbel werden in trockenen, belüfteten Räumen gelagert. Wir stapeln nicht einfach wild übereinander, sondern lagern strukturiert auf Paletten oder in Regalen. Das schützt vor Feuchtigkeit, Schädlingen und Beschädigungen.
+                </p>
+                <p>
+                    <strong>4. Inventarliste und Versicherung:</strong> Sie erhalten eine detaillierte Liste aller eingelagerten Gegenstände. Ihr Lagergut ist über unsere Versicherung abgedeckt – Sie können ruhig schlafen.
+                </p>
+                <p>
+                    <strong>5. Zugriff bei Bedarf:</strong> Sie möchten etwas aus dem Lager holen oder weitere Gegenstände einlagern? Kein Problem. Nach kurzer Terminabsprache (24 Stunden Vorlauf) bereiten wir den Zugang für Sie vor.
+                </p>
+                <p>
+                    <strong>6. Auslieferung an neue Adresse:</strong> Wenn Sie Ihre Möbel wieder brauchen, liefern wir sie direkt an die neue Adresse – auch bundesweit. Auf Wunsch bauen wir sie dort wieder auf. Alles aus einer Hand.
+                </p>
+
+                <h2 class="section-title">Warum Lagerung bei Aust und nicht Selfstorage?</h2>
+                <p>
+                    Selfstorage-Anbieter vermieten Ihnen einen leeren Raum. Sie müssen selbst Transport, Verpackung und Einlagerung organisieren. Das klingt flexibel, ist in der Praxis aber oft umständlich und teuer.
+                </p>
+                <p>
+                    Bei uns bekommen Sie ein Rundum-Paket: Wir holen ab, lagern fachgerecht ein und liefern später aus. Sie sparen sich die Miete eines Transporters, das Schleppen schwerer Möbel und das Tetris-Spiel im Lagerraum.
+                </p>
+                <p>
+                    Außerdem lagern wir professioneller: Möbel stehen bei uns nicht einfach auf dem Boden, sondern auf Paletten oder in Regalen. Das schützt vor Bodenfeuchtigkeit und erleichtert den Zugriff. Empfindliche Stücke werden einzeln verpackt, schwere Gegenstände sicher abgestellt.
+                </p>
+                <p>
+                    Und dann ist da noch die Versicherung: Bei Selfstorage müssen Sie sich selbst um den Versicherungsschutz kümmern. Bei uns ist Ihr Lagergut automatisch über unsere Betriebshaftpflicht abgedeckt. Auf Wunsch vermitteln wir auch eine Zusatzversicherung für besonders wertvolle Stücke.
+                </p>
+
+                <h3 class="highlight-title">Typische Situationen für Einlagerung</h3>
+                <p>
+                    Die häufigste Situation: Die neue Wohnung ist noch nicht fertig, aber die alte muss bereits geräumt werden. In diesem Fall lagern wir Ihre Möbel für wenige Wochen oder Monate zwischen – und liefern sie pünktlich zur Fertigstellung der neuen Wohnung.
+                </p>
+                <p>
+                    Auch bei Renovierungen macht Einlagerung Sinn: Wenn Maler, Elektriker und Bodenleger arbeiten, stehen Möbel nur im Weg. Wir räumen alles aus, lagern es ein und bringen es nach Abschluss der Arbeiten zurück.
+                </p>
+                <p>
+                    Beruflicher Auslandsaufenthalt? Viele unserer Kunden lagern ihre Möbel für 1-2 Jahre ein, während sie im Ausland arbeiten. So müssen sie nichts verkaufen und haben nach der Rückkehr alles wieder.
+                </p>
+                <p>
+                    Trennung oder Scheidung: Wenn einer der Partner auszieht, aber noch keine endgültige Wohnung hat, ist Zwischenlagerung die praktische Lösung. Auch bei Erbschaften lagern Familien oft erst einmal ein, bis geklärt ist, wer was bekommt.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Lagerung wird häufig mit einem <a href="/leistungen/privatumzug">Privatumzug</a> oder <a href="/leistungen/seniorenumzug">Seniorenumzug</a> kombiniert. Falls Sie eine komplette Wohnung auflösen, aber Teile davon einlagern möchten, ist unsere <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösung</a> der richtige Ansprechpartner. Und wenn Sie Möbel später wieder aufbauen lassen möchten, steht unser <a href="/leistungen/montage">Montageservice</a> bereit.
+                </p>
             </div>
 
             <div class="cta-column">

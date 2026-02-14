@@ -120,6 +120,59 @@
                         <span>Entsorgung von Altmobiliar</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">Firmenumzug: Effizient geplant, schnell umgesetzt</h2>
+                <p>
+                    Ein Firmenumzug ist kein normaler Umzug. Hier zählt jede Stunde – denn jeder Tag Stillstand kostet Ihr Unternehmen Geld. Deshalb planen wir Ihren Standortwechsel mit militärischer Präzision.
+                </p>
+                <p>
+                    <strong>1. Projektplanung und Bestandsaufnahme:</strong> Wir besuchen Ihre Räumlichkeiten, erfassen alle Möbel, IT-Systeme, Aktenbestände und Spezialgeräte. Gemeinsam erstellen wir einen detaillierten Zeitplan: Wann wird was abgebaut? In welcher Reihenfolge werden die Abteilungen umgezogen? Welche Bereiche müssen zuerst einsatzbereit sein?
+                </p>
+                <p>
+                    <strong>2. Umzug am Wochenende oder nachts:</strong> Die meisten unserer Firmenumzüge finden außerhalb der Geschäftszeiten statt – am Freitagnachmittag, über das Wochenende oder in der Nacht. So starten Ihre Mitarbeiter am Montagmorgen direkt am neuen Standort in die Arbeitswoche.
+                </p>
+                <p>
+                    <strong>3. IT- und Servertransport:</strong> Computer, Netzwerktechnik und Server werden fachgerecht demontiert, antistatisch verpackt und sicher transportiert. Am neuen Standort bauen wir alles nach Ihrem Plan wieder auf. Auf Wunsch koordinieren wir den Prozess mit Ihrem IT-Administrator, damit die Systeme schnellstmöglich wieder laufen.
+                </p>
+                <p>
+                    <strong>4. Akten- und Archivtransport:</strong> Vertrauliche Unterlagen transportieren wir in versiegelten Behältern. Jede Kiste wird inventarisiert und beschriftet, damit am neuen Standort alles sofort am richtigen Platz ist. Auf Wunsch übernehmen wir auch die datenschutzkonforme Aktenvernichtung.
+                </p>
+                <p>
+                    <strong>5. Montage von Büromöbelsystemen:</strong> Moderne Büromöbel wie USM, Vitra oder Steelcase erfordern Fachwissen beim Ab- und Aufbau. Unsere Monteure kennen die gängigen Systeme und bauen Ihre Arbeitsplätze schnell und sauber wieder auf.
+                </p>
+                <p>
+                    <strong>6. Entsorgung und Neuausstattung:</strong> Alte Möbel, die nicht mehr benötigt werden, entsorgen wir fachgerecht. Falls Sie neue Büromöbel bestellt haben, koordinieren wir die Anlieferung und den Aufbau direkt mit den Lieferanten.
+                </p>
+
+                <h2 class="section-title">Warum Hildesheimer Unternehmen uns vertrauen</h2>
+                <p>
+                    Als lokales Umzugsunternehmen kennen wir die Hildesheimer Wirtschaft. Viele Firmen, Arztpraxen, Anwaltskanzleien und Einzelhändler in der Region haben bereits mit uns zusammengearbeitet – und empfehlen uns weiter.
+                </p>
+                <p>
+                    Der Vorteil eines lokalen Partners: Kurze Wege, schnelle Reaktionszeiten und persönliche Betreuung. Wenn am Umzugstag spontan etwas fehlt, sind wir in 15 Minuten wieder da. Wenn Sie vorab noch Fragen haben, kommen wir vorbei. Diese Nähe macht den Unterschied.
+                </p>
+                <p>
+                    Wir haben Erfahrung mit allen Arten von Geschäftsumzügen: Büros in der Innenstadt, Praxen im Ärztehaus, Produktionsbetriebe im Gewerbegebiet, Einzelhandelsgeschäfte in der Fußgängerzone. Jede Branche hat ihre eigenen Anforderungen – und wir kennen sie.
+                </p>
+                <p>
+                    Besonders wichtig: Wir verstehen, dass Diskretion bei Firmenumzügen entscheidend ist. Oft soll der Umzug nicht öffentlich kommuniziert werden, bevor er abgeschlossen ist. Wir arbeiten unauffällig und professionell – ohne große Schilder am LKW oder Werbung an Ihrer alten Adresse.
+                </p>
+
+                <h3 class="highlight-title">Häufige Herausforderungen bei Firmenumzügen</h3>
+                <p>
+                    Das größte Problem bei Firmenumzügen ist die Koordination. Viele Gewerke müssen gleichzeitig arbeiten: Elektriker, IT-Techniker, Maler, Telefonanbieter. Wir übernehmen die zentrale Koordination und sorgen dafür, dass alles reibungslos abläuft.
+                </p>
+                <p>
+                    Eine weitere Herausforderung: der Zeitdruck. Oft sind die neuen Räume erst kurz vor dem Umzug fertig – dann muss alles sehr schnell gehen. Wir sind darauf vorbereitet und können bei Bedarf auch mit mehreren Teams parallel arbeiten.
+                </p>
+                <p>
+                    Und dann gibt es noch die Frage der Ausfallzeit: Wie lange steht der Betrieb still? Unser Ziel ist immer: maximal ein Wochenende. Bei kleineren Büros schaffen wir es oft sogar, den Umzug so zu organisieren, dass am Montag normal weitergearbeitet werden kann.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Viele Firmenumzüge benötigen eine <a href="/leistungen/halteverbot">Halteverbotszone</a> an der alten und neuen Adresse – wir beantragen diese für Sie. Falls Sie IT-Equipment oder Akten vorübergehend lagern müssen, bieten wir sichere <a href="/leistungen/lagerung">Lagerräume</a>. Und für die Montage komplexer Büromöbelsysteme steht unser <a href="/leistungen/montage">Montageservice</a> bereit.
+                </p>
             </div>
 
             <div class="cta-column">

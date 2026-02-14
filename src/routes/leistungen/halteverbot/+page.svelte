@@ -116,6 +116,59 @@
                         <span>Auch für Selbstumzieher buchbar</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">So organisieren wir Ihre Halteverbotszone</h2>
+                <p>
+                    Eine offizielle Halteverbotszone sorgt dafür, dass Ihr Umzugswagen direkt vor der Tür parken kann. Ohne lange Tragewege, ohne Parkplatzsuche, ohne Stress. Wir übernehmen den gesamten Prozess für Sie.
+                </p>
+                <p>
+                    <strong>1. Bedarfsklärung:</strong> Wie groß soll die Zone sein? An welchen Adressen benötigen Sie Halteverbot (alte und/oder neue Wohnung)? Welcher Zeitraum ist nötig? Wir besprechen alle Details und planen die optimale Lösung.
+                </p>
+                <p>
+                    <strong>2. Beantragung beim Ordnungsamt:</strong> Wir stellen den offiziellen Antrag bei der Stadt Hildesheim, reichen alle erforderlichen Unterlagen ein und warten auf die Genehmigung. Das dauert in der Regel 2-3 Wochen – deshalb sollten Sie uns frühzeitig beauftragen.
+                </p>
+                <p>
+                    <strong>3. Aufstellung der Schilder:</strong> Mindestens 72 Stunden vor dem Umzug stellen wir die Halteverbotsschilder auf. Wir dokumentieren Datum, Uhrzeit und Position mit Fotos – als rechtliche Absicherung. So ist sichergestellt, dass die Zone offiziell gilt.
+                </p>
+                <p>
+                    <strong>4. Protokoll und Dokumentation:</strong> Sie erhalten von uns ein Aufstellungsprotokoll mit allen relevanten Daten. Falls am Umzugstag trotzdem jemand in der Zone parkt, können wir das Ordnungsamt oder die Polizei kontaktieren – die Abschleppkosten trägt der Falschparker.
+                </p>
+                <p>
+                    <strong>5. Umzugstag:</strong> Ihre Halteverbotszone ist frei, der Umzugswagen kann direkt vor der Tür parken. Kurze Tragewege bedeuten weniger Zeit, weniger Kraft und weniger Kosten.
+                </p>
+                <p>
+                    <strong>6. Abbau der Schilder:</strong> Nach dem Umzug holen wir die Schilder wieder ab und geben sie zurück. Sie müssen sich um nichts kümmern.
+                </p>
+
+                <h2 class="section-title">Warum eine Halteverbotszone in Hildesheim wichtig ist</h2>
+                <p>
+                    Hildesheim ist eine gewachsene Stadt mit vielen engen Straßen, besonders in der Altstadt. Wer hier schon einmal einen Parkplatz gesucht hat, weiß: Es ist eng. Und genau deshalb ist eine Halteverbotszone bei Umzügen oft unverzichtbar.
+                </p>
+                <p>
+                    Stellen Sie sich vor: Der Umzugswagen muss 200 Meter entfernt parken, weil direkt vor Ihrer Wohnung kein Platz ist. Jedes Möbelstück muss diese 200 Meter getragen werden – hin und zurück. Bei einem 3-Zimmer-Haushalt sind das schnell 50 Gänge. Das kostet Zeit, Kraft und am Ende auch Geld, weil die Helfer länger brauchen.
+                </p>
+                <p>
+                    Mit einer Halteverbotszone steht der LKW direkt vor Ihrer Tür. Die Tragewege sind minimal, der Umzug geht schneller – und Sie sparen am Ende mehr, als die Halteverbotszone kostet.
+                </p>
+                <p>
+                    Besonders in engen Straßen oder bei schweren Möbeln ist die Zone Gold wert. Ein Klavier, ein Flügel, ein schwerer Tresor – solche Stücke trägt man nicht gerne 200 Meter weit. Und auch bei Umzügen in höhere Stockwerke ohne Aufzug ist jeder eingesparte Meter ein Segen.
+                </p>
+
+                <h3 class="highlight-title">Häufige Fragen zu Halteverbotszonen</h3>
+                <p>
+                    „Wie groß sollte die Zone sein?" Die Standardgröße ist 15 Meter – genug Platz für einen großen Umzugs-LKW. Bei größeren Umzügen mit zwei Fahrzeugen oder besonders engen Straßen beantragen wir entsprechend mehr Platz. Wir kennen die Hildesheimer Straßen und schätzen die optimale Größe für Sie ein.
+                </p>
+                <p>
+                    „Was passiert, wenn trotzdem jemand in der Zone parkt?" Dann rufen wir das Ordnungsamt oder die Polizei. Das ordnungswidrig parkende Fahrzeug darf abgeschleppt werden – auf Kosten des Falschparkers. Dank unseres Aufstellungsprotokolls sind Sie rechtlich auf der sicheren Seite.
+                </p>
+                <p>
+                    „Kann ich die Zone auch nur für einen halben Tag beantragen?" Nein, Halteverbotszonen gelten immer tageweise. Aber das ist auch sinnvoll: Oft dauern Umzüge länger als geplant, und mit einer ganztägigen Zone haben Sie einen Puffer.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Halteverbot wird meist zusammen mit einem <a href="/leistungen/privatumzug">Privatumzug</a>, <a href="/leistungen/firmenumzug">Firmenumzug</a> oder <a href="/leistungen/seniorenumzug">Seniorenumzug</a> gebucht. Aber auch Selbstumzieher, die einen Transporter gemietet haben, nutzen unseren Service – denn eine Halteverbotszone können Sie auch einzeln bei uns bestellen.
+                </p>
             </div>
 
             <div class="cta-column">

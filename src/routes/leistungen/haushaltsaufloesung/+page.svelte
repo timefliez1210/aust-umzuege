@@ -119,6 +119,56 @@
                         >
                     </li>
                 </ul>
+
+                <h2 class="section-title">So läuft eine Haushaltsauflösung professionell ab</h2>
+                <p>
+                    Eine Haushaltsauflösung ist oft eine Ausnahmesituation – ob nach einem Todesfall, bei einem Umzug ins Pflegeheim oder nach einer Trennung. In solchen Momenten hilft ein klarer, verlässlicher Ablauf.
+                </p>
+                <p>
+                    <strong>1. Kostenlose Besichtigung vor Ort:</strong> Wir kommen zu Ihnen, schauen uns die Wohnung oder das Haus an und verschaffen uns einen Überblick. Wie viele Räume? Welche Möbel? Gibt es Wertsachen, die verkauft werden können? Gibt es Sondermüll? Auf Basis dieser Besichtigung erstellen wir Ihnen ein verbindliches Festpreisangebot.
+                </p>
+                <p>
+                    <strong>2. Sicherung persönlicher Gegenstände:</strong> Bevor wir mit der Räumung beginnen, sortieren wir gemeinsam alle Erinnerungsstücke, Dokumente, Schmuck und Wertgegenstände aus. Diese werden gesondert verpackt und Ihnen übergeben – oder auf Wunsch sicher gelagert.
+                </p>
+                <p>
+                    <strong>3. Verkauf und Wertanrechnung:</strong> Gut erhaltene Möbel, Antiquitäten oder Sammlungen verkaufen wir an Händler oder spenden sie an soziale Einrichtungen. Den Erlös rechnen wir transparent gegen unsere Kosten auf. So zahlen Sie am Ende oft deutlich weniger.
+                </p>
+                <p>
+                    <strong>4. Fachgerechte Entsorgung:</strong> Alles, was nicht mehr verwertbar ist, entsorgen wir nach gesetzlichen Vorschriften: Sperrmüll, Elektroschrott, Farben, Chemikalien. Wir arbeiten mit zertifizierten Entsorgungsbetrieben zusammen und können Ihnen auf Wunsch Nachweise für Ihre Unterlagen ausstellen.
+                </p>
+                <p>
+                    <strong>5. Besenreine Übergabe:</strong> Am Ende ist die Wohnung leer, gefegt und bereit für die Schlüsselübergabe. Auf Wunsch entfernen wir auch Tapeten, Teppichböden oder Einbauten – sodass die Wohnung renovierungsbereit ist.
+                </p>
+                <p>
+                    <strong>6. Schnelle Abwicklung:</strong> Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1-2 Tagen komplett. Bei größeren Objekten oder komplexeren Situationen planen wir entsprechend mehr Zeit ein. Sie erhalten von uns einen verbindlichen Termin, auf den Sie sich verlassen können.
+                </p>
+
+                <h2 class="section-title">Haushaltsauflösung in Hildesheim und Umgebung</h2>
+                <p>
+                    Als lokales Unternehmen kennen wir die Gegebenheiten in Hildesheim genau. Enge Altstadtgassen, Häuser ohne Aufzug, verwinkelte Treppenhäuser – für uns kein Problem. Wir wissen, wo wir mit dem LKW parken können und welche Zufahrtswege möglich sind.
+                </p>
+                <p>
+                    Auch im Umland sind wir tätig: Sarstedt, Alfeld, Bad Salzdetfurth, Elze – überall dort, wo Menschen unsere Unterstützung brauchen. Die Nähe zu unseren Kunden ist uns wichtig, denn oft entstehen während der Räumung noch Fragen oder es müssen Entscheidungen getroffen werden. Dann sind wir schnell vor Ort.
+                </p>
+                <p>
+                    Besonders bei Haushaltsauflösungen nach einem Todesfall arbeiten wir diskret und respektvoll. Wir wissen, wie emotional belastend diese Situation ist – und geben Ihnen die Zeit, die Sie brauchen. Unser Team ist geschult im sensiblen Umgang mit Trauernden und geht behutsam mit den Hinterlassenschaften um.
+                </p>
+
+                <h3 class="highlight-title">Herausforderungen bei Haushaltsauflösungen</h3>
+                <p>
+                    Jede Haushaltsauflösung ist anders. Manche Wohnungen sind gut sortiert, andere völlig überfüllt. Wir haben Erfahrung mit allen Situationen – auch mit sogenannten Messie-Wohnungen, die besondere Anforderungen stellen.
+                </p>
+                <p>
+                    Bei stark vermüllten Wohnungen arbeiten wir mit Schutzkleidung, sorgen für fachgerechte Desinfektion und entsorgen alles hygienisch einwandfrei. Schädlingsbefall? Auch kein Problem – wir koordinieren bei Bedarf mit Kammerjägern und Reinigungsfirmen.
+                </p>
+                <p>
+                    Eine weitere Herausforderung: die kurzen Fristen. Oft muss eine Wohnung innerhalb weniger Tage geräumt werden, weil der Mietvertrag ausläuft. Wir richten uns nach Ihrem Zeitplan und organisieren auch kurzfristige Räumungen.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Oft kombinieren Kunden die Haushaltsauflösung mit einem <a href="/leistungen/seniorenumzug">Seniorenumzug</a>, wenn nicht alles entsorgt, sondern ein Teil in ein neues, kleineres Zuhause gebracht werden soll. Falls Sie Möbel vorübergehend lagern möchten, bieten wir Ihnen sichere <a href="/leistungen/lagerung">Lagerräume</a>. Und wenn Sie nur Teile der Wohnung auflösen wollen, ist unser <a href="/leistungen/privatumzug">Privatumzug</a> die richtige Wahl.
+                </p>
             </div>
 
             <div class="cta-column">

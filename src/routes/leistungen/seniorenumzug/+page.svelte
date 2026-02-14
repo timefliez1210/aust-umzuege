@@ -118,6 +118,59 @@
                         <span>Anschluss von Lampen und Elektrogeräten</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">Wie ein Seniorenumzug bei uns abläuft</h2>
+                <p>
+                    Ein Seniorenumzug ist weit mehr als nur der Transport von Möbeln. Es geht um einen sensiblen Übergang in einen neuen Lebensabschnitt – und genau dafür nehmen wir uns die Zeit, die Sie brauchen.
+                </p>
+                <p>
+                    <strong>1. Persönliches Kennenlernen und Planung:</strong> Wir besuchen Sie zu Hause und schauen uns in Ruhe an, was mitgenommen werden soll. Gemeinsam entscheiden wir, welche Möbel ins neue Zuhause passen und was aussortiert oder gespendet werden kann. Für viele unserer Kunden ist dieser Schritt emotional – wir geben Ihnen die nötige Zeit und unterstützen ganz nach Ihrem Tempo.
+                </p>
+                <p>
+                    <strong>2. Organisation aller Formalitäten:</strong> Wir helfen Ihnen, den Antrag bei der Pflegekasse zu stellen und alle Unterlagen vorzubereiten. Falls nötig, koordinieren wir auch mit dem neuen Wohnheim, betreutem Wohnen oder Ihrer Familie. Sie müssen sich um nichts kümmern – das übernehmen wir.
+                </p>
+                <p>
+                    <strong>3. Sorgfältiges Verpacken:</strong> Am Umzugstag packen wir alle Gegenstände behutsam ein. Persönliche Erinnerungsstücke, Fotoalben, Porzellan und Erbstücke werden mit besonderer Sorgfalt behandelt. Wir beschriften alles, damit Sie auch in der neuen Wohnung sofort wissen, wo was ist.
+                </p>
+                <p>
+                    <strong>4. Sicherer Transport:</strong> Ihre Möbel und persönlichen Gegenstände werden professionell gesichert und zum neuen Wohnort gebracht. Bei Umzügen in Seniorenresidenzen oder Pflegeheime kennen wir die engen Flure und kleinen Aufzüge – und passen unsere Planung entsprechend an.
+                </p>
+                <p>
+                    <strong>5. Einrichtung am neuen Ort:</strong> Wir bauen Ihre Möbel wieder auf, hängen Bilder auf, schließen Lampen an und stellen Ihr Bett an die gewünschte Stelle. Auf Wunsch räumen wir auch Ihre Schränke ein und richten alles so her, dass Sie sich von der ersten Minute an wohlfühlen.
+                </p>
+                <p>
+                    <strong>6. Besenreine Übergabe der alten Wohnung:</strong> Falls gewünscht, räumen wir die alte Wohnung komplett aus, entsorgen nicht mehr benötigte Möbel und übergeben sie besenrein an den Vermieter. So haben Sie keinen Stress mit der Wohnungsübergabe.
+                </p>
+
+                <h2 class="section-title">Warum ein Seniorenumzug Profis braucht</h2>
+                <p>
+                    Oft denken Angehörige: „Das schaffen wir auch selbst." Doch die Realität sieht anders aus. Ein Seniorenumzug ist körperlich anstrengend, zeitaufwendig und emotional belastend – besonders für die Familie.
+                </p>
+                <p>
+                    Wir sind darauf spezialisiert, diese Belastung von Ihnen zu nehmen. Unsere Mitarbeiter sind im Umgang mit älteren Menschen geschult, arbeiten geduldig und respektvoll. Wir wissen, wie wichtig kleine Details sind: die richtige Anordnung der Möbel, der Zugang zum Lieblingsbild, die vertraute Atmosphäre auch im neuen Zuhause.
+                </p>
+                <p>
+                    Besonders bei Umzügen in betreutes Wohnen oder Pflegeheime kommt es auf Erfahrung an. Die Zimmer sind oft kleiner, der Platz begrenzt. Wir helfen Ihnen vorab zu entscheiden, welche Möbelstücke passen – und sorgen dafür, dass der neue Raum trotzdem gemütlich und persönlich wird.
+                </p>
+                <p>
+                    Und dann ist da noch die finanzielle Entlastung: Mit einem anerkannten Pflegegrad können Sie bis zu 4.180 Euro Zuschuss von der Pflegekasse beantragen. Diesen Betrag deckt oft den gesamten Umzug ab – oder zumindest einen großen Teil. Wir unterstützen Sie bei der Antragstellung und stellen die nötigen Unterlagen zusammen.
+                </p>
+
+                <h3 class="highlight-title">Was unsere Kunden besonders schätzen</h3>
+                <p>
+                    „Die größte Sorge vieler Senioren ist der Verlust von vertrauten Dingen", erzählt uns ein Familienmitglied nach einem Umzug. „Aber Aust Umzüge hat dafür gesorgt, dass die wichtigsten Erinnerungsstücke einen schönen Platz im neuen Zimmer bekommen haben. Meine Mutter hat sich sofort wohlgefühlt."
+                </p>
+                <p>
+                    Genau das ist unser Ziel. Ein Seniorenumzug ist nie nur Logistik – es geht um Menschen, um Würde, um Wertschätzung. Wir arbeiten eng mit Ihnen oder Ihren Angehörigen zusammen und halten Sie über jeden Schritt auf dem Laufenden.
+                </p>
+                <p>
+                    Auch die zeitliche Flexibilität wird oft gelobt: Umzüge ins Pflegeheim müssen manchmal sehr kurzfristig erfolgen. Wir richten uns nach Ihrem Zeitplan und sind auch bei kurzen Vorlaufzeiten für Sie da.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Bei vielen Seniorenumzügen ist auch eine <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösung</a> nötig – wir übernehmen beides aus einer Hand. Falls Sie nur vorübergehend Möbel lagern möchten, bieten wir Ihnen sichere <a href="/leistungen/lagerung">Lagerräume</a>. Und wenn schwere Möbel ab- oder aufgebaut werden müssen, kümmert sich unser <a href="/leistungen/montage">Montageservice</a> darum.
+                </p>
             </div>
 
             <div class="cta-column">

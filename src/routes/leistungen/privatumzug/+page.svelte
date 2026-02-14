@@ -119,6 +119,71 @@
                         >
                     </li>
                 </ul>
+
+                <h2 class="section-title">So läuft Ihr Privatumzug mit Aust Umzüge ab</h2>
+                <p>
+                    Einen Umzug zu planen kann sich anfühlen wie ein zweiter Job. Zwischen Mietvertrag, Ummeldung, Kisten packen und den alten Schlüssel abgeben bleibt kaum Luft zum Atmen. Genau deshalb nehmen wir Ihnen so viel wie möglich ab. Hier sehen Sie, wie ein typischer Privatumzug mit uns abläuft.
+                </p>
+                <p>
+                    <strong>1. Erstes Gespräch und Besichtigung</strong><br>
+                    Sie rufen an oder schreiben uns -- wir melden uns in der Regel am selben Tag zurück. Dann vereinbaren wir einen Termin bei Ihnen zu Hause. Wir schauen uns gemeinsam an, was mitgenommen werden soll, wo es knifflig werden kann (Dachgeschoss? Klavier? Enge Treppe?) und was Sie sich wünschen. Das dauert meistens eine halbe Stunde, manchmal etwas länger.
+                </p>
+                <p>
+                    <strong>2. Festpreisangebot</strong><br>
+                    Innerhalb von ein bis zwei Tagen erhalten Sie ein klares Angebot per Mail. Kein Kleingedrucktes, keine versteckten Zuschläge. Der Preis, den wir nennen, steht. Auch wenn der Umzug mal eine Stunde länger dauert als geplant.
+                </p>
+                <p>
+                    <strong>3. Vorbereitung am Umzugstag</strong><br>
+                    Wir bringen Verpackungsmaterial mit, stellen auf Wunsch eine Halteverbotszone auf und schützen Treppenhäuser und Türrahmen. Bevor ein einziger Karton ins Auto kommt, ist alles vorbereitet.
+                </p>
+                <p>
+                    <strong>4. Einpacken, Abbauen, Verladen</strong><br>
+                    Ob Sie selbst packen oder das uns überlassen -- wir stellen uns darauf ein. Möbel, die nicht am Stück passen, werden fachgerecht abgebaut. Unsere Schreiner im Team kennen sich mit allen gängigen Systemen aus. Dann laden wir ein. Systematisch, nicht wahllos.
+                </p>
+                <p>
+                    <strong>5. Transport und Entladen</strong><br>
+                    Am neuen Ort wird entladen und jede Kiste genau in den richtigen Raum gestellt. Sie sagen, wo was hin soll -- wir tragen es dorthin.
+                </p>
+                <p>
+                    <strong>6. Aufbau und Feinschliff</strong><br>
+                    Möbel wieder zusammenbauen, Küche anschließen, Lampen aufhängen. Erst wenn Sie sagen "alles gut", ist der Umzug für uns erledigt. Nicht vorher.
+                </p>
+
+                <h2 class="section-title">Privatumzug in Hildesheim und Umgebung</h2>
+                <p>
+                    Wer in Hildesheim umzieht, braucht ein Team, das die Stadt kennt. Und wir kennen sie. Die schmalen Durchfahrten in der Altstadt rund um den Marktplatz. Die engen Treppenhäuser in den Gründerzeithäusern an der Schuhstraße. Die Parkplatzsituation in der Nordstadt, wo ein Umzugswagen ohne Halteverbot manchmal drei Straßen weiter stehen müsste.
+                </p>
+                <p>
+                    Wir wissen, bei welchen Straßen in der Oststadt das Ordnungsamt unkompliziert ist und wo man besser zwei Wochen vorher den Antrag stellt. Wir kennen die typischen Herausforderungen in den verschiedenen Vierteln -- ob Moritzberg mit seinen steilen Auffahrten, die Nordstadt mit ihren Altbauten oder die Neubauviertel in Ochtersum und Itzum.
+                </p>
+                <p>
+                    Auch ins Umland fahren wir regelmäßig. Sarstedt, Giesen, Harsum, Bockenem, Alfeld, Bad Salzdetfurth -- für uns alles Heimspiel. Und wenn es mal weiter gehen soll, nach Hannover oder Göttingen zum Beispiel, sind wir genauso dabei.
+                </p>
+                <p>
+                    Weil wir hier verwurzelt sind, können wir Ihren Umzug besser einschätzen als ein überregionaler Anbieter. Wir wissen, wo es eng wird, wo man aufpassen muss und wo es besonders flott geht. Das spart am Ende Zeit und Geld.
+                </p>
+
+                <h3 class="highlight-title">Häufige Herausforderungen beim Privatumzug</h3>
+                <p>
+                    <strong>"Ich weiß gar nicht, wo ich anfangen soll."</strong><br>
+                    Das hören wir oft. Die Antwort: mit einem Anruf bei uns. Wir geben Ihnen schon am Telefon eine grobe Orientierung, was auf Sie zukommt, und bei der Besichtigung erstellen wir gemeinsam einen Plan. Danach wissen Sie genau, was Sie selbst machen und was wir übernehmen.
+                </p>
+                <p>
+                    <strong>"Meine Waschmaschine passt nicht durchs Treppenhaus."</strong><br>
+                    Kein seltenes Problem, gerade in Altbauten. Wir prüfen vorher, ob alles durch die Türen und ums Eck passt. Falls nötig, setzen wir einen Möbellift ein oder nehmen einen alternativen Weg. An solche Dinge denken wir, bevor sie zum Problem werden.
+                </p>
+                <p>
+                    <strong>"Ich habe kaum Urlaub und will das an einem Tag schaffen."</strong><br>
+                    Verstehen wir. Deshalb planen wir so, dass der Umzug möglichst in einem Tag über die Bühne geht. Mit genug Leuten und einem klaren Ablaufplan ist das auch bei einer Vier-Zimmer-Wohnung machbar. In Einzelfällen empfehlen wir einen Umzug über zwei Tage -- aber nur, wenn es wirklich nötig ist.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Ihr Privatumzug ist unser Kerngeschäft, aber manchmal braucht es noch ein bisschen mehr. Wenn Ihre Küche ab- und wieder aufgebaut werden muss, übernimmt das unser <a href="/leistungen/montage">Montage-Team</a> direkt mit. Brauchen Sie einen garantierten Parkplatz vor der Tür? Wir kümmern uns um die <a href="/leistungen/halteverbot">Halteverbotszone</a>, von der Beantragung bis zum Schilderabbau.
+                </p>
+                <p>
+                    Wenn die neue Wohnung noch nicht fertig ist und Sie eine Zwischenlösung brauchen, bieten wir <a href="/leistungen/lagerung">Einlagerung</a> mit flexiblen Laufzeiten an. Und falls Sie sich unsicher sind, was genau Sie brauchen, starten Sie am besten mit einer <a href="/leistungen/umzugsberatung">kostenlosen Umzugsberatung</a>. Dann klären wir alles in Ruhe bei Ihnen vor Ort.
+                </p>
             </div>
 
             <div class="cta-column">

@@ -116,6 +116,59 @@
                         <span>Flexible stundenweise Buchung möglich</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">So arbeiten unsere Umzugshelfer</h2>
+                <p>
+                    Umzugshelfer buchen – das klingt simpel. Aber zwischen „irgendwelchen Helfern" und professionellen Umzugskräften liegen Welten. Unsere Mitarbeiter sind geschult, versichert und wissen genau, wie man Möbel sicher trägt, LKWs optimal belädt und Schäden vermeidet.
+                </p>
+                <p>
+                    <strong>1. Planung und Zeitabsprache:</strong> Sie sagen uns, wann Sie Helfer brauchen und für welche Aufgaben. Nur zum Beladen? Nur zum Entladen? Oder für den gesamten Umzug? Wir schätzen gemeinsam, wie viele Helfer Sie benötigen und wie lange der Einsatz dauert.
+                </p>
+                <p>
+                    <strong>2. Pünktlicher Start:</strong> Unsere Helfer kommen pünktlich zum vereinbarten Termin – mit Tragegurten, Sackkarren und Möbeldecken ausgestattet. Sie müssen nichts vorbereiten, keine Ausrüstung besorgen, nichts organisieren.
+                </p>
+                <p>
+                    <strong>3. Fachgerechtes Beladen:</strong> Ein gut beladener LKW nutzt den Platz optimal und schützt die Möbel vor Transportschäden. Unsere Helfer wissen, wie man schwere Teile nach unten, leichte nach oben packt und alles mit Spanngurten sichert. Das verhindert Verrutschen und Kratzer.
+                </p>
+                <p>
+                    <strong>4. Sicheres Tragen:</strong> Schwere Möbel die Treppe hinunter zu tragen, erfordert Technik und Erfahrung. Unsere Helfer arbeiten im Team, nutzen Tragegurte für Waschmaschinen und Kühlschränke und achten darauf, dass Treppenhaus und Türrahmen unbeschädigt bleiben.
+                </p>
+                <p>
+                    <strong>5. Flexible Unterstützung:</strong> Wenn vor Ort spontan etwas dazukommt – ein Schrank muss doch noch auseinander gebaut werden, ein zusätzlicher Raum soll ausgeräumt werden – kein Problem. Unsere Helfer sind flexibel und packen mit an, wo es nötig ist.
+                </p>
+                <p>
+                    <strong>6. Abrechnung nach tatsächlichem Aufwand:</strong> Sie zahlen nur die tatsächlich geleisteten Stunden. Wenn der Umzug schneller geht als geplant, sparen Sie Geld. Fair und transparent.
+                </p>
+
+                <h2 class="section-title">Warum professionelle Helfer sich lohnen</h2>
+                <p>
+                    Viele denken: „Ich frage einfach ein paar Freunde." Das Problem: Freunde haben oft keine Erfahrung, arbeiten langsamer und sind nicht versichert. Wenn etwas kaputt geht, gibt es Streit. Wenn jemand sich verletzt, wird es teuer.
+                </p>
+                <p>
+                    Unsere Helfer dagegen sind über unsere Betriebshaftpflicht versichert. Schäden an Möbeln, Türrahmen oder Treppenhaus werden übernommen. Das gibt Ihnen die Sicherheit, die Sie bei einem Umzug brauchen.
+                </p>
+                <p>
+                    Außerdem arbeiten professionelle Helfer effizienter. Was Laien in 6 Stunden schaffen, erledigen unsere Mitarbeiter oft in 3-4 Stunden. Am Ende zahlen Sie weniger, weil die Arbeitszeit kürzer ist.
+                </p>
+                <p>
+                    Und dann ist da noch die körperliche Belastung: Ein Umzug ist anstrengend. Wenn Sie selbst den ganzen Tag schleppen, sind Sie am Abend völlig erschöpft. Mit professionellen Helfern können Sie sich auf die Organisation konzentrieren – und bleiben fit für die erste Nacht in der neuen Wohnung.
+                </p>
+
+                <h3 class="highlight-title">Was Kunden an unserem Service schätzen</h3>
+                <p>
+                    „Die Helfer waren super freundlich und haben mitgedacht", hören wir oft von unseren Kunden. „Als wir nicht wussten, wie wir das Sofa durch die enge Tür bekommen, hatten die Jungs sofort eine Lösung."
+                </p>
+                <p>
+                    Genau das ist der Unterschied: Unsere Helfer sind nicht nur kräftig, sondern auch erfahren. Sie wissen, wie man ein Klavier sicher die Treppe herunterträgt, wie man eine Waschmaschine ohne Kratzer durch den Flur bugsiert und wie man zerbrechliche Gegenstände schützt.
+                </p>
+                <p>
+                    Auch die Zuverlässigkeit wird immer wieder gelobt: „Die waren pünktlich auf die Minute – und haben durchgezogen, bis alles fertig war." Kein Verschleppen, kein Trödeln, kein „Ach, das schaffen wir morgen".
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Sie überlegen, ob Umzugshelfer ausreichen oder ob Sie doch lieber einen <a href="/leistungen/privatumzug">Vollservice-Umzug</a> buchen sollten? Wir beraten Sie gerne. Falls schwere Möbel ab- oder aufgebaut werden müssen, bieten wir zusätzlich unseren <a href="/leistungen/montage">Montageservice</a> an. Und wenn Sie einen Parkplatz vor der Tür brauchen, organisieren wir eine <a href="/leistungen/halteverbot">Halteverbotszone</a> für Sie.
+                </p>
             </div>
 
             <div class="cta-column">

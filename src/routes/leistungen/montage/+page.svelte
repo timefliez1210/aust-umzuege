@@ -121,6 +121,59 @@
                         <span>Neumöbelmontage nach Lieferung</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">Möbelmontage: Vom Abbau bis zum perfekten Sitz</h2>
+                <p>
+                    Große Kleiderschränke, Einbauküchen, modulare Wohnwände – viele Möbel lassen sich nur zerlegt transportieren. Und genau hier beginnt die Herausforderung: Ein fachgerechter Abbau und Aufbau erfordert Erfahrung, das richtige Werkzeug und ein gutes Auge für Details.
+                </p>
+                <p>
+                    <strong>1. Professioneller Abbau:</strong> Wir demontieren Ihre Möbel sorgfältig, sammeln alle Schrauben und Beschläge in beschrifteten Beuteln und dokumentieren bei komplexen Systemen die Reihenfolge. So wissen wir beim Aufbau genau, was wohin gehört.
+                </p>
+                <p>
+                    <strong>2. Sichere Verpackung:</strong> Abgebaute Teile werden einzeln verpackt, um Kratzer und Beschädigungen zu vermeiden. Glaselemente, Spiegel und empfindliche Oberflächen schützen wir mit Spezialverpackungen.
+                </p>
+                <p>
+                    <strong>3. Transport und Aufbau:</strong> Am neuen Standort bauen wir Ihre Möbel fachgerecht wieder auf. Dabei achten wir darauf, dass Schranktüren gerade hängen, Schubladen sauber laufen und alles stabil steht.
+                </p>
+                <p>
+                    <strong>4. Ausrichtung und Justierung:</strong> Nach dem Aufbau justieren wir Scharniere, richten Regale aus und prüfen die Standfestigkeit. Besonders bei Küchen ist Präzision wichtig – damit Arbeitsplatten passgenau sitzen und Elektrogeräte einwandfrei eingebaut sind.
+                </p>
+                <p>
+                    <strong>5. Anschluss von Geräten:</strong> Waschmaschinen, Spülmaschinen, Herde und Dunstabzugshauben schließen wir fachgerecht an. Unsere zertifizierten Mitarbeiter kennen sich mit Wasser- und Elektroanschlüssen aus – und wissen, wann ein Elektriker hinzugezogen werden muss.
+                </p>
+                <p>
+                    <strong>6. Entsorgung des Verpackungsmaterials:</strong> Wenn alles steht, räumen wir auf und entsorgen Kartons, Folien und Verpackungsmaterial. Sie müssen sich um nichts kümmern.
+                </p>
+
+                <h2 class="section-title">Montage auch ohne Umzug</h2>
+                <p>
+                    Viele unserer Kunden buchen uns ausschließlich für Montagearbeiten – unabhängig von einem Umzug. Sie haben bei IKEA, Höffner oder online neue Möbel bestellt und brauchen jemanden, der sie aufbaut? Wir sind Ihre Lösung.
+                </p>
+                <p>
+                    Besonders bei großen Schranksystemen wie IKEA PAX, KALLAX oder BESTA lohnt sich der Profi: Was in der Aufbauanleitung einfach aussieht, entpuppt sich oft als stundenlange Fummelarbeit. Unsere Monteure kennen diese Systeme in- und auswendig und bauen sie routiniert auf.
+                </p>
+                <p>
+                    Auch Küchenmontagen übernehmen wir gerne. Vom einfachen IKEA-Küchenblock bis zur hochwertigen Markenküche – wir passen Arbeitsplatten an, installieren Spülen, schließen Geräte an und sorgen dafür, dass alles perfekt sitzt.
+                </p>
+                <p>
+                    Und wenn Sie nur Kleinigkeiten erledigt haben möchten – Lampen aufhängen, Regale anbringen, Gardinenstangen befestigen – auch das machen wir. Oft kombinieren Kunden mehrere Aufgaben in einem Termin, um die Anfahrtskosten optimal zu nutzen.
+                </p>
+
+                <h3 class="highlight-title">Häufige Montage-Herausforderungen</h3>
+                <p>
+                    Die größte Schwierigkeit bei Möbelmontagen ist oft nicht der Aufbau selbst, sondern die Anpassung an die örtlichen Gegebenheiten. Schiefe Wände, unebene Böden, niedrige Decken – in Altbauten ist selten etwas im rechten Winkel.
+                </p>
+                <p>
+                    Unsere Monteure kennen diese Probleme und wissen, wie man Möbel auch in schwierigen Situationen stabil montiert. Wir unterlegen, justieren und passen an – bis alles perfekt steht.
+                </p>
+                <p>
+                    Eine weitere Herausforderung: fehlende Teile. Gerade bei gebrauchten Möbeln oder nach mehreren Umzügen fehlen manchmal Schrauben, Dübel oder Beschläge. Wir haben gängiges Ersatzmaterial dabei und können oft vor Ort weiterhelfen. Bei Spezialteilen bestellen wir das Fehlende nach.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Montage wird oft zusammen mit einem <a href="/leistungen/privatumzug">Privatumzug</a> oder <a href="/leistungen/firmenumzug">Firmenumzug</a> gebucht. Falls Sie nur einzelne Möbelstücke transportieren lassen möchten, helfen unsere <a href="/leistungen/umzugshelfer">Umzugshelfer</a>. Und wenn Sie eine komplette Wohnung ausräumen lassen, ist unsere <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösung</a> die richtige Wahl.
+                </p>
             </div>
 
             <div class="cta-column">

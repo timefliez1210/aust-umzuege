@@ -119,6 +119,59 @@
                         >
                     </li>
                 </ul>
+
+                <h2 class="section-title">Was Sie von unserer Umzugsberatung erwarten können</h2>
+                <p>
+                    Eine gute Beratung ist der Grundstein für einen stressfreien Umzug. Wir nehmen uns Zeit, schauen uns alles genau an und planen gemeinsam mit Ihnen jeden Schritt.
+                </p>
+                <p>
+                    <strong>1. Terminvereinbarung:</strong> Sie rufen uns an oder schreiben uns, und wir vereinbaren einen Termin für die Besichtigung – bei Ihnen zu Hause, zu einem Zeitpunkt, der Ihnen passt. Die Besichtigung ist komplett kostenlos und unverbindlich.
+                </p>
+                <p>
+                    <strong>2. Vor-Ort-Besichtigung:</strong> Wir kommen zu Ihnen nach Hause und schauen uns alles genau an: Wie viele Zimmer? Welche Möbel? Gibt es besondere Herausforderungen wie enge Treppenhäuser, schwere Einzelstücke oder ein Klavier? Wie sieht die Parksituation aus? Gibt es einen Aufzug?
+                </p>
+                <p>
+                    <strong>3. Bedarfsanalyse:</strong> Gemeinsam besprechen wir, was Sie alles benötigen: Verpackungsmaterial? Montage von Möbeln? Entsorgung alter Sachen? Halteverbotszone? Lagerung? Wir hören zu, beraten ehrlich und schlagen die optimale Lösung vor.
+                </p>
+                <p>
+                    <strong>4. Festpreisangebot:</strong> Innerhalb von 24-48 Stunden erhalten Sie ein detailliertes Angebot mit allen Leistungen und einem verbindlichen Festpreis. Keine Überraschungen, keine versteckten Kosten. Der Preis steht – egal ob der Umzug länger dauert als geplant.
+                </p>
+                <p>
+                    <strong>5. Planung und Koordination:</strong> Wenn Sie unser Angebot annehmen, planen wir den Umzug im Detail: Welches Team? Wie viele Helfer? Welche Fahrzeuge? Welche Materialien? Sie bekommen einen festen Ansprechpartner, der Sie bis zum Umzugstag begleitet.
+                </p>
+                <p>
+                    <strong>6. Nachbetreuung:</strong> Auch nach dem Umzug sind wir für Sie da. Wenn etwas nicht passt, ein Möbelstück nachträglich montiert werden muss oder Sie noch Fragen haben – wir sind erreichbar.
+                </p>
+
+                <h2 class="section-title">Warum eine Beratung vor Ort so wichtig ist</h2>
+                <p>
+                    Viele Umzugsfirmen erstellen Angebote am Telefon oder per E-Mail. Das Problem: Ohne Besichtigung werden wichtige Details übersehen. Das enge Treppenhaus, das schwere Klavier im zweiten Stock, die fehlende Parkmöglichkeit vor der Tür – solche Dinge sieht man erst vor Ort.
+                </p>
+                <p>
+                    Und genau hier entstehen später böse Überraschungen: Der Preis wird nachträglich erhöht, weil der Aufwand größer ist als gedacht. Bei uns passiert das nicht, denn wir schauen uns alles vorher genau an.
+                </p>
+                <p>
+                    Ein weiterer Vorteil der Vor-Ort-Beratung: Sie lernen uns persönlich kennen. Sie sehen, mit wem Sie es zu tun haben, können Fragen stellen und bekommen ein Gefühl dafür, ob die Chemie stimmt. Vertrauen ist bei einem Umzug wichtig – schließlich lassen Sie fremde Menschen in Ihr Zuhause.
+                </p>
+                <p>
+                    Außerdem können wir bei der Besichtigung direkt Tipps geben: Welche Möbel passen in die neue Wohnung? Was sollten Sie vorher aussortieren? Wie können Sie Kosten sparen, indem Sie selbst schon ein paar Kartons packen? Diese Beratung ist Gold wert – und bei uns kostenlos.
+                </p>
+
+                <h3 class="highlight-title">Festpreis vs. Kostenvoranschlag: Der Unterschied</h3>
+                <p>
+                    Viele Umzugsfirmen arbeiten mit Kostenvoranschlägen. Das klingt erst mal gut – aber Vorsicht: Ein Kostenvoranschlag darf gesetzlich um bis zu 20% überschritten werden. Aus 1.000 Euro werden dann schnell 1.200 Euro. Und Sie können nichts dagegen tun.
+                </p>
+                <p>
+                    Wir arbeiten grundsätzlich mit Festpreisen. Der vereinbarte Preis steht – egal was kommt. Wenn der Umzug länger dauert, wenn unerwartete Probleme auftauchen, wenn es regnet oder schneit: Der Preis bleibt. Das gibt Ihnen volle Kostensicherheit.
+                </p>
+                <p>
+                    Natürlich gilt das nur, wenn sich am Umfang nichts ändert. Wenn Sie uns bei der Besichtigung nicht erzählen, dass noch ein Keller ausgeräumt werden muss, können wir das nicht einkalkulieren. Aber solange alle Informationen auf dem Tisch liegen, ist der Preis fix.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Nach der Beratung entscheiden Sie, welche Leistungen Sie buchen möchten: <a href="/leistungen/privatumzug">Privatumzug</a>, <a href="/leistungen/firmenumzug">Firmenumzug</a>, <a href="/leistungen/seniorenumzug">Seniorenumzug</a> oder einzelne Services wie <a href="/leistungen/montage">Montage</a>, <a href="/leistungen/halteverbot">Halteverbot</a> oder <a href="/leistungen/lagerung">Lagerung</a>. Wir erstellen Ihnen ein maßgeschneidertes Angebot – genau passend zu Ihrem Bedarf.
+                </p>
             </div>
 
             <div class="cta-column">

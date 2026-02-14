@@ -116,6 +116,59 @@
                         <span>Verlade- und Entladeservice am Zielort</span>
                     </li>
                 </ul>
+
+                <h2 class="section-title">Ihr Weg ins Ausland – Schritt für Schritt</h2>
+                <p>
+                    Ein internationaler Umzug ist komplex. Andere Länder, andere Gesetze, andere Sprachen. Damit Sie den Überblick behalten, begleiten wir Sie durch jeden einzelnen Schritt.
+                </p>
+                <p>
+                    <strong>1. Beratungsgespräch und Bedarfsermittlung:</strong> Wohin geht die Reise? Wie viel möchten Sie mitnehmen? Welche Möbel passen in die neue Wohnung? Wir besprechen alle Details und klären, welche Transportart für Sie am besten geeignet ist: LKW innerhalb Europas, Seecontainer für Übersee oder Luftfracht für eilige Sendungen.
+                </p>
+                <p>
+                    <strong>2. Angebot mit allen Kosten:</strong> Sie erhalten von uns ein transparentes Festpreisangebot, das alle Leistungen umfasst: Verpackung, Transport, Versicherung, Zollabwicklung und Lieferung am Zielort. Keine versteckten Kosten, keine Überraschungen.
+                </p>
+                <p>
+                    <strong>3. Zoll und Einfuhrbestimmungen:</strong> Jedes Land hat eigene Vorschriften. Wir erstellen für Sie die notwendigen Inventarlisten, kümmern uns um Zollanmeldungen und Einfuhrgenehmigungen. In vielen Fällen übernehmen unsere Partneragenturen vor Ort die Verzollung komplett – Sie müssen sich um nichts kümmern.
+                </p>
+                <p>
+                    <strong>4. Exportverpackung:</strong> Für internationale Transporte verwenden wir seefeste Spezialverpackungen: verstärkte Kartons, Luftpolsterfolie, Antikorrosionsschutz für Metallgegenstände und containergerechte Ladungssicherung. Empfindliche Stücke wie Glasvitrinen, Antiquitäten oder Musikinstrumente werden in maßgeschneiderten Holzkisten gesichert.
+                </p>
+                <p>
+                    <strong>5. Transport und Tracking:</strong> Während Ihr Umzugsgut unterwegs ist, halten wir Sie auf dem Laufenden. Sie erhalten regelmäßige Updates zum Transportstatus. Bei Seetransporten können Sie die Container-Nummer verfolgen und wissen immer, wo Ihre Sachen gerade sind.
+                </p>
+                <p>
+                    <strong>6. Ankunft und Aufbau am Zielort:</strong> Unsere Partneragentur vor Ort nimmt Ihr Umzugsgut entgegen, verzollt es und liefert es zu Ihrer neuen Adresse. Auf Wunsch bauen wir Ihre Möbel auch am Zielort wieder auf – egal ob in Zürich, New York oder Sydney.
+                </p>
+
+                <h2 class="section-title">Weltweit vernetzt – lokal verwurzelt</h2>
+                <p>
+                    Als Hildesheimer Familienunternehmen haben wir ein globales Netzwerk aufgebaut. Wir arbeiten mit zuverlässigen Partneragenturen in über 100 Ländern zusammen – von europäischen Nachbarländern bis zu entfernten Überseezielen.
+                </p>
+                <p>
+                    Das bedeutet für Sie: Egal wohin Sie ziehen, Sie haben vor Ort einen Ansprechpartner, der Ihre Sprache spricht und die örtlichen Gegebenheiten kennt. Die Koordination läuft über uns in Hildesheim – Sie haben einen einzigen Ansprechpartner für den gesamten Umzug.
+                </p>
+                <p>
+                    Besonders wichtig bei internationalen Umzügen: die Versicherung. Für See- und Luftfracht empfehlen wir eine Transportversicherung, die über die gesetzliche Haftung hinausgeht. Wir beraten Sie zu passenden Policen und vermitteln auf Wunsch direkt eine Versicherung, die Ihr Umzugsgut zum Neuwert absichert.
+                </p>
+                <p>
+                    Und wenn Sie nur wenige Kubikmeter versenden möchten? Dann ist eine Beiladung die richtige Lösung. Dabei wird Ihr Umzugsgut zusammen mit anderen Sendungen im Container transportiert. Das ist deutlich günstiger als ein eigener Container und ideal für kleinere Mengen.
+                </p>
+
+                <h3 class="highlight-title">Typische Herausforderungen bei Auslandsumzügen</h3>
+                <p>
+                    Die größte Unsicherheit bei internationalen Umzügen ist die Frage: Was darf ich überhaupt einführen? Manche Länder haben strenge Einfuhrbestimmungen für Holzmöbel, Pflanzen oder Elektrogeräte. Wir kennen die Vorschriften und klären vorab, was möglich ist.
+                </p>
+                <p>
+                    Eine weitere Herausforderung: die lange Transportzeit. Während ein LKW innerhalb Europas nur wenige Tage braucht, kann ein Seecontainer nach Übersee 6-12 Wochen unterwegs sein. Wir helfen Ihnen zu planen, welche Gegenstände Sie im Handgepäck mitnehmen sollten und was im Container transportiert werden kann.
+                </p>
+                <p>
+                    Auch die Frage der Spannungsunterschiede spielt eine Rolle: Elektrogeräte aus Deutschland funktionieren nicht überall ohne Adapter oder Transformator. Wir beraten Sie, ob sich der Transport Ihrer Geräte lohnt oder ob ein Neukauf vor Ort sinnvoller ist.
+                </p>
+
+                <h3 class="highlight-title">Verwandte Leistungen</h3>
+                <p>
+                    Wenn Sie Deutschland verlassen, möchten Sie vielleicht Möbel zurücklassen oder später nachsenden? Unsere <a href="/leistungen/lagerung">Lagerräume</a> bieten Ihnen diese Flexibilität. Falls Sie nur einen Teil Ihres Haushalts mitnehmen, übernehmen wir die <a href="/leistungen/haushaltsaufloesung">Auflösung</a> der alten Wohnung. Und für eine persönliche Beratung zu Ihrem Auslandsumzug vereinbaren Sie einfach einen Termin für unsere <a href="/leistungen/umzugsberatung">Umzugsberatung</a>.
+                </p>
             </div>
 
             <div class="cta-column">

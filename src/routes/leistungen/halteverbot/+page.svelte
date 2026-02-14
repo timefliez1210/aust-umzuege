@@ -117,7 +117,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">So organisieren wir Ihre Halteverbotszone</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">So organisieren wir Ihre Halteverbotszone</h2>
                 <p>
                     Eine offizielle Halteverbotszone sorgt dafür, dass Ihr Umzugswagen direkt vor der Tür parken kann. Ohne lange Tragewege, ohne Parkplatzsuche, ohne Stress. Wir übernehmen den gesamten Prozess für Sie.
                 </p>

@@ -122,7 +122,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">Möbelmontage: Vom Abbau bis zum perfekten Sitz</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">Möbelmontage: Vom Abbau bis zum perfekten Sitz</h2>
                 <p>
                     Große Kleiderschränke, Einbauküchen, modulare Wohnwände – viele Möbel lassen sich nur zerlegt transportieren. Und genau hier beginnt die Herausforderung: Ein fachgerechter Abbau und Aufbau erfordert Erfahrung, das richtige Werkzeug und ein gutes Auge für Details.
                 </p>

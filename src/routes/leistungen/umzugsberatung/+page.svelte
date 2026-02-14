@@ -120,7 +120,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">Was Sie von unserer Umzugsberatung erwarten können</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">Was Sie von unserer Umzugsberatung erwarten können</h2>
                 <p>
                     Eine gute Beratung ist der Grundstein für einen stressfreien Umzug. Wir nehmen uns Zeit, schauen uns alles genau an und planen gemeinsam mit Ihnen jeden Schritt.
                 </p>

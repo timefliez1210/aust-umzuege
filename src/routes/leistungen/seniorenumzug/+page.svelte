@@ -119,7 +119,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">Wie ein Seniorenumzug bei uns abläuft</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">Wie ein Seniorenumzug bei uns abläuft</h2>
                 <p>
                     Ein Seniorenumzug ist weit mehr als nur der Transport von Möbeln. Es geht um einen sensiblen Übergang in einen neuen Lebensabschnitt – und genau dafür nehmen wir uns die Zeit, die Sie brauchen.
                 </p>

@@ -117,7 +117,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">So arbeiten unsere Umzugshelfer</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">So arbeiten unsere Umzugshelfer</h2>
                 <p>
                     Umzugshelfer buchen – das klingt simpel. Aber zwischen „irgendwelchen Helfern" und professionellen Umzugskräften liegen Welten. Unsere Mitarbeiter sind geschult, versichert und wissen genau, wie man Möbel sicher trägt, LKWs optimal belädt und Schäden vermeidet.
                 </p>

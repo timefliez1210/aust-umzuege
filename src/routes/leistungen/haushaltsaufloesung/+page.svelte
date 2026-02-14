@@ -120,7 +120,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">So läuft eine Haushaltsauflösung professionell ab</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">So läuft eine Haushaltsauflösung professionell ab</h2>
                 <p>
                     Eine Haushaltsauflösung ist oft eine Ausnahmesituation – ob nach einem Todesfall, bei einem Umzug ins Pflegeheim oder nach einer Trennung. In solchen Momenten hilft ein klarer, verlässlicher Ablauf.
                 </p>

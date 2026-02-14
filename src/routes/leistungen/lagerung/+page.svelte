@@ -112,7 +112,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">So funktioniert unsere Möbellagerung</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">So funktioniert unsere Möbellagerung</h2>
                 <p>
                     Lagerung ist mehr als nur ein leerer Raum. Bei uns erhalten Sie einen professionellen Service, der Ihre Möbel schützt und Ihnen volle Flexibilität bietet.
                 </p>

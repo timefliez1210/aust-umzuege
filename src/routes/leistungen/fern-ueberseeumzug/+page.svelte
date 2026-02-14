@@ -117,7 +117,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">Ihr Weg ins Ausland – Schritt für Schritt</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">Ihr Weg ins Ausland – Schritt für Schritt</h2>
                 <p>
                     Ein internationaler Umzug ist komplex. Andere Länder, andere Gesetze, andere Sprachen. Damit Sie den Überblick behalten, begleiten wir Sie durch jeden einzelnen Schritt.
                 </p>

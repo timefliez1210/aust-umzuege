@@ -120,7 +120,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">So läuft Ihr Privatumzug mit Aust Umzüge ab</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">So läuft Ihr Privatumzug mit Aust Umzüge ab</h2>
                 <p>
                     Einen Umzug zu planen kann sich anfühlen wie ein zweiter Job. Zwischen Mietvertrag, Ummeldung, Kisten packen und den alten Schlüssel abgeben bleibt kaum Luft zum Atmen. Genau deshalb nehmen wir Ihnen so viel wie möglich ab. Hier sehen Sie, wie ein typischer Privatumzug mit uns abläuft.
                 </p>

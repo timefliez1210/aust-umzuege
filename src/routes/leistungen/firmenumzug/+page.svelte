@@ -121,7 +121,7 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title">Firmenumzug: Effizient geplant, schnell umgesetzt</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">Firmenumzug: Effizient geplant, schnell umgesetzt</h2>
                 <p>
                     Ein Firmenumzug ist kein normaler Umzug. Hier zählt jede Stunde – denn jeder Tag Stillstand kostet Ihr Unternehmen Geld. Deshalb planen wir Ihren Standortwechsel mit militärischer Präzision.
                 </p>

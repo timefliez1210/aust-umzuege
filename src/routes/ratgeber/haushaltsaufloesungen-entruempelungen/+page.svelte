@@ -357,6 +357,7 @@
 				description="Wir übernehmen die komplette Entrümpelung für dich – von der Sortierung bis zur fachgerechten Entsorgung."
 				buttonText="Kostenloses Angebot anfordern"
 				buttonHref="/kostenloses-angebot"
+				buttonAriaLabel="Kostenloses Angebot für Haushaltsauflösung anfordern"
 			/>
 		</article>
 	</div>

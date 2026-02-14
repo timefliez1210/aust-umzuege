@@ -179,6 +179,7 @@
                 description="Wir packen für Sie – sicher, schnell und stressfrei."
                 buttonText="Kostenloses Angebot anfordern"
                 buttonHref="/kostenloses-angebot"
+                buttonAriaLabel="Kostenloses Angebot für Verpackungsservice anfordern"
             />
         </article>
     </div>

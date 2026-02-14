@@ -1,5 +1,7 @@
 <script lang="ts">
     // Hero - Full-width hero section with background image and CTA
+    import CTAButton from "$lib/components/CTAButton.svelte";
+
     interface Props {
         tagline?: string;
         heading?: string;
@@ -39,22 +41,11 @@
             <span class="hero__tagline">{tagline}</span>
             <h1 class="hero__heading">{heading}</h1>
             <p class="hero__subheading">{subheading}</p>
-            <a href={ctaHref} class="hero__cta">
-                {ctaText}
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </a>
+            <CTAButton
+                text={ctaText}
+                href={ctaHref}
+                ariaLabel="Jetzt kostenlos anfragen und Angebot erhalten"
+            />
         </div>
     </div>
 </section>
@@ -136,36 +127,8 @@
         max-width: 480px;
     }
 
-    .hero__cta {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
+    .hero__content :global(.cta-button) {
         margin-top: var(--space-3);
-        padding: var(--space-4) var(--space-8);
-        background: linear-gradient(135deg, #ff6b00 0%, #e65100 100%);
-        color: var(--color-text);
-        font-size: var(--text-base);
-        font-weight: var(--font-semibold);
-        text-decoration: none;
-        border-radius: var(--radius-md);
-        transition:
-            transform var(--transition-fast),
-            box-shadow var(--transition-fast);
-        box-shadow: 0 4px 14px rgba(230, 81, 0, 0.35);
-    }
-
-    .hero__cta:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(230, 81, 0, 0.45);
-        color: var(--color-text);
-    }
-
-    .hero__cta svg {
-        transition: transform var(--transition-fast);
-    }
-
-    .hero__cta:hover svg {
-        transform: translateX(4px);
     }
 
     /* Mobile Responsive */

@@ -2,6 +2,7 @@
     // Navbar - Main navigation with mobile hamburger menu
     import { page } from "$app/stores";
     import { Plus, Minus } from "lucide-svelte";
+    import CTAButton from "$lib/components/CTAButton.svelte";
 
     interface DropdownItem {
         label: string;
@@ -166,20 +167,13 @@
         </ul>
 
         <!-- CTA Button -->
-        <a href="/kostenloses-angebot" class="navbar__cta">
-            Kostenfreies Angebot
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-            >
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-        </a>
+        <div class="navbar__cta-wrapper">
+            <CTAButton
+                text="Kostenfreies Angebot"
+                href="/kostenloses-angebot"
+                ariaLabel="Kostenloses Angebot anfordern"
+            />
+        </div>
 
         <!-- Mobile Menu Button -->
         <button
@@ -389,27 +383,14 @@
         color: var(--color-nav-accent);
     }
 
-    .navbar__cta {
+    .navbar__cta-wrapper {
         display: none;
-        align-items: center;
-        gap: var(--space-2);
-        background: linear-gradient(135deg, #ff6b00 0%, #e65100 100%);
-        color: var(--color-text);
-        padding: var(--space-3) var(--space-6);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-semibold);
-        font-size: var(--text-sm);
-        text-decoration: none;
-        transition:
-            transform var(--transition-fast),
-            box-shadow var(--transition-fast);
-        white-space: nowrap;
     }
 
-    .navbar__cta:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3);
-        color: var(--color-text);
+    .navbar__cta-wrapper :global(.cta-button) {
+        padding: var(--space-3) var(--space-6);
+        font-size: var(--text-sm);
+        white-space: nowrap;
     }
 
     /* Mobile Toggle */
@@ -544,7 +525,7 @@
             display: flex;
         }
 
-        .navbar__cta {
+        .navbar__cta-wrapper {
             display: flex;
         }
 

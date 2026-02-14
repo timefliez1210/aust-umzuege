@@ -212,6 +212,7 @@
                 description="Wir übernehmen die schwere Arbeit für Sie – von der Planung bis zur Montage."
                 buttonText="Kostenloses Angebot anfordern"
                 buttonHref="/kostenloses-angebot"
+                buttonAriaLabel="Kostenloses Angebot für Ihren Umzug anfordern"
             />
         </article>
     </div>

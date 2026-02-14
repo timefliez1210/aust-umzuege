@@ -1,20 +1,26 @@
 <script lang="ts">
+	import CTAButton from "$lib/components/CTAButton.svelte";
+
 	interface Props {
 		heading: string;
 		description: string;
 		buttonText: string;
 		buttonHref: string;
+		buttonAriaLabel: string;
 	}
 
-	let { heading, description, buttonText, buttonHref }: Props = $props();
+	let { heading, description, buttonText, buttonHref, buttonAriaLabel }: Props = $props();
 </script>
 
 <section class="cta-section">
 	<h2 class="cta-section__heading">{heading}</h2>
 	<p class="cta-section__text">{description}</p>
-	<a href={buttonHref} class="cta-section__button">
-		{buttonText}
-	</a>
+	<CTAButton
+		text={buttonText}
+		href={buttonHref}
+		ariaLabel={buttonAriaLabel}
+		showArrow={false}
+	/>
 </section>
 
 <style>
@@ -42,21 +48,4 @@
 		color: #fff;
 	}
 
-	.cta-section__button {
-		display: inline-block;
-		background-color: var(--color-nav-accent);
-		color: #fff;
-		padding: var(--space-4) var(--space-8);
-		border-radius: var(--radius-md);
-		font-weight: 700;
-		text-decoration: none;
-		transition:
-			background-color 0.2s,
-			transform 0.2s;
-	}
-
-	.cta-section__button:hover {
-		background-color: #d84a00;
-		transform: translateY(-2px);
-	}
 </style>

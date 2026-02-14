@@ -431,6 +431,7 @@
 				description="Transparenz, Festpreisgarantie nach Besichtigung und umfassende Versicherung – bei uns Standard."
 				buttonText="Unverbindliches Angebot anfragen"
 				buttonHref="/kostenloses-angebot"
+				buttonAriaLabel="Unverbindliches Angebot für professionellen Umzug anfragen"
 			/>
 		</article>
 	</div>

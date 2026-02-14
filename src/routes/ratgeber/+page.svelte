@@ -80,6 +80,7 @@
             description="Wir beraten Sie gerne persönlich zu allen Details Ihres Umzugs."
             buttonText="Kontakt aufnehmen"
             buttonHref="/kontakt"
+            buttonAriaLabel="Kontakt aufnehmen für persönliche Beratung"
         />
     </div>
 </main>

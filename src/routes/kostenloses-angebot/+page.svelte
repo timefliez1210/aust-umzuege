@@ -1,6 +1,9 @@
 <script lang="ts">
     import VolumeCalculator from "$lib/components/VolumeCalculator.svelte";
     import { Send } from "lucide-svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { createBreadcrumbs } from "$lib/data/structuredData";
 
     // Volume calculator bindings
     let volumeM3 = $state(0);
@@ -134,15 +137,21 @@
             isSubmitting = false;
         }
     }
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Kostenloses Angebot" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Kostenloses Angebot | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Berechnen Sie Ihr Umzugsvolumen und erhalten Sie ein kostenloses Angebot von Aust Umzüge Hildesheim."
-    />
-</svelte:head>
+<MetaTags
+    title="Kostenloses Angebot | Aust Umzüge Hildesheim"
+    description="Berechnen Sie Ihr Umzugsvolumen und erhalten Sie ein kostenloses Angebot von Aust Umzüge Hildesheim."
+    keywords="Kostenloses Umzugsangebot, Umzugsrechner, Umzugskosten berechnen, Angebot Umzug Hildesheim"
+    canonical="https://www.aust-umzuege.de/kostenloses-angebot"
+/>
+
+<StructuredData schema={breadcrumbs} />
 
 <main class="angebot-page">
     <div class="angebot-page__container">

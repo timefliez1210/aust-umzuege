@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Trash2, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Haushaltsauflösung" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Haushaltsauflösung & Entrümpelung | Aust Umzüge</title>
-    <meta
-        name="description"
-        content="Diskrete Haushaltsauflösungen und Entrümpelungen in Hildesheim. Besenreine Räumung und fachgerechte Entsorgung."
-    />
-</svelte:head>
+<MetaTags
+    title="Haushaltsauflösung & Entrümpelung | Aust Umzüge"
+    description="Diskrete Haushaltsauflösungen und Entrümpelungen in Hildesheim. Besenreine Räumung und fachgerechte Entsorgung."
+    keywords="Haushaltsauflösung Hildesheim, Entrümpelung, Wohnungsräumung, besenreine Übergabe"
+    canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
+/>
+
+<StructuredData schema={services.haushaltsaufloesung} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

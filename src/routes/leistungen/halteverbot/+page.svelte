@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Ban, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Halteverbot" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Halteverbot einrichten | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Offizielle Halteverbotszonen für Ihren Umzug. Wir kümmern uns um Antrag, Aufstellung und Abbau der Schilder."
-    />
-</svelte:head>
+<MetaTags
+    title="Halteverbot einrichten | Aust Umzüge Hildesheim"
+    description="Offizielle Halteverbotszonen für Ihren Umzug. Wir kümmern uns um Antrag, Aufstellung und Abbau der Schilder."
+    keywords="Halteverbot Umzug Hildesheim, Halteverbotszone, Parkplatz Umzug, Halteverbotsschilder"
+    canonical="https://www.aust-umzuege.de/leistungen/halteverbot"
+/>
+
+<StructuredData schema={services.halteverbot} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

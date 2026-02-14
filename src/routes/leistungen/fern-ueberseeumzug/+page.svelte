@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Globe, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Fern- & Überseeumzug" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Fern- & Überseeumzug | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Sicherer Umzug ins Ausland oder Übersee. Wir kümmern uns um Zollformalitäten, Verpackung und Logistik weltweit."
-    />
-</svelte:head>
+<MetaTags
+    title="Fern- & Überseeumzug | Aust Umzüge Hildesheim"
+    description="Sicherer Umzug ins Ausland oder Übersee. Wir kümmern uns um Zollformalitäten, Verpackung und Logistik weltweit."
+    keywords="Fernumzug, Überseeumzug, Auslandsumzug, internationaler Umzug, Umzug weltweit"
+    canonical="https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug"
+/>
+
+<StructuredData schema={services.fernUebersee} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

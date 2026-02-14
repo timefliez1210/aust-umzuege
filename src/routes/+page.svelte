@@ -4,15 +4,20 @@
   // import ReviewsSection from "$lib/components/ReviewsSection.svelte";
   import AboutSection from "$lib/components/AboutSection.svelte";
   import ServicesCarousel from "$lib/components/ServicesCarousel.svelte";
+  import MetaTags from "$lib/components/MetaTags.svelte";
+  import StructuredData from "$lib/components/StructuredData.svelte";
+  import { businessInfo } from "$lib/data/structuredData";
 </script>
 
-<svelte:head>
-  <title>Aust Umzüge | Ihr Partner für Umzüge in Hildesheim und Umgebung</title>
-  <meta
-    name="description"
-    content="Professionelle Umzüge, Haushaltsauflösungen und Montagen in Hildesheim und Umgebung. Unverbindlich anfragen und kostenloses Angebot erhalten."
-  />
-</svelte:head>
+<MetaTags
+  title="Aust Umzüge | Ihr Partner für Umzüge in Hildesheim und Umgebung"
+  description="Professionelle Umzüge, Haushaltsauflösungen und Montagen in Hildesheim und Umgebung. Unverbindlich anfragen und kostenloses Angebot erhalten."
+  keywords="Umzüge Hildesheim, Umzugsfirma Hildesheim, Privatumzug, Firmenumzug, Haushaltsauflösung, Möbelmontage"
+  canonical="https://www.aust-umzuege.de/"
+  ogType="website"
+/>
+
+<StructuredData schema={businessInfo} />
 
 <main>
   <Hero />

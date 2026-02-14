@@ -1,15 +1,28 @@
 <script lang="ts">
     import { Package, ArrowLeft } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { articles, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
+        { name: "Verpackungstipps" }
+    ]);
+
 </script>
 
-<svelte:head>
-    <title>Verpackungstipps für den Umzug | Aust Umzüge Ratgeber</title>
-    <meta
-        name="description"
-        content="Professionelle Verpackungstipps für Ihren Umzug: Geschirr, Elektronik, Möbel und empfindliche Gegenstände sicher verpacken. Mit Profi-Tricks vom Umzugsunternehmen."
-    />
-</svelte:head>
+<MetaTags
+    title="Verpackungstipps für den Umzug | Aust Umzüge Ratgeber"
+    description="Professionelle Verpackungstipps für Ihren Umzug: Geschirr, Elektronik, Möbel und empfindliche Gegenstände sicher verpacken. Mit Profi-Tricks vom Umzugsunternehmen."
+    keywords="Verpackungstipps Umzug, Umzugskartons packen, Geschirr verpacken, Möbel schützen"
+    canonical="https://www.aust-umzuege.de/ratgeber/verpackungstipps"
+    ogType="article"
+/>
+
+<StructuredData schema={articles.verpackungstipps} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">
     <div class="guide-detail__container">

@@ -1,14 +1,23 @@
 <script lang="ts">
     // Impressum - Legal information page
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Impressum" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Impressum | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Impressum und rechtliche Informationen von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
-    />
-</svelte:head>
+<MetaTags
+    title="Impressum | Aust Umzüge Hildesheim"
+    description="Impressum und rechtliche Informationen von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
+    canonical="https://www.aust-umzuege.de/impressum"
+/>
+
+<StructuredData schema={businessInfo} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="impressum">
     <div class="impressum__container">

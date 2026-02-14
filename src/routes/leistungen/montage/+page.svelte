@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Wrench, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Montage & Demontage" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Montage & Demontage | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Fachgerechter Möbelaufbau und Küchenmontage. Unsere Schreiner im Team sorgen für den perfekten Sitz Ihrer Einrichtung."
-    />
-</svelte:head>
+<MetaTags
+    title="Montage & Demontage | Aust Umzüge Hildesheim"
+    description="Fachgerechter Möbelaufbau und Küchenmontage. Unsere Schreiner im Team sorgen für den perfekten Sitz Ihrer Einrichtung."
+    keywords="Möbelmontage Hildesheim, Küchenmontage, Möbelaufbau, Schrankaufbau, Demontage"
+    canonical="https://www.aust-umzuege.de/leistungen/montage"
+/>
+
+<StructuredData schema={services.montage} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

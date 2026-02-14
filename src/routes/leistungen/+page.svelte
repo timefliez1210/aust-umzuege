@@ -14,6 +14,9 @@
         Mail,
     } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { leistungenOverview, createBreadcrumbs } from "$lib/data/structuredData";
 
     const services = [
         {
@@ -87,15 +90,22 @@
             link: "/leistungen/lagerung",
         },
     ];
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Unsere Leistungen | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Alle Leistungen von Aust Umzüge auf einen Blick: Privatumzug, Firmenumzug, Montage, Entrümpelung und mehr."
-    />
-</svelte:head>
+<MetaTags
+    title="Unsere Leistungen | Aust Umzüge Hildesheim"
+    description="Alle Leistungen von Aust Umzüge auf einen Blick: Privatumzug, Firmenumzug, Montage, Entrümpelung und mehr."
+    keywords="Umzugsleistungen, Umzugsservice, Privatumzug, Firmenumzug, Montage, Entrümpelung Hildesheim"
+    canonical="https://www.aust-umzuege.de/leistungen"
+/>
+
+<StructuredData schema={leistungenOverview} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="services-page">
     <div class="services-page__container">

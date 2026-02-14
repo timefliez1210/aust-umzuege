@@ -1,14 +1,22 @@
 <script lang="ts">
     // Datenschutz - Privacy Policy page
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Datenschutzerklärung" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Datenschutzerklärung | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Datenschutzerklärung von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
-    />
-</svelte:head>
+<MetaTags
+    title="Datenschutzerklärung | Aust Umzüge Hildesheim"
+    description="Datenschutzerklärung von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
+    canonical="https://www.aust-umzuege.de/datenschutz"
+/>
+
+<StructuredData schema={breadcrumbs} />
 
 <main class="datenschutz">
     <div class="datenschutz__container">

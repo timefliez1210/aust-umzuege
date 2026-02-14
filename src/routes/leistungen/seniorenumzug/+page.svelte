@@ -1,15 +1,26 @@
 <script lang="ts">
     import { HeartHandshake, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Seniorenumzug" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Seniorenumzug Hildesheim | Aust Umzüge</title>
-    <meta
-        name="description"
-        content="Einfühlsamer Seniorenumzug. Wir helfen beim Umzug ins betreute Wohnen mit Full-Service, Montage und Entsorgung."
-    />
-</svelte:head>
+<MetaTags
+    title="Seniorenumzug Hildesheim | Aust Umzüge"
+    description="Einfühlsamer Seniorenumzug. Wir helfen beim Umzug ins betreute Wohnen mit Full-Service, Montage und Entsorgung."
+    keywords="Seniorenumzug Hildesheim, Umzug Senioren, betreutes Wohnen, Seniorenheim Umzug"
+    canonical="https://www.aust-umzuege.de/leistungen/seniorenumzug"
+/>
+
+<StructuredData schema={services.seniorenumzug} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

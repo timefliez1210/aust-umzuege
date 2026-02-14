@@ -1,5 +1,8 @@
 <script lang="ts">
     import { Send } from "lucide-svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { contactPage, createBreadcrumbs } from "$lib/data/structuredData";
 
     let formData = $state({
         name: "",
@@ -56,15 +59,22 @@
             isSubmitting = false;
         }
     }
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Kontakt" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Kontakt | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Kontaktieren Sie Aust Umzüge in Hildesheim. Wir stehen Ihnen für Fragen und Angebote gerne zur Verfügung."
-    />
-</svelte:head>
+<MetaTags
+    title="Kontakt | Aust Umzüge Hildesheim"
+    description="Kontaktieren Sie Aust Umzüge in Hildesheim. Wir stehen Ihnen für Fragen und Angebote gerne zur Verfügung."
+    keywords="Kontakt Aust Umzüge, Umzugsfirma Hildesheim Kontakt, Umzugsanfrage, Umzugsberatung"
+    canonical="https://www.aust-umzuege.de/kontakt"
+/>
+
+<StructuredData schema={contactPage} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="contact-page">
     <div class="contact-page__container">

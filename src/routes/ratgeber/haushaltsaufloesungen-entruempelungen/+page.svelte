@@ -1,33 +1,44 @@
 <script lang="ts">
-	import { ArrowLeft, Home } from 'lucide-svelte';
 	import CTASection from "$lib/components/CTASection.svelte";
+	import MetaTags from "$lib/components/MetaTags.svelte";
+	import StructuredData from "$lib/components/StructuredData.svelte";
+	import { articles, createBreadcrumbs } from "$lib/data/structuredData";
+
+	const breadcrumbs = createBreadcrumbs([
+		{ name: "Home", url: "https://www.aust-umzuege.de/" },
+		{ name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
+		{ name: "Haushaltsauflösungen" }
+	]);
 </script>
 
-<svelte:head>
-	<title
-		>Haushaltsauflösungen und Entrümpelungen - Praktischer Ratgeber | Aust Umzüge</title
-	>
-	<meta
-		name="description"
-		content="Praktischer Ratgeber für Haushaltsauflösungen: Tipps zu Herausforderungen, Transport (PKW vs. Transporter), Entsorgungsmöglichkeiten und realistischer Zeitplanung."
-	/>
-	<meta
-		name="keywords"
-		content="Haushaltsauflösungen, Entrümpelungen, Hildesheim, Niedersachsen, Wertstoffhof, Sperrmüll"
-	/>
-</svelte:head>
+<MetaTags
+	title="Haushaltsauflösungen und Entrümpelungen - Praktischer Ratgeber | Aust Umzüge"
+	description="Praktischer Ratgeber für Haushaltsauflösungen: Tipps zu Herausforderungen, Transport (PKW vs. Transporter), Entsorgungsmöglichkeiten und realistischer Zeitplanung."
+	keywords="Haushaltsauflösungen, Entrümpelungen, Hildesheim, Niedersachsen, Wertstoffhof, Sperrmüll"
+	canonical="https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen"
+	ogType="article"
+/>
+
+<StructuredData schema={articles.haushaltsaufloesungen} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">
 	<div class="guide-detail__container">
 		<a href="/ratgeber" class="back-link">
-			<ArrowLeft size={16} />
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<line x1="19" y1="12" x2="5" y2="12"></line>
+				<polyline points="12 19 5 12 12 5"></polyline>
+			</svg>
 			Zurück zur Übersicht
 		</a>
 
 		<article class="guide-article">
 			<header class="guide-header">
 				<div class="icon-wrapper">
-					<Home size={48} strokeWidth={1.5} />
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+						<polyline points="9 22 9 12 15 12 15 22"></polyline>
+					</svg>
 				</div>
 				<h1>Haushaltsauflösungen und Entrümpelungen</h1>
 				<p class="subtitle">Praktischer Ratgeber für die komplette Wohnungsräumung</p>

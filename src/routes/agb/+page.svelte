@@ -1,14 +1,22 @@
 <script lang="ts">
     // AGB - Allgemeine Geschäftsbedingungen (Terms and Conditions)
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "AGB" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>AGB | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Allgemeine Geschäftsbedingungen (AGB) von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
-    />
-</svelte:head>
+<MetaTags
+    title="AGB | Aust Umzüge Hildesheim"
+    description="Allgemeine Geschäftsbedingungen (AGB) von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
+    canonical="https://www.aust-umzuege.de/agb"
+/>
+
+<StructuredData schema={breadcrumbs} />
 
 <main class="agb">
     <div class="agb__container">

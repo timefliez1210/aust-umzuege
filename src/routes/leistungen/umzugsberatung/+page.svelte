@@ -1,15 +1,26 @@
 <script lang="ts">
     import { MessageSquare, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Umzugsberatung" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Umzugsberatung Hildesheim | Aust Umzüge</title>
-    <meta
-        name="description"
-        content="Kostenlose und unverbindliche Umzugsberatung vor Ort. Wir planen Ihren Umzug individuell und erstellen ein Festpreisangebot."
-    />
-</svelte:head>
+<MetaTags
+    title="Umzugsberatung Hildesheim | Aust Umzüge"
+    description="Kostenlose und unverbindliche Umzugsberatung vor Ort. Wir planen Ihren Umzug individuell und erstellen ein Festpreisangebot."
+    keywords="Umzugsberatung Hildesheim, kostenlose Beratung, Festpreis Umzug, Umzugsplanung"
+    canonical="https://www.aust-umzuege.de/leistungen/umzugsberatung"
+/>
+
+<StructuredData schema={services.umzugsberatung} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

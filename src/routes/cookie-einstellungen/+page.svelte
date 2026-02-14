@@ -2,6 +2,9 @@
 	// Cookie Settings Page - Allows users to manage their cookie preferences
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 	import { goto } from '$app/navigation';
+	import MetaTags from "$lib/components/MetaTags.svelte";
+	import StructuredData from "$lib/components/StructuredData.svelte";
+	import { createBreadcrumbs } from "$lib/data/structuredData";
 
 	let analyticsEnabled = $state($cookieConsent.preferences.analytics);
 	let marketingEnabled = $state($cookieConsent.preferences.marketing);
@@ -28,16 +31,21 @@
 		cookieConsent.rejectAll();
 		goto('/');
 	}
+
+	const breadcrumbs = createBreadcrumbs([
+		{ name: "Home", url: "https://www.aust-umzuege.de/" },
+		{ name: "Cookie-Einstellungen" }
+	]);
 </script>
 
-<svelte:head>
-	<title>Cookie-Einstellungen | Aust Umzüge</title>
-	<meta
-		name="description"
-		content="Verwalten Sie Ihre Cookie-Einstellungen für aust-umzuege.de"
-	/>
-	<meta name="robots" content="noindex, follow" />
-</svelte:head>
+<MetaTags
+	title="Cookie-Einstellungen | Aust Umzüge"
+	description="Verwalten Sie Ihre Cookie-Einstellungen für aust-umzuege.de"
+	canonical="https://www.aust-umzuege.de/cookie-einstellungen"
+	noindex={true}
+/>
+
+<StructuredData schema={breadcrumbs} />
 
 <main class="cookie-page">
 	<div class="cookie-page__container">

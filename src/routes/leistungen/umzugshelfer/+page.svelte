@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Users, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Umzugshelfer" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Umzugshelfer Hildesheim | Aust Umzüge</title>
-    <meta
-        name="description"
-        content="Kräftige Umzugshelfer mieten. Unterstützung beim Tragen, Beladen und Entladen – stundenweise buchbar."
-    />
-</svelte:head>
+<MetaTags
+    title="Umzugshelfer Hildesheim | Aust Umzüge"
+    description="Kräftige Umzugshelfer mieten. Unterstützung beim Tragen, Beladen und Entladen – stundenweise buchbar."
+    keywords="Umzugshelfer Hildesheim, Möbelpacker, Tragehilfe Umzug, stundenweise Helfer"
+    canonical="https://www.aust-umzuege.de/leistungen/umzugshelfer"
+/>
+
+<StructuredData schema={services.umzugshelfer} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

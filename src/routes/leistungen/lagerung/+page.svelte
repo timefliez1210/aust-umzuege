@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Warehouse, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Lagerung & Einlagerung" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Lagerung & Einlagerung | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Sichere Möbellagerung in Hildesheim. Zwischenlagerung beim Umzug, Langzeitlagerung, flexible Laufzeiten. Abholung und Lieferung möglich."
-    />
-</svelte:head>
+<MetaTags
+    title="Lagerung & Einlagerung | Aust Umzüge Hildesheim"
+    description="Sichere Möbellagerung in Hildesheim. Zwischenlagerung beim Umzug, Langzeitlagerung, flexible Laufzeiten. Abholung und Lieferung möglich."
+    keywords="Möbellagerung Hildesheim, Einlagerung, Zwischenlagerung, Lagerhalle, Langzeitlagerung"
+    canonical="https://www.aust-umzuege.de/leistungen/lagerung"
+/>
+
+<StructuredData schema={services.lagerung} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

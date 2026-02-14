@@ -1,6 +1,9 @@
 <script lang="ts">
     import { ClipboardList, ArrowLeft, CheckCircle } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { articles, createBreadcrumbs } from "$lib/data/structuredData";
 
     const checklistSections = [
         {
@@ -154,15 +157,24 @@
             ],
         },
     ];
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
+        { name: "Umzugs-Checkliste" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Umzugs-Checkliste | Aust Umzüge Ratgeber</title>
-    <meta
-        name="description"
-        content="Kostenlose Umzugs-Checkliste: Was Sie 4 Wochen bis 1 Woche nach dem Umzug erledigen sollten. Telefon, Strom, Ummeldung und mehr."
-    />
-</svelte:head>
+<MetaTags
+    title="Umzugs-Checkliste | Aust Umzüge Ratgeber"
+    description="Kostenlose Umzugs-Checkliste: Was Sie 4 Wochen bis 1 Woche nach dem Umzug erledigen sollten. Telefon, Strom, Ummeldung und mehr."
+    keywords="Umzugs-Checkliste, Umzugsplanung, Umzug organisieren, Checkliste Wohnungswechsel"
+    canonical="https://www.aust-umzuege.de/ratgeber/umzugs-checkliste"
+    ogType="article"
+/>
+
+<StructuredData schema={articles.umzugsCheckliste} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">
     <div class="guide-detail__container">

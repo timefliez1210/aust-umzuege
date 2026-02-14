@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Home, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Privatumzug" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Privatumzug Hildesheim | Aust Umzüge</title>
-    <meta
-        name="description"
-        content="Stressfreier Privatumzug in Hildesheim und Umgebung. Wir bieten Full-Service, Montage und faire Preise für Ihren Wohnungswechsel."
-    />
-</svelte:head>
+<MetaTags
+    title="Privatumzug Hildesheim | Aust Umzüge"
+    description="Stressfreier Privatumzug in Hildesheim und Umgebung. Wir bieten Full-Service, Montage und faire Preise für Ihren Wohnungswechsel."
+    keywords="Privatumzug Hildesheim, Umzug Privatpersonen, Wohnungsumzug, Umzugsfirma Hildesheim"
+    canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
+/>
+
+<StructuredData schema={services.privatumzug} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

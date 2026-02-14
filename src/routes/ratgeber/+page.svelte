@@ -1,6 +1,9 @@
 <script lang="ts">
     import { ClipboardList, Package, Home, ShieldCheck, ArrowRight } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { ratgeberOverview, createBreadcrumbs } from "$lib/data/structuredData";
 
     const guides = [
         {
@@ -32,15 +35,22 @@
             link: "/ratgeber/seriose-umzugsfirma",
         },
     ];
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Ratgeber & Tipps" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Ratgeber & Tipps | Aust Umzüge Hildesheim</title>
-    <meta
-        name="description"
-        content="Nützliche Tipps und Checklisten rund um den Umzug. Erfahren Sie, wie Sie Ihren Wohnungswechsel stressfrei gestalten."
-    />
-</svelte:head>
+<MetaTags
+    title="Ratgeber & Tipps | Aust Umzüge Hildesheim"
+    description="Nützliche Tipps und Checklisten rund um den Umzug. Erfahren Sie, wie Sie Ihren Wohnungswechsel stressfrei gestalten."
+    keywords="Umzugstipps, Umzugsratgeber, Umzugscheckliste, Verpackungstipps, Haushaltsauflösung, Umzugsfirma auswählen"
+    canonical="https://www.aust-umzuege.de/ratgeber"
+/>
+
+<StructuredData schema={ratgeberOverview} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="guides-page">
     <div class="guides-page__container">

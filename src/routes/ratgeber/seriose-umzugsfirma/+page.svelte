@@ -1,31 +1,44 @@
 <script lang="ts">
-	import { ArrowLeft, ShieldCheck } from 'lucide-svelte';
 	import CTASection from "$lib/components/CTASection.svelte";
+	import MetaTags from "$lib/components/MetaTags.svelte";
+	import StructuredData from "$lib/components/StructuredData.svelte";
+	import { articles, createBreadcrumbs } from "$lib/data/structuredData";
+
+	const breadcrumbs = createBreadcrumbs([
+		{ name: "Home", url: "https://www.aust-umzuege.de/" },
+		{ name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
+		{ name: "Seriöse Umzugsfirma" }
+	]);
 </script>
 
-<svelte:head>
-	<title>Wie erkenne ich eine seriöse Umzugsfirma? | Aust Umzüge Ratgeber</title>
-	<meta
-		name="description"
-		content="Seriöse Umzugsfirma finden: Erkennen Sie Red Flags, stellen Sie die richtigen Fragen und vermeiden Sie schwarze Schafe. Praktischer Ratgeber mit Checkliste."
-	/>
-	<meta
-		name="keywords"
-		content="seriöse Umzugsfirma, gute Umzugsfirma finden, Festpreis Umzug, Umzugsunternehmen Checkliste, professioneller Umzug"
-	/>
-</svelte:head>
+<MetaTags
+	title="Wie erkenne ich eine seriöse Umzugsfirma? | Aust Umzüge Ratgeber"
+	description="Seriöse Umzugsfirma finden: Erkennen Sie Red Flags, stellen Sie die richtigen Fragen und vermeiden Sie schwarze Schafe. Praktischer Ratgeber mit Checkliste."
+	keywords="seriöse Umzugsfirma, gute Umzugsfirma finden, Festpreis Umzug, Umzugsunternehmen Checkliste, professioneller Umzug"
+	canonical="https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma"
+	ogType="article"
+/>
+
+<StructuredData schema={articles.serioseUmzugsfirma} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">
 	<div class="guide-detail__container">
 		<a href="/ratgeber" class="back-link">
-			<ArrowLeft size={16} />
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<line x1="19" y1="12" x2="5" y2="12"></line>
+				<polyline points="12 19 5 12 12 5"></polyline>
+			</svg>
 			Zurück zur Übersicht
 		</a>
 
 		<article class="guide-article">
 			<header class="guide-header">
 				<div class="icon-wrapper">
-					<ShieldCheck size={48} strokeWidth={1.5} />
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+						<polyline points="9 12 11 14 15 10"></polyline>
+					</svg>
 				</div>
 				<h1>Wie erkenne ich eine seriöse Umzugsfirma?</h1>
 				<p class="subtitle">Qualität erkennen, schwarze Schafe vermeiden</p>

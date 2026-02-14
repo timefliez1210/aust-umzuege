@@ -1,15 +1,26 @@
 <script lang="ts">
     import { Building2, CheckCircle, ArrowLeft } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import MetaTags from "$lib/components/MetaTags.svelte";
+    import StructuredData from "$lib/components/StructuredData.svelte";
+    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+
+    const breadcrumbs = createBreadcrumbs([
+        { name: "Home", url: "https://www.aust-umzuege.de/" },
+        { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
+        { name: "Firmenumzug" }
+    ]);
 </script>
 
-<svelte:head>
-    <title>Firmenumzug Hildesheim | Aust Umzüge</title>
-    <meta
-        name="description"
-        content="Professionelle Firmen- und Büroumzüge. Minimale Ausfallzeiten, IT-Transport und Wochenendservice für Ihr Unternehmen."
-    />
-</svelte:head>
+<MetaTags
+    title="Firmenumzug Hildesheim | Aust Umzüge"
+    description="Professionelle Firmen- und Büroumzüge. Minimale Ausfallzeiten, IT-Transport und Wochenendservice für Ihr Unternehmen."
+    keywords="Firmenumzug Hildesheim, Büroumzug, Geschäftsumzug, IT-Umzug, Betriebsumzug"
+    canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
+/>
+
+<StructuredData schema={services.firmenumzug} />
+<StructuredData schema={breadcrumbs} />
 
 <main class="service-detail">
     <div class="service-detail__container">

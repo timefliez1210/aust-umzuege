@@ -87,14 +87,20 @@
     $effect(() => {
         if (typeof window === 'undefined') return;
 
-        windowWidth = window.innerWidth;
+        // Use requestAnimationFrame to prevent forced reflow
+        requestAnimationFrame(() => {
+            windowWidth = window.innerWidth;
+        });
 
         const handleResize = () => {
-            windowWidth = window.innerWidth;
-            // Reset to first slide if current index is out of bounds
-            if (currentIndex > maxIndex) {
-                currentIndex = maxIndex;
-            }
+            // Debounce with requestAnimationFrame to batch layout reads
+            requestAnimationFrame(() => {
+                windowWidth = window.innerWidth;
+                // Reset to first slide if current index is out of bounds
+                if (currentIndex > maxIndex) {
+                    currentIndex = maxIndex;
+                }
+            });
         };
 
         window.addEventListener('resize', handleResize);

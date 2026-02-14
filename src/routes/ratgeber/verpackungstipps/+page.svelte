@@ -198,7 +198,7 @@
         display: inline-flex;
         align-items: center;
         gap: var(--space-2);
-        color: #64748b;
+        color: #3d4852;
         text-decoration: none;
         margin-bottom: var(--space-8);
         font-size: var(--text-sm);
@@ -232,7 +232,7 @@
 
     .subtitle {
         font-size: 1.25rem;
-        color: #64748b;
+        color: #3d4852;
     }
 
     .guide-intro {
@@ -313,17 +313,20 @@
 
     .cta-button {
         display: inline-block;
-        background-color: var(--color-nav-accent);
-        color: #fff;
+        background-color: #fff;
+        color: var(--color-info-bar);
         padding: var(--space-4) var(--space-8);
         border-radius: var(--radius-md);
-        font-weight: 600;
+        font-weight: 700;
         text-decoration: none;
-        transition: background-color 0.2s, transform 0.2s;
+        transition: background-color 0.2s, transform 0.2s, color 0.2s;
+        border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
     .cta-button:hover {
-        background-color: #d84a00;
+        background-color: var(--color-nav-accent);
+        color: #fff;
         transform: translateY(-2px);
+        border-color: var(--color-nav-accent);
     }
 </style>

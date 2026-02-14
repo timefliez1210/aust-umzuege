@@ -369,7 +369,7 @@
 
     .services-cta__text {
         font-size: var(--text-lg);
-        opacity: 0.9;
+        font-weight: var(--font-medium);
         margin-bottom: var(--space-8);
         max-width: 600px;
         margin-inline: auto;

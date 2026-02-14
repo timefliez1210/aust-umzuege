@@ -187,7 +187,7 @@
     }
 
     .guide-card__description {
-        color: #64748b;
+        color: #3d4852;
         font-size: var(--text-base);
         line-height: 1.6;
         margin-bottom: var(--space-6);
@@ -204,14 +204,14 @@
         display: inline-flex;
         align-items: center;
         gap: var(--space-2);
-        color: var(--color-nav-accent);
+        color: #c44a00; /* Darker orange for better contrast on white */
         font-weight: var(--font-semibold);
         text-decoration: none;
         transition: color var(--transition-fast);
     }
 
     .guide-card__link:hover {
-        color: #d84a00;
+        color: #a03d00; /* Even darker on hover */
         text-decoration: underline;
     }
 
@@ -232,7 +232,7 @@
 
     .guides-cta__text {
         font-size: var(--text-lg);
-        opacity: 0.9;
+        font-weight: var(--font-medium);
         margin-bottom: var(--space-8);
     }
 

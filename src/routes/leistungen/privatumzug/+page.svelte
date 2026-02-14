@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Home, CheckCircle, ArrowLeft } from "lucide-svelte";
+    import CTAButton from "$lib/components/CTAButton.svelte";
 </script>
 
 <svelte:head>
@@ -84,13 +85,23 @@
                         Lassen Sie sich jetzt ein unverbindliches Angebot
                         erstellen.
                     </p>
-                    <a href="/kostenloses-angebot" class="cta-button primary">
-                        Kostenloses Angebot
-                    </a>
+                    <div class="cta-button-wrapper">
+                        <CTAButton
+                            text="Kostenloses Angebot"
+                            href="/kostenloses-angebot"
+                            ariaLabel="Kostenloses Angebot für Privatumzug anfordern"
+                            showArrow={false}
+                        />
+                    </div>
                     <div class="divider">oder</div>
-                    <a href="/kontakt" class="cta-button secondary">
-                        Kontakt aufnehmen
-                    </a>
+                    <div class="cta-button-wrapper">
+                        <CTAButton
+                            text="Kontakt aufnehmen"
+                            href="/kontakt"
+                            ariaLabel="Kontakt für Privatumzug aufnehmen"
+                            showArrow={false}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -233,47 +244,24 @@
     }
 
     .cta-box p {
-        color: #64748b;
+        color: #1a202c;
         margin-bottom: var(--space-6);
     }
 
-    .cta-button {
-        display: block;
+    .cta-button-wrapper {
         width: 100%;
-        padding: var(--space-3);
-        border-radius: var(--radius-md);
-        text-align: center;
-        text-decoration: none;
-        font-weight: var(--font-semibold);
-        transition: all var(--transition-fast);
-        box-sizing: border-box; /* Ensure padding doesn't affect width calculation */
     }
 
-    .cta-button.primary {
-        background-color: var(--color-nav-accent);
-        color: #fff;
-    }
-
-    .cta-button.primary:hover {
-        background-color: #d84a00;
-        transform: translateY(-2px);
-    }
-
-    .cta-button.secondary {
-        background-color: #fff;
-        color: var(--color-info-bar);
-        border: 1px solid #cbd5e0;
-    }
-
-    .cta-button.secondary:hover {
-        background-color: #f1f5f9;
-        border-color: var(--color-info-bar);
+    .cta-button-wrapper :global(.cta-button) {
+        width: 100%;
+        justify-content: center;
     }
 
     .divider {
         margin: var(--space-3) 0;
-        color: #94a3b8;
+        color: #1a202c;
         font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }

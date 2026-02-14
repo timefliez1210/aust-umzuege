@@ -1,5 +1,6 @@
 <script lang="ts">
     import { HeartHandshake, CheckCircle, ArrowLeft } from "lucide-svelte";
+    import CTAButton from "$lib/components/CTAButton.svelte";
 </script>
 
 <svelte:head>
@@ -82,13 +83,23 @@
                     <p>
                         Vereinbaren Sie einen kostenlosen Besichtigungstermin.
                     </p>
-                    <a href="/kostenloses-angebot" class="cta-button primary">
-                        Angebot anfordern
-                    </a>
+                    <div class="cta-button-wrapper">
+                        <CTAButton
+                            text="Angebot anfordern"
+                            href="/kostenloses-angebot"
+                            ariaLabel="Kostenloses Angebot für Seniorenumzug anfordern"
+                            showArrow={false}
+                        />
+                    </div>
                     <div class="divider">oder</div>
-                    <a href="/kontakt" class="cta-button secondary">
-                        Kontakt aufnehmen
-                    </a>
+                    <div class="cta-button-wrapper">
+                        <CTAButton
+                            text="Kontakt aufnehmen"
+                            href="/kontakt"
+                            ariaLabel="Kontakt für Seniorenumzug aufnehmen"
+                            showArrow={false}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -213,41 +224,21 @@
         margin-bottom: 0.5rem;
     }
     .cta-box p {
-        color: #64748b;
+        color: #1a202c;
         margin-bottom: 1.5rem;
     }
-    .cta-button {
-        display: block;
+    .cta-button-wrapper {
         width: 100%;
-        padding: 0.75rem;
-        border-radius: var(--radius-md);
-        text-align: center;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s;
-        box-sizing: border-box;
     }
-    .cta-button.primary {
-        background-color: var(--color-nav-accent);
-        color: #fff;
-    }
-    .cta-button.primary:hover {
-        background-color: #d84a00;
-        transform: translateY(-2px);
-    }
-    .cta-button.secondary {
-        background-color: #fff;
-        color: var(--color-info-bar);
-        border: 1px solid #cbd5e0;
-    }
-    .cta-button.secondary:hover {
-        background-color: #f1f5f9;
-        border-color: var(--color-info-bar);
+    .cta-button-wrapper :global(.cta-button) {
+        width: 100%;
+        justify-content: center;
     }
     .divider {
         margin: 0.75rem 0;
-        color: #94a3b8;
+        color: #1a202c;
         font-size: 0.875rem;
+        font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }

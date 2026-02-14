@@ -1,5 +1,6 @@
 <script lang="ts">
     import { MessageSquare, CheckCircle, ArrowLeft } from "lucide-svelte";
+    import CTAButton from "$lib/components/CTAButton.svelte";
 </script>
 
 <svelte:head>
@@ -84,9 +85,14 @@
                         Rufen Sie uns an oder schreiben Sie uns für Ihren
                         kostenlosen Beratungstermin.
                     </p>
-                    <a href="/kontakt" class="cta-button primary">
-                        Termin anfragen
-                    </a>
+                    <div class="cta-button-wrapper">
+                        <CTAButton
+                            text="Termin anfragen"
+                            href="/kontakt"
+                            ariaLabel="Termin für Umzugsberatung anfragen"
+                            showArrow={false}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -211,26 +217,14 @@
         margin-bottom: 0.5rem;
     }
     .cta-box p {
-        color: #64748b;
+        color: #1a202c;
         margin-bottom: 1.5rem;
     }
-    .cta-button {
-        display: block;
+    .cta-button-wrapper {
         width: 100%;
-        padding: 0.75rem;
-        border-radius: var(--radius-md);
-        text-align: center;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s;
-        box-sizing: border-box;
     }
-    .cta-button.primary {
-        background-color: var(--color-nav-accent);
-        color: #fff;
-    }
-    .cta-button.primary:hover {
-        background-color: #d84a00;
-        transform: translateY(-2px);
+    .cta-button-wrapper :global(.cta-button) {
+        width: 100%;
+        justify-content: center;
     }
 </style>

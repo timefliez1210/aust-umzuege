@@ -126,7 +126,7 @@
     }
 
     .guides-page__intro {
-        color: #4a5568;
+        color: #1a202c;
         font-size: var(--text-lg);
         line-height: 1.6;
     }

@@ -501,7 +501,7 @@
 	}
 
 	.guide-intro p {
-		color: #4a5568;
+		color: #1a202c;
 		font-size: 1.125rem;
 		line-height: 1.7;
 		margin: 0;

@@ -47,7 +47,11 @@ export const businessInfo = {
 			closes: "18:00"
 		}
 	],
-	sameAs: ["https://www.instagram.com/vier_elfen"],
+	sameAs: [
+		"https://facebook.com/austumzuege",
+		"https://instagram.com/austumzuege",
+		"https://tiktok.com/@austumzuege"
+	],
 	founder: {
 		"@type": "Person",
 		name: "Alex Aust"

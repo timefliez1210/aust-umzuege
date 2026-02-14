@@ -13,59 +13,6 @@
   const siteUrl = "https://www.aust-umzuege.de";
   const siteName = "Aust Umzüge";
   const defaultImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.webp";
-
-  // Structured data for Local Business
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "MovingCompany",
-    "name": "Aust Umzüge & Haushaltsauflösungen",
-    "image": `${siteUrl}${defaultImage}`,
-    "logo": `${siteUrl}/umzuege-hildesheim-logo-aust.webp`,
-    "@id": siteUrl,
-    "url": siteUrl,
-    "telephone": "+49-5121-7558379",
-    "email": "info@aust-umzuege.de",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Kaiserstr. 32",
-      "addressLocality": "Hildesheim",
-      "postalCode": "31134",
-      "addressCountry": "DE"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 52.1534,
-      "longitude": 9.9511
-    },
-    "openingHoursSpecification": [
-      {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "09:00",
-        "closes": "19:00"
-      }
-    ],
-    "priceRange": "$$",
-    "areaServed": {
-      "@type": "GeoCircle",
-      "geoMidpoint": {
-        "@type": "GeoCoordinates",
-        "latitude": 52.1534,
-        "longitude": 9.9511
-      },
-      "geoRadius": "100000"
-    },
-    "serviceType": [
-      "Privatumzug",
-      "Firmenumzug",
-      "Seniorenumzug",
-      "Haushaltsauflösung",
-      "Möbelmontage",
-      "Küchenmontage",
-      "Lagerung"
-    ],
-    "sameAs": []
-  };
 </script>
 
 <svelte:head>
@@ -83,9 +30,6 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="{siteUrl}{defaultImage}" />
-
-  <!-- Structured Data -->
-  {@html `<script type="application/ld+json">${JSON.stringify(structuredData)}</script>`}
 </svelte:head>
 
 <!-- Skip link for accessibility -->

@@ -13,6 +13,7 @@
         ArrowRight,
         Mail,
     } from "lucide-svelte";
+    import CTASection from "$lib/components/CTASection.svelte";
 
     const services = [
         {
@@ -137,15 +138,12 @@
             {/each}
         </div>
 
-        <section class="services-cta">
-            <h2 class="services-cta__heading">Planen Sie einen Umzug?</h2>
-            <p class="services-cta__text">
-                Nutzen Sie unseren Online-Rechner für ein schnelles Angebot.
-            </p>
-            <a href="/kostenloses-angebot" class="cta-button">
-                Kostenloses Angebot
-            </a>
-        </section>
+        <CTASection
+            heading="Planen Sie einen Umzug?"
+            description="Nutzen Sie unseren Online-Rechner für ein schnelles Angebot."
+            buttonText="Kostenloses Angebot"
+            buttonHref="/kostenloses-angebot"
+        />
     </div>
 </main>
 
@@ -352,45 +350,4 @@
     }
 
     /* Bottom CTA */
-    .services-cta {
-        background-color: var(--color-info-bar);
-        border-radius: var(--radius-lg);
-        padding: var(--space-10) var(--space-6);
-        text-align: center;
-        color: #fff;
-    }
-
-    .services-cta__heading {
-        font-size: var(--text-3xl);
-        font-weight: var(--font-bold);
-        margin-bottom: var(--space-4);
-        color: #fff;
-    }
-
-    .services-cta__text {
-        font-size: var(--text-lg);
-        font-weight: var(--font-medium);
-        margin-bottom: var(--space-8);
-        max-width: 600px;
-        margin-inline: auto;
-    }
-
-    .cta-button {
-        display: inline-block;
-        background-color: var(--color-nav-accent);
-        color: #fff;
-        padding: var(--space-3) var(--space-8);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-bold);
-        text-decoration: none;
-        transition:
-            background-color var(--transition-fast),
-            transform var(--transition-fast);
-        will-change: transform;
-    }
-
-    .cta-button:hover {
-        background-color: #d84a00;
-        transform: translate3d(0, -2px, 0);
-    }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ClipboardList, ArrowLeft, CheckCircle } from "lucide-svelte";
+    import CTASection from "$lib/components/CTASection.svelte";
 
     const checklistSections = [
         {
@@ -206,11 +207,12 @@
                 {/each}
             </div>
 
-            <div class="guide-cta">
-                <h2>Umzug geplant?</h2>
-                <p>Wir übernehmen die schwere Arbeit für Sie – von der Planung bis zur Montage.</p>
-                <a href="/kostenloses-angebot" class="cta-button">Kostenloses Angebot anfordern</a>
-            </div>
+            <CTASection
+                heading="Umzug geplant?"
+                description="Wir übernehmen die schwere Arbeit für Sie – von der Planung bis zur Montage."
+                buttonText="Kostenloses Angebot anfordern"
+                buttonHref="/kostenloses-angebot"
+            />
         </article>
     </div>
 </main>
@@ -231,7 +233,7 @@
         display: inline-flex;
         align-items: center;
         gap: var(--space-2);
-        color: #3d4852;
+        color: #2d3748;
         text-decoration: none;
         margin-bottom: var(--space-8);
         font-size: var(--text-sm);
@@ -265,7 +267,7 @@
 
     .subtitle {
         font-size: 1.25rem;
-        color: #3d4852;
+        color: #2d3748;
     }
 
     .guide-intro {
@@ -335,46 +337,6 @@
         font-size: 1rem;
         line-height: 1.6;
         margin: 0;
-    }
-
-    .guide-cta {
-        background: linear-gradient(135deg, var(--color-info-bar) 0%, #2d5a87 100%);
-        border-radius: var(--radius-lg);
-        padding: var(--space-10);
-        text-align: center;
-        margin-top: var(--space-12);
-    }
-
-    .guide-cta h2 {
-        color: #fff;
-        font-size: 1.75rem;
-        font-weight: 700;
-        margin-bottom: var(--space-3);
-    }
-
-    .guide-cta p {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.125rem;
-        margin-bottom: var(--space-6);
-    }
-
-    .cta-button {
-        display: inline-block;
-        background-color: #fff;
-        color: var(--color-info-bar);
-        padding: var(--space-4) var(--space-8);
-        border-radius: var(--radius-md);
-        font-weight: 700;
-        text-decoration: none;
-        transition: background-color 0.2s, transform 0.2s, color 0.2s;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .cta-button:hover {
-        background-color: var(--color-nav-accent);
-        color: #fff;
-        transform: translateY(-2px);
-        border-color: var(--color-nav-accent);
     }
 
     @media (max-width: 640px) {

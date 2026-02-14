@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ClipboardList, Package, Home, ShieldCheck, ArrowRight } from "lucide-svelte";
+    import CTASection from "$lib/components/CTASection.svelte";
 
     const guides = [
         {
@@ -74,13 +75,12 @@
             {/each}
         </div>
 
-        <section class="guides-cta">
-            <h2 class="guides-cta__heading">Haben Sie Fragen?</h2>
-            <p class="guides-cta__text">
-                Wir beraten Sie gerne persönlich zu allen Details Ihres Umzugs.
-            </p>
-            <a href="/kontakt" class="cta-button"> Kontakt aufnehmen </a>
-        </section>
+        <CTASection
+            heading="Haben Sie Fragen?"
+            description="Wir beraten Sie gerne persönlich zu allen Details Ihres Umzugs."
+            buttonText="Kontakt aufnehmen"
+            buttonHref="/kontakt"
+        />
     </div>
 </main>
 
@@ -187,7 +187,7 @@
     }
 
     .guide-card__description {
-        color: #3d4852;
+        color: #2d3748;
         font-size: var(--text-base);
         line-height: 1.6;
         margin-bottom: var(--space-6);
@@ -213,41 +213,5 @@
     .guide-card__link:hover {
         color: #a03d00; /* Even darker on hover */
         text-decoration: underline;
-    }
-
-    .guides-cta {
-        background-color: var(--color-info-bar);
-        border-radius: var(--radius-lg);
-        padding: var(--space-10) var(--space-6);
-        text-align: center;
-        color: #fff;
-    }
-
-    .guides-cta__heading {
-        font-size: var(--text-3xl);
-        font-weight: var(--font-bold);
-        margin-bottom: var(--space-4);
-        color: #fff;
-    }
-
-    .guides-cta__text {
-        font-size: var(--text-lg);
-        font-weight: var(--font-medium);
-        margin-bottom: var(--space-8);
-    }
-
-    .cta-button {
-        display: inline-block;
-        background-color: var(--color-nav-accent);
-        color: #fff;
-        padding: var(--space-3) var(--space-8);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-bold);
-        text-decoration: none;
-        transition: background-color var(--transition-fast);
-    }
-
-    .cta-button:hover {
-        background-color: #d84a00;
     }
 </style>

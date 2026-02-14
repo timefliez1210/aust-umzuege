@@ -13,7 +13,7 @@
 </script>
 
 <MetaTags
-    title="Haushaltsauflösung & Entrümpelung | Aust Umzüge"
+    title="Haushaltsauflösung & Entrümpelung Hildesheim | Aust Umzüge"
     description="Diskrete Haushaltsauflösungen und Entrümpelungen in Hildesheim. Besenreine Räumung und fachgerechte Entsorgung."
     keywords="Haushaltsauflösung Hildesheim, Entrümpelung, Wohnungsräumung, besenreine Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"

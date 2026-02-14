@@ -15,27 +15,31 @@
     const faqs = [
         {
             question: "Was kostet ein Firmenumzug in Hildesheim?",
-            answer: "Die Kosten hängen von der Bürogröße, Anzahl der Arbeitsplätze und benötigten Zusatzleistungen ab. Wir erstellen nach einer Besichtigung ein detailliertes Festpreisangebot, damit Sie die Kosten exakt budgetieren können."
+            answer: "Die Kosten richten sich nach Bürogröße, Arbeitsplatzzahl und Zusatzleistungen wie IT-Transport oder Archivierung. Ein kleines Büro (5-10 Arbeitsplätze) liegt zwischen 2.000 und 5.000 Euro, größere Standortwechsel können 10.000 Euro und mehr kosten. Wir erstellen nach einer Besichtigung ein detailliertes Festpreisangebot, das Sie sicher budgetieren können."
         },
         {
             question: "Wie minimieren Sie die Ausfallzeit unseres Unternehmens?",
-            answer: "Wir planen Firmenumzüge bevorzugt am Wochenende oder nach Feierabend. Durch professionelle Vorbereitung, klare Ablaufpläne und ein erfahrenes Team sorgen wir dafür, dass Ihr Betrieb am Montag wieder voll einsatzbereit ist."
+            answer: "Wir planen Firmenumzüge bevorzugt am Wochenende oder nachts. Durch präzise Ablaufpläne, vorbereitete Umzugskisten-Systeme und ein erfahrenes Team ist Ihr Betrieb am nächsten Werktag wieder voll einsatzbereit. Bei größeren Umzügen setzen wir einen Projektkoordinator ein, der alle Gewerke steuert."
+        },
+        {
+            question: "Sind Firmenumzugskosten steuerlich absetzbar?",
+            answer: "Ja, die Kosten eines Firmenumzugs sind vollständig als Betriebsausgaben absetzbar. Das gilt für Transport, Montage, Halteverbotszone, Verpackung und unsere Projektkoordination. Sie erhalten von uns eine detaillierte Rechnung, die Ihre Buchhaltung direkt verarbeiten kann."
         },
         {
             question: "Können Sie auch IT-Equipment und Server transportieren?",
-            answer: "Ja, wir haben Erfahrung im Transport sensibler IT-Infrastruktur. Computer, Server und Netzwerktechnik werden fachgerecht demontiert, beschriftet, gesichert transportiert und am neuen Standort wieder angeschlossen."
+            answer: "Ja. Computer, Server, Netzwerktechnik und Drucker werden fachgerecht demontiert, antistatisch verpackt, sicher transportiert und am neuen Standort wieder angeschlossen. Auf Wunsch koordinieren wir den IT-Umzug mit Ihrem Administrator, damit die Systeme schnellstmöglich wieder laufen."
         },
         {
-            question: "Bieten Sie eine Umzugsplanung und Projektkoordination an?",
-            answer: "Selbstverständlich. Wir stellen Ihnen einen persönlichen Umzugskoordinator, der alle Details plant, Mitarbeiter informiert, Zeitpläne erstellt und als Ansprechpartner für Ihr Team zur Verfügung steht."
+            question: "Bieten Sie einen persönlichen Umzugskoordinator?",
+            answer: "Ja. Bei jedem Firmenumzug erhalten Sie einen festen Ansprechpartner, der den gesamten Prozess steuert: Zeitpläne erstellen, Mitarbeiter informieren, Gewerke koordinieren und am Umzugstag vor Ort die Regie führen. So haben Sie den Kopf frei für Ihr Kerngeschäft."
         },
         {
             question: "Wie gehen Sie mit vertraulichen Dokumenten um?",
-            answer: "Vertrauliche Unterlagen können Sie selbst transportieren oder wir packen diese in versiegelte Behälter, die nur von autorisierten Personen geöffnet werden. Diskretion und Datenschutz haben bei uns höchste Priorität."
+            answer: "Vertrauliche Unterlagen transportieren wir auf Wunsch in versiegelten Behältern, die nur von autorisierten Personen geöffnet werden. Alternativ können sensible Dokumente von Ihren Mitarbeitern selbst transportiert werden. Unser Team ist im datenschutzkonformen Umgang mit Geschäftsunterlagen geschult."
         },
         {
-            question: "Können Sie auch Aktenarchive und Lagerbestände umziehen?",
-            answer: "Ja, wir transportieren auch große Aktenmengen, Lagerbestände und Waren. Auf Wunsch organisieren wir die Zwischenlagerung und stellen sicher, dass alles systematisch beschriftet und am neuen Standort schnell auffindbar ist."
+            question: "Können Sie auch Praxis- oder Ladenumzüge durchführen?",
+            answer: "Ja, wir haben Erfahrung mit Arztpraxen, Zahnarztpraxen, Anwaltskanzleien und Einzelhandelsgeschäften. Medizinische Geräte, Ladeneinrichtungen und empfindliche Technik transportieren wir fachgerecht. Auch hier planen wir den Umzug so, dass Ihre Ausfallzeit minimal bleibt."
         }
     ];
 </script>

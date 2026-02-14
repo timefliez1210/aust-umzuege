@@ -15,27 +15,31 @@
     const faqs = [
         {
             question: "Was kostet ein internationaler Umzug?",
-            answer: "Die Kosten variieren stark je nach Zielland, Transportart (LKW, See- oder Luftfracht), Umzugsgut-Volumen und benötigten Zusatzleistungen. Nach einer Besichtigung erstellen wir Ihnen ein genaues Angebot mit allen Kosten transparent aufgeschlüsselt."
+            answer: "Die Kosten variieren stark: Ein Umzug innerhalb Europas per LKW liegt bei 3.000-7.000 Euro, ein Überseeumzug per Seecontainer bei 5.000-13.000 Euro. Die Faktoren sind Zielland, Volumen und Transportart (LKW, See- oder Luftfracht). Eine Beiladung ist oft deutlich günstiger. Nach einer Besichtigung erstellen wir ein transparentes Angebot mit allen Kosten."
         },
         {
-            question: "Wie lange dauert ein Überseeumzug?",
-            answer: "Ein Umzug per Seefracht dauert je nach Zielland 4-12 Wochen. Luftfracht ist schneller (1-2 Wochen), aber deutlich teurer. Innerhalb Europas erfolgt der Transport per LKW meist innerhalb von 3-7 Tagen. Die genaue Dauer besprechen wir im Vorfeld."
+            question: "Wie lange dauert ein Umzug ins Ausland?",
+            answer: "Innerhalb Europas per LKW: 3-7 Tage. Per Seefracht nach Übersee: 4-12 Wochen je nach Zielhafen. Luftfracht ist mit 1-2 Wochen deutlich schneller, aber teurer. Wir nennen Ihnen bei der Beratung die realistische Lieferzeit für Ihr Zielland, damit Sie den Einzug planen können."
         },
         {
-            question: "Wer kümmert sich um die Zollformalitäten?",
-            answer: "Wir koordinieren mit unseren Partneragenturen vor Ort und unterstützen Sie bei allen notwendigen Dokumenten. Dazu gehören Inventarlisten, Zollanmeldungen und Einfuhrgenehmigungen. In vielen Fällen können wir die Verzollung komplett für Sie übernehmen."
+            question: "Wer kümmert sich um Zoll und Einfuhrbestimmungen?",
+            answer: "Wir koordinieren mit unseren Partneragenturen vor Ort und unterstützen Sie bei allen Dokumenten: Inventarlisten, Zollanmeldungen, Einfuhrgenehmigungen und länderspezifische Vorschriften. In vielen Fällen übernehmen wir die Verzollung komplett. Sie müssen sich um die Bürokratie nicht kümmern."
         },
         {
-            question: "Brauche ich eine spezielle Versicherung für den Überseetransport?",
-            answer: "Ja, für Überseetransporte empfehlen wir eine Transportversicherung, die Schäden durch See- oder Luftfracht abdeckt. Wir beraten Sie zu passenden Versicherungsoptionen und vermitteln auf Wunsch entsprechende Policen."
+            question: "Brauche ich eine spezielle Transportversicherung für Übersee?",
+            answer: "Ja, für See- und Luftfracht empfehlen wir eine Transportversicherung, die über die gesetzliche Haftung hinausgeht. Wir beraten Sie zu passenden Policen und vermitteln auf Wunsch direkt eine Versicherung, die Ihr Umzugsgut zum Neuwert absichert – für maximale Sicherheit auf langen Transportwegen."
         },
         {
-            question: "Wie wird das Umzugsgut für den Seetransport verpackt?",
-            answer: "Für Überseetransporte verwenden wir spezielle Exportverpackungen: Seefeste Kisten, Luftpolsterfolie, Antikorrosionsschutz und containergerechte Ladungssicherung. Empfindliche Gegenstände werden zusätzlich in Spezialkartons verpackt."
+            question: "Was ist eine Beiladung und wann lohnt sie sich?",
+            answer: "Bei einer Beiladung wird Ihr Umzugsgut zusammen mit anderen Sendungen im Container transportiert. Das ist deutlich günstiger als ein eigener Container und ideal, wenn Sie nur wenige Kubikmeter versenden (z.B. einzelne Möbelstücke oder Kartons). Wir organisieren Beiladungen nach vielen Ländern weltweit."
         },
         {
-            question: "Kann ich auch nur Teilleistungen buchen (z.B. nur Transport ohne Verpackung)?",
-            answer: "Ja, Sie können unseren Service modular buchen. Wenn Sie selbst packen möchten, organisieren wir nur den Transport. Oder wir übernehmen die komplette Abwicklung von der Verpackung bis zur Montage am Zielort – ganz nach Ihrem Bedarf."
+            question: "Wie wird mein Umzugsgut für den Seetransport verpackt?",
+            answer: "Für Überseetransporte verwenden wir seefeste Exportverpackungen: Spezialkartons, Luftpolsterfolie, Antikorrosionsschutz und containergerechte Ladungssicherung. Empfindliche Gegenstände wie Glas, Elektronik und Antiquitäten werden zusätzlich in maßgeschneiderten Holzkisten gesichert."
+        },
+        {
+            question: "In welche Länder führen Sie Umzüge durch?",
+            answer: "Wir organisieren Umzüge in alle Länder weltweit – von europäischen Nachbarländern wie Schweiz, Österreich und Niederlande bis zu Überseezielen wie USA, Kanada, Australien und den Nahen Osten. Durch unser internationales Partnernetzwerk sind wir an jedem Zielort vertreten. Nennen Sie uns Ihr Zielland und wir beraten Sie."
         }
     ];
 </script>

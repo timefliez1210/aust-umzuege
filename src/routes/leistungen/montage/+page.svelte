@@ -14,28 +14,32 @@
 
     const faqs = [
         {
-            question: "Welche Möbel können Sie montieren?",
-            answer: "Wir montieren alle gängigen Möbelsysteme: PAX-, IKEA-, Nolte-, Hülsta-Schränke, Wohnwände, Regale, Betten, Einbauküchen und vieles mehr. Unsere Monteure haben jahrelange Erfahrung mit allen bekannten Herstellern."
-        },
-        {
             question: "Was kostet die Möbelmontage?",
-            answer: "Die Kosten hängen vom Aufwand ab. Einfache Regalmontagen starten bei ca. 50 €, komplexe Küchenmontagen können mehrere hundert Euro kosten. Bei einem Umzug können wir die Montage meist zu einem vergünstigten Paketpreis anbieten."
+            answer: "Einfache Montagen wie Regale oder Betten starten ab ca. 50 Euro. Ein großer Kleiderschrank (PAX, Nolte o.ä.) liegt bei 80-200 Euro. Küchenmontagen kosten je nach Länge 150-300 Euro pro Laufmeter. Bei einer Buchung zusammen mit einem Umzug erhalten Sie einen vergünstigten Paketpreis. Fragen Sie uns nach einem Angebot."
         },
         {
-            question: "Können Sie auch Küchen an- und abschließen (Wasser, Strom)?",
-            answer: "Ja, wir haben zertifizierte Fachkräfte im Team, die Wasseranschlüsse und elektrische Geräte fachgerecht anschließen dürfen. Für größere Elektroarbeiten vermitteln wir bei Bedarf einen Elektriker."
+            question: "Welche Möbel können Sie montieren?",
+            answer: "Wir montieren alle gängigen Systeme: IKEA (PAX, KALLAX, BESTA), Nolte, Hülsta, Rolf Benz, Einbauküchen aller Hersteller, Wohnwände, Betten, Regalsysteme und Büromöbel. Unsere Monteure haben jahrelange Erfahrung mit allen bekannten Herstellern und Systemen."
         },
         {
-            question: "Was passiert mit den alten Schrauben und Dübeln?",
-            answer: "Beim Abbau sammeln wir alle Schrauben, Dübel und Kleinteile in beschrifteten Tüten, damit beim Aufbau nichts fehlt. Sollten Teile fehlen oder beschädigt sein, haben wir Ersatzmaterial dabei."
-        },
-        {
-            question: "Können Sie auch Neuware aufbauen (z.B. nach IKEA-Lieferung)?",
-            answer: "Ja, wir bieten auch reine Montageservices für neu gekaufte Möbel an. Egal ob vom Möbelhaus geliefert oder selbst abgeholt – wir bauen Ihre neuen Möbel fachgerecht auf und entsorgen das Verpackungsmaterial."
+            question: "Können Sie Küchen komplett anschließen (Wasser, Strom)?",
+            answer: "Ja, wir haben zertifizierte Fachkräfte im Team, die Wasseranschlüsse, Spülmaschinen und elektrische Geräte (Herd, Backofen, Dunstabzug) fachgerecht anschließen. Für größere Elektroinstallationen vermitteln wir bei Bedarf einen Elektriker aus unserem Netzwerk."
         },
         {
             question: "Wie lange dauert eine Küchenmontage?",
-            answer: "Eine Standardküche (ca. 3-4 Meter) montieren wir in der Regel in 4-6 Stunden. Bei größeren Küchen mit vielen Geräten und Arbeitsplattenanpassungen kann es auch ein ganzer Tag werden. Den genauen Zeitrahmen klären wir bei der Besichtigung."
+            answer: "Eine Standardküche (3-4 Meter) montieren wir in 4-6 Stunden, eine größere Küche mit Insel oder vielen Geräten in einem vollen Arbeitstag. Wichtig: Wir prüfen die Anschlüsse vorab, damit am Montagetag alles reibungslos läuft. Den genauen Zeitrahmen besprechen wir bei der Besichtigung."
+        },
+        {
+            question: "Bauen Sie auch neu gekaufte Möbel auf (z.B. nach IKEA-Lieferung)?",
+            answer: "Ja, wir bieten Möbelaufbau auch unabhängig vom Umzug an. Egal ob IKEA, Höffner, XXXLutz oder Online-Bestellung: Wir bauen Ihre neuen Möbel fachgerecht auf und entsorgen das Verpackungsmaterial. Oft sind wir schneller und günstiger als der Montageservice des Möbelhauses."
+        },
+        {
+            question: "Was passiert, wenn beim Abbau Teile fehlen oder kaputt sind?",
+            answer: "Beim Abbau sammeln wir alle Schrauben, Dübel und Kleinteile in beschrifteten Beuteln. Sollten Teile fehlen oder beschädigt sein, haben wir gängiges Ersatzmaterial dabei. Bei Spezialbeschlägen bestellen wir das passende Teil – damit Ihr Möbelstück sicher steht."
+        },
+        {
+            question: "Kann ich die Montage auch ohne Umzug buchen?",
+            answer: "Selbstverständlich. Viele unserer Kunden buchen uns ausschließlich für Montagearbeiten: Küchen einbauen, Kleiderschränke aufbauen, Lampen anhängen oder Gardinenstangen befestigen. Rufen Sie uns an oder schreiben Sie uns – wir vereinbaren zeitnah einen Termin."
         }
     ];
 </script>

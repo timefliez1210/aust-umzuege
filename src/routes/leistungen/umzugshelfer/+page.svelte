@@ -14,28 +14,32 @@
 
     const faqs = [
         {
-            question: "Was kosten Umzugshelfer pro Stunde?",
-            answer: "Die Kosten richten sich nach der Anzahl der benötigten Helfer und der Dauer des Einsatzes. In der Regel liegt der Stundensatz zwischen 25-35 € pro Helfer. Nach einem kurzen Telefonat können wir Ihnen ein konkretes Angebot machen."
+            question: "Was kosten Umzugshelfer pro Stunde in Hildesheim?",
+            answer: "Unsere professionellen Umzugshelfer kosten zwischen 25 und 35 Euro pro Person und Stunde, inklusive Versicherung und Ausrüstung. Private Helfer sind zwar günstiger (10-15 Euro), arbeiten aber ohne Haftpflichtversicherung und Erfahrung. Für ein konkretes Angebot rufen Sie uns kurz an – wir beraten Sie innerhalb von Minuten."
         },
         {
             question: "Wie viele Umzugshelfer brauche ich?",
-            answer: "Das hängt von der Wohnungsgröße und dem Umfang des Umzugs ab. Für eine 2-Zimmer-Wohnung reichen meist 2 Helfer, für größere Wohnungen oder bei vielen schweren Möbeln empfehlen wir 3-4 Helfer. Wir beraten Sie gerne telefonisch."
+            answer: "Als Faustregel: 2 Helfer für eine 2-Zimmer-Wohnung, 3 Helfer für 3-4 Zimmer, 4 Helfer für ein Einfamilienhaus. Bei vielen schweren Möbeln, Treppen oder ohne Aufzug empfehlen wir eher einen Helfer mehr. Wir beraten Sie gerne telefonisch und schlagen die optimale Teamgröße vor."
         },
         {
-            question: "Sind die Umzugshelfer versichert?",
-            answer: "Ja, alle unsere Umzugshelfer sind über unsere Betriebshaftpflicht versichert. Sollte es zu Schäden am Inventar oder Gebäude kommen, sind Sie abgesichert – anders als bei privaten Helfern."
+            question: "Sind Ihre Umzugshelfer versichert?",
+            answer: "Ja, alle unsere Umzugshelfer sind über unsere Betriebshaftpflichtversicherung abgesichert. Schäden an Möbeln, Wohnungen oder Treppenhäusern werden übernommen. Das unterscheidet uns deutlich von privaten Helfern oder Plattform-Angeboten, wo Sie bei Schäden auf den Kosten sitzen bleiben."
         },
         {
-            question: "Kann ich auch nur für einzelne Aufgaben Helfer buchen?",
-            answer: "Selbstverständlich. Ob Sie nur Hilfe beim Beladen des Transporters, beim Tragen schwerer Einzelstücke (Klavier, Tresor) oder beim kompletten Be- und Entladen benötigen – wir passen uns flexibel Ihrem Bedarf an."
+            question: "Kann ich Helfer auch nur für einzelne Aufgaben buchen?",
+            answer: "Selbstverständlich. Ob nur zum Beladen des Transporters, zum Tragen eines Klaviers die Treppe hinunter oder zum kompletten Be- und Entladen – wir passen uns flexibel Ihrem Bedarf an. Auch stundenweise Buchungen ab 2 Stunden sind möglich."
         },
         {
             question: "Wie kurzfristig kann ich Umzugshelfer buchen?",
-            answer: "Bei freien Kapazitäten können wir auch kurzfristig (24-48 Stunden im Voraus) Helfer stellen. Für eine sichere Planung empfehlen wir jedoch eine Buchung mindestens 1-2 Wochen im Voraus, besonders am Monatsende."
+            answer: "Bei freien Kapazitäten stellen wir auch innerhalb von 24-48 Stunden Helfer. Am Monatsende und in der Sommersaison empfehlen wir 1-2 Wochen Vorlauf. Rufen Sie uns einfach an – wir sagen Ihnen sofort, ob wir an Ihrem Wunschtermin verfügbar sind."
         },
         {
-            question: "Bringen die Helfer eigenes Werkzeug mit?",
-            answer: "Ja, unsere Helfer sind mit Tragegurten, Möbeldecken, Sackkarren und grundlegendem Montagewerkzeug ausgestattet. Falls spezielle Werkzeuge benötigt werden, sprechen wir das vorab mit Ihnen ab."
+            question: "Was ist der Unterschied zwischen Umzugshelfern und einem Vollservice-Umzug?",
+            answer: "Bei Umzugshelfern bringen Sie Ihren eigenen Transporter mit und wir stellen die Arbeitskraft. Beim Vollservice-Umzug übernehmen wir alles: LKW, Verpackung, Transport, Montage und auf Wunsch Halteverbot. Wenn Sie unsicher sind, beraten wir Sie gerne – oft ist der Vollservice überraschend günstig."
+        },
+        {
+            question: "Bringen Ihre Helfer eigenes Werkzeug und Ausrüstung mit?",
+            answer: "Ja, unsere Helfer kommen mit Tragegurten, Möbeldecken, Sackkarren, Spanngurten und grundlegendem Montagewerkzeug. Sie müssen nichts vorbereiten. Falls spezielle Werkzeuge benötigt werden (z.B. für Küchen), sprechen wir das vorab ab."
         }
     ];
 </script>

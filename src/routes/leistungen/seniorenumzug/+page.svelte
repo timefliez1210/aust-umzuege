@@ -15,27 +15,31 @@
     const faqs = [
         {
             question: "Was kostet ein Seniorenumzug?",
-            answer: "Die Kosten hängen vom Umfang der Leistungen ab. Neben dem Transport bieten wir auch Demontage, Montage, Entsorgung und Einrichtungsservice an. Nach einer persönlichen Besichtigung erstellen wir Ihnen ein detailliertes Festpreisangebot."
+            answer: "Die Kosten hängen vom Umfang ab: Reiner Transport, Verpackung, Montage und Einrichtungsservice lassen sich individuell kombinieren. Ein typischer Seniorenumzug in Hildesheim liegt zwischen 1.200 und 3.500 Euro. In vielen Fällen übernimmt die Pflegekasse bis zu 4.180 Euro – damit kann der Umzug für Sie sogar kostenfrei sein. Wir erstellen Ihnen ein detailliertes Festpreisangebot nach einer persönlichen Besichtigung."
         },
         {
             question: "Zahlt die Pflegekasse einen Zuschuss für den Seniorenumzug?",
-            answer: "Ja, unter bestimmten Voraussetzungen können Sie einen Zuschuss von bis zu 4.000 Euro für wohnumfeldverbessernde Maßnahmen nach §40 SGB XI erhalten. Dies gilt besonders beim Umzug in eine barrierefreie Wohnung oder ins betreute Wohnen. Wir beraten Sie gerne zu den Möglichkeiten."
+            answer: "Ja. Bei einem anerkannten Pflegegrad (1-5) können Sie nach §40 SGB XI bis zu 4.180 Euro als Zuschuss für wohnumfeldverbessernde Maßnahmen erhalten. Das gilt beim Umzug in eine barrierefreie Wohnung, ins betreute Wohnen oder in ein Pflegeheim. Wir helfen Ihnen beim Antrag und erstellen die benötigten Kostenvoranschläge für die Pflegekasse."
         },
         {
-            question: "Wie gehen Sie mit persönlichen Erinnerungsstücken um?",
-            answer: "Wir behandeln alle Gegenstände mit besonderer Sorgfalt und Respekt. Persönliche und wertvolle Stücke werden separat und besonders geschützt verpackt. Unser Team ist im einfühlsamen Umgang mit Senioren geschult."
+            question: "Wie läuft ein Seniorenumzug bei Aust ab?",
+            answer: "Wir beginnen mit einem persönlichen Gespräch bei Ihnen zu Hause. Gemeinsam entscheiden wir, was mitgenommen wird und was nicht. Am Umzugstag verpacken wir alles sorgfältig, transportieren es sicher und richten die neue Wohnung komplett ein – bis hin zu Bildern und Gardinen. Nicht benötigte Möbel entsorgen wir fachgerecht. So können Sie sich sofort wohlfühlen."
         },
         {
             question: "Können Sie auch die alte Wohnung auflösen?",
-            answer: "Ja, wir bieten einen kompletten Service: Transport der gewünschten Möbel in die neue Wohnung, Entsorgung nicht benötigter Gegenstände und besenreine Übergabe der alten Wohnung. Alles aus einer Hand."
+            answer: "Ja, wir bieten den kompletten Service aus einer Hand: Transport der gewünschten Möbel in die neue Wohnung, fachgerechte Entsorgung nicht benötigter Gegenstände und besenreine Übergabe der alten Wohnung. So ersparen Sie sich den Aufwand, mehrere Dienstleister zu koordinieren."
         },
         {
-            question: "Richten Sie die neue Wohnung komplett ein?",
-            answer: "Selbstverständlich. Wir bauen alle Möbel fachgerecht auf, richten die Küche ein, hängen Bilder und Gardinen auf und stellen sicher, dass alles an seinem Platz ist – damit Sie sich sofort wohlfühlen können."
+            question: "Wie gehen Sie mit persönlichen Erinnerungsstücken um?",
+            answer: "Wir behandeln alle Gegenstände mit besonderer Sorgfalt und Respekt. Persönliche und wertvolle Stücke werden separat und besonders geschützt verpackt. Unser Team ist im einfühlsamen Umgang mit Senioren geschult und nimmt sich die Zeit, die Sie brauchen."
         },
         {
-            question: "Wie lange dauert die Planung eines Seniorenumzugs?",
-            answer: "Wir empfehlen eine Vorlaufzeit von 4-6 Wochen. So haben wir genug Zeit für die gründliche Planung, Beantragung eventueller Zuschüsse und die Koordination aller Details. In dringenden Fällen sind auch kürzere Fristen möglich."
+            question: "Können meine Angehörigen den Umzug für mich organisieren?",
+            answer: "Selbstverständlich. In den meisten Fällen organisieren Kinder oder Enkel den Seniorenumzug. Wir stimmen alle Details mit Ihren Angehörigen ab, führen die Besichtigung gemeinsam durch und halten alle Beteiligten auf dem Laufenden. Sie müssen am Umzugstag nicht einmal anwesend sein, wenn Sie das wünschen."
+        },
+        {
+            question: "Wie lange im Voraus sollte ich einen Seniorenumzug planen?",
+            answer: "Wir empfehlen 4-6 Wochen Vorlauf für die gründliche Planung und Beantragung des Pflegekassenzuschusses. Bei einem Umzug ins Pflegeheim mit festem Einzugstermin passen wir uns Ihrem Zeitplan an. In dringenden Fällen sind auch kürzere Fristen möglich – sprechen Sie uns an."
         }
     ];
 </script>

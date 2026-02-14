@@ -15,31 +15,31 @@
     const faqs = [
         {
             question: "Was kostet eine Haushaltsauflösung in Hildesheim?",
-            answer: "Die Kosten hängen von der Wohnungsgröße, Menge des Hausrats und dem Verwertungswert ab. Oft können wir brauchbare Gegenstände verkaufen und den Erlös mit den Kosten verrechnen. Nach einer kostenlosen Besichtigung erstellen wir Ihnen ein transparentes Angebot."
+            answer: "Die Kosten liegen je nach Wohnungsgröße und Zustand zwischen 20 und 60 Euro pro Quadratmeter. Eine 3-Zimmer-Wohnung kostet erfahrungsgemäß zwischen 1.500 und 3.000 Euro. Gut erhaltene Möbel und Wertsachen rechnen wir gegen die Kosten auf – das senkt Ihren Preis spürbar. Nach einer kostenlosen Besichtigung erhalten Sie ein verbindliches Festpreisangebot."
+        },
+        {
+            question: "Wie läuft eine Haushaltsauflösung nach einem Todesfall ab?",
+            answer: "Wir gehen besonders sensibel vor: Zunächst sichern wir gemeinsam persönliche Erinnerungsstücke und Wertgegenstände. Dann räumen wir die Wohnung zügig und diskret, entsorgen fachgerecht und übergeben besenrein. Wir können den gesamten Ablauf auch mit Ihrem Nachlassverwalter oder Vermieter koordinieren, wenn Sie nicht vor Ort sein können."
         },
         {
             question: "Wie lange dauert eine Haushaltsauflösung?",
-            answer: "Eine durchschnittliche 3-Zimmer-Wohnung können wir in der Regel in 1-2 Tagen komplett auflösen. Bei größeren Objekten oder Messie-Wohnungen kann es auch länger dauern. Den genauen Zeitrahmen besprechen wir bei der Besichtigung."
+            answer: "Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1-2 Tagen komplett. Bei größeren Objekten, Häusern oder stark vermüllten Wohnungen kann es länger dauern. Wir nennen Ihnen den genauen Zeitrahmen nach der Besichtigung, damit Sie die Wohnungsübergabe zuverlässig planen können."
         },
         {
             question: "Was passiert mit noch brauchbaren Gegenständen?",
-            answer: "Wertvolle und brauchbare Gegenstände verkaufen wir an Gebrauchtwaren-händler oder spenden sie an soziale Einrichtungen. Den Erlös rechnen wir selbstverständlich mit unseren Kosten gegen, sodass Sie weniger zahlen."
+            answer: "Verkaufbare Möbel, Antiquitäten und Gebrauchsgüter verkaufen wir an Händler oder spenden sie an soziale Einrichtungen in Hildesheim. Den Erlös rechnen wir transparent gegen unsere Kosten auf. So zahlen Sie weniger und gut Erhaltenes bekommt ein zweites Leben."
         },
         {
-            question: "Ist die Räumung besenrein?",
-            answer: "Ja, wir übergeben die Wohnung vollständig besenrein. Das bedeutet: Alle Gegenstände werden entfernt, die Räume werden gefegt und sind bereit für die Übergabe an den Vermieter."
+            question: "Ist die Räumung wirklich besenrein?",
+            answer: "Ja, garantiert. Besenrein bedeutet bei uns: Alle Gegenstände entfernt, Böden gefegt, Schränke und Regale geräumt. Die Wohnung ist direkt bereit für die Vermieterübergabe. Auf Wunsch entfernen wir auch Tapeten, Teppichböden und Einbauten – für eine komplett renovierungsfertige Übergabe."
         },
         {
-            question: "Wer kümmert sich um die Entsorgung?",
-            answer: "Wir übernehmen die komplette fachgerechte Entsorgung aller Gegenstände. Sperrmüll, Elektrogeräte und Sondermüll entsorgen wir umweltgerecht über die entsprechenden Entsorgungsstellen in Hildesheim."
+            question: "Wer kümmert sich um die fachgerechte Entsorgung?",
+            answer: "Wir übernehmen die komplette Entsorgung nach gesetzlichen Vorschriften: Sperrmüll, Elektrogeräte, Sondermüll und Bauschutt entsorgen wir über zertifizierte Entsorgungsstellen in Hildesheim. Auf Wunsch erhalten Sie Entsorgungsnachweise für Ihre Unterlagen."
         },
         {
             question: "Können Sie auch Messie-Wohnungen entrümpeln?",
-            answer: "Ja, wir haben Erfahrung mit Messie-Wohnungen und gehen dabei diskret und professionell vor. Unser Team ist im sensiblen Umgang mit solchen Situationen geschult und arbeitet zuverlässig und ohne Vorurteile."
-        },
-        {
-            question: "Brauche ich bei der Auflösung anwesend zu sein?",
-            answer: "Nein, das ist nicht zwingend erforderlich. Nach einer gemeinsamen Besichtigung und Klärung aller Details können wir die Auflösung auch selbstständig durchführen. Sie bekommen von uns eine Bestandsliste und Fotos der besenreinen Übergabe."
+            answer: "Ja, wir haben umfangreiche Erfahrung mit Messie-Wohnungen und gehen dabei absolut diskret und professionell vor. Unser Team arbeitet zuverlässig, wertungsfrei und kennt die besonderen Anforderungen – von der Schädlingsbekämpfung bis zur Grundreinigung. Sprechen Sie uns vertraulich an."
         }
     ];
 </script>

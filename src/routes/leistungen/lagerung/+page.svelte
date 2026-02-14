@@ -14,28 +14,32 @@
 
     const faqs = [
         {
-            question: "Was kostet die Lagerung pro Monat?",
-            answer: "Die Kosten richten sich nach dem benötigten Lagerraum (Kubikmeter). Ein durchschnittlicher 2-Zimmer-Haushalt (ca. 15-20 m³) kostet etwa 150-250 € pro Monat. Nach einer Besichtigung können wir Ihnen ein genaues Angebot erstellen."
+            question: "Was kostet die Einlagerung von Möbeln pro Monat?",
+            answer: "Die Kosten richten sich nach dem benötigten Platz. Als Richtwert: Ein 2-Zimmer-Haushalt (ca. 15-20 Kubikmeter) kostet bei uns etwa 150-250 Euro pro Monat. Einzelne Möbelstücke oder Kartons lagern wir ab ca. 50 Euro monatlich ein. Nach einer Besichtigung oder Fotobewertung nennen wir Ihnen den genauen Preis."
         },
         {
-            question: "Wie sicher ist mein Lagergut?",
-            answer: "Unsere Lagerräume sind trocken, sauber und gegen Feuchtigkeit geschützt. Alle Gegenstände sind über unsere Versicherung abgedeckt. Auf Wunsch können Sie zusätzlich eine Wertsachenversicherung abschließen."
+            question: "Wie sicher ist mein eingelagertes Umzugsgut?",
+            answer: "Unsere Lagerräume sind trocken, belüftet und gegen Feuchtigkeit geschützt. Ihr Lagergut ist über unsere Versicherung abgedeckt. Anders als bei Selfstorage lagern wir Ihre Möbel auf Paletten oder in Regalen – professionell geschützt und inventarisiert. Auf Wunsch ist eine Zusatzversicherung für Wertsachen möglich."
         },
         {
             question: "Gibt es eine Mindestmietdauer?",
-            answer: "Nein, wir bieten flexible Laufzeiten ohne lange Vertragsbindung. Sie können monatlich kündigen. Für längere Lagerzeiten (ab 6 Monaten) gewähren wir Rabatte."
+            answer: "Nein, wir bieten flexible Laufzeiten ohne lange Vertragsbindung. Sie können monatlich kündigen. Ob Sie nur 2 Wochen während einer Renovierung oder 2 Jahre während eines Auslandsaufenthalts einlagern möchten – wir passen uns Ihrem Bedarf an. Ab 6 Monaten Laufzeit gewähren wir Rabatte."
+        },
+        {
+            question: "Was ist der Unterschied zwischen Ihrem Lagerservice und Selfstorage?",
+            answer: "Bei Selfstorage mieten Sie einen leeren Raum und müssen Transport, Verpackung und Einlagerung selbst organisieren. Bei uns erhalten Sie alles aus einer Hand: Wir holen Ihre Möbel ab, verpacken sie fachgerecht, lagern sie sicher ein und liefern sie später direkt an die neue Adresse. Das spart Ihnen Zeit und schützt Ihre Möbel besser."
         },
         {
             question: "Kann ich jederzeit auf mein Lagergut zugreifen?",
-            answer: "Ja, nach Terminabsprache können Sie Ihr Lagergut jederzeit abholen oder Teile davon entnehmen. Wir empfehlen eine Voranmeldung von 24 Stunden, damit wir alles vorbereiten können."
+            answer: "Ja, nach Terminabsprache können Sie Ihr Lagergut jederzeit einsehen, Teile entnehmen oder ergänzen. Wir bitten um 24 Stunden Voranmeldung, damit wir den Zugang für Sie vorbereiten können."
         },
         {
-            question: "Wie wird mein Umzugsgut eingelagert?",
-            answer: "Wir lagern Ihre Möbel und Kartons auf Paletten oder in Regalen, geschützt vor Bodenfeuchtigkeit. Empfindliche Gegenstände werden zusätzlich mit Decken oder Folie abgedeckt. Sie erhalten eine Inventarliste aller eingelagerten Gegenstände."
+            question: "Für welche Situationen ist Einlagerung sinnvoll?",
+            answer: "Typische Situationen sind: Zwischenlagerung bei Umzug (neue Wohnung noch nicht fertig), Renovierung, beruflicher Auslandsaufenthalt, Trennung/Scheidung, Erbschaft oder einfach Platzmangel. Wir beraten Sie zur optimalen Lösung – oft ist eine Kombination aus Umzug und Einlagerung am günstigsten."
         },
         {
-            question: "Können Sie mein Lagergut auch direkt zur neuen Wohnung bringen?",
-            answer: "Selbstverständlich. Wir holen Ihre Sachen ab, lagern sie ein und liefern sie später direkt an die neue Adresse – auch bundesweit. So sparen Sie sich doppelte Fahrten und Stress."
+            question: "Liefern Sie das Lagergut später an eine neue Adresse?",
+            answer: "Ja. Wir holen Ihre Sachen ab, lagern sie sicher ein und liefern sie später direkt an die neue Adresse – auch bundesweit. So sparen Sie sich doppelte Fahrten und das Organisieren eines separaten Transports. Alles aus einer Hand."
         }
     ];
 </script>

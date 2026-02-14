@@ -15,27 +15,31 @@
     const faqs = [
         {
             question: "Was kostet ein Privatumzug in Hildesheim?",
-            answer: "Die Kosten für einen Privatumzug hängen von mehreren Faktoren ab: Umfang des Hausrats, Entfernung, Etage, und benötigte Zusatzleistungen. Nach einer kostenlosen Vor-Ort-Besichtigung erstellen wir Ihnen ein transparentes Festpreisangebot ohne versteckte Kosten."
+            answer: "Die Kosten richten sich nach Wohnungsgröße, Etage, Entfernung und gewünschten Leistungen. In Hildesheim liegt ein 2-Zimmer-Umzug erfahrungsgemäß zwischen 400 und 800 Euro, ein 4-Zimmer-Haushalt zwischen 1.200 und 2.500 Euro. Wir erstellen Ihnen nach einer kostenlosen Vor-Ort-Besichtigung ein verbindliches Festpreisangebot – ohne versteckte Kosten. Fordern Sie jetzt Ihr unverbindliches Angebot an."
+        },
+        {
+            question: "Lohnt sich eine Umzugsfirma oder soll ich selbst umziehen?",
+            answer: "Sobald Sie mehr als zwei Zimmer umziehen, lohnt sich eine Umzugsfirma fast immer. Sie sparen sich Transporter-Miete, Versicherungsrisiko und oft mehrere Tage Arbeit. Professionelle Möbelpacker arbeiten schneller, sicherer und Ihr Inventar ist während des Transports versichert. Bei uns erhalten Sie ein Festpreisangebot – so wissen Sie vorab genau, was der Umzug kostet."
         },
         {
             question: "Wie lange dauert ein Privatumzug?",
-            answer: "Die Dauer variiert je nach Wohnungsgröße und Umfang. Ein 2-Zimmer-Umzug dauert in der Regel 4-6 Stunden, ein 4-Zimmer-Umzug etwa 8-10 Stunden. Bei der Besichtigung können wir Ihnen einen genauen Zeitrahmen nennen."
+            answer: "Ein 2-Zimmer-Umzug innerhalb Hildesheims dauert in der Regel 4-6 Stunden, ein 4-Zimmer-Haushalt 8-10 Stunden. Bei längeren Strecken oder Dachgeschoss ohne Aufzug kann es länger dauern. Wir schätzen den Zeitbedarf bei der kostenlosen Besichtigung realistisch ein, damit Sie Ihren Tag planen können."
         },
         {
             question: "Wann sollte ich eine Umzugsfirma buchen?",
-            answer: "Idealerweise 4-6 Wochen vor dem Umzugstermin, besonders in der Hochsaison (Sommer und Monatsende). So sichern Sie sich Ihren Wunschtermin und haben genug Zeit für die Planung."
-        },
-        {
-            question: "Brauche ich eine Halteverbotszone für den Umzug?",
-            answer: "Eine Halteverbotszone ist bei den meisten Umzügen sehr empfehlenswert, besonders in Innenstadtlagen oder engen Straßen. Sie spart Zeit und Kosten, da der LKW direkt vor der Tür parken kann. Wir kümmern uns auf Wunsch um die Beantragung und Aufstellung."
+            answer: "Idealerweise 4-6 Wochen vor dem Umzugstermin. Zur Hochsaison (Sommer, Monatsende, Quartalsende) empfehlen wir 6-8 Wochen Vorlauf. So sichern Sie sich Ihren Wunschtermin. Kurzfristige Anfragen sind bei freien Kapazitäten ebenfalls möglich – rufen Sie uns einfach an."
         },
         {
             question: "Sind meine Möbel während des Umzugs versichert?",
-            answer: "Ja, Ihr gesamtes Inventar ist während des Transports durch unsere Transportversicherung geschützt. Die genauen Konditionen besprechen wir bei der Angebotserstellung mit Ihnen."
+            answer: "Ja, Ihr gesamtes Inventar ist während des Transports über unsere Betriebshaftpflicht- und Transportversicherung geschützt. Das ist ein entscheidender Vorteil gegenüber einem Umzug in Eigenregie mit privaten Helfern, bei dem Sie für Schäden selbst haften. Die genauen Konditionen besprechen wir bei der Angebotserstellung."
         },
         {
-            question: "Kann ich auch nur Umzugshelfer ohne LKW buchen?",
-            answer: "Ja, wir bieten auch reine Helfer-Dienste an. Unsere erfahrenen Umzugshelfer unterstützen Sie stundenweise beim Tragen, Be- und Entladen – perfekt, wenn Sie selbst einen Transporter gemietet haben."
+            question: "Kann ich Umzugskosten von der Steuer absetzen?",
+            answer: "Ja, bei beruflich bedingten Umzügen können Sie die Kosten als Werbungskosten absetzen. Die Umzugskostenpauschale liegt aktuell bei 964 Euro pro Person. Auch privat veranlasste Umzüge lassen sich teilweise als haushaltsnahe Dienstleistung geltend machen (20% der Arbeitskosten, max. 4.000 Euro). Sie erhalten von uns eine ordnungsgemäße Rechnung."
+        },
+        {
+            question: "Brauche ich eine Halteverbotszone für den Umzug?",
+            answer: "In den meisten Fällen ja – besonders in Innenstadtlagen und engen Straßen. Eine Halteverbotszone spart erheblich Zeit und Kosten, weil der LKW direkt vor der Tür parken kann. Wir übernehmen auf Wunsch die komplette Beantragung und Aufstellung. Der Service kostet in Hildesheim ca. 100-200 Euro pro Zone."
         }
     ];
 </script>

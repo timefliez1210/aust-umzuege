@@ -14,28 +14,32 @@
 
     const faqs = [
         {
-            question: "Ist die Umzugsberatung wirklich kostenlos?",
-            answer: "Ja, die Vor-Ort-Besichtigung und Beratung sind komplett kostenlos und unverbindlich. Sie gehen keinerlei Verpflichtung ein. Erst wenn Sie unser Angebot annehmen, entstehen Kosten."
+            question: "Ist die Umzugsberatung wirklich kostenlos und unverbindlich?",
+            answer: "Ja, komplett. Die Vor-Ort-Besichtigung, Beratung und Angebotserstellung sind kostenlos. Sie gehen keine Verpflichtung ein. Erst wenn Sie unser Angebot annehmen und den Auftrag erteilen, entstehen Kosten. Wir wollen Sie durch Qualität überzeugen, nicht durch Kleingedrucktes."
         },
         {
             question: "Wie lange dauert eine Besichtigung?",
-            answer: "In der Regel dauert eine Besichtigung 30-45 Minuten. Wir nehmen uns Zeit, alle Räume anzusehen, Besonderheiten zu notieren und Ihre Fragen zu beantworten. Größere Objekte oder komplexe Umzüge können auch etwas länger dauern."
-        },
-        {
-            question: "Kann die Beratung auch telefonisch oder per Video erfolgen?",
-            answer: "Für eine grobe Kostenschätzung reicht ein Telefonat oft aus. Für ein verbindliches Festpreisangebot empfehlen wir jedoch eine Vor-Ort-Besichtigung, da nur so alle Details erfasst werden können und es am Umzugstag keine Überraschungen gibt."
-        },
-        {
-            question: "Was sollte ich zur Besichtigung vorbereiten?",
-            answer: "Sie müssen nichts vorbereiten. Hilfreich ist, wenn Sie bereits wissen, welche Möbel mitgenommen und welche entsorgt werden sollen. Auch Informationen zu Parkplatzsituation und Stockwerk an alter und neuer Adresse sind nützlich."
+            answer: "In der Regel 30-45 Minuten. Wir schauen uns alle Räume an, notieren Besonderheiten (Klavier, enges Treppenhaus, Dachgeschoss) und beantworten Ihre Fragen. Bei größeren Objekten oder komplexen Umzügen kann es etwas länger dauern. Wir nehmen uns die Zeit, die nötig ist."
         },
         {
             question: "Wann erhalte ich das Angebot nach der Besichtigung?",
-            answer: "In der Regel erstellen wir Ihr individuelles Festpreisangebot innerhalb von 24-48 Stunden nach der Besichtigung. Sie erhalten es per E-Mail mit allen Details transparent aufgeschlüsselt."
+            answer: "Innerhalb von 24-48 Stunden nach der Besichtigung erhalten Sie Ihr individuelles Festpreisangebot per E-Mail – transparent aufgeschlüsselt nach Leistungen, ohne versteckte Posten. In dringenden Fällen erstellen wir das Angebot noch am selben Tag."
         },
         {
-            question: "Bin ich an das Angebot gebunden, wenn ich die Beratung nutze?",
-            answer: "Nein, Sie haben keinerlei Verpflichtung. Die Beratung ist unverbindlich. Vergleichen Sie in Ruhe Angebote und entscheiden Sie sich für den Partner, der am besten zu Ihren Bedürfnissen passt."
+            question: "Was sollte ich vor der Besichtigung wissen?",
+            answer: "Sie müssen nichts vorbereiten. Hilfreich ist, wenn Sie ungefähr wissen, welche Möbel mitgenommen und welche entsorgt werden sollen. Außerdem: Gibt es einen Aufzug? In welchem Stockwerk liegt die Wohnung? Wie sieht die Parksituation aus? Je mehr Details wir kennen, desto genauer wird das Angebot."
+        },
+        {
+            question: "Warum ist ein Festpreisangebot besser als ein Kostenvoranschlag?",
+            answer: "Ein Kostenvoranschlag darf um bis zu 20% überschritten werden – böse Überraschungen sind möglich. Unser Festpreis steht. Der vereinbarte Preis ist der Endpreis, unabhängig davon, ob der Umzug länger dauert als geplant. Das gibt Ihnen volle Kostensicherheit."
+        },
+        {
+            question: "Kann die Beratung auch telefonisch oder per Video erfolgen?",
+            answer: "Für eine grobe Kostenschätzung reicht ein Telefonat oder Videocall oft aus. Für ein verbindliches Festpreisangebot empfehlen wir die Vor-Ort-Besichtigung, da nur so alle Details (Treppenhaus, Parkplatzsituation, schwere Möbelstücke) zuverlässig erfasst werden. Beides ist selbstverständlich kostenlos."
+        },
+        {
+            question: "Wie vergleiche ich Umzugsangebote richtig?",
+            answer: "Achten Sie darauf, dass die Angebote dieselben Leistungen umfassen: Verpackung, Transport, Montage, Versicherung und Halteverbot. Vergleichen Sie Festpreise statt Stundenpreise. Prüfen Sie, ob die Firma versichert ist und lesen Sie Bewertungen. Wir scheuen keinen Vergleich – holen Sie sich ruhig mehrere Angebote ein."
         }
     ];
 </script>

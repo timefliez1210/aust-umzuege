@@ -14,28 +14,32 @@
 
     const faqs = [
         {
-            question: "Was kostet eine Halteverbotszone für den Umzug?",
-            answer: "Die Kosten liegen je nach Stadt und Dauer bei ca. 100-200 € pro Halteverbotszone (inkl. Genehmigung, Schilder und Aufstellung). In Hildesheim können wir Ihnen nach Absprache ein konkretes Angebot erstellen."
+            question: "Was kostet eine Halteverbotszone für den Umzug in Hildesheim?",
+            answer: "In Hildesheim kostet eine Halteverbotszone inklusive behördlicher Genehmigung, Schilder und Aufstellung zwischen 100 und 200 Euro pro Zone. Wenn Sie sowohl an der alten als auch der neuen Adresse eine Zone benötigen, bieten wir ein Paketangebot. Im Vergleich zu den Zeit- und Kostenersparnissen am Umzugstag rechnet sich das schnell."
         },
         {
-            question: "Wie lange vor dem Umzug muss das Halteverbot beantragt werden?",
-            answer: "Die Schilder müssen mindestens 72 Stunden vor dem Umzugstermin aufgestellt werden, damit parkende Autos rechtzeitig umparken können. Wir empfehlen eine Beauftragung mindestens 2 Wochen im Voraus, da die behördliche Genehmigung Zeit braucht."
-        },
-        {
-            question: "Wer stellt die Halteverbotsschilder auf?",
-            answer: "Wir übernehmen das Aufstellen und Abbau der Schilder für Sie. Die Schilder werden mit Ständern befestigt und müssen fristgerecht (72h vorher) positioniert werden. Nach dem Umzug holen wir sie wieder ab."
+            question: "Wie lange vorher muss das Halteverbot beantragt werden?",
+            answer: "Die Schilder müssen mindestens 72 Stunden (3 volle Tage) vor dem Umzug aufgestellt sein. Für die behördliche Genehmigung beim Ordnungsamt benötigen wir 2-3 Wochen Vorlauf. Beauftragen Sie uns daher idealerweise 3-4 Wochen vor dem Umzug, damit alles rechtzeitig genehmigt und aufgestellt ist."
         },
         {
             question: "Was passiert, wenn trotzdem jemand in der Halteverbotszone parkt?",
-            answer: "Ordnungswidrig parkende Fahrzeuge dürfen abgeschleppt werden. Die Kosten trägt der Falschparker. Sollte dies nötig sein, kontaktieren wir für Sie das Ordnungsamt oder die Polizei."
+            answer: "Ordnungswidrig parkende Fahrzeuge dürfen abgeschleppt werden – die Kosten trägt der Falschparker. Sollte am Umzugstag ein Auto in der Zone stehen, kontaktieren wir umgehend das Ordnungsamt oder die Polizei. Dank des dokumentierten Aufstellungsprotokolls (mit Fotos und Datum) sind Sie rechtlich auf der sicheren Seite."
         },
         {
-            question: "Brauche ich auch für die neue Wohnung ein Halteverbot?",
-            answer: "Ja, idealerweise sollten Sie sowohl an der alten als auch an der neuen Adresse eine Halteverbotszone einrichten lassen. So haben Sie an beiden Orten kurze Laufwege und der Umzug läuft deutlich schneller."
+            question: "Brauche ich ein Halteverbot an beiden Adressen?",
+            answer: "Wir empfehlen es dringend. Halteverbotszonen an alter und neuer Adresse verkürzen die Tragewege erheblich und können den Umzug um 1-2 Stunden beschleunigen. Das spart Ihnen bei einem stundenbasierten Umzug oft mehr, als die zweite Zone kostet."
         },
         {
-            question: "Kann ich auch als Privatperson ohne Umzugsfirma ein Halteverbot beantragen?",
-            answer: "Ja, grundsätzlich kann jeder ein Halteverbot beantragen. Allerdings ist der Prozess zeitaufwendig und fehleranfällig. Wir kümmern uns professionell um alle Formalitäten und sparen Ihnen den Behördengang."
+            question: "Kann ich das Halteverbot auch selbst beantragen?",
+            answer: "Ja, grundsätzlich können Sie die Genehmigung selbst beim Ordnungsamt beantragen und Schilder mieten. Allerdings ist der Prozess zeitaufwendig und Fehler (falsche Maße, fehlende Protokolle) können dazu führen, dass das Halteverbot ungültig ist. Wir übernehmen den kompletten Prozess zuverlässig für Sie – inklusive aller Formalitäten."
+        },
+        {
+            question: "Wie groß sollte die Halteverbotszone sein?",
+            answer: "Die Standardgröße ist 15 Meter (Platz für einen großen Umzugs-LKW). Bei größeren Umzügen mit zwei Fahrzeugen oder bei engen Straßen beantragen wir entsprechend mehr Platz. Wir kennen die örtlichen Gegebenheiten in Hildesheim und beantragen immer die optimale Größe."
+        },
+        {
+            question: "Gilt das Halteverbot auch am Wochenende und an Feiertagen?",
+            answer: "Ja, ein genehmigtes Halteverbot gilt an allen Tagen, auch am Wochenende und an Feiertagen. Wir beantragen das Halteverbot genau für den Zeitraum, den Sie benötigen – ob Samstag, Sonntag oder unter der Woche. Die Kosten sind unabhängig vom Wochentag."
         }
     ];
 </script>

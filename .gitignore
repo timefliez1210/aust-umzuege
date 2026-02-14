@@ -29,3 +29,6 @@ lighthouse-reports/
 .lighthouseci/
 lighthouse-reports/
 lighthouse-output.log
+
+# Internal Documentation (Private)
+SEO-AUDIT-2026.md

@@ -234,7 +234,7 @@
         display: inline-flex;
         align-items: center;
         gap: var(--space-2);
-        color: #2d3748;
+        color: #1a202c;
         text-decoration: none;
         margin-bottom: var(--space-8);
         font-size: var(--text-sm);
@@ -268,7 +268,7 @@
 
     .subtitle {
         font-size: 1.25rem;
-        color: #2d3748;
+        color: #1a202c;
     }
 
     .guide-intro {

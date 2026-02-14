@@ -188,7 +188,7 @@
     }
 
     .guide-card__description {
-        color: #2d3748;
+        color: #1a202c;
         font-size: var(--text-base);
         line-height: 1.6;
         margin-bottom: var(--space-6);

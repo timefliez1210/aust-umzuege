@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,37 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Haushaltsauflösung" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet eine Haushaltsauflösung in Hildesheim?",
+            answer: "Die Kosten hängen von der Wohnungsgröße, Menge des Hausrats und dem Verwertungswert ab. Oft können wir brauchbare Gegenstände verkaufen und den Erlös mit den Kosten verrechnen. Nach einer kostenlosen Besichtigung erstellen wir Ihnen ein transparentes Angebot."
+        },
+        {
+            question: "Wie lange dauert eine Haushaltsauflösung?",
+            answer: "Eine durchschnittliche 3-Zimmer-Wohnung können wir in der Regel in 1-2 Tagen komplett auflösen. Bei größeren Objekten oder Messie-Wohnungen kann es auch länger dauern. Den genauen Zeitrahmen besprechen wir bei der Besichtigung."
+        },
+        {
+            question: "Was passiert mit noch brauchbaren Gegenständen?",
+            answer: "Wertvolle und brauchbare Gegenstände verkaufen wir an Gebrauchtwaren-händler oder spenden sie an soziale Einrichtungen. Den Erlös rechnen wir selbstverständlich mit unseren Kosten gegen, sodass Sie weniger zahlen."
+        },
+        {
+            question: "Ist die Räumung besenrein?",
+            answer: "Ja, wir übergeben die Wohnung vollständig besenrein. Das bedeutet: Alle Gegenstände werden entfernt, die Räume werden gefegt und sind bereit für die Übergabe an den Vermieter."
+        },
+        {
+            question: "Wer kümmert sich um die Entsorgung?",
+            answer: "Wir übernehmen die komplette fachgerechte Entsorgung aller Gegenstände. Sperrmüll, Elektrogeräte und Sondermüll entsorgen wir umweltgerecht über die entsprechenden Entsorgungsstellen in Hildesheim."
+        },
+        {
+            question: "Können Sie auch Messie-Wohnungen entrümpeln?",
+            answer: "Ja, wir haben Erfahrung mit Messie-Wohnungen und gehen dabei diskret und professionell vor. Unser Team ist im sensiblen Umgang mit solchen Situationen geschult und arbeitet zuverlässig und ohne Vorurteile."
+        },
+        {
+            question: "Brauche ich bei der Auflösung anwesend zu sein?",
+            answer: "Nein, das ist nicht zwingend erforderlich. Nach einer gemeinsamen Besichtigung und Klärung aller Details können wir die Auflösung auch selbstständig durchführen. Sie bekommen von uns eine Bestandsliste und Fotos der besenreinen Übergabe."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -116,6 +148,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

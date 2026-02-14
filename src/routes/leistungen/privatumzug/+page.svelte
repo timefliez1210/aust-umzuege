@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Privatumzug" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet ein Privatumzug in Hildesheim?",
+            answer: "Die Kosten für einen Privatumzug hängen von mehreren Faktoren ab: Umfang des Hausrats, Entfernung, Etage, und benötigte Zusatzleistungen. Nach einer kostenlosen Vor-Ort-Besichtigung erstellen wir Ihnen ein transparentes Festpreisangebot ohne versteckte Kosten."
+        },
+        {
+            question: "Wie lange dauert ein Privatumzug?",
+            answer: "Die Dauer variiert je nach Wohnungsgröße und Umfang. Ein 2-Zimmer-Umzug dauert in der Regel 4-6 Stunden, ein 4-Zimmer-Umzug etwa 8-10 Stunden. Bei der Besichtigung können wir Ihnen einen genauen Zeitrahmen nennen."
+        },
+        {
+            question: "Wann sollte ich eine Umzugsfirma buchen?",
+            answer: "Idealerweise 4-6 Wochen vor dem Umzugstermin, besonders in der Hochsaison (Sommer und Monatsende). So sichern Sie sich Ihren Wunschtermin und haben genug Zeit für die Planung."
+        },
+        {
+            question: "Brauche ich eine Halteverbotszone für den Umzug?",
+            answer: "Eine Halteverbotszone ist bei den meisten Umzügen sehr empfehlenswert, besonders in Innenstadtlagen oder engen Straßen. Sie spart Zeit und Kosten, da der LKW direkt vor der Tür parken kann. Wir kümmern uns auf Wunsch um die Beantragung und Aufstellung."
+        },
+        {
+            question: "Sind meine Möbel während des Umzugs versichert?",
+            answer: "Ja, Ihr gesamtes Inventar ist während des Transports durch unsere Transportversicherung geschützt. Die genauen Konditionen besprechen wir bei der Angebotserstellung mit Ihnen."
+        },
+        {
+            question: "Kann ich auch nur Umzugshelfer ohne LKW buchen?",
+            answer: "Ja, wir bieten auch reine Helfer-Dienste an. Unsere erfahrenen Umzugshelfer unterstützen Sie stundenweise beim Tragen, Be- und Entladen – perfekt, wenn Sie selbst einen Transporter gemietet haben."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -116,6 +144,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

@@ -3,6 +3,7 @@
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
+    import FAQSection from "$lib/components/FAQSection.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -10,6 +11,33 @@
         { name: "Leistungen", url: "https://www.aust-umzuege.de/leistungen" },
         { name: "Seniorenumzug" }
     ]);
+
+    const faqs = [
+        {
+            question: "Was kostet ein Seniorenumzug?",
+            answer: "Die Kosten hängen vom Umfang der Leistungen ab. Neben dem Transport bieten wir auch Demontage, Montage, Entsorgung und Einrichtungsservice an. Nach einer persönlichen Besichtigung erstellen wir Ihnen ein detailliertes Festpreisangebot."
+        },
+        {
+            question: "Zahlt die Pflegekasse einen Zuschuss für den Seniorenumzug?",
+            answer: "Ja, unter bestimmten Voraussetzungen können Sie einen Zuschuss von bis zu 4.000 Euro für wohnumfeldverbessernde Maßnahmen nach §40 SGB XI erhalten. Dies gilt besonders beim Umzug in eine barrierefreie Wohnung oder ins betreute Wohnen. Wir beraten Sie gerne zu den Möglichkeiten."
+        },
+        {
+            question: "Wie gehen Sie mit persönlichen Erinnerungsstücken um?",
+            answer: "Wir behandeln alle Gegenstände mit besonderer Sorgfalt und Respekt. Persönliche und wertvolle Stücke werden separat und besonders geschützt verpackt. Unser Team ist im einfühlsamen Umgang mit Senioren geschult."
+        },
+        {
+            question: "Können Sie auch die alte Wohnung auflösen?",
+            answer: "Ja, wir bieten einen kompletten Service: Transport der gewünschten Möbel in die neue Wohnung, Entsorgung nicht benötigter Gegenstände und besenreine Übergabe der alten Wohnung. Alles aus einer Hand."
+        },
+        {
+            question: "Richten Sie die neue Wohnung komplett ein?",
+            answer: "Selbstverständlich. Wir bauen alle Möbel fachgerecht auf, richten die Küche ein, hängen Bilder und Gardinen auf und stellen sicher, dass alles an seinem Platz ist – damit Sie sich sofort wohlfühlen können."
+        },
+        {
+            question: "Wie lange dauert die Planung eines Seniorenumzugs?",
+            answer: "Wir empfehlen eine Vorlaufzeit von 4-6 Wochen. So haben wir genug Zeit für die gründliche Planung, Beantragung eventueller Zuschüsse und die Koordination aller Details. In dringenden Fällen sind auch kürzere Fristen möglich."
+        }
+    ];
 </script>
 
 <MetaTags
@@ -114,6 +142,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ Section -->
+        <FAQSection {faqs} />
     </div>
 </main>
 

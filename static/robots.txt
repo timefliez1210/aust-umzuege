@@ -3,8 +3,10 @@
 User-agent: *
 Allow: /
 
+# Block internal/utility files
+Disallow: /api/
+Disallow: /send-mail.php
+Disallow: /_forms.html
+
 # Sitemap
 Sitemap: https://www.aust-umzuege.de/sitemap.xml
-
-# Disallow admin/internal paths if any
-Disallow: /api/

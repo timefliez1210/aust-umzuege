@@ -1,7 +1,7 @@
 <?php
 /**
  * Form handler for Aust Umzüge contact forms.
- * Replaces Netlify Forms functionality for KAS hosting.
+ * Uses PHP mail() function (configured by KAS hosting).
  */
 
 // Only allow POST
@@ -26,7 +26,7 @@ function clean(string $input): string {
 }
 
 $formName = $_POST['form-name'] ?? '';
-$to = 'info@aust-umzuege.de';
+$to = 'angebot@aust-umzuege.de';
 
 if ($formName === 'kontakt') {
     // Simple contact form
@@ -99,7 +99,7 @@ if ($formName === 'kontakt') {
 }
 
 // Send email
-$headers = "From: noreply@aust-umzuege.de\r\n";
+$headers = "From: angebot@aust-umzuege.de\r\n";
 $headers .= "Reply-To: $email\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 $headers .= "X-Mailer: Aust-Umzuege-Website\r\n";

@@ -48,7 +48,7 @@ export const businessInfo = {
 		}
 	],
 	sameAs: [
-		"https://facebook.com/austumzuege",
+		"https://www.facebook.com/share/16MwCMuiwd/?mibextid=wwXIfr",
 		"https://instagram.com/austumzuege",
 		"https://tiktok.com/@austumzuege"
 	],
@@ -298,7 +298,7 @@ export const articles = {
 	},
 	serioseUmzugsfirma: {
 		"@type": "Article",
-		headline: "Wie erkenne ich eine seriöse Umzugsfirma?",
+		headline: "Woran erkenne ich eine seriöse Umzugsfirma?",
 		description:
 			"Seriöse Umzugsfirma finden: Erkennen Sie Red Flags, stellen Sie die richtigen Fragen und vermeiden Sie schwarze Schafe.",
 		author: {
@@ -459,7 +459,7 @@ export const ratgeberOverview = {
 			position: 4,
 			item: {
 				"@type": "Article",
-				name: "Wie erkenne ich eine seriöse Umzugsfirma?",
+				name: "Woran erkenne ich eine seriöse Umzugsfirma?",
 				url: "https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma"
 			}
 		}

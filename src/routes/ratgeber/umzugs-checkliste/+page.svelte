@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, ArrowLeft, CheckCircle } from "lucide-svelte";
+    import { ClipboardList, ArrowLeft, CheckCircle, Download } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
@@ -196,6 +196,14 @@
                 <p>
                     Ein Umzug will gut geplant sein. Mit unserer Checkliste behalten Sie den Überblick und vergessen nichts Wichtiges. Von der Kündigung bis zur Ummeldung – hier finden Sie alle Aufgaben im zeitlichen Ablauf.
                 </p>
+                <a
+                    href="/umzugs-checkliste.pdf"
+                    download="Umzugs-Checkliste-Aust-Umzuege.pdf"
+                    class="download-btn"
+                >
+                    <Download size={18} />
+                    Checkliste als PDF herunterladen
+                </a>
             </div>
 
             <div class="guide-content">
@@ -295,7 +303,28 @@
         color: #1a202c;
         font-size: 1.125rem;
         line-height: 1.7;
-        margin: 0;
+        margin: 0 0 var(--space-5) 0;
+    }
+
+    .download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-6);
+        background: linear-gradient(135deg, #ff6b00 0%, #e65100 100%);
+        color: #fff;
+        font-weight: var(--font-semibold);
+        font-size: var(--text-sm);
+        text-decoration: none;
+        border-radius: var(--radius-md);
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 8px rgba(230, 81, 0, 0.25);
+    }
+
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px rgba(230, 81, 0, 0.35);
+        color: #fff;
     }
 
     .checklist-section {

@@ -32,3 +32,6 @@ lighthouse-output.log
 
 # Internal Documentation (Private)
 SEO-AUDIT-2026.md
+
+# WordPress Backup
+wp-backup/

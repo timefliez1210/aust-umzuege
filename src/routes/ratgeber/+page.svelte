@@ -28,7 +28,7 @@
             link: "/ratgeber/haushaltsaufloesungen-entruempelungen",
         },
         {
-            title: "Wie erkenne ich eine seriöse Umzugsfirma?",
+            title: "Woran erkenne ich eine seriöse Umzugsfirma?",
             description:
                 "Red Flags erkennen, die richtigen Fragen stellen und schwarze Schafe vermeiden. Praktischer Ratgeber mit Checkliste.",
             icon: ShieldCheck,

@@ -98,13 +98,35 @@ if ($formName === 'kontakt') {
     exit;
 }
 
-// Send email
+// Build JSON attachment from form data
+$jsonData = $_POST;
+unset($jsonData['bot-field']); // Remove honeypot field
+$jsonData['_submitted_at'] = date('c');
+$jsonString = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+$jsonBase64 = chunk_split(base64_encode($jsonString));
+$jsonFilename = $formName . '-' . date('Y-m-d-His') . '.json';
+
+// Send as multipart MIME with JSON attachment
+$boundary = md5(uniqid(time()));
+
 $headers = "From: angebot@aust-umzuege.de\r\n";
 $headers .= "Reply-To: $email\r\n";
-$headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+$headers .= "MIME-Version: 1.0\r\n";
+$headers .= "Content-Type: multipart/mixed; boundary=\"$boundary\"\r\n";
 $headers .= "X-Mailer: Aust-Umzuege-Website\r\n";
 
-$success = mail($to, $subject, $body, $headers);
+$mimeBody = "--$boundary\r\n";
+$mimeBody .= "Content-Type: text/plain; charset=UTF-8\r\n";
+$mimeBody .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
+$mimeBody .= $body . "\r\n\r\n";
+$mimeBody .= "--$boundary\r\n";
+$mimeBody .= "Content-Type: application/json; name=\"$jsonFilename\"\r\n";
+$mimeBody .= "Content-Transfer-Encoding: base64\r\n";
+$mimeBody .= "Content-Disposition: attachment; filename=\"$jsonFilename\"\r\n\r\n";
+$mimeBody .= $jsonBase64 . "\r\n";
+$mimeBody .= "--$boundary--";
+
+$success = mail($to, $subject, $mimeBody, $headers);
 
 if ($success) {
     http_response_code(200);

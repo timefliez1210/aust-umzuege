@@ -6,9 +6,9 @@ const config = {
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
-			fallback: undefined,
+			fallback: 'admin.html',
 			precompress: false,
-			strict: true
+			strict: false
 		})
 	}
 };

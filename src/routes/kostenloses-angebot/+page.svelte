@@ -181,6 +181,8 @@
             method="POST"
             data-netlify="true"
             netlify-honeypot="bot-field"
+            toolname="kostenloses-angebot"
+            tooldescription="Kostenloses Umzugsangebot anfordern bei Aust Umzüge Hildesheim. Kontaktdaten, Auszugs-/Einzugsadresse mit Etage, Wunschtermin und Zusatzleistungen angeben."
         >
             <!-- Netlify form detection -->
             <input type="hidden" name="form-name" value="kostenloses-angebot" />
@@ -217,6 +219,8 @@
                             bind:value={formData.name}
                             placeholder="Max Mustermann"
                             required
+                            toolparamtitle="Name"
+                            toolparamdescription="Vollständiger Name des Kunden"
                         />
                     </div>
 
@@ -229,6 +233,8 @@
                             bind:value={formData.email}
                             placeholder="max@beispiel.de"
                             required
+                            toolparamtitle="E-Mail"
+                            toolparamdescription="E-Mail-Adresse des Kunden"
                         />
                     </div>
 
@@ -241,6 +247,8 @@
                             bind:value={formData.phone}
                             placeholder="05121 1234567"
                             required
+                            toolparamtitle="Telefon"
+                            toolparamdescription="Telefonnummer des Kunden"
                         />
                     </div>
 
@@ -252,6 +260,8 @@
                             name="wunschtermin"
                             bind:value={formData.date}
                             required
+                            toolparamtitle="Wunschtermin"
+                            toolparamdescription="Gewünschtes Umzugsdatum im Format JJJJ-MM-TT"
                         />
                     </div>
 
@@ -264,6 +274,8 @@
                             bind:value={formData.startAddress}
                             placeholder="Straße, Nr., PLZ, Ort"
                             required
+                            toolparamtitle="Auszugsadresse"
+                            toolparamdescription="Aktuelle Adresse (Straße, Hausnummer, PLZ, Ort)"
                         />
                     </div>
 
@@ -274,6 +286,8 @@
                             name="etage-auszug"
                             bind:value={formData.startFloor}
                             required
+                            toolparamtitle="Etage Auszug"
+                            toolparamdescription="Stockwerk der Auszugsadresse (Erdgeschoss bis Höher als 6. Stock)"
                         >
                             {#each floorOptions as option}
                                 <option value={option.value}>{option.label}</option>
@@ -358,6 +372,8 @@
                             bind:value={formData.endAddress}
                             placeholder="Straße, Nr., PLZ, Ort"
                             required
+                            toolparamtitle="Einzugsadresse"
+                            toolparamdescription="Neue Adresse (Straße, Hausnummer, PLZ, Ort)"
                         />
                     </div>
 
@@ -368,6 +384,8 @@
                             name="etage-einzug"
                             bind:value={formData.endFloor}
                             required
+                            toolparamtitle="Etage Einzug"
+                            toolparamdescription="Stockwerk der Einzugsadresse (Erdgeschoss bis Höher als 6. Stock)"
                         >
                             {#each floorOptions as option}
                                 <option value={option.value}>{option.label}</option>
@@ -428,6 +446,8 @@
                         bind:value={formData.message}
                         placeholder="Weitere Details oder Fragen..."
                         rows={4}
+                        toolparamtitle="Nachricht"
+                        toolparamdescription="Zusätzliche Informationen oder Fragen zum Umzug (optional)"
                     ></textarea>
                 </div>
             </section>

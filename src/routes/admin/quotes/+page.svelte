@@ -121,7 +121,10 @@
 		{ value: 'pending', label: 'Offen' },
 		{ value: 'volume_estimated', label: 'Volumen' },
 		{ value: 'offer_generated', label: 'Angebot' },
-		{ value: 'offer_sent', label: 'Gesendet' }
+		{ value: 'offer_sent', label: 'Gesendet' },
+		{ value: 'accepted', label: 'Akzeptiert' },
+		{ value: 'done', label: 'Erledigt' },
+		{ value: 'paid', label: 'Bezahlt' }
 	];
 
 	const columns = [

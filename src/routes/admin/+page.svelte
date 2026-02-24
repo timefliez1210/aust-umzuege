@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { apiGet, formatDateTime } from '$lib/utils/api.svelte';
-	import { FileText, Receipt, CalendarDays, Users, ArrowRight } from 'lucide-svelte';
+	import { FileText, Receipt, CalendarDays, Users, ArrowRight, AlertTriangle } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+
+	interface ConflictDate {
+		date: string;
+		booked: number;
+		capacity: number;
+	}
 
 	interface DashboardData {
 		open_quotes: number;
@@ -14,6 +20,7 @@
 			created_at: string;
 			status?: string;
 		}[];
+		conflict_dates: ConflictDate[];
 	}
 
 	let data = $state<DashboardData | null>(null);
@@ -34,7 +41,8 @@
 				pending_offers: 0,
 				todays_bookings: 0,
 				total_customers: 0,
-				recent_activity: []
+				recent_activity: [],
+				conflict_dates: []
 			};
 		}
 	}
@@ -74,6 +82,22 @@
 			</a>
 		{/each}
 	</div>
+
+	{#if data && data.conflict_dates && data.conflict_dates.length > 0}
+		<div class="section-card conflict-card">
+			<div class="section-header conflict-header">
+				<h2><AlertTriangle size={16} /> Terminueberschneidungen</h2>
+			</div>
+			<div class="conflict-list">
+				{#each data.conflict_dates as conflict}
+					<a href="/admin/calendar" class="conflict-item">
+						<span class="conflict-date">{new Date(conflict.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+						<span class="conflict-count">{conflict.booked}/{conflict.capacity} gebucht</span>
+					</a>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	<div class="section-card">
 		<div class="section-header">
@@ -238,6 +262,60 @@
 		text-align: center;
 		color: #94a3b8;
 		font-size: 0.875rem;
+	}
+
+	.conflict-card {
+		border-left: 3px solid #f59e0b;
+		margin-bottom: 1.5rem;
+	}
+
+	.conflict-header {
+		background: #fffbeb;
+	}
+
+	.conflict-header h2 {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: #92400e;
+	}
+
+	.conflict-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.conflict-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1.25rem;
+		border-bottom: 1px solid #f1f5f9;
+		text-decoration: none;
+		transition: background 150ms;
+	}
+
+	.conflict-item:last-child {
+		border-bottom: none;
+	}
+
+	.conflict-item:hover {
+		background: #fffbeb;
+	}
+
+	.conflict-date {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #334155;
+	}
+
+	.conflict-count {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #d97706;
+		background: #fef3c7;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
 	}
 
 	@media (max-width: 768px) {

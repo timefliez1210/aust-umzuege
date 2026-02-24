@@ -2,6 +2,7 @@
 	import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { ChevronLeft, ChevronRight, Check, X, Trash2, Plus } from 'lucide-svelte';
+	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
 	interface BookingItem {
 		id: string;
@@ -222,16 +223,18 @@
 					{@const booked = day.schedule?.availability?.booked || 0}
 					{@const capacity = day.schedule?.availability?.capacity || 1}
 					{@const full = booked >= capacity}
+					{@const overbooked = booked > capacity}
 					<button
 						class="cal-cell"
 						class:today={day.isToday}
 						class:has-bookings={booked > 0}
 						class:full
+						class:overbooked
 						onclick={() => selectDay(day.schedule, day.date)}
 					>
 						<span class="cal-date">{day.date}</span>
 						{#if booked > 0}
-							<span class="cal-count">{booked}/{capacity}</span>
+							<span class="cal-count">{#if overbooked}&#9888;&#xFE0F; {/if}{booked}/{capacity}</span>
 						{/if}
 					</button>
 				{/if}
@@ -279,7 +282,7 @@
 						<div class="booking-item">
 							<div class="booking-info">
 								<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
-								<span class="booking-status-badge {booking.status}">{booking.status}</span>
+								<StatusBadge status={booking.status} />
 							</div>
 							{#if booking.description}
 								<span class="booking-notes">{booking.description}</span>
@@ -331,6 +334,9 @@
 	.cal-count { font-size: 0.6875rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 9999px; }
 	.has-bookings .cal-count { background: #dbeafe; color: #2563eb; }
 	.full .cal-count { background: #fee2e2; color: #dc2626; }
+	.overbooked { background: #fef3c7; }
+	.overbooked:hover { background: #fde68a; }
+	.overbooked .cal-count { background: #fbbf24; color: #92400e; }
 
 	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 500; }
 	.modal { background: #ffffff; border: none; border-radius: 16px; box-shadow: 10px 10px 30px #d1d9e6, -10px -10px 30px #ffffff; padding: 1.5rem; width: 90%; max-width: 400px; }

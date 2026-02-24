@@ -15,7 +15,10 @@
 		completed: { bg: '#d1fae5', color: '#059669', text: 'Abgeschlossen' },
 		volume_estimated: { bg: '#ede9fe', color: '#7c3aed', text: 'Volumen' },
 		offer_generated: { bg: '#e0e7ff', color: '#4338ca', text: 'Angebot' },
-		offer_sent: { bg: '#dbeafe', color: '#2563eb', text: 'Gesendet' }
+		offer_sent: { bg: '#dbeafe', color: '#2563eb', text: 'Gesendet' },
+		done: { bg: '#d1fae5', color: '#059669', text: 'Erledigt' },
+		paid: { bg: '#bbf7d0', color: '#15803d', text: 'Bezahlt' },
+		tentative: { bg: '#fef3c7', color: '#d97706', text: 'Vorlaeufig' }
 	};
 
 	let config = $derived(

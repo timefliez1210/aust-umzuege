@@ -6,7 +6,7 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
 	import RouteMap from '$lib/components/admin/RouteMap.svelte';
-	import { ArrowLeft, Save, FileOutput, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video } from 'lucide-svelte';
+	import { ArrowLeft, Save, FileOutput, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video, CheckCircle, CircleDollarSign } from 'lucide-svelte';
 
 	interface Address {
 		id: string;
@@ -570,6 +570,39 @@
 		}
 	}
 
+	async function acceptQuote() {
+		if (!data) return;
+		try {
+			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/accept`);
+			showToast('Anfrage akzeptiert', 'success');
+			await loadQuote();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	async function markDone() {
+		if (!data) return;
+		try {
+			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/done`);
+			showToast('Anfrage als erledigt markiert', 'success');
+			await loadQuote();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	async function markPaid() {
+		if (!data) return;
+		try {
+			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/paid`);
+			showToast('Anfrage als bezahlt markiert', 'success');
+			await loadQuote();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
 	async function deleteQuote() {
 		if (!data) return;
 		if (!confirm('Anfrage unwiderruflich loeschen?')) return;
@@ -628,6 +661,24 @@
 					<FileOutput size={16} />
 					Angebot erstellen
 				</button>
+				{#if data.quote.status === 'offer_sent' || data.quote.status === 'offer_generated'}
+					<button class="btn btn-success" onclick={acceptQuote}>
+						<CheckCircle size={16} />
+						Akzeptieren
+					</button>
+				{/if}
+				{#if data.quote.status === 'accepted'}
+					<button class="btn btn-success" onclick={markDone}>
+						<CheckCircle size={16} />
+						Erledigt
+					</button>
+				{/if}
+				{#if data.quote.status === 'done'}
+					<button class="btn btn-success" onclick={markPaid}>
+						<CircleDollarSign size={16} />
+						Bezahlt
+					</button>
+				{/if}
 				<button class="btn btn-danger" onclick={deleteQuote}>
 					<Trash2 size={16} />
 				</button>
@@ -1836,6 +1887,17 @@
 
 	.btn-danger:hover {
 		color: #ef4444;
+	}
+
+	.btn-success {
+		background: #d1fae5;
+		color: #059669;
+		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+	}
+
+	.btn-success:hover {
+		background: #a7f3d0;
+		color: #047857;
 	}
 
 	.btn:disabled {

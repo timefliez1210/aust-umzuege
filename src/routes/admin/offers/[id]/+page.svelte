@@ -6,6 +6,7 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
 	import ImageLightbox from '$lib/components/admin/ImageLightbox.svelte';
+	import RouteMap from '$lib/components/admin/RouteMap.svelte';
 	import { ArrowLeft, Send, XCircle, Download, RefreshCw, Trash2, Pencil, Save, Plus, X } from 'lucide-svelte';
 
 	interface LineItem {
@@ -71,6 +72,9 @@
 	let editing = $state(false);
 	let saving = $state(false);
 
+	// Route map coordinates
+	let routeCoordinates = $state<[number, number][] | null>(null);
+
 	// Editable state
 	let editPersons = $state(2);
 	let editHours = $state(3);
@@ -108,6 +112,21 @@
 		try {
 			const id = $page.params.id;
 			offer = await apiGet<OfferDetail>(`/api/v1/admin/offers/${id}`);
+
+			// Fetch route geometry from distance calculator (non-blocking)
+			if (offer.origin_address && offer.destination_address) {
+				apiPost<{ legs: { geometry: [number, number][] }[] }>(`/api/v1/distance/calculate`, {
+					addresses: [offer.origin_address, offer.destination_address]
+				})
+					.then((r) => {
+						const geo = r.legs?.[0]?.geometry;
+						// geometry is [[lng, lat], ...] — swap to [lat, lng] for Leaflet
+						routeCoordinates = geo?.length >= 2
+							? geo.map(([lng, lat]) => [lat, lng] as [number, number])
+							: null;
+					})
+					.catch(() => { routeCoordinates = null; });
+			}
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
@@ -518,6 +537,11 @@
 					</div>
 				{/if}
 			</div>
+
+			<!-- Route Map -->
+			{#if routeCoordinates && offer}
+				<RouteMap coordinates={routeCoordinates} distanceKm={offer.distance_km} />
+			{/if}
 
 			<!-- Detected Items -->
 			{#if offer.items && offer.items.length > 0}

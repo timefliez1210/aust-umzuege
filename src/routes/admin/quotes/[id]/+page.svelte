@@ -5,6 +5,7 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
+	import RouteMap from '$lib/components/admin/RouteMap.svelte';
 	import { ArrowLeft, Save, FileOutput, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video } from 'lucide-svelte';
 
 	interface Address {
@@ -107,6 +108,9 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let savingItems = $state(false);
+
+	// Route map coordinates
+	let routeCoordinates = $state<[number, number][] | null>(null);
 
 	// Editable fields
 	let editVolume = $state<number | null>(null);
@@ -416,6 +420,23 @@
 				initEditItems(data.estimation.items);
 			}
 			computePricingDefaults();
+
+			// Fetch route geometry from distance calculator (non-blocking)
+			if (data.origin_address && data.destination_address) {
+				const originStr = `${data.origin_address.street}, ${data.origin_address.postal_code || ''} ${data.origin_address.city}`.trim();
+				const destStr = `${data.destination_address.street}, ${data.destination_address.postal_code || ''} ${data.destination_address.city}`.trim();
+				apiPost<{ legs: { geometry: [number, number][] }[] }>(`/api/v1/distance/calculate`, {
+					addresses: [originStr, destStr]
+				})
+					.then((r) => {
+						const geo = r.legs?.[0]?.geometry;
+						// geometry is [[lng, lat], ...] — swap to [lat, lng] for Leaflet
+						routeCoordinates = geo?.length >= 2
+							? geo.map(([lng, lat]) => [lat, lng] as [number, number])
+							: null;
+					})
+					.catch(() => { routeCoordinates = null; });
+			}
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
@@ -780,6 +801,11 @@
 						</div>
 					{/if}
 				</div>
+			{/if}
+
+			<!-- Route Map -->
+			{#if routeCoordinates}
+				<RouteMap coordinates={routeCoordinates} distanceKm={editDistance} />
 			{/if}
 
 			<!-- Editable Fields -->

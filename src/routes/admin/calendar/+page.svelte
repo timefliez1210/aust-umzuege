@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { ChevronLeft, ChevronRight, Check, X, Trash2, Plus } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, Check, X, Trash2, Plus, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
 	interface BookingItem {
@@ -9,6 +9,8 @@
 		quote_id: string | null;
 		customer_name: string | null;
 		customer_email: string | null;
+		departure_address: string | null;
+		arrival_address: string | null;
 		description: string | null;
 		status: string;
 	}
@@ -281,9 +283,19 @@
 					{#each selectedDay.bookings as booking}
 						<div class="booking-item">
 							<div class="booking-info">
-								<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
+								{#if booking.quote_id}
+									<a href="/admin/quotes/{booking.quote_id}" class="booking-link">
+										<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
+										<ExternalLink size={12} />
+									</a>
+								{:else}
+									<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
+								{/if}
 								<StatusBadge status={booking.status} />
 							</div>
+							{#if booking.departure_address || booking.arrival_address}
+								<span class="booking-route">{booking.departure_address || '?'} → {booking.arrival_address || '?'}</span>
+							{/if}
 							{#if booking.description}
 								<span class="booking-notes">{booking.description}</span>
 							{/if}
@@ -369,6 +381,9 @@
 	.booking-item:last-child { border-bottom: none; }
 	.booking-info { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
 	.booking-name { font-size: 0.875rem; color: #334155; font-weight: 500; }
+	.booking-link { display: inline-flex; align-items: center; gap: 0.25rem; color: #4338ca; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+	.booking-link:hover { color: #3730a3; text-decoration: underline; }
+	.booking-route { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.125rem; }
 	.booking-status-badge { font-size: 0.6875rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: 9999px; text-transform: capitalize; }
 	.booking-status-badge.confirmed { background: #dcfce7; color: #16a34a; }
 	.booking-status-badge.pending, .booking-status-badge.tentative { background: #fef3c7; color: #d97706; }

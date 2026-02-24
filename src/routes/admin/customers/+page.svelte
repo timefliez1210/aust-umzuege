@@ -362,4 +362,25 @@
 	.pagination span {
 		color: #64748b;
 	}
+
+	@media (max-width: 768px) {
+		.page-header {
+			flex-wrap: wrap;
+		}
+		.search-box {
+			flex: 1;
+			min-width: 0;
+		}
+		.search-box input {
+			width: 100%;
+		}
+		.btn-create {
+			min-height: 44px;
+		}
+		.pagination button {
+			min-height: 44px;
+			min-width: 44px;
+			justify-content: center;
+		}
+	}
 </style>

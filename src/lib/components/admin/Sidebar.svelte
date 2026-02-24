@@ -12,7 +12,17 @@
 		PanelLeft
 	} from 'lucide-svelte';
 
-	let { collapsed, onToggle }: { collapsed: boolean; onToggle: () => void } = $props();
+	let {
+		collapsed,
+		onToggle,
+		mobileOpen = false,
+		onMobileClose = () => {}
+	}: {
+		collapsed: boolean;
+		onToggle: () => void;
+		mobileOpen?: boolean;
+		onMobileClose?: () => void;
+	} = $props();
 
 	const links = [
 		{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,7 +40,7 @@
 	}
 </script>
 
-<aside class="sidebar" class:collapsed>
+<aside class="sidebar" class:collapsed class:mobile-open={mobileOpen}>
 	<div class="sidebar-header">
 		{#if !collapsed}
 			<span class="sidebar-brand">AUST</span>
@@ -145,23 +155,41 @@
 		color: #a5b4fc;
 	}
 
-	@media (max-width: 767px) {
+	@media (max-width: 768px) {
 		.sidebar {
-			width: 64px;
+			width: 240px;
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100vh;
+			z-index: 1001;
+			transform: translateX(-100%);
+			transition: transform 250ms ease;
 		}
 
+		.sidebar.mobile-open {
+			transform: translateX(0);
+		}
+
+		/* Always show brand and labels in mobile drawer */
 		.sidebar-brand,
 		.sidebar-link span {
-			display: none;
+			display: inline;
 		}
 
 		.sidebar-link {
-			justify-content: center;
-			padding: 0.625rem;
+			justify-content: flex-start;
+			padding: 0.625rem 0.75rem;
+			min-height: 44px;
 		}
 
 		.sidebar-header {
-			justify-content: center;
+			justify-content: space-between;
+		}
+
+		/* Hide collapse toggle on mobile - drawer is always full width when open */
+		.sidebar-toggle {
+			display: none;
 		}
 	}
 </style>

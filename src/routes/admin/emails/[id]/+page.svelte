@@ -675,4 +675,19 @@
 		gap: 0.5rem;
 		margin-top: 0.5rem;
 	}
+
+	@media (max-width: 768px) {
+		.page-header { flex-wrap: wrap; }
+
+		.message { max-width: 100%; }
+		.message-body { max-width: 100%; overflow-wrap: break-word; }
+		.message-header { flex-wrap: wrap; gap: 0.375rem; }
+
+		.draft-actions { flex-wrap: wrap; }
+		.reply-actions { flex-wrap: wrap; }
+
+		.btn { min-height: 44px; }
+		.btn-reply { min-height: 44px; }
+		.link-quote { min-height: 44px; }
+	}
 </style>

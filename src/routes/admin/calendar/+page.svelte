@@ -209,32 +209,34 @@
 		<button onclick={nextMonth}><ChevronRight size={20} /></button>
 	</div>
 
-	<div class="calendar-grid">
-		{#each weekdays as day}
-			<div class="cal-header">{day}</div>
-		{/each}
+	<div class="calendar-scroll">
+		<div class="calendar-grid">
+			{#each weekdays as day}
+				<div class="cal-header">{day}</div>
+			{/each}
 
-		{#each calendarDays as day}
-			{#if day.date === null}
-				<div class="cal-cell empty"></div>
-			{:else}
-				{@const booked = day.schedule?.availability?.booked || 0}
-				{@const capacity = day.schedule?.availability?.capacity || 1}
-				{@const full = booked >= capacity}
-				<button
-					class="cal-cell"
-					class:today={day.isToday}
-					class:has-bookings={booked > 0}
-					class:full
-					onclick={() => selectDay(day.schedule, day.date)}
-				>
-					<span class="cal-date">{day.date}</span>
-					{#if booked > 0}
-						<span class="cal-count">{booked}/{capacity}</span>
-					{/if}
-				</button>
-			{/if}
-		{/each}
+			{#each calendarDays as day}
+				{#if day.date === null}
+					<div class="cal-cell empty"></div>
+				{:else}
+					{@const booked = day.schedule?.availability?.booked || 0}
+					{@const capacity = day.schedule?.availability?.capacity || 1}
+					{@const full = booked >= capacity}
+					<button
+						class="cal-cell"
+						class:today={day.isToday}
+						class:has-bookings={booked > 0}
+						class:full
+						onclick={() => selectDay(day.schedule, day.date)}
+					>
+						<span class="cal-date">{day.date}</span>
+						{#if booked > 0}
+							<span class="cal-count">{booked}/{capacity}</span>
+						{/if}
+					</button>
+				{/if}
+			{/each}
+		</div>
 	</div>
 </div>
 
@@ -368,4 +370,16 @@
 	.booking-notes { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem; }
 	.booking-actions { display: flex; gap: 0.375rem; }
 	.text-muted { color: #94a3b8; font-size: 0.875rem; }
+
+	@media (max-width: 768px) {
+		.page-header { flex-wrap: wrap; }
+
+		.cal-nav button { min-height: 44px; min-width: 44px; justify-content: center; }
+
+		.calendar-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+		.calendar-grid { min-width: 500px; }
+
+		.cal-cell { padding: 0.375rem 0.25rem; min-height: 56px; }
+		.cal-header { padding: 0.375rem 0.25rem; }
+	}
 </style>

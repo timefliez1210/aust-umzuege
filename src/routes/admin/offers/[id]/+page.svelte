@@ -1051,7 +1051,7 @@
 		cursor: not-allowed;
 	}
 
-	@media (max-width: 767px) {
+	@media (max-width: 768px) {
 		.editor-grid {
 			grid-template-columns: 1fr;
 		}
@@ -1063,5 +1063,36 @@
 		.li-edit-row {
 			flex-wrap: wrap;
 		}
+
+		.li-edit-row select {
+			min-width: 0;
+			width: 100%;
+		}
+
+		.edit-qty,
+		.edit-price {
+			width: 60px;
+		}
+
+		.info-row {
+			flex-wrap: wrap;
+		}
+
+		.card {
+			max-width: 100%;
+			overflow-x: auto;
+		}
+
+		.line-items {
+			max-width: 100%;
+			overflow-x: auto;
+		}
+
+		.items-table-wrap {
+			max-width: 100%;
+		}
+
+		.btn { min-height: 44px; }
+		.btn-sm { min-height: 44px; }
 	}
 </style>

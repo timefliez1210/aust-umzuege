@@ -35,3 +35,9 @@ SEO-AUDIT-2026.md
 
 # WordPress Backup
 wp-backup/
+
+# Deploy scripts (contain server paths, use env vars for credentials)
+deploy-full.py
+deploy-kas.py
+upload-html.py
+inline-css.py

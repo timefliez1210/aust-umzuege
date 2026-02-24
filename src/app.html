@@ -34,7 +34,7 @@
 
 		%sveltekit.head%
 
-		<!-- Google Analytics (deferred until after user interaction or 3s) -->
+		<!-- Google Analytics (deferred until after user interaction or idle) -->
 		<script>
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
@@ -47,11 +47,16 @@
 					loaded = true;
 					var s = document.createElement('script');
 					s.src = 'https://www.googletagmanager.com/gtag/js?id=G-9QT7TKENKZ';
+					s.async = true;
 					document.head.appendChild(s);
 				}
 				var events = ['scroll','click','touchstart','keydown'];
 				events.forEach(function(e){document.addEventListener(e, load, {once:true,passive:true});});
-				setTimeout(load, 3000);
+				if (typeof requestIdleCallback === 'function') {
+					requestIdleCallback(function(){setTimeout(load, 3000);}, {timeout: 8000});
+				} else {
+					setTimeout(load, 8000);
+				}
 			})();
 		</script>
 	</head>

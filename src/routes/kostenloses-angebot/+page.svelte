@@ -800,12 +800,12 @@
     }
 
     .angebot-page__privacy-text a {
-        color: var(--color-nav-accent);
-        text-decoration: none;
+        color: #c44100;
+        text-decoration: underline;
     }
 
     .angebot-page__privacy-text a:hover {
-        text-decoration: underline;
+        color: #b93d00;
     }
 
     .angebot-page__submit {

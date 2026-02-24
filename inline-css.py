@@ -25,11 +25,14 @@ def inline_css_in_html(html_path):
     def replace_link(match):
         nonlocal modified
         css_href = match.group(1)
-        # Resolve relative path
-        css_path = os.path.normpath(os.path.join(html_dir, css_href))
+        # Resolve absolute paths (starting with /) from BUILD_DIR, relative from html_dir
+        if css_href.startswith('/'):
+            css_path = os.path.normpath(os.path.join(BUILD_DIR, css_href.lstrip('/')))
+        else:
+            css_path = os.path.normpath(os.path.join(html_dir, css_href))
 
         if not os.path.exists(css_path):
-            print(f"  WARN: CSS not found: {css_path}")
+            print(f"  WARN: CSS not found: {css_href}")
             return match.group(0)
 
         with open(css_path, 'r', encoding='utf-8') as f:

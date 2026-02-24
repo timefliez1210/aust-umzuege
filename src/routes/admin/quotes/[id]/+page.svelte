@@ -2156,7 +2156,7 @@
 		transform: scale(1.03);
 	}
 
-	@media (max-width: 767px) {
+	@media (max-width: 768px) {
 		.detail-grid {
 			grid-template-columns: 1fr;
 		}
@@ -2172,5 +2172,38 @@
 		.li-edit-row {
 			flex-wrap: wrap;
 		}
+
+		.li-edit-row select {
+			min-width: 0;
+			width: 100%;
+		}
+
+		.edit-li-qty,
+		.edit-li-price {
+			width: 60px;
+		}
+
+		.th-num {
+			width: 80px;
+		}
+
+		.th-foto,
+		.crop-cell {
+			width: 50px;
+		}
+
+		.card {
+			max-width: 100%;
+			overflow-x: auto;
+		}
+
+		.line-items {
+			max-width: 100%;
+			overflow-x: auto;
+		}
+
+		.btn { min-height: 44px; }
+		.btn-sm { min-height: 44px; }
+		.header-actions { flex-wrap: wrap; }
 	}
 </style>

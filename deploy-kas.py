@@ -8,9 +8,9 @@ import ftplib
 import os
 import sys
 
-FTP_HOST = "w019276c.kasserver.com"
-FTP_USER = "f0180dc8"
-FTP_PASS = "ForAlmightyClaude1210!"
+FTP_HOST = os.environ.get("FTP_HOST", "w019276c.kasserver.com")
+FTP_USER = os.environ.get("FTP_USER", "f0180dc8")
+FTP_PASS = os.environ["FTP_PASS"]  # Required: set FTP_PASS environment variable
 BUILD_DIR = "/media/timefliez/FileSystem/projects/alex_aust/build"
 
 # Files/dirs to skip when moving (don't move these into wp-old)

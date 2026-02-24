@@ -185,7 +185,6 @@
                         <CTAButton
                             text="Termin anfragen"
                             href="/kontakt"
-                            ariaLabel="Termin für Umzugsberatung anfragen"
                             showArrow={false}
                         />
                     </div>

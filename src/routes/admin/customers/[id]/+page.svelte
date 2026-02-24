@@ -204,4 +204,16 @@
 	.list-info span { font-size: 0.875rem; color: #334155; }
 	.text-muted { color: #94a3b8 !important; font-size: 0.75rem !important; }
 	.empty { padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.875rem; }
+
+	@media (max-width: 768px) {
+		.page-header { flex-wrap: wrap; }
+
+		.btn-delete-entity { min-height: 44px; }
+		.btn { min-height: 44px; }
+
+		.grid { gap: 0.75rem; }
+		.card-body { padding: 1rem; }
+
+		.list-item { padding: 0.75rem 1rem; }
+	}
 </style>

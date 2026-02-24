@@ -969,6 +969,7 @@
                     class="volume-calculator__category"
                     class:active={activeCategoryIndex === index && !searchQuery}
                     onclick={() => selectCategory(index)}
+                    aria-label={category.name}
                 >
                     <span class="volume-calculator__category-icon">
                         {#if category.name === "Wohnzimmer"}
@@ -1145,7 +1146,7 @@
     }
 
     .volume-calculator__info strong {
-        color: var(--color-nav-accent);
+        color: #b93d00;
     }
 
     .volume-calculator__layout {
@@ -1393,7 +1394,7 @@
         font-size: var(--text-xl);
         font-weight: var(--font-bold);
         margin: 0;
-        color: var(--color-nav-accent);
+        color: #ff8a50;
     }
 
     /* Mobile Responsive */

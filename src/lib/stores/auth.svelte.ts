@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.aufraeumhelden.com';
 const TOKEN_KEY = 'aust_access_token';
 const REFRESH_KEY = 'aust_refresh_token';
 const USER_KEY = 'aust_user';

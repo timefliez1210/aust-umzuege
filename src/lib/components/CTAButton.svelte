@@ -2,14 +2,14 @@
 	interface Props {
 		text: string;
 		href: string;
-		ariaLabel: string;
+		ariaLabel?: string;
 		showArrow?: boolean;
 	}
 
 	let { text, href, ariaLabel, showArrow = true }: Props = $props();
 </script>
 
-<a {href} class="cta-button" aria-label={ariaLabel}>
+<a {href} class="cta-button" aria-label={ariaLabel || undefined}>
 	{text}
 	{#if showArrow}
 		<svg

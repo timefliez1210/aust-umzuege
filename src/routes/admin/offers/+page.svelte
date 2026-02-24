@@ -247,4 +247,25 @@
 	.pagination span {
 		color: #64748b;
 	}
+
+	@media (max-width: 768px) {
+		.page-header {
+			flex-wrap: wrap;
+		}
+		.tabs {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			flex-wrap: nowrap;
+			width: 100%;
+		}
+		.tab {
+			min-height: 44px;
+			white-space: nowrap;
+		}
+		.pagination button {
+			min-height: 44px;
+			min-width: 44px;
+			justify-content: center;
+		}
+	}
 </style>

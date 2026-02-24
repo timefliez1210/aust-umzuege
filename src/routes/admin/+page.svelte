@@ -239,4 +239,10 @@
 		color: #94a3b8;
 		font-size: 0.875rem;
 	}
+
+	@media (max-width: 768px) {
+		.page-header {
+			flex-wrap: wrap;
+		}
+	}
 </style>

@@ -89,7 +89,8 @@
 	.table-wrapper {
 		background: #ffffff;
 		border-radius: 12px;
-		overflow: hidden;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
 	}
 
@@ -152,5 +153,16 @@
 		text-align: center;
 		color: #94a3b8;
 		padding: 2rem 1rem;
+	}
+
+	@media (max-width: 768px) {
+		td, th {
+			padding: 0.5rem 0.6rem;
+			font-size: 0.8125rem;
+		}
+
+		th {
+			white-space: normal;
+		}
 	}
 </style>

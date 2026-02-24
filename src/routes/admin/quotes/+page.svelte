@@ -1131,7 +1131,28 @@
 		cursor: not-allowed;
 	}
 
-	@media (max-width: 767px) {
+	@media (max-width: 768px) {
+		.page-header {
+			flex-wrap: wrap;
+		}
+		.search-box {
+			flex: 1;
+			min-width: 0;
+		}
+		.search-box input {
+			width: 100%;
+		}
+		.btn-create {
+			min-height: 44px;
+		}
+		.tab {
+			min-height: 44px;
+		}
+		.pagination button {
+			min-height: 44px;
+			min-width: 44px;
+			justify-content: center;
+		}
 		.address-grid {
 			grid-template-columns: 1fr;
 		}

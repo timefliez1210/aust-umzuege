@@ -7,9 +7,12 @@ const config = {
 			pages: 'build',
 			assets: 'build',
 			fallback: 'admin.html',
-			precompress: false,
+			precompress: true,
 			strict: false
-		})
+		}),
+		paths: {
+			relative: false
+		}
 	}
 };
 

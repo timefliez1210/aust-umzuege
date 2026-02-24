@@ -6,10 +6,9 @@
 		description: string;
 		buttonText: string;
 		buttonHref: string;
-		buttonAriaLabel: string;
 	}
 
-	let { heading, description, buttonText, buttonHref, buttonAriaLabel }: Props = $props();
+	let { heading, description, buttonText, buttonHref }: Props = $props();
 </script>
 
 <section class="cta-section">
@@ -18,7 +17,6 @@
 	<CTAButton
 		text={buttonText}
 		href={buttonHref}
-		ariaLabel={buttonAriaLabel}
 		showArrow={false}
 	/>
 </section>

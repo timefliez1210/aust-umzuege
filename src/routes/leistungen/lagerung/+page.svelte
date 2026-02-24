@@ -180,7 +180,6 @@
                         <CTAButton
                             text="Angebot anfordern"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Lagerung anfordern"
                             showArrow={false}
                         />
                     </div>
@@ -189,7 +188,6 @@
                         <CTAButton
                             text="Kontakt aufnehmen"
                             href="/kontakt"
-                            ariaLabel="Kontakt für Lagerung aufnehmen"
                             showArrow={false}
                         />
                     </div>

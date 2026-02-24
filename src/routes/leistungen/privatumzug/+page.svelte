@@ -197,7 +197,6 @@
                         <CTAButton
                             text="Kostenloses Angebot"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Privatumzug anfordern"
                             showArrow={false}
                         />
                     </div>
@@ -206,7 +205,6 @@
                         <CTAButton
                             text="Kontakt aufnehmen"
                             href="/kontakt"
-                            ariaLabel="Kontakt für Privatumzug aufnehmen"
                             showArrow={false}
                         />
                     </div>

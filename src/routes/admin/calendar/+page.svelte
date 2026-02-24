@@ -11,6 +11,8 @@
 		customer_email: string | null;
 		departure_address: string | null;
 		arrival_address: string | null;
+		volume_m3: number | null;
+		offer_price_cents: number | null;
 		description: string | null;
 		status: string;
 	}
@@ -296,6 +298,16 @@
 							{#if booking.departure_address || booking.arrival_address}
 								<span class="booking-route">{booking.departure_address || '?'} → {booking.arrival_address || '?'}</span>
 							{/if}
+							{#if booking.volume_m3 || booking.offer_price_cents}
+								<div class="booking-details">
+									{#if booking.volume_m3}
+										<span class="booking-detail">📦 {booking.volume_m3.toFixed(1)} m³</span>
+									{/if}
+									{#if booking.offer_price_cents}
+										<span class="booking-detail">💰 {(booking.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
+									{/if}
+								</div>
+							{/if}
 							{#if booking.description}
 								<span class="booking-notes">{booking.description}</span>
 							{/if}
@@ -388,6 +400,8 @@
 	.booking-status-badge.confirmed { background: #dcfce7; color: #16a34a; }
 	.booking-status-badge.pending, .booking-status-badge.tentative { background: #fef3c7; color: #d97706; }
 	.booking-status-badge.cancelled { background: #fee2e2; color: #dc2626; }
+	.booking-details { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
+	.booking-detail { font-size: 0.75rem; color: #475569; font-weight: 500; }
 	.booking-notes { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem; }
 	.booking-actions { display: flex; gap: 0.375rem; }
 	.text-muted { color: #94a3b8; font-size: 0.875rem; }

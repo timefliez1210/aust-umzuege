@@ -6,7 +6,7 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
 	import RouteMap from '$lib/components/admin/RouteMap.svelte';
-	import { ArrowLeft, Save, FileOutput, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video, CheckCircle, CircleDollarSign } from 'lucide-svelte';
+	import { ArrowLeft, Save, FileOutput, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video } from 'lucide-svelte';
 
 	interface Address {
 		id: string;
@@ -570,36 +570,33 @@
 		}
 	}
 
-	async function acceptQuote() {
-		if (!data) return;
-		try {
-			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/accept`);
-			showToast('Anfrage akzeptiert', 'success');
-			await loadQuote();
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
+	const statusOptions: { value: string; label: string }[] = [
+		{ value: 'pending', label: 'Ausstehend' },
+		{ value: 'volume_estimated', label: 'Volumen geschaetzt' },
+		{ value: 'offer_generated', label: 'Angebot erstellt' },
+		{ value: 'offer_sent', label: 'Angebot gesendet' },
+		{ value: 'accepted', label: 'Akzeptiert' },
+		{ value: 'done', label: 'Erledigt' },
+		{ value: 'paid', label: 'Bezahlt' },
+		{ value: 'rejected', label: 'Abgelehnt' },
+		{ value: 'cancelled', label: 'Storniert' },
+	];
 
-	async function markDone() {
-		if (!data) return;
-		try {
-			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/done`);
-			showToast('Anfrage als erledigt markiert', 'success');
-			await loadQuote();
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
+	let changingStatus = $state(false);
 
-	async function markPaid() {
+	async function setQuoteStatus(newStatus: string) {
 		if (!data) return;
+		if (data.quote.status === newStatus) return;
+		changingStatus = true;
 		try {
-			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/paid`);
-			showToast('Anfrage als bezahlt markiert', 'success');
+			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/status`, { status: newStatus });
+			const label = statusOptions.find(s => s.value === newStatus)?.label || newStatus;
+			showToast(`Status: ${label}`, 'success');
 			await loadQuote();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
+		} finally {
+			changingStatus = false;
 		}
 	}
 
@@ -661,24 +658,16 @@
 					<FileOutput size={16} />
 					Angebot erstellen
 				</button>
-				{#if data.quote.status === 'offer_sent' || data.quote.status === 'offer_generated'}
-					<button class="btn btn-success" onclick={acceptQuote}>
-						<CheckCircle size={16} />
-						Akzeptieren
-					</button>
-				{/if}
-				{#if data.quote.status === 'accepted'}
-					<button class="btn btn-success" onclick={markDone}>
-						<CheckCircle size={16} />
-						Erledigt
-					</button>
-				{/if}
-				{#if data.quote.status === 'done'}
-					<button class="btn btn-success" onclick={markPaid}>
-						<CircleDollarSign size={16} />
-						Bezahlt
-					</button>
-				{/if}
+				<select
+					class="status-select"
+					value={data.quote.status}
+					onchange={(e) => setQuoteStatus((e.target as HTMLSelectElement).value)}
+					disabled={changingStatus}
+				>
+					{#each statusOptions as opt}
+						<option value={opt.value} selected={opt.value === data.quote.status}>{opt.label}</option>
+					{/each}
+				</select>
 				<button class="btn btn-danger" onclick={deleteQuote}>
 					<Trash2 size={16} />
 				</button>
@@ -1889,15 +1878,26 @@
 		color: #ef4444;
 	}
 
-	.btn-success {
-		background: #d1fae5;
-		color: #059669;
-		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+	.status-select {
+		padding: 0.5rem 0.75rem;
+		border-radius: 10px;
+		border: none;
+		background: #e8ecf1;
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: #1a1a2e;
+		cursor: pointer;
+		outline: none;
 	}
 
-	.btn-success:hover {
-		background: #a7f3d0;
-		color: #047857;
+	.status-select:focus {
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px #6366f1;
+	}
+
+	.status-select:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.btn:disabled {

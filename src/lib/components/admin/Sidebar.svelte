@@ -28,8 +28,8 @@
 	const links = [
 		{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/admin/quotes', label: 'Anfragen', icon: FileText },
-		{ href: '/admin/orders', label: 'Auftraege', icon: ClipboardList },
 		{ href: '/admin/offers', label: 'Angebote', icon: Receipt },
+		{ href: '/admin/orders', label: 'Auftraege', icon: ClipboardList },
 		{ href: '/admin/customers', label: 'Kunden', icon: Users },
 		{ href: '/admin/emails', label: 'E-Mails', icon: Mail },
 		{ href: '/admin/calendar', label: 'Kalender', icon: CalendarDays },

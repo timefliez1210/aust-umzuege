@@ -32,20 +32,24 @@
   <meta name="twitter:image" content="{siteUrl}{defaultImage}" />
 </svelte:head>
 
-<!-- Skip link for accessibility -->
-<a href="#main-content" class="skip-link">Zum Inhalt springen</a>
-
-<InfoBar />
-<Navbar />
-
-<div id="main-content">
+{#if $page.url.pathname.startsWith('/admin')}
   {@render children()}
-</div>
+{:else}
+  <!-- Skip link for accessibility -->
+  <a href="#main-content" class="skip-link">Zum Inhalt springen</a>
 
-<ContactCTA />
-<Footer />
-<CookieBanner />
-<ConsentManager />
+  <InfoBar />
+  <Navbar />
+
+  <div id="main-content">
+    {@render children()}
+  </div>
+
+  <ContactCTA />
+  <Footer />
+  <CookieBanner />
+  <ConsentManager />
+{/if}
 
 <style>
   #main-content {

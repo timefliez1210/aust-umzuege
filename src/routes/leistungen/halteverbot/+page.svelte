@@ -181,7 +181,6 @@
                         <CTAButton
                             text="Jetzt bestellen"
                             href="/kontakt"
-                            ariaLabel="Halteverbot für Umzug bestellen"
                             showArrow={false}
                         />
                     </div>

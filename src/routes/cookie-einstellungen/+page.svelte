@@ -211,7 +211,7 @@
 	}
 
 	.cookie-page__intro a {
-		color: #e65100;
+		color: #c44100;
 		text-decoration: underline;
 	}
 
@@ -278,7 +278,7 @@
 		font-size: 0.8rem;
 		font-weight: 600;
 		background: #e2e8f0;
-		color: #64748b;
+		color: #3f4f63;
 	}
 
 	.cookie-card__badge--required {
@@ -411,12 +411,13 @@
 		border-left: 4px solid #ffc107;
 		padding: var(--space-4) var(--space-6);
 		border-radius: var(--radius-md);
-		color: #856404;
+		color: #6d5204;
 		line-height: 1.6;
 	}
 
 	.cookie-page__info p {
 		margin: 0;
+		color: inherit;
 	}
 
 	/* Responsive */

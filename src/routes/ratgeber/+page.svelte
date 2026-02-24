@@ -28,7 +28,7 @@
             link: "/ratgeber/haushaltsaufloesungen-entruempelungen",
         },
         {
-            title: "Wie erkenne ich eine seriöse Umzugsfirma?",
+            title: "Woran erkenne ich eine seriöse Umzugsfirma?",
             description:
                 "Red Flags erkennen, die richtigen Fragen stellen und schwarze Schafe vermeiden. Praktischer Ratgeber mit Checkliste.",
             icon: ShieldCheck,
@@ -90,7 +90,6 @@
             description="Wir beraten Sie gerne persönlich zu allen Details Ihres Umzugs."
             buttonText="Kontakt aufnehmen"
             buttonHref="/kontakt"
-            buttonAriaLabel="Kontakt aufnehmen für persönliche Beratung"
         />
     </div>
 </main>

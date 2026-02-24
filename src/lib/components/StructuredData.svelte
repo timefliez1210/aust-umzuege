@@ -11,14 +11,14 @@
 	let { schema }: Props = $props();
 
 	// Convert schema to JSON-LD string
-	const schemaJson = JSON.stringify(
+	const schemaJson = $derived(JSON.stringify(
 		{
 			"@context": "https://schema.org",
 			...(Array.isArray(schema) ? schema[0] : schema)
 		},
 		null,
 		2
-	);
+	));
 </script>
 
 <svelte:head>

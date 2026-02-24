@@ -945,6 +945,11 @@
             categories[catIndex].items[itemIndex].quantity--;
         }
     }
+
+    function setQuantity(catIndex: number, itemIndex: number, value: string) {
+        const qty = Math.max(0, Math.floor(parseInt(value, 10) || 0));
+        categories[catIndex].items[itemIndex].quantity = qty;
+    }
 </script>
 
 <div class="volume-calculator">
@@ -964,6 +969,7 @@
                     class="volume-calculator__category"
                     class:active={activeCategoryIndex === index && !searchQuery}
                     onclick={() => selectCategory(index)}
+                    aria-label={category.name}
                 >
                     <span class="volume-calculator__category-icon">
                         {#if category.name === "Wohnzimmer"}
@@ -1016,13 +1022,15 @@
                                         >
                                             <Minus size={16} />
                                         </button>
-                                        <span
+                                        <input
+                                            type="number"
                                             class="volume-calculator__counter-value"
-                                        >
-                                            {categories[result.catIndex].items[
-                                                result.itemIndex
-                                            ].quantity}
-                                        </span>
+                                            value={categories[result.catIndex].items[result.itemIndex].quantity}
+                                            min="0"
+                                            aria-label="Anzahl"
+                                            oninput={(e) => setQuantity(result.catIndex, result.itemIndex, (e.target as HTMLInputElement).value)}
+                                            onclick={(e) => (e.target as HTMLInputElement).select()}
+                                        />
                                     {/if}
                                     <button
                                         type="button"
@@ -1067,10 +1075,15 @@
                                     >
                                         <Minus size={16} />
                                     </button>
-                                    <span
+                                    <input
+                                        type="number"
                                         class="volume-calculator__counter-value"
-                                        >{item.quantity}</span
-                                    >
+                                        value={item.quantity}
+                                        min="0"
+                                        aria-label="Anzahl"
+                                        oninput={(e) => setQuantity(activeCategoryIndex, itemIndex, (e.target as HTMLInputElement).value)}
+                                        onclick={(e) => (e.target as HTMLInputElement).select()}
+                                    />
                                 {/if}
                                 <button
                                     type="button"
@@ -1133,7 +1146,7 @@
     }
 
     .volume-calculator__info strong {
-        color: var(--color-nav-accent);
+        color: #b93d00;
     }
 
     .volume-calculator__layout {
@@ -1150,6 +1163,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+        min-width: 0; /* Allow grid item to shrink below min-content */
     }
 
     .volume-calculator__category {
@@ -1197,6 +1211,8 @@
         display: flex;
         flex-direction: column;
         padding: var(--space-4);
+        min-width: 0; /* Allow grid item to shrink below min-content */
+        overflow: hidden; /* Contain any inner overflow */
     }
 
     .volume-calculator__items-list {
@@ -1250,12 +1266,16 @@
     .volume-calculator__item-name {
         color: #4a5568;
         font-size: var(--text-sm);
+        flex: 1;
+        min-width: 0;
+        padding-right: var(--space-2);
     }
 
     .volume-calculator__item-counter {
         display: flex;
         align-items: center;
         gap: var(--space-2);
+        flex-shrink: 0;
     }
 
     .volume-calculator__counter-btn {
@@ -1289,10 +1309,29 @@
     }
 
     .volume-calculator__counter-value {
-        min-width: 24px;
+        width: 32px;
         text-align: center;
         font-weight: var(--font-semibold);
         color: var(--color-info-bar);
+        font-size: inherit;
+        font-family: inherit;
+        border: none;
+        background: transparent;
+        outline: none;
+        padding: 0;
+        cursor: text;
+        border-radius: var(--radius-sm);
+        -moz-appearance: textfield;
+    }
+
+    .volume-calculator__counter-value::-webkit-inner-spin-button,
+    .volume-calculator__counter-value::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .volume-calculator__counter-value:focus {
+        background-color: rgba(30, 58, 95, 0.1);
     }
 
     .volume-calculator__no-results {
@@ -1326,6 +1365,8 @@
         font-size: var(--text-sm);
         color: #4a5568;
         outline: none;
+        min-width: 0; /* Override browser's default input min-width */
+        width: 0; /* Force flex to calculate width from flex-grow, not content */
     }
 
     .volume-calculator__search-input::placeholder {
@@ -1353,7 +1394,7 @@
         font-size: var(--text-xl);
         font-weight: var(--font-bold);
         margin: 0;
-        color: var(--color-nav-accent);
+        color: #ff8a50;
     }
 
     /* Mobile Responsive */

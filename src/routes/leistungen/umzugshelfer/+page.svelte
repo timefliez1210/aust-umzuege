@@ -181,7 +181,6 @@
                         <CTAButton
                             text="Angebot anfordern"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Umzugshelfer anfordern"
                             showArrow={false}
                         />
                     </div>
@@ -190,7 +189,6 @@
                         <CTAButton
                             text="Kontakt aufnehmen"
                             href="/kontakt"
-                            ariaLabel="Kontakt für Umzugshelfer aufnehmen"
                             showArrow={false}
                         />
                     </div>

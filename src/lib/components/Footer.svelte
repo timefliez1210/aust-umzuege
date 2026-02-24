@@ -10,7 +10,7 @@
             <p class="footer__social-text">Folgt uns jetzt auf Social Media:</p>
             <div class="footer__social-icons">
                 <a
-                    href="https://facebook.com/austumzuege"
+                    href="https://www.facebook.com/share/16MwCMuiwd/?mibextid=wwXIfr"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="footer__social-link"

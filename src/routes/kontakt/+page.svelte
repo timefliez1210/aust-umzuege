@@ -34,7 +34,7 @@
         const formDataObj = new FormData(form);
 
         try {
-            const response = await fetch("/_forms.html", {
+            const response = await fetch("/send-mail.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams(formDataObj as any).toString(),
@@ -106,6 +106,8 @@
                 method="POST"
                 data-netlify="true"
                 netlify-honeypot="bot-field"
+                toolname="kontakt"
+                tooldescription="Kontaktformular für allgemeine Anfragen an Aust Umzüge Hildesheim. Senden Sie eine Nachricht mit Name, E-Mail und Anliegen."
             >
                 <!-- Netlify form detection -->
                 <input type="hidden" name="form-name" value="kontakt" />
@@ -119,6 +121,8 @@
                         bind:value={formData.name}
                         placeholder="Ihr Name:"
                         required
+                        toolparamtitle="Name"
+                        toolparamdescription="Vollständiger Name des Absenders"
                     />
                 </div>
 
@@ -130,6 +134,8 @@
                         bind:value={formData.email}
                         placeholder="Ihre E-Mail-Adresse:"
                         required
+                        toolparamtitle="E-Mail"
+                        toolparamdescription="E-Mail-Adresse für die Rückmeldung"
                     />
                 </div>
 
@@ -140,6 +146,8 @@
                         name="phone"
                         bind:value={formData.phone}
                         placeholder="Ihre Telefonnummer:"
+                        toolparamtitle="Telefon"
+                        toolparamdescription="Telefonnummer für Rückruf (optional)"
                     />
                 </div>
 
@@ -151,6 +159,8 @@
                         rows="4"
                         placeholder="Ihre Nachricht:"
                         required
+                        toolparamtitle="Nachricht"
+                        toolparamdescription="Ihre Nachricht oder Anfrage an Aust Umzüge"
                     ></textarea>
                 </div>
 

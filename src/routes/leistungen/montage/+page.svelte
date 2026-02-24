@@ -187,7 +187,6 @@
                         <CTAButton
                             text="Angebot anfordern"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Montageservice anfordern"
                             showArrow={false}
                         />
                     </div>

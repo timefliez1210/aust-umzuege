@@ -182,7 +182,6 @@
                         <CTAButton
                             text="Angebot anfordern"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Haushaltsauflösung anfordern"
                             showArrow={false}
                         />
                     </div>
@@ -191,7 +190,6 @@
                         <CTAButton
                             text="Kontakt aufnehmen"
                             href="/kontakt"
-                            ariaLabel="Kontakt für Haushaltsauflösung aufnehmen"
                             showArrow={false}
                         />
                     </div>

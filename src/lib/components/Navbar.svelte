@@ -171,7 +171,6 @@
             <CTAButton
                 text="Kostenfreies Angebot"
                 href="/kostenloses-angebot"
-                ariaLabel="Kostenloses Angebot anfordern"
             />
         </div>
 
@@ -190,11 +189,12 @@
     </div>
 
     <!-- Mobile Menu -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         id="mobile-menu"
         class="navbar__mobile"
         class:open={mobileMenuOpen}
-        aria-hidden={!mobileMenuOpen}
+        inert={!mobileMenuOpen ? true : undefined}
     >
         <ul class="navbar__mobile-links">
             {#each links as link}

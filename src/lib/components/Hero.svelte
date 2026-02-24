@@ -44,7 +44,6 @@
             <CTAButton
                 text={ctaText}
                 href={ctaHref}
-                ariaLabel="Jetzt kostenlos anfragen und Angebot erhalten"
             />
         </div>
     </div>

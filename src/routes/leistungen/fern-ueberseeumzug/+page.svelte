@@ -181,7 +181,6 @@
                         <CTAButton
                             text="Angebot anfordern"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Fern- und Überseeumzug anfordern"
                             showArrow={false}
                         />
                     </div>
@@ -190,7 +189,6 @@
                         <CTAButton
                             text="Kontakt aufnehmen"
                             href="/kontakt"
-                            ariaLabel="Kontakt für Fern- und Überseeumzug aufnehmen"
                             showArrow={false}
                         />
                     </div>

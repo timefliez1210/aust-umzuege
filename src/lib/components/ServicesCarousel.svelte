@@ -127,6 +127,7 @@
     // Touch handlers for mobile swipe
     function handleTouchStart(e: TouchEvent) {
         touchStartX = e.touches[0].clientX;
+        touchEndX = e.touches[0].clientX; // init to same so a tap = 0 distance
         isSwiping = true;
     }
 
@@ -214,7 +215,7 @@
             >
                 {#each services as service}
                     <article class="service-card">
-                        <div class="service-card__image-wrapper">
+                        <a href={service.href} class="service-card__image-wrapper" aria-label={service.title}>
                             <img
                                 src={service.image}
                                 srcset="{service.image.replace('.webp', '')}-400w.webp 400w, {service.image.replace('.webp', '')}-600w.webp 600w, {service.image.replace('.webp', '')}-800w.webp 800w"
@@ -226,10 +227,7 @@
                                 width="800"
                                 height="600"
                             />
-                            <a
-                                href={service.href}
-                                class="service-card__title-link"
-                            >
+                            <span class="service-card__title-link">
                                 {service.title}
                                 <svg
                                     width="18"
@@ -243,8 +241,8 @@
                                     <polyline points="12 5 19 12 12 19"
                                     ></polyline>
                                 </svg>
-                            </a>
-                        </div>
+                            </span>
+                        </a>
                         <p class="service-card__description">
                             {service.description}
                         </p>

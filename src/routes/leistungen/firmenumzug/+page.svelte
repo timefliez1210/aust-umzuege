@@ -186,7 +186,6 @@
                         <CTAButton
                             text="Angebot anfordern"
                             href="/kostenloses-angebot"
-                            ariaLabel="Kostenloses Angebot für Firmenumzug anfordern"
                             showArrow={false}
                         />
                     </div>
@@ -195,7 +194,6 @@
                         <CTAButton
                             text="Beratungsgespräch"
                             href="/kontakt"
-                            ariaLabel="Kontakt für Firmenumzug aufnehmen"
                             showArrow={false}
                         />
                     </div>

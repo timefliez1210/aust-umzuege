@@ -1,0 +1,260 @@
+<script lang="ts">
+	import { ChevronLeft, ChevronRight, X } from 'lucide-svelte';
+
+	let {
+		imageUrl = null,
+		images = [],
+		initialIndex = 0,
+		bbox = null,
+		itemName = '',
+		volumeM3 = 0,
+		imageWidth = 0,
+		imageHeight = 0,
+		onclose
+	}: {
+		imageUrl?: string | null;
+		images?: string[];
+		initialIndex?: number;
+		bbox?: number[] | null;
+		itemName?: string;
+		volumeM3?: number;
+		imageWidth?: number;
+		imageHeight?: number;
+		onclose: () => void;
+	} = $props();
+
+	let isGallery = $derived(images.length > 0);
+	let currentIndex = $state(initialIndex);
+	let currentUrl = $derived(isGallery ? images[currentIndex] : imageUrl);
+
+	let imgEl = $state<HTMLImageElement | null>(null);
+	let displayedWidth = $state(0);
+	let displayedHeight = $state(0);
+
+	let scale = $derived(imageWidth > 0 ? displayedWidth / imageWidth : 1);
+
+	let bboxStyle = $derived.by(() => {
+		if (!bbox || bbox.length < 4 || scale === 0 || isGallery) return '';
+		const left = bbox[0] * scale;
+		const top = bbox[1] * scale;
+		const width = (bbox[2] - bbox[0]) * scale;
+		const height = (bbox[3] - bbox[1]) * scale;
+		return `left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px;`;
+	});
+
+	$effect(() => {
+		if (!imgEl) return;
+		const observer = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				displayedWidth = entry.contentRect.width;
+				displayedHeight = entry.contentRect.height;
+			}
+		});
+		observer.observe(imgEl);
+		return () => observer.disconnect();
+	});
+
+	function prev() {
+		if (currentIndex > 0) currentIndex--;
+	}
+
+	function next() {
+		if (currentIndex < images.length - 1) currentIndex++;
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			onclose();
+		} else if (e.key === 'ArrowLeft' && isGallery) {
+			prev();
+		} else if (e.key === 'ArrowRight' && isGallery) {
+			next();
+		}
+	}
+
+	function handleBackdropClick(e: MouseEvent) {
+		if (e.target === e.currentTarget) {
+			onclose();
+		}
+	}
+</script>
+
+<svelte:window onkeydown={handleKeydown} />
+
+<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="backdrop" onclick={handleBackdropClick}>
+	<button class="close-btn" onclick={onclose} aria-label="Schliessen">
+		<X size={24} />
+	</button>
+
+	{#if isGallery && currentIndex > 0}
+		<button class="nav-btn nav-prev" onclick={prev} aria-label="Vorheriges Bild">
+			<ChevronLeft size={32} />
+		</button>
+	{/if}
+
+	{#if isGallery && currentIndex < images.length - 1}
+		<button class="nav-btn nav-next" onclick={next} aria-label="Naechstes Bild">
+			<ChevronRight size={32} />
+		</button>
+	{/if}
+
+	<div class="lightbox-content">
+		<div class="image-container">
+			{#key currentUrl}
+				<img
+					bind:this={imgEl}
+					src={currentUrl}
+					alt={itemName || `Bild ${currentIndex + 1}`}
+					class="lightbox-image"
+				/>
+			{/key}
+			{#if bbox && bbox.length >= 4 && bboxStyle}
+				<div class="bbox-overlay" style={bboxStyle}></div>
+			{/if}
+		</div>
+
+		<div class="caption">
+			{#if itemName}
+				<span class="item-name">{itemName}</span>
+			{/if}
+			{#if volumeM3 > 0}
+				<span class="volume">{volumeM3.toFixed(2)} m&sup3;</span>
+			{/if}
+			{#if isGallery}
+				<span class="counter">{currentIndex + 1} / {images.length}</span>
+			{/if}
+		</div>
+	</div>
+</div>
+
+<style>
+	.backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		background: rgba(0, 0, 0, 0.8);
+		backdrop-filter: blur(8px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		animation: fadeIn 150ms ease;
+	}
+
+	.close-btn {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		z-index: 10000;
+		color: rgba(255, 255, 255, 0.7);
+		padding: 0.5rem;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.1);
+		border: none;
+		cursor: pointer;
+		transition: all 150ms ease;
+	}
+
+	.close-btn:hover {
+		color: #ffffff;
+		background: rgba(255, 255, 255, 0.2);
+	}
+
+	.nav-btn {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 10000;
+		color: rgba(255, 255, 255, 0.7);
+		padding: 0.75rem;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.1);
+		border: none;
+		cursor: pointer;
+		transition: all 150ms ease;
+	}
+
+	.nav-btn:hover {
+		color: #ffffff;
+		background: rgba(255, 255, 255, 0.2);
+	}
+
+	.nav-prev {
+		left: 1rem;
+	}
+
+	.nav-next {
+		right: 1rem;
+	}
+
+	.lightbox-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		max-width: 90vw;
+		max-height: 92vh;
+	}
+
+	.image-container {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 0;
+	}
+
+	.lightbox-image {
+		max-width: 90vw;
+		max-height: 85vh;
+		object-fit: contain;
+		border-radius: 12px;
+		display: block;
+		box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+	}
+
+	.bbox-overlay {
+		position: absolute;
+		border: 2px solid #6366f1;
+		border-radius: 4px;
+		pointer-events: none;
+		box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3);
+	}
+
+	.caption {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.5rem 1rem;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(12px);
+		border-radius: 10px;
+		color: #ffffff;
+		font-size: 0.875rem;
+	}
+
+	.item-name {
+		font-weight: 600;
+	}
+
+	.volume {
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.counter {
+		color: rgba(255, 255, 255, 0.5);
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+</style>

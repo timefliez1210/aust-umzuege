@@ -153,7 +153,6 @@
             description="Nutzen Sie unseren Online-Rechner für ein schnelles Angebot."
             buttonText="Kostenloses Angebot"
             buttonHref="/kostenloses-angebot"
-            buttonAriaLabel="Kostenloses Angebot mit Online-Rechner erstellen"
         />
     </div>
 </main>

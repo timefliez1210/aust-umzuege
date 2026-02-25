@@ -1338,6 +1338,11 @@
 					</div>
 				</div>
 			{/if}
+
+			<button class="btn-generate-bottom" onclick={generateOffer}>
+				<FileOutput size={20} />
+				Angebot erstellen
+			</button>
 		</div>
 	{/if}
 </div>
@@ -2471,5 +2476,27 @@
 		.btn { min-height: 44px; }
 		.btn-sm { min-height: 44px; }
 		.header-actions { flex-wrap: wrap; }
+	}
+
+	.btn-generate-bottom {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 1rem;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #ffffff;
+		background: #6366f1;
+		border: none;
+		border-radius: 12px;
+		cursor: pointer;
+		box-shadow: 3px 3px 10px rgba(99, 102, 241, 0.3);
+		transition: background 150ms ease;
+	}
+
+	.btn-generate-bottom:hover {
+		background: #4f46e5;
 	}
 </style>

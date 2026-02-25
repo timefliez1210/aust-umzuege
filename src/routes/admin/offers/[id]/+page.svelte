@@ -14,6 +14,7 @@
 		quantity: number;
 		unit_price_cents: number;
 		total_cents: number;
+		is_labor: boolean;
 	}
 
 	interface EditLineItem {
@@ -140,8 +141,8 @@
 		editHours = offer.hours;
 		editRateCents = offer.rate_cents;
 		editBruttoCents = offer.total_brutto_cents;
-		// Map line items to editable - try to recover row from label
-		editLineItems = offer.line_items.map(li => {
+		// Map non-labor line items to editable - try to recover row from label
+		editLineItems = offer.line_items.filter(li => !li.is_labor).map(li => {
 			const match = ROW_OPTIONS.find(r => r.label === li.label);
 			return {
 				row: match?.row || 0,
@@ -520,7 +521,7 @@
 							</div>
 						</div>
 
-						{#each offer.line_items as li}
+						{#each offer.line_items.filter(x => !x.is_labor) as li}
 							<div class="line-item">
 								<span class="li-name">{li.label}</span>
 								<div class="li-detail">

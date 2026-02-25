@@ -45,6 +45,7 @@
 		total_volume_m3: number;
 		items: EstimationItem[];
 		source_images: string[];
+		source_videos: string[];
 	}
 
 	interface OfferSummary {
@@ -52,6 +53,24 @@
 		total_brutto_cents: number | null;
 		status: string;
 		created_at: string;
+	}
+
+	interface OfferLineItemDetail {
+		label: string;
+		quantity: number;
+		unit_price_cents: number;
+		total_cents: number;
+		is_labor: boolean;
+	}
+
+	interface LatestOfferPricing {
+		offer_id: string;
+		persons: number;
+		hours: number;
+		rate_cents: number;
+		total_netto_cents: number;
+		total_brutto_cents: number;
+		line_items: OfferLineItemDetail[];
 	}
 
 	interface QuoteDetail {
@@ -69,6 +88,7 @@
 		destination_address: Address | null;
 		estimation: Estimation | null;
 		offers: OfferSummary[];
+		latest_offer: LatestOfferPricing | null;
 	}
 
 	interface EditableItem {
@@ -310,46 +330,113 @@
 	let videoUploading = $state(false);
 	let videoProgress = $state('');
 	let videoFileInput = $state<HTMLInputElement | null>(null);
+	let videoQueue = $state<File[]>([]);
 
-	async function handleVideoUpload(e: Event) {
+	function handleVideoSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
-		if (!file || !data) return;
+		if (!file) return;
 
-		if (!file.type.startsWith('video/')) {
+		const videoExtensions = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
+		const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+		if (!file.type.startsWith('video/') && !videoExtensions.includes(ext)) {
 			showToast('Bitte eine Videodatei waehlen', 'error');
+			input.value = '';
+			return;
+		}
+		if (file.size > 500 * 1024 * 1024) {
+			showToast(`${file.name} zu gross (max. 500 MB)`, 'error');
+			input.value = '';
 			return;
 		}
 
-		if (file.size > 500 * 1024 * 1024) {
-			showToast('Video zu gross (max. 500 MB)', 'error');
-			return;
-		}
+		videoQueue = [...videoQueue, file];
+		input.value = '';
+	}
+
+	function removeFromQueue(idx: number) {
+		videoQueue = videoQueue.filter((_, i) => i !== idx);
+	}
+
+	function formatFileSize(bytes: number): string {
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	}
+
+	async function uploadVideos() {
+		if (videoQueue.length === 0 || !data) return;
 
 		videoUploading = true;
-		videoProgress = 'Video wird hochgeladen...';
+		const count = videoQueue.length;
+		videoProgress = `${count} Video${count > 1 ? 's' : ''} wird hochgeladen...`;
 
 		try {
 			const formData = new FormData();
 			formData.append('quote_id', data.quote.id);
-			formData.append('video', file);
+			for (const file of videoQueue) {
+				formData.append('video', file);
+			}
 
-			videoProgress = 'Video wird analysiert... (2-10 Min.)';
-
-			const result = await apiFetch(`/api/v1/estimates/video`, {
+			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/estimates/video`, {
 				method: 'POST',
 				body: formData,
 			});
 
-			showToast('Video-Analyse abgeschlossen', 'success');
-			await loadQuote();
+			videoQueue = [];
+			showToast(`${count} Video${count > 1 ? 's' : ''} hochgeladen — Analyse läuft`, 'success');
+
+			const processingIds = results.filter(r => r.status === 'processing').map(r => r.id);
+			if (processingIds.length > 0) {
+				await pollEstimations(processingIds);
+			} else {
+				await loadQuote();
+			}
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
 			videoUploading = false;
 			videoProgress = '';
-			if (input) input.value = '';
 		}
+	}
+
+	async function pollEstimations(estimationIds: string[]) {
+		const maxAttempts = 120; // 10 min at 5s intervals
+		const pending = new Set(estimationIds);
+		let completed = 0;
+		let failed = 0;
+		const total = estimationIds.length;
+
+		for (let i = 0; i < maxAttempts && pending.size > 0; i++) {
+			await new Promise(r => setTimeout(r, 5000));
+			for (const id of [...pending]) {
+				try {
+					const est = await apiFetch<{ id: string; status: string }>(`/api/v1/estimates/${id}`);
+					if (est.status === 'completed') {
+						pending.delete(id);
+						completed++;
+					} else if (est.status === 'failed') {
+						pending.delete(id);
+						failed++;
+					}
+				} catch {
+					// Network error during poll, keep trying
+				}
+			}
+			if (pending.size > 0) {
+				videoProgress = `${completed + failed}/${total} Videos analysiert...`;
+			}
+		}
+
+		if (failed > 0 && completed === 0) {
+			showToast('Video-Analyse fehlgeschlagen', 'error');
+		} else if (failed > 0) {
+			showToast(`${completed}/${total} Videos analysiert, ${failed} fehlgeschlagen`, 'warning');
+		} else if (pending.size > 0) {
+			showToast('Video-Analyse Timeout', 'error');
+		} else {
+			showToast('Video-Analyse abgeschlossen', 'success');
+		}
+		await loadQuote();
 	}
 
 	// Photo filter: click a photo to filter items table
@@ -382,6 +469,30 @@
 
 	function computePricingDefaults() {
 		if (!data) return;
+
+		// If an offer exists with edited values, use those instead of recomputing
+		if (data.latest_offer) {
+			const lo = data.latest_offer;
+			editPersons = lo.persons;
+			editHours = lo.hours;
+			editRateCents = lo.rate_cents;
+			editBruttoCents = lo.total_brutto_cents;
+			// Build editable line items from offer (non-labor only)
+			editLineItems = lo.line_items
+				.filter(li => !li.is_labor)
+				.map(li => {
+					const match = ROW_OPTIONS.find(r => r.label === li.label);
+					return mkLineItem(
+						match?.row ?? 0,
+						li.label,
+						li.quantity,
+						li.unit_price_cents,
+					);
+				});
+			priceDirty = false;
+			return;
+		}
+
 		const originFloor = parseFloor(data.origin_address?.floor ?? null);
 		const destFloor = parseFloor(data.destination_address?.floor ?? null);
 		const originElev = data.origin_address?.elevator ?? false;
@@ -912,27 +1023,60 @@
 				<div class="card-header">
 					<h3>Video-Analyse</h3>
 				</div>
+				{#if data.estimation?.source_videos && data.estimation.source_videos.length > 0}
+					<div class="video-gallery">
+						{#each data.estimation.source_videos as videoUrl}
+							<video controls preload="metadata" class="video-player">
+								<source src={API_BASE + videoUrl} />
+							</video>
+						{/each}
+					</div>
+				{/if}
 				{#if videoUploading}
 					<div class="video-uploading">
 						<div class="video-spinner"></div>
 						<span>{videoProgress}</span>
 					</div>
 				{:else}
-					<div class="video-upload-zone">
-						<input
-							type="file"
-							accept="video/*"
-							onchange={handleVideoUpload}
-							bind:this={videoFileInput}
-							class="video-file-input"
-							id="video-upload"
-						/>
+					{#if videoQueue.length > 0}
+						<div class="video-queue">
+							{#each videoQueue as file, idx}
+								<div class="video-queue-item">
+									<Video size={16} />
+									<span class="video-queue-name">{file.name}</span>
+									<span class="video-queue-size">{formatFileSize(file.size)}</span>
+									<button class="del-btn" onclick={() => removeFromQueue(idx)} title="Entfernen">
+										<X size={14} />
+									</button>
+								</div>
+							{/each}
+							<div class="video-queue-actions">
+								<label for="video-upload" class="btn btn-sm video-add-more">
+									<Plus size={14} />
+									Weiteres Video
+								</label>
+								<button class="btn btn-primary" onclick={uploadVideos}>
+									<Upload size={16} />
+									{videoQueue.length} Video{videoQueue.length > 1 ? 's' : ''} hochladen
+								</button>
+							</div>
+						</div>
+					{/if}
+					<input
+						type="file"
+						accept="video/*,.mov,.mp4,.webm,.mkv"
+						onchange={handleVideoSelect}
+						bind:this={videoFileInput}
+						class="video-file-input"
+						id="video-upload"
+					/>
+					{#if videoQueue.length === 0}
 						<label for="video-upload" class="video-upload-label">
 							<Video size={24} />
-							<span>Video hochladen</span>
-							<span class="video-hint">MP4, MOV, WebM (max. 500 MB)</span>
+							<span>Video hinzufuegen</span>
+							<span class="video-hint">MP4, MOV, WebM (max. 500 MB pro Video)</span>
 						</label>
-					</div>
+					{/if}
 				{/if}
 			</div>
 
@@ -1474,6 +1618,66 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
+	}
+
+	/* Video Gallery */
+	.video-gallery {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+
+	.video-player {
+		width: 100%;
+		border-radius: 10px;
+		background: #1a1a2e;
+		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+	}
+
+	/* Video Queue */
+	.video-queue {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.video-queue-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		background: #e8ecf1;
+		border-radius: 8px;
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+	}
+
+	.video-queue-name {
+		flex: 1;
+		font-size: 0.8125rem;
+		color: #334155;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.video-queue-size {
+		font-size: 0.75rem;
+		color: #94a3b8;
+		white-space: nowrap;
+	}
+
+	.video-queue-actions {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding-top: 0.25rem;
+	}
+
+	.video-add-more {
+		cursor: pointer;
 	}
 
 	/* Video Upload */

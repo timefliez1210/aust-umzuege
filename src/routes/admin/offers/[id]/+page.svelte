@@ -45,6 +45,8 @@
 		pdf_url: string | null;
 		created_at: string;
 		items: OfferItem[];
+		email_subject: string;
+		email_body: string;
 	}
 
 	interface OfferItem {
@@ -72,6 +74,10 @@
 	let loading = $state(true);
 	let editing = $state(false);
 	let saving = $state(false);
+
+	// Email draft state
+	let emailSubject = $state('');
+	let emailBody = $state('');
 
 	// Route map coordinates
 	let routeCoordinates = $state<[number, number][] | null>(null);
@@ -115,6 +121,8 @@
 		try {
 			const id = $page.params.id;
 			offer = await apiGet<OfferDetail>(`/api/v1/admin/offers/${id}`);
+			emailSubject = offer.email_subject;
+			emailBody = offer.email_body;
 
 			// Fetch route geometry from distance calculator (non-blocking)
 			if (offer.origin_address && offer.destination_address) {
@@ -240,7 +248,10 @@
 		if (!offer) return;
 		if (!confirm('Angebot an Kunden senden?')) return;
 		try {
-			await apiPost(`/api/v1/admin/offers/${offer.id}/send`);
+			await apiPost(`/api/v1/admin/offers/${offer.id}/send`, {
+				email_subject: emailSubject,
+				email_body: emailBody,
+			});
 			showToast('Angebot gesendet', 'success');
 			await loadOffer();
 		} catch (e) {
@@ -552,6 +563,22 @@
 				{/if}
 			</div>
 
+			<!-- Email Draft -->
+			<div class="card full-width">
+				<h3>E-Mail an {offer.customer_email}</h3>
+				<div class="email-draft">
+					<div class="field">
+						<label for="email-subject">Betreff</label>
+						<input id="email-subject" type="text" bind:value={emailSubject} />
+					</div>
+					<div class="field">
+						<label for="email-body">Nachricht</label>
+						<textarea id="email-body" rows={8} bind:value={emailBody}></textarea>
+					</div>
+					<span class="email-hint">PDF wird automatisch angehängt</span>
+				</div>
+			</div>
+
 			<!-- Route Map -->
 			{#if routeCoordinates && offer}
 				<RouteMap coordinates={routeCoordinates} distanceKm={offer.distance_km} />
@@ -798,6 +825,52 @@
 
 	.labor-profit.negative {
 		color: #ef4444;
+	}
+
+	/* Email Draft */
+	.email-draft {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.email-draft textarea {
+		background: #e8ecf1;
+		border: none;
+		border-radius: 8px;
+		color: #1a1a2e;
+		padding: 0.625rem;
+		font-size: 0.8125rem;
+		font-family: inherit;
+		outline: none;
+		resize: vertical;
+		line-height: 1.5;
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+	}
+
+	.email-draft textarea:focus {
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.email-draft input {
+		background: #e8ecf1;
+		border: none;
+		border-radius: 8px;
+		color: #1a1a2e;
+		padding: 0.5rem 0.625rem;
+		font-size: 0.8125rem;
+		font-family: inherit;
+		outline: none;
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+	}
+
+	.email-draft input:focus {
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.email-hint {
+		font-size: 0.75rem;
+		color: #94a3b8;
 	}
 
 	/* Line Items */

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { apiGet, apiPost, apiPatch, formatDate, formatEuro, API_BASE } from '$lib/utils/api.svelte';
+	import { apiGet, apiPost, apiPatch, apiDownload, formatDate, formatEuro, API_BASE } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
@@ -290,14 +290,19 @@
 					</button>
 				{:else}
 					{#if offer.pdf_url}
-						<a
-							href="{API_BASE}/api/v1/offers/{offer.id}/pdf"
+						<button
 							class="btn btn-outline"
-							target="_blank"
+							onclick={async () => {
+								try {
+									await apiDownload(`/api/v1/offers/${offer!.id}/pdf`, `${offer!.offer_number || 'Angebot'}.pdf`);
+								} catch (e) {
+									showToast((e as Error).message, 'error');
+								}
+							}}
 						>
 							<Download size={16} />
 							PDF
-						</a>
+						</button>
 					{/if}
 					<button class="btn btn-outline" onclick={startEditing}>
 						<Pencil size={16} />

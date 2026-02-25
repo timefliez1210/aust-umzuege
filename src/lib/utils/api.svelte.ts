@@ -85,6 +85,41 @@ export function apiDelete<T = unknown>(path: string): Promise<T> {
 	return apiFetch<T>(path, { method: 'DELETE' });
 }
 
+/** Fetch a file with auth headers and trigger a browser download. */
+export async function apiDownload(path: string, filename: string): Promise<void> {
+	const headers: Record<string, string> = {};
+	if (auth.token) {
+		headers['Authorization'] = `Bearer ${auth.token}`;
+	}
+
+	let res = await fetch(`${API_BASE}${path}`, { headers });
+
+	if (res.status === 401 && auth.token) {
+		const refreshed = await auth.refreshToken();
+		if (refreshed) {
+			headers['Authorization'] = `Bearer ${auth.token}`;
+			res = await fetch(`${API_BASE}${path}`, { headers });
+		} else {
+			auth.logout();
+			throw new ApiError(401, 'Sitzung abgelaufen. Bitte erneut anmelden.');
+		}
+	}
+
+	if (!res.ok) {
+		throw new ApiError(res.status, `Download fehlgeschlagen (${res.status})`);
+	}
+
+	const blob = await res.blob();
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
 export function formatEuro(cents: number): string {
 	return new Intl.NumberFormat('de-DE', {
 		style: 'currency',

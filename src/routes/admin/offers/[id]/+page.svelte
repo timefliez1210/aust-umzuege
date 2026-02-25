@@ -200,12 +200,17 @@
 				line_items_json: lineItemsJson,
 			});
 
-			// Then regenerate to produce new PDF
+			// Then regenerate to produce new PDF (include line items so they're preserved)
 			await apiPost(`/api/v1/admin/offers/${offer.id}/regenerate`, {
 				persons: editPersons,
 				hours: editHours,
 				rate: editRateCents / 100,
 				price_cents: calculatedNettoCents,
+				line_items: editLineItems.map(li => ({
+					description: li.label,
+					quantity: li.quantity,
+					unit_price: li.unit_price_cents / 100,
+				})),
 			});
 
 			showToast('Angebot aktualisiert', 'success');

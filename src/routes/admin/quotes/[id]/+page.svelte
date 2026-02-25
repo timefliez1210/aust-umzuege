@@ -649,30 +649,14 @@
 			if (priceDirty) {
 				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
 			}
-			const result = await apiPost<{ id: string }>(`/api/v1/offers/generate`, payload);
-
-			// Patch the new offer with edited line items
-			if (result?.id && editLineItems.length > 0) {
-				const lineItemsJson = editLineItems.map(li => ({
-					row: li.row,
+			if (editLineItems.length > 0) {
+				payload.line_items = editLineItems.map(li => ({
+					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unitPriceCents / 100,
 				}));
-				await apiPatch(`/api/v1/admin/offers/${result.id}`, {
-					price_netto_cents: calculatedNettoCents,
-					persons: editPersons,
-					hours: editHours,
-					rate_per_hour_cents: editRateCents,
-					line_items_json: lineItemsJson,
-				});
-				// Regenerate PDF with the updated line items
-				await apiPost(`/api/v1/admin/offers/${result.id}/regenerate`, {
-					persons: editPersons,
-					hours: editHours,
-					rate: editRateCents / 100,
-					price_cents: calculatedNettoCents,
-				});
 			}
+			await apiPost<{ id: string }>(`/api/v1/offers/generate`, payload);
 
 			showToast('Angebot erstellt', 'success');
 			await loadQuote();

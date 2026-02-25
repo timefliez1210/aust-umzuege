@@ -46,11 +46,17 @@
 	let createLoading = $state(false);
 
 	// Customer selection
+	let customerMode = $state<'existing' | 'new'>('existing');
 	let customerSearch = $state('');
 	let customerResults = $state<CustomerMatch[]>([]);
 	let selectedCustomer = $state<CustomerMatch | null>(null);
 	let customerSearchLoading = $state(false);
 	let showCustomerDropdown = $state(false);
+
+	// New customer fields
+	let newCustomerEmail = $state('');
+	let newCustomerName = $state('');
+	let newCustomerPhone = $state('');
 
 	// Addresses
 	let originStreet = $state('');
@@ -222,6 +228,9 @@
 		selectedCustomer = null;
 		customerSearch = '';
 		customerResults = [];
+		newCustomerEmail = '';
+		newCustomerName = '';
+		newCustomerPhone = '';
 	}
 
 	function buildNotes(): string {
@@ -277,8 +286,12 @@
 	}
 
 	async function handleCreateQuote() {
-		if (!selectedCustomer) {
+		if (customerMode === 'existing' && !selectedCustomer) {
 			createError = 'Bitte Kunde auswählen';
+			return;
+		}
+		if (customerMode === 'new' && !newCustomerEmail.trim()) {
+			createError = 'E-Mail-Adresse ist erforderlich';
 			return;
 		}
 		if (!originStreet.trim() || !originCity.trim()) {
@@ -298,8 +311,21 @@
 		createLoading = true;
 
 		try {
+			// If creating a new customer, do that first
+			let customerId: string;
+			if (customerMode === 'new') {
+				const newCustomer = await apiPost<{ id: string }>('/api/v1/admin/customers', {
+					email: newCustomerEmail.trim(),
+					name: newCustomerName.trim() || null,
+					phone: newCustomerPhone.trim() || null,
+				});
+				customerId = newCustomer.id;
+			} else {
+				customerId = selectedCustomer!.id;
+			}
+
 			const body: Record<string, unknown> = {
-				customer_id: selectedCustomer.id,
+				customer_id: customerId,
 				origin: {
 					street: originStreet.trim(),
 					city: originCity.trim(),
@@ -382,33 +408,54 @@
 			<!-- 1. Kunde -->
 			<div class="create-section__group">
 				<h3>Kunde</h3>
-				{#if selectedCustomer}
-					<div class="selected-customer">
-						<span>{selectedCustomer.name || selectedCustomer.email}</span>
-						{#if selectedCustomer.name}<span class="selected-customer__email">{selectedCustomer.email}</span>{/if}
-						<button class="selected-customer__clear" onclick={clearCustomer}><X size={14} /></button>
-					</div>
+				<div class="customer-mode-toggle">
+					<button
+						class="toggle-btn"
+						class:active={customerMode === 'existing'}
+						onclick={() => { customerMode = 'existing'; clearCustomer(); }}
+					>Bestehend</button>
+					<button
+						class="toggle-btn"
+						class:active={customerMode === 'new'}
+						onclick={() => { customerMode = 'new'; clearCustomer(); }}
+					>Neu anlegen</button>
+				</div>
+
+				{#if customerMode === 'existing'}
+					{#if selectedCustomer}
+						<div class="selected-customer">
+							<span>{selectedCustomer.name || selectedCustomer.email}</span>
+							{#if selectedCustomer.name}<span class="selected-customer__email">{selectedCustomer.email}</span>{/if}
+							<button class="selected-customer__clear" onclick={clearCustomer}><X size={14} /></button>
+						</div>
+					{:else}
+						<div class="customer-search">
+							<input
+								type="text"
+								placeholder="Kunde suchen (Name oder E-Mail)..."
+								bind:value={customerSearch}
+								oninput={handleCustomerSearchInput}
+								onfocus={() => { if (customerResults.length) showCustomerDropdown = true; }}
+								onblur={() => { setTimeout(() => { showCustomerDropdown = false; }, 200); }}
+								class="form-input"
+							/>
+							{#if showCustomerDropdown && customerResults.length > 0}
+								<div class="customer-dropdown">
+									{#each customerResults as c}
+										<button class="customer-dropdown__item" onmousedown={() => selectCustomer(c)}>
+											<span class="customer-dropdown__name">{c.name || c.email}</span>
+											{#if c.name}<span class="customer-dropdown__email">{c.email}</span>{/if}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
 				{:else}
-					<div class="customer-search">
-						<input
-							type="text"
-							placeholder="Kunde suchen (Name oder E-Mail)..."
-							bind:value={customerSearch}
-							oninput={handleCustomerSearchInput}
-							onfocus={() => { if (customerResults.length) showCustomerDropdown = true; }}
-							onblur={() => { setTimeout(() => { showCustomerDropdown = false; }, 200); }}
-							class="form-input"
-						/>
-						{#if showCustomerDropdown && customerResults.length > 0}
-							<div class="customer-dropdown">
-								{#each customerResults as c}
-									<button class="customer-dropdown__item" onmousedown={() => selectCustomer(c)}>
-										<span class="customer-dropdown__name">{c.name || c.email}</span>
-										{#if c.name}<span class="customer-dropdown__email">{c.email}</span>{/if}
-									</button>
-								{/each}
-							</div>
-						{/if}
+					<div class="new-customer-form">
+						<input type="email" placeholder="E-Mail *" bind:value={newCustomerEmail} class="form-input" />
+						<input type="text" placeholder="Name" bind:value={newCustomerName} class="form-input" />
+						<input type="tel" placeholder="Telefon" bind:value={newCustomerPhone} class="form-input" />
 					</div>
 				{/if}
 			</div>
@@ -814,6 +861,43 @@
 
 	.form-checkbox input[type="checkbox"] {
 		accent-color: #6366f1;
+	}
+
+	/* Customer mode toggle */
+	.customer-mode-toggle {
+		display: flex;
+		gap: 0;
+		margin-bottom: 0.75rem;
+		border-radius: 8px;
+		overflow: hidden;
+		border: 1px solid #e2e8f0;
+	}
+
+	.toggle-btn {
+		flex: 1;
+		padding: 0.4rem 0.75rem;
+		border: none;
+		background: #f8fafc;
+		color: #64748b;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 150ms;
+	}
+
+	.toggle-btn:first-child {
+		border-right: 1px solid #e2e8f0;
+	}
+
+	.toggle-btn.active {
+		background: #6366f1;
+		color: #ffffff;
+	}
+
+	.new-customer-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	/* Customer search */

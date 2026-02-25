@@ -277,6 +277,8 @@
 	);
 	let calculatedNettoCents = $derived(nonLaborCents + laborCents);
 	let calculatedBruttoCents = $derived(Math.round(calculatedNettoCents * 1.19));
+	const COST_PER_PERSON_HOUR = 18.23;
+	let laborProfit = $derived(editPersons * editHours * (editRateCents / 100 - COST_PER_PERSON_HOUR));
 
 	// Item reviewer state
 	let reviewIndex = $state<number | null>(null);
@@ -1228,6 +1230,7 @@
 					<button class="btn-link" onclick={onBruttoChange}>
 						Rate aus Gesamtpreis berechnen
 					</button>
+					<span class="labor-profit" class:negative={laborProfit < 0}>{laborProfit.toFixed(2)} &euro;</span>
 				</div>
 			</div>
 
@@ -1755,6 +1758,17 @@
 
 	.btn-link:hover {
 		color: #4f46e5;
+	}
+
+	.labor-profit {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #22c55e;
+		font-family: 'JetBrains Mono', 'Fira Code', monospace;
+	}
+
+	.labor-profit.negative {
+		color: #ef4444;
 	}
 
 	/* Line Items */

@@ -51,4 +51,10 @@
 	<meta property="og:locale" content="de_DE" />
 	<meta property="og:site_name" content="Aust Umzüge" />
 
+	<!-- Twitter Card -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={title} />
+	<meta name="twitter:description" content={description} />
+	<meta name="twitter:image" content={ogImage} />
+
 </svelte:head>

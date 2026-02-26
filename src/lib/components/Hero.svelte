@@ -12,9 +12,9 @@
     }
 
     let {
-        tagline = "Professionell & kompetent",
-        heading = "Ihr Umzugsunternehmen in Hildesheim – Umzüge, Haushaltsauflösungen & Montagen",
-        subheading = "Unverbindlich anfragen und ein kostenloses Angebot erhalten",
+        tagline = "Umzüge · Haushaltsauflösungen · Montagen",
+        heading = "Ihr Umzugsunternehmen in Hildesheim",
+        subheading = "Kostenloses Festpreisangebot – schnell & unverbindlich",
         ctaText = "Jetzt anfragen",
         ctaHref = "/kostenloses-angebot",
         backgroundImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.webp",

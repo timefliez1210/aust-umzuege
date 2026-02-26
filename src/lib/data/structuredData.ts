@@ -140,13 +140,17 @@ export const businessInfo = {
 		}
 	],
 	sameAs: [
-		"https://www.facebook.com/share/16MwCMuiwd/?mibextid=wwXIfr",
-		"https://instagram.com/austumzuege",
-		"https://tiktok.com/@austumzuege"
+		"https://www.facebook.com/profile.php?id=61576264141191",
+		"https://www.instagram.com/austumzuege/",
+		"https://www.tiktok.com/@austumzuege"
 	],
+	numberOfEmployees: {
+		"@type": "QuantitativeValue",
+		value: 7
+	},
 	founder: {
 		"@type": "Person",
-		name: "Alex Aust"
+		name: "Alexander Aust"
 	},
 	aggregateRating: {
 		"@type": "AggregateRating",
@@ -184,8 +188,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/privatumzug",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	firmenumzug: {
@@ -201,8 +204,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/firmenumzug",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	seniorenumzug: {
@@ -218,8 +220,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/seniorenumzug",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	fernUebersee: {
@@ -235,8 +236,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	umzugshelfer: {
@@ -252,8 +252,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/umzugshelfer",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	montage: {
@@ -269,8 +268,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/montage",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	lagerung: {
@@ -286,8 +284,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/lagerung",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	halteverbot: {
@@ -303,8 +300,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/halteverbot",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	},
 	umzugsberatung: {
@@ -338,8 +334,7 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR",
-			priceRange: "€€"
+			priceCurrency: "EUR"
 		}
 	}
 };

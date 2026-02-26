@@ -33,7 +33,7 @@ deploy-kas.py
 deploy.sh
 upload-html.py
 inline-css.py
-
+blog-audit-report.md
 # Source images (originals kept locally, not in repo)
 src/assets/originals/
 

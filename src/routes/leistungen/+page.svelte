@@ -98,8 +98,8 @@
 </script>
 
 <MetaTags
-    title="Unsere Leistungen | Aust Umzüge Hildesheim"
-    description="Alle Leistungen von Aust Umzüge auf einen Blick: Privatumzug, Firmenumzug, Montage, Entrümpelung und mehr."
+    title="Umzugsleistungen Hildesheim | Aust Umzüge"
+    description="Alle Umzugsleistungen in Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug, Montage, Haushaltsauflösung und mehr. Kostenlose Beratung und Festpreisgarantie."
     keywords="Umzugsleistungen, Umzugsservice, Privatumzug, Firmenumzug, Montage, Entrümpelung Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen"
 />
@@ -112,9 +112,11 @@
         <header class="services-page__header">
             <h1 class="services-page__title">Umzugsleistungen in Hildesheim & Umgebung</h1>
             <p class="services-page__intro">
-                Wir bieten Ihnen ein umfassendes Spektrum an Dienstleistungen
-                rund um Umzug und Transport. Maßgeschneidert auf Ihre
-                individuellen Bedürfnisse.
+                Als Umzugsunternehmen in Hildesheim bieten wir Ihnen alles aus einer Hand: vom klassischen Privatumzug über
+                Firmenumzüge und Seniorenumzüge bis hin zu Haushaltsauflösungen, Möbelmontagen und Einlagerungen. Unser
+                erfahrenes Team arbeitet professionell, zuverlässig und zu fairen Festpreisen – ohne versteckte Kosten.
+                Ob innerhalb Hildesheims, in ganz Niedersachsen oder bundesweit: Wir planen Ihren Umzug individuell und
+                übernehmen auf Wunsch die komplette Organisation. Starten Sie mit einer kostenlosen Beratung vor Ort.
             </p>
         </header>
 

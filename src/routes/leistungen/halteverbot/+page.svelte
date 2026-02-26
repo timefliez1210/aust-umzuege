@@ -45,8 +45,8 @@
 </script>
 
 <MetaTags
-    title="Halteverbot einrichten | Aust Umzüge Hildesheim"
-    description="Offizielle Halteverbotszonen für Ihren Umzug. Wir kümmern uns um Antrag, Aufstellung und Abbau der Schilder."
+    title="Halteverbot einrichten Hildesheim | Aust Umzüge"
+    description="Offizielle Halteverbotszonen für Ihren Umzug in Hildesheim. Wir kümmern uns um Antrag, Aufstellung und Abbau der Schilder – stressfrei und zuverlässig."
     keywords="Halteverbot Umzug Hildesheim, Halteverbotszone, Parkplatz Umzug, Halteverbotsschilder"
     canonical="https://www.aust-umzuege.de/leistungen/halteverbot"
 />

@@ -9,17 +9,11 @@
   import ConsentManager from "$lib/components/ConsentManager.svelte";
 
   let { children } = $props();
-
-  const siteUrl = "https://www.aust-umzuege.de";
-  const defaultImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.webp";
 </script>
 
 <svelte:head>
-  <!-- OG image with dimensions (hero photo for social sharing) -->
-  <meta property="og:image" content="{siteUrl}{defaultImage}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-
 </svelte:head>
 
 {#if $page.url.pathname.startsWith('/admin')}

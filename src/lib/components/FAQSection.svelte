@@ -63,11 +63,9 @@
 					/>
 				</button>
 
-				{#if openIndexes.has(index)}
-					<div class="faq-answer">
-						<p>{faq.answer}</p>
-					</div>
-				{/if}
+				<div class="faq-answer" class:is-open={openIndexes.has(index)}>
+					<p>{faq.answer}</p>
+				</div>
 			</div>
 		{/each}
 	</div>
@@ -155,21 +153,19 @@
 		color: var(--color-nav-accent);
 	}
 
-	/* Answer */
+	/* Answer — always in DOM for crawlability, toggled via CSS */
 	.faq-answer {
-		padding: 0 var(--space-5) var(--space-5) var(--space-5);
-		animation: slideDown 0.3s ease-out;
+		max-height: 0;
+		overflow: hidden;
+		opacity: 0;
+		padding: 0 var(--space-5);
+		transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
 	}
 
-	@keyframes slideDown {
-		from {
-			opacity: 0;
-			transform: translateY(-10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+	.faq-answer.is-open {
+		max-height: 50rem;
+		opacity: 1;
+		padding: 0 var(--space-5) var(--space-5) var(--space-5);
 	}
 
 	.faq-answer p {
@@ -193,7 +189,7 @@
 			font-size: var(--text-base);
 		}
 
-		.faq-answer {
+		.faq-answer.is-open {
 			padding: 0 var(--space-4) var(--space-4) var(--space-4);
 		}
 

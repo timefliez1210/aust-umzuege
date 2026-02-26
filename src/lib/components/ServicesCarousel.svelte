@@ -254,7 +254,7 @@
                             {service.description}
                         </p>
                         <a href={service.href} class="service-card__link" aria-label="Mehr erfahren über {service.title}">
-                            Hier mehr erfahren
+                            Mehr über {service.title}
                             <svg
                                 width="16"
                                 height="16"

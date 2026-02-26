@@ -14,6 +14,7 @@
     title="Impressum | Aust Umzüge Hildesheim"
     description="Impressum und rechtliche Informationen von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
     canonical="https://www.aust-umzuege.de/impressum"
+    noindex
 />
 
 <StructuredData schema={breadcrumbs} />

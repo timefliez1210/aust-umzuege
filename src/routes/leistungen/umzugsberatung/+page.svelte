@@ -46,7 +46,7 @@
 
 <MetaTags
     title="Kostenlose Umzugsberatung in Hildesheim | Aust Umzüge"
-    description="Kostenlose Umzugsberatung in Hildesheim: Vor-Ort-Besichtigung mit individueller Planung und verbindlichem Festpreisangebot. Jetzt Termin vereinbaren."
+    description="Kostenlose Umzugsberatung in Hildesheim: Vor-Ort-Besichtigung mit individueller Planung und verbindlichem Festpreisangebot. Jetzt Ihren Termin vereinbaren."
     keywords="Umzugsberatung Hildesheim, kostenlose Beratung, Festpreis Umzug, Umzugsplanung"
     canonical="https://www.aust-umzuege.de/leistungen/umzugsberatung"
 />

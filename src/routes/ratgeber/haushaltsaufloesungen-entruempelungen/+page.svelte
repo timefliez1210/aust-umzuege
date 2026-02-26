@@ -43,21 +43,22 @@
 				</div>
 				<h1>Haushaltsauflösungen und Entrümpelungen</h1>
 				<p class="subtitle">Praktischer Ratgeber für die komplette Wohnungsräumung</p>
+				<p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge</p>
 			</header>
 
 			<div class="guide-intro">
 				<p>
-					Du stehst vor einer Haushaltsauflösung? Mit der richtigen Planung und
+					Sie stehen vor einer Haushaltsauflösung? Mit der richtigen Planung und
 					diesen praktischen Tipps wird die Entrümpelung deutlich entspannter. Von der
-					Zeitplanung über Transport bis zur Entsorgung – hier erfährst du alles Wichtige.
+					Zeitplanung über Transport bis zur Entsorgung – hier erfahren Sie alles Wichtige.
 				</p>
 			</div>
 
 			<div class="article-content">
 				<section>
-					<h2>Wenn die Wohnung geräumt werden muss – So meisterst du die Herausforderung</h2>
+					<h2>Wenn die Wohnung geräumt werden muss – So meistern Sie die Herausforderung</h2>
 					<p>
-						Du stehst vor einer Haushaltsauflösung? Dann weißt du vermutlich
+						Sie stehen vor einer Haushaltsauflösung? Dann wissen Sie vermutlich
 						schon: Das ist keine Kleinigkeit. Ob nach einem Todesfall, vor einem
 						Umzug ins Altersheim, bei einer Trennung oder einfach, weil sich über
 						die Jahre zu viel angesammelt hat – eine Entrümpelung ist immer eine
@@ -67,8 +68,8 @@
 					</p>
 					<p>
 						Besonders in größeren Häusern mit Keller und Dachboden sammelt sich
-						über Jahrzehnte eine Menge an. Lass uns gemeinsam durchgehen, worauf
-						du achten solltest.
+						über Jahrzehnte eine Menge an. Lassen Sie uns gemeinsam durchgehen, worauf
+						Sie achten sollten.
 					</p>
 				</section>
 
@@ -82,13 +83,13 @@
 						einem Wochenende", denken viele. Die Realität sieht anders aus.
 					</p>
 					<p>
-						Rechne realistisch mit <strong>mindestens einer Woche</strong> für eine
-						durchschnittliche Wohnung, wenn du es nebenher machst. Bei einem ganzen
+						Rechnen Sie realistisch mit <strong>mindestens einer Woche</strong> für eine
+						durchschnittliche Wohnung, wenn Sie es nebenher machen. Bei einem ganzen
 						Haus mit Keller und Dachboden können es auch schnell zwei bis drei Wochen
 						werden. Warum dauert das so lange?
 					</p>
 					<p>
-						<strong>Jeder Gegenstand muss durch deine Hände:</strong> Ist das wertvoll?
+						<strong>Jeder Gegenstand muss durch Ihre Hände:</strong> Ist das wertvoll?
 						Kann das weg? Wer könnte das gebrauchen? Soll ich das behalten? Diese Entscheidungen
 						kosten Zeit – und Kraft. Besonders bei Haushaltsauflösungen nach einem
 						Todesfall kommen die Emotionen dazu. Jedes Foto, jeder Brief, jede Kaffeetasse
@@ -104,29 +105,29 @@
 						<li><strong>Entsorgen:</strong> Was muss zum Wertstoffhof oder in den Müll?</li>
 					</ul>
 					<p>
-						Diese vier Kategorien solltest du von Anfang an strikt trennen. Am
-						besten richtest du dir gleich verschiedene Bereiche oder Boxen ein.
-						Sonst steht am Ende wieder alles durcheinander. Für Tipps zum sicheren Einpacken schau dir unsere <a href="/ratgeber/verpackungstipps">Verpackungstipps vom Profi</a> an.
+						Diese vier Kategorien sollten Sie von Anfang an strikt trennen. Am
+						besten richten Sie sich gleich verschiedene Bereiche oder Boxen ein.
+						Sonst steht am Ende wieder alles durcheinander. Für Tipps zum sicheren Einpacken schauen Sie sich unsere <a href="/ratgeber/verpackungstipps">Verpackungstipps vom Profi</a> an.
 					</p>
 
 					<h3>Die körperliche Belastung</h3>
 					<p>
-						Unterschätz nicht, wie anstrengend so eine Entrümpelung ist. Möbel
+						Unterschätzen Sie nicht, wie anstrengend so eine Entrümpelung ist. Möbel
 						schleppen, Kisten tragen, Treppen rauf und runter – nach ein paar
-						Stunden merkst du Muskeln, von denen du nicht wusstest, dass du sie
-						hast.
+						Stunden merken Sie Muskeln, von denen Sie nicht wussten, dass Sie sie
+						haben.
 					</p>
 					<p>
 						Besonders in Altbauten mit schmalen Treppenhäusern und ohne Aufzug
 						wird jedes Möbelstück zur Herausforderung. Und der alte Kleiderschrank
-						aus Eiche wiegt definitiv mehr als du denkst.
+						aus Eiche wiegt definitiv mehr als Sie denken.
 					</p>
 				</section>
 
 				<section>
 					<h2>Eigenes Auto vs. Transporter mieten – Was macht wirklich Sinn?</h2>
 					<p>
-						Diese Frage stellen sich viele zu Beginn. Lass uns die Optionen
+						Diese Frage stellen sich viele zu Beginn. Lassen Sie uns die Optionen
 						ehrlich durchgehen.
 					</p>
 
@@ -136,7 +137,7 @@
 							<h4>Vorteile:</h4>
 							<ul>
 								<li>Keine Mietkosten</li>
-								<li>Du kannst spontan fahren, wann immer du möchtest</li>
+								<li>Sie können spontan fahren, wann immer Sie möchten</li>
 								<li>Kein Stress mit Abgabe- und Rückgabezeiten</li>
 								<li>Keine Kaution nötig</li>
 							</ul>
@@ -144,17 +145,17 @@
 						<div class="cons">
 							<h4>Nachteile:</h4>
 							<ul>
-								<li>Du brauchst <strong>viel mehr Fahrten</strong>. Was mit einem Transporter in zwei Touren erledigt ist, bedeutet mit dem PKW zehn bis fünfzehn Fahrten</li>
+								<li>Sie brauchen <strong>viel mehr Fahrten</strong>. Was mit einem Transporter in zwei Touren erledigt ist, bedeutet mit dem PKW zehn bis fünfzehn Fahrten</li>
 								<li>Sperrige Möbel passen einfach nicht rein</li>
 								<li>Der Benzinverbrauch summiert sich schnell</li>
 								<li>Zeitverschwendung: Ständig hin und her fahren kostet Nerven</li>
-								<li>Dein Auto wird dreckig (Staub, Kratzer)</li>
+								<li>Ihr Auto wird dreckig (Staub, Kratzer)</li>
 							</ul>
 						</div>
 					</div>
 					<p>
-						Rechne mal realistisch: Vom Wohnort zum Wertstoffhof und zurück sind
-						je nach Entfernung schnell 20-30 Minuten. Bei zehn Fahrten bist du
+						Rechnen Sie mal realistisch: Vom Wohnort zum Wertstoffhof und zurück sind
+						je nach Entfernung schnell 20-30 Minuten. Bei zehn Fahrten sind Sie
 						<strong>fünf Stunden nur unterwegs</strong> – ohne die Zeit zum Be- und
 						Entladen.
 					</p>
@@ -166,7 +167,7 @@
 							<ul>
 								<li>Alles passt rein: Möbel, Kartons, Elektrogeräte</li>
 								<li>Deutlich <strong>weniger Fahrten</strong> (meist zwei bis drei reichen)</li>
-								<li>Zeitersparnis: Was du an Miete zahlst, holst du an Zeit zurück</li>
+								<li>Zeitersparnis: Was Sie an Miete zahlen, holen Sie an Zeit zurück</li>
 								<li>Professionelle Ausstattung (Zurrgurte, Decken)</li>
 								<li>Einfaches Be- und Entladen auf einer Höhe</li>
 							</ul>
@@ -176,7 +177,7 @@
 							<ul>
 								<li>Mietkosten (ab ca. 50-80 Euro pro Tag)</li>
 								<li>Gewöhnungsbedürftig zu fahren (besonders in engen Straßen)</li>
-								<li>Tanken musst du selbst</li>
+								<li>Tanken müssen Sie selbst</li>
 								<li>Zeitfenster für Abholung und Rückgabe</li>
 							</ul>
 						</div>
@@ -184,9 +185,9 @@
 
 					<div class="tip-box">
 						<strong>Unser Tipp aus der Praxis:</strong> Ab einer Zwei-Zimmer-Wohnung
-						lohnt sich der Transporter fast immer. Rechne nicht nur die reinen Kosten,
-						sondern auch <strong>deine Zeit</strong>. Wenn du zwei Tage Urlaub nehmen
-						musst statt einem – was ist das wert?
+						lohnt sich der Transporter fast immer. Rechnen Sie nicht nur die reinen Kosten,
+						sondern auch <strong>Ihre Zeit</strong>. Wenn Sie zwei Tage Urlaub nehmen
+						müssen statt einem – was ist das wert?
 					</div>
 				</section>
 
@@ -194,12 +195,12 @@
 					<h2>Wohin mit all den Sachen? Entsorgung und Abgabe</h2>
 					<p>
 						Eine der häufigsten Fragen: "Wo kann ich das alles hinbringen?" Hier
-						der praktische Überblick über deine Möglichkeiten.
+						der praktische Überblick über Ihre Möglichkeiten.
 					</p>
 
 					<h3>Wertstoffhof und Recyclinghöfe</h3>
 					<p>
-						In Hildesheim findest du mehrere Wertstoffhöfe, die fast alles
+						In Hildesheim finden Sie mehrere Wertstoffhöfe, die fast alles
 						annehmen:
 					</p>
 					<p><strong>Was wird angenommen:</strong></p>
@@ -213,7 +214,7 @@
 					</ul>
 					<p><strong>Wichtig zu wissen:</strong></p>
 					<ul>
-						<li>Bring deinen Personalausweis mit (Nachweis, dass du aus Hildesheim kommst)</li>
+						<li>Bringen Sie Ihren Personalausweis mit (Nachweis, dass Sie aus Hildesheim kommen)</li>
 						<li>Manche Sachen sind kostenlos, für andere fallen Gebühren an</li>
 						<li>Öffnungszeiten beachten (meist nur bis nachmittags, samstags kürzer)</li>
 						<li>Am Samstag ist immer viel los – geh lieber unter der Woche</li>
@@ -226,12 +227,12 @@
 
 					<h3>Sperrmüll-Abholung</h3>
 					<p>
-						Die Stadt Hildesheim bietet Sperrmüll-Abholungen an. Du meldest dich
-						an, gibst an was raus soll, und es wird abgeholt.
+						Die Stadt Hildesheim bietet Sperrmüll-Abholungen an. Sie melden sich
+						an, geben an was raus soll, und es wird abgeholt.
 					</p>
 					<p><strong>Vorteile:</strong></p>
 					<ul>
-						<li>Bequem, du musst nichts selbst fahren</li>
+						<li>Bequem, Sie müssen nichts selbst fahren</li>
 						<li>Für Menschen ohne Auto ideal</li>
 					</ul>
 					<p><strong>Nachteile:</strong></p>
@@ -239,7 +240,7 @@
 						<li>Begrenzte Menge</li>
 						<li>Wartezeit (oft mehrere Wochen)</li>
 						<li>Nur bestimmte Sachen erlaubt</li>
-						<li>Du musst alles zur Straße bringen</li>
+						<li>Sie müssen alles zur Straße bringen</li>
 					</ul>
 					<p>
 						Bei einer kompletten Haushaltsauflösung reicht die reguläre
@@ -256,7 +257,7 @@
 						<li>Nehmen Möbel, Hausrat, Kleidung, Bücher</li>
 						<li>Holen bei größeren Mengen auch ab</li>
 						<li>Helfen Menschen mit kleinem Budget</li>
-						<li>Du bekommst oft eine Spendenbescheinigung</li>
+						<li>Sie bekommen oft eine Spendenbescheinigung</li>
 					</ul>
 				</section>
 
@@ -294,14 +295,14 @@
 
 					<p>
 						Das ist ein straffer Plan für eine durchschnittliche Wohnung. Bei
-						größeren Objekten oder wenn du berufstätig bist, plan lieber vier bis
-						sechs Wochen ein. Falls du gleichzeitig einen Umzug planst, hilft dir unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> beim Überblick behalten.
+						größeren Objekten oder wenn Sie berufstätig sind, planen Sie lieber vier bis
+						sechs Wochen ein. Falls Sie gleichzeitig einen Umzug planen, hilft Ihnen unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> beim Überblick behalten.
 					</p>
 
 					<h3>Hilfe holen ist keine Schwäche</h3>
 					<p>
-						Viele denken: "Das schaffe ich alleine." Aber ehrlich: Warum solltest
-						du?
+						Viele denken: "Das schaffe ich alleine." Aber ehrlich: Warum sollten
+						Sie?
 					</p>
 					<p>
 						<strong>Familie und Freunde einspannen</strong> macht die Sache nicht
@@ -311,15 +312,15 @@
 					<p>
 						<strong>Professionelle Entrümpelungsfirmen</strong> kennen sich aus.
 						Die wissen genau, was wohin muss, haben die richtigen Transporter und
-						erledigen in zwei Tagen, wofür du zwei Wochen bräuchtest. Unser <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösungs-Service</a> übernimmt die komplette Räumung für dich.
+						erledigen in zwei Tagen, wofür Sie zwei Wochen bräuchten. Unser <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösungs-Service</a> übernimmt die komplette Räumung für Sie.
 					</p>
-					<p>Ja, das kostet Geld. Aber rechne mal durch:</p>
+					<p>Ja, das kostet Geld. Aber rechnen Sie mal durch:</p>
 					<ul>
-						<li>Deine Urlaubstage</li>
+						<li>Ihre Urlaubstage</li>
 						<li>Transporter-Miete</li>
 						<li>Benzinkosten</li>
 						<li>Entsorgungsgebühren</li>
-						<li>Deine Nerven und Gesundheit</li>
+						<li>Ihre Nerven und Gesundheit</li>
 					</ul>
 					<p>
 						Oft ist der Unterschied kleiner als gedacht. Und manchmal übernimmt
@@ -336,37 +337,37 @@
 					</p>
 					<ul>
 						<li>
-							<strong>Zeit:</strong> Plan mindestens das Doppelte ein, was du ursprünglich
-							dachtest. Besser zu viel Puffer als Zeitdruck.
+							<strong>Zeit:</strong> Planen Sie mindestens das Doppelte ein, was Sie ursprünglich
+							dachten. Besser zu viel Puffer als Zeitdruck.
 						</li>
 						<li>
 							<strong>Transport:</strong> Ab einer Zwei-Zimmer-Wohnung lohnt sich der
-							Transporter. Deine Zeit ist wertvoll.
+							Transporter. Ihre Zeit ist wertvoll.
 						</li>
 						<li>
 							<strong>Entsorgung:</strong> Nutze die vielen Anlaufstellen – Wertstoffhof,
 							Sozialkaufhäuser, Online-Plattformen. Nicht alles muss in den Müll.
 						</li>
 						<li>
-							<strong>Hilfe:</strong> Hol dir Unterstützung, ob von Freunden oder professionell.
-							Niemand hat gesagt, dass du das allein schaffen musst.
+							<strong>Hilfe:</strong> Holen Sie sich Unterstützung, ob von Freunden oder professionell.
+							Niemand hat gesagt, dass Sie das allein schaffen müssen.
 						</li>
 					</ul>
 					<p>
-						Und noch ein letzter Tipp aus der Praxis: <strong>Fang früh genug an.</strong>
-						Wenn du weißt, dass eine Haushaltsauflösung ansteht, schieb's nicht vor
-						dir her. Je früher du anfängst, desto entspannter wird die ganze Sache.
+						Und noch ein letzter Tipp aus der Praxis: <strong>Fangen Sie früh genug an.</strong>
+						Wenn Sie wissen, dass eine Haushaltsauflösung ansteht, schieben Sie es nicht vor
+						sich her. Je früher Sie anfangen, desto entspannter wird die ganze Sache.
 					</p>
 					<p>
-						Du schaffst das! Und wenn du zwischendrin mal nicht weiterweißt – es
-						gibt genug Profis, die dir unter die Arme greifen können.
+						Sie schaffen das! Und wenn Sie zwischendrin mal nicht weiterwissen – es
+						gibt genug Profis, die Ihnen unter die Arme greifen können.
 					</p>
 				</section>
 			</div>
 
 			<CTASection
 				heading="Haushaltsauflösung geplant?"
-				description="Wir übernehmen die komplette Entrümpelung für dich – von der Sortierung bis zur fachgerechten Entsorgung."
+				description="Wir übernehmen die komplette Entrümpelung für Sie – von der Sortierung bis zur fachgerechten Entsorgung."
 				buttonText="Kostenloses Angebot anfordern"
 				buttonHref="/kostenloses-angebot"
 			/>
@@ -427,6 +428,12 @@
 		font-size: 1.25rem;
 		color: #1a202c;
 		margin: 0;
+	}
+
+	.author-byline {
+		color: #64748b;
+		font-size: var(--text-sm);
+		margin-top: var(--space-2);
 	}
 
 	.guide-intro {

@@ -14,6 +14,7 @@
     title="AGB | Aust Umzüge Hildesheim"
     description="Allgemeine Geschäftsbedingungen (AGB) von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
     canonical="https://www.aust-umzuege.de/agb"
+    noindex
 />
 
 <StructuredData schema={breadcrumbs} />

@@ -43,12 +43,13 @@
 				</div>
 				<h1>Woran erkenne ich eine seriöse Umzugsfirma?</h1>
 				<p class="subtitle">Qualität erkennen, schwarze Schafe vermeiden</p>
+				<p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge</p>
 			</header>
 
 			<div class="guide-intro">
 				<p>
 					Ein Umzug ist Vertrauenssache. Mit den richtigen Fragen und einem
-					geschulten Blick kannst du selbstbewusst eine fundierte Entscheidung
+					geschulten Blick können Sie selbstbewusst eine fundierte Entscheidung
 					treffen und schwarze Schafe meiden.
 				</p>
 			</div>
@@ -56,36 +57,36 @@
 			<div class="article-content">
 				<section>
 					<p>
-						Ein Umzug ist Vertrauenssache. Du übergibst fremden Menschen den
-						Schlüssel zu deinem Zuhause und lässt sie mit all deinen
-						Habseligkeiten – vom Erbstück-Sofa bis zur Fotosammlung deiner Kinder
-						– von A nach B fahren. Da ist es nur verständlich, dass du dir sicher
-						sein willst: Diese Leute machen ihren Job professionell, zuverlässig
+						Ein Umzug ist Vertrauenssache. Sie übergeben fremden Menschen den
+						Schlüssel zu Ihrem Zuhause und lassen sie mit all Ihren
+						Habseligkeiten – vom Erbstück-Sofa bis zur Fotosammlung Ihrer Kinder
+						– von A nach B fahren. Da ist es nur verständlich, dass Sie sich sicher
+						sein wollen: Diese Leute machen ihren Job professionell, zuverlässig
 						und ehrlich.
 					</p>
 					<p>
 						Die gute Nachricht? Der Umzugsmarkt hat viele hervorragende Profis,
 						die genau das tun. Die weniger gute? Es gibt auch schwarze Schafe, die
 						mit unsauberen Methoden arbeiten. Aber hier kommt die wirklich gute
-						Nachricht: Mit den richtigen Fragen und einem geschulten Blick kannst
-						du selbstbewusst die Spreu vom Weizen trennen und eine fundierte
+						Nachricht: Mit den richtigen Fragen und einem geschulten Blick können
+						Sie selbstbewusst die Spreu vom Weizen trennen und eine fundierte
 						Entscheidung treffen.
 					</p>
 					<p>
-						Dieser Artikel zeigt dir genau, worauf du achten solltest – egal ob du in Hildesheim, Hannover oder anderswo in Deutschland suchst. Es geht nicht darum,
+						Dieser Artikel zeigt Ihnen genau, worauf Sie achten sollten – egal ob Sie in Hildesheim, Hannover oder anderswo in Deutschland suchen. Es geht nicht darum,
 						den billigsten Anbieter zu finden, sondern den richtigen. Einen, bei
 						dem Qualität, Zuverlässigkeit und Transparenz stimmen. Denn am Ende
 						des Tages geht es nicht darum, ein paar Euro zu sparen, sondern darum,
-						dass dein Umzug reibungslos läuft und deine Sachen heil ankommen.
+						dass Ihr Umzug reibungslos läuft und Ihre Sachen heil ankommen.
 					</p>
 				</section>
 
 				<section>
-					<h2>Warnsignale, die du ernst nehmen solltest</h2>
+					<h2>Warnsignale, die Sie ernst nehmen sollten</h2>
 					<p>
 						Manche Alarmglocken sollten sofort läuten. Hier sind die klassischen
-						Red Flags, bei denen du genauer hinsehen oder gleich weitersuchen
-						solltest.
+						Red Flags, bei denen Sie genauer hinsehen oder gleich weitersuchen
+						sollten.
 					</p>
 
 					<h3>Verdächtige Zahlungsbedingungen</h3>
@@ -101,21 +102,21 @@
 						Was aber definitiv ein Warnsignal ist: <strong
 							>100 Prozent Vorkasse.</strong
 						> Wer den kompletten Betrag vor dem Umzug haben will, handelt unseriös.
-						Im schlimmsten Fall steht am Umzugstag niemand vor der Tür, und dein Geld
+						Im schlimmsten Fall steht am Umzugstag niemand vor der Tür, und Ihr Geld
 						ist weg.
 					</p>
 					<p>
 						Genauso kritisch: <strong
 							>Nur Barzahlung ohne Rechnung.</strong
 						> Das riecht stark nach Schwarzarbeit. Keine Rechnung bedeutet keine Nachweise,
-						keine Gewährleistung, keine Absicherung für dich. Und im Schadensfall?
+						keine Gewährleistung, keine Absicherung für Sie. Und im Schadensfall?
 						Pech gehabt. Finger weg.
 					</p>
 
 					<h3>Unrealistisch niedrige Preise</h3>
 					<p>
 						Klar, niemand zahlt gern mehr als nötig. Aber wenn ein Angebot
-						deutlich unter dem Marktdurchschnitt liegt, solltest du skeptisch
+						deutlich unter dem Marktdurchschnitt liegt, sollten Sie skeptisch
 						werden. Ein Umzug hat reale Kosten: Versicherung, professionelle
 						Ausrüstung, geschultes Personal, Fahrzeuge, Treibstoff. Wer "zu
 						billig" anbietet, spart an der falschen Stelle – und das endet oft
@@ -125,7 +126,7 @@
 						Klassische Masche: Der Lockvogel-Preis. Am Umzugstag kommen dann
 						plötzlich "unvorhergesehene Kosten" für Dinge dazu, die von Anfang an
 						klar waren. Treppenhaus im dritten Stock? "Ach, das haben Sie nicht
-						erwähnt!" Spoiler: Hast du. Im Endeffekt zahlst du mehr als bei einem
+						erwähnt!" Spoiler: Haben Sie. Im Endeffekt zahlen Sie mehr als bei einem
 						ehrlichen Angebot – nur mit deutlich mehr Ärger.
 					</p>
 
@@ -137,7 +138,7 @@
 						<strong>Festpreis</strong> kalkuliert werden.
 					</p>
 					<p>
-						Wer dir am Telefon blind einen Preis nennt, rät bestenfalls – und
+						Wer Ihnen am Telefon blind einen Preis nennt, rät bestenfalls – und
 						wird am Umzugstag "Anpassungen" vornehmen müssen. Lies:
 						Nachforderungen. Eine Vor-Ort-Besichtigung ist das Fundament für
 						Transparenz und Planungssicherheit.
@@ -146,16 +147,16 @@
 					<h3>Fehlende Versicherung</h3>
 					<p>
 						Ein Umzug ohne Versicherung ist wie Autofahren ohne Führerschein:
-						vielleicht geht es gut, aber wenn nicht, wird es richtig teuer. Du
-						brauchst mindestens zwei Versicherungen: eine <strong
+						vielleicht geht es gut, aber wenn nicht, wird es richtig teuer. Sie
+						brauchen mindestens zwei Versicherungen: eine <strong
 							>Transportversicherung</strong
 						>
-						(schützt deine Sachen während des Transports) und eine
+						(schützt Ihre Sachen während des Transports) und eine
 						<strong>Haftpflichtversicherung</strong> (falls im Haus etwas zu Bruch
 						geht).
 					</p>
 					<p>
-						Frage nach einem schriftlichen Nachweis. Seriöse Firmen zeigen dir
+						Fragen Sie nach einem schriftlichen Nachweis. Seriöse Firmen zeigen Ihnen
 						das ohne Umschweife. Wer ausweicht oder sagt "ist nicht nötig", lügt.
 					</p>
 
@@ -164,10 +165,10 @@
 						Nur eine Handynummer und keine Adresse im Impressum? Das ist ein
 						riesiges Warnsignal. Professionelle Unternehmen haben ein Büro, eine
 						Werkstatt, eine Garage – irgendetwas Greifbares. Fliegende Händler
-						hingegen sind nach dem Umzug oft unauffindbar, wenn du sie brauchst.
+						hingegen sind nach dem Umzug oft unauffindbar, wenn Sie sie brauchen.
 					</p>
 					<p>
-						Check das Impressum auf der Website. Gibt es eine vollständige
+						Prüfen Sie das Impressum auf der Website. Gibt es eine vollständige
 						Geschäftsadresse? Eine Steuernummer oder Handelsregisternummer? Wenn
 						nein: weitersuchen.
 					</p>
@@ -176,30 +177,30 @@
 					<p>
 						"Dieses Angebot gilt nur heute!" oder "Wenn Sie jetzt nicht zusagen,
 						ist der Termin weg!" – das sind klassische Druckverkaufsmethoden. Gute
-						Umzugsfirmen geben dir Zeit, das Angebot zu prüfen, Fragen zu stellen
-						und zu vergleichen. Wer dich unter Druck setzt, will verhindern, dass
-						du nachdenkst. Das sollte Grund genug sein, genau das zu tun.
+						Umzugsfirmen geben Ihnen Zeit, das Angebot zu prüfen, Fragen zu stellen
+						und zu vergleichen. Wer Sie unter Druck setzt, will verhindern, dass
+						Sie nachdenken. Das sollte Grund genug sein, genau das zu tun.
 					</p>
 				</section>
 
 				<section>
-					<h2>Woran du Qualität erkennst</h2>
+					<h2>Woran Sie Qualität erkennen</h2>
 					<p>
-						Jetzt zu den positiven Signalen – den Dingen, die zeigen, dass du es
-						mit einem professionellen Anbieter zu tun hast.
+						Jetzt zu den positiven Signalen – den Dingen, die zeigen, dass Sie es
+						mit einem professionellen Anbieter zu tun haben.
 					</p>
 
 					<h3>Transparente Preisgestaltung</h3>
 					<p>
 						Ein <strong>seriöser Festpreis</strong> basiert auf dem, was bei der Besichtigung
 						festgehalten wurde: Anzahl der Möbel, Umfang der Dienstleistungen, Rahmenbedingungen.
-						Das ist deine Sicherheit.
+						Das ist Ihre Sicherheit.
 					</p>
 					<p>
 						Wichtig zu verstehen: <strong
 							>Ein Festpreis ist an einen vereinbarten Umfang gebunden.</strong
-						> Wenn sich dieser Umfang ändert – etwa weil du kurzfristig noch ein Klavier
-						transportieren lassen willst oder zusätzliche Services buchst – wird der
+						> Wenn sich dieser Umfang ändert – etwa weil Sie kurzfristig noch ein Klavier
+						transportieren lassen wollen oder zusätzliche Services buchen – wird der
 						Preis transparent angepasst. Das ist fair und schützt beide Seiten.
 					</p>
 					<p>
@@ -223,7 +224,7 @@
 					<p>
 						Alles Wichtige gehört auf Papier: Umfang der Leistungen, Preis,
 						Zahlungsbedingungen, Versicherungsdetails, Haftungsfragen. Ein
-						professioneller Vertrag schützt dich und zeigt, dass die Firma sauber
+						professioneller Vertrag schützt Sie und zeigt, dass die Firma sauber
 						arbeitet.
 					</p>
 					<p>Fehlt der Vertrag oder ist er schwammig? Red Flag.</p>
@@ -243,7 +244,7 @@
 
 					<h3>Echte Bewertungen</h3>
 					<p>
-						Google-Rezensionen, Trusted Shops, Bewertungsportale – schau dir an,
+						Google-Rezensionen, Trusted Shops, Bewertungsportale – schauen Sie sich an,
 						was andere Kunden sagen. Aber Vorsicht: <strong
 							>Zu perfekt ist verdächtig.</strong
 						> Wenn alle Bewertungen fünf Sterne haben und wie aus der Feder eines
@@ -251,7 +252,7 @@
 					</p>
 					<p>
 						Eine gesunde Mischung aus guten und vereinzelten kritischeren
-						Bewertungen wirkt authentischer. Und achte darauf, wie die Firma auf
+						Bewertungen wirkt authentischer. Und achten Sie darauf, wie die Firma auf
 						Kritik reagiert: Professionell und lösungsorientiert? Gutes Zeichen.
 						Pampig oder gar nicht? Eher nicht.
 					</p>
@@ -272,8 +273,8 @@
 				<section>
 					<h2>Die richtigen Fragen vor der Buchung</h2>
 					<p>
-						Hier ist deine Checkliste. Stelle diese Fragen, bevor du
-						unterschreibst:
+						Hier ist Ihre Checkliste. Stellen Sie diese Fragen, bevor Sie
+						unterschreiben:
 					</p>
 
 					<div class="checklist">
@@ -363,8 +364,8 @@
 				<section>
 					<h2>Festpreis vs. Stundenabrechnung: Was ist besser?</h2>
 					<p>
-						<strong>Festpreis</strong> gibt dir Planungssicherheit. Du weißt vorher
-						genau, was du zahlst – vorausgesetzt, der vereinbarte Umfang stimmt. Das
+						<strong>Festpreis</strong> gibt Ihnen Planungssicherheit. Sie wissen vorher
+						genau, was Sie zahlen – vorausgesetzt, der vereinbarte Umfang stimmt. Das
 						ist besonders bei größeren Umzügen sinnvoll, wo Unklarheiten schnell teuer
 						werden können.
 					</p>
@@ -376,15 +377,15 @@
 					</p>
 					<p>
 						<strong>Unsere Empfehlung:</strong> Wenn möglich, Festpreis nach Besichtigung.
-						So hast du Klarheit und kannst entspannt planen.
+						So haben Sie Klarheit und können entspannt planen.
 					</p>
 				</section>
 
 				<section>
 					<h2>Warnsignale im Vertrag</h2>
 					<p>
-						Auch wenn du einen Vertrag in den Händen hältst, heißt das nicht
-						automatisch, dass alles sauber ist. Achte auf diese Warnsignale:
+						Auch wenn Sie einen Vertrag in den Händen halten, heißt das nicht
+						automatisch, dass alles sauber ist. Achten Sie auf diese Warnsignale:
 					</p>
 					<ul>
 						<li>
@@ -396,24 +397,24 @@
 							werden (Versicherung, Haftung, Leistungsumfang), ist das kein Versehen.
 						</li>
 						<li>
-							<strong>Keine Stornobedingungen:</strong> Was passiert, wenn du absagen
-							musst?
+							<strong>Keine Stornobedingungen:</strong> Was passiert, wenn Sie absagen
+							müssen?
 						</li>
 						<li>
 							<strong>"Alles inklusive" ohne Spezifizierung:</strong> Was genau ist
-							"alles"? Wenn das nicht definiert ist, kannst du es auch nicht einfordern.
+							"alles"? Wenn das nicht definiert ist, können Sie es auch nicht einfordern.
 						</li>
 					</ul>
 					<p>
-						Lies den Vertrag gründlich. Und wenn etwas unklar ist: nachfragen.
+						Lesen Sie den Vertrag gründlich. Und wenn etwas unklar ist: nachfragen.
 						Lieber einmal zu viel gefragt als hinterher die böse Überraschung.
 					</p>
 				</section>
 
 				<section>
-					<h2>Fazit: Du bist bestens vorbereitet</h2>
+					<h2>Fazit: Sie sind bestens vorbereitet</h2>
 					<p>
-						Mit diesem Wissen bist du bestens gerüstet, um eine seriöse
+						Mit diesem Wissen sind Sie bestens gerüstet, um eine seriöse
 						Umzugsfirma zu erkennen und schwarze Schafe zu meiden. Es geht nicht
 						darum, misstrauisch durch die Welt zu gehen, sondern darum, die
 						richtigen Fragen zu stellen und auf die Antworten zu achten.
@@ -425,18 +426,18 @@
 						Nerven, Ärger und im Zweifel auch Geld.
 					</p>
 					<p>
-						Nimm dir die Zeit, Angebote zu vergleichen. Stelle die Fragen aus
-						diesem Artikel. Achte auf die Warnsignale. Und vertraue deinem
+						Nehmen Sie sich die Zeit, Angebote zu vergleichen. Stellen Sie die Fragen aus
+						diesem Artikel. Achten Sie auf die Warnsignale. Und vertrauen Sie Ihrem
 						Bauchgefühl: Wenn sich etwas komisch anfühlt, ist es das
-						wahrscheinlich auch. Unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> hilft dir, den gesamten Umzug strukturiert zu planen.
+						wahrscheinlich auch. Unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> hilft Ihnen, den gesamten Umzug strukturiert zu planen.
 					</p>
 					<p>
 						Ein transparenter, professioneller Service ist keine Utopie – es ist
-						das, was du verdienst. Und mit dem richtigen Anbieter wird dein Umzug
+						das, was Sie verdienen. Und mit dem richtigen Anbieter wird Ihr Umzug
 						zu dem, was er sein sollte: der Anfang eines neuen Kapitels, nicht der
 						Beginn eines Albtraums.
 					</p>
-					<p><strong>Viel Erfolg bei deinem Umzug!</strong></p>
+					<p><strong>Viel Erfolg bei Ihrem Umzug!</strong></p>
 				</section>
 			</div>
 
@@ -503,6 +504,12 @@
 		font-size: 1.25rem;
 		color: #1a202c;
 		margin: 0;
+	}
+
+	.author-byline {
+		color: #64748b;
+		font-size: var(--text-sm);
+		margin-top: var(--space-2);
 	}
 
 	.guide-intro {

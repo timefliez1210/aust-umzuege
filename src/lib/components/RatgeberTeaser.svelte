@@ -4,21 +4,25 @@
 			title: "Umzugs-Checkliste",
 			description: "Strukturierter Plan für Ihren Umzug: Was Sie 4 Wochen, 1 Woche und am Umzugstag beachten müssen.",
 			href: "/ratgeber/umzugs-checkliste",
+			linkText: "Zur Umzugs-Checkliste",
 		},
 		{
 			title: "Verpackungstipps vom Profi",
 			description: "Geschirr, Elektronik und Möbel sicher verpacken – mit Profi-Tricks vom Umzugsunternehmen.",
 			href: "/ratgeber/verpackungstipps",
+			linkText: "Verpackungstipps lesen",
 		},
 		{
 			title: "Haushaltsauflösungen & Entrümpelungen",
 			description: "Praktischer Ratgeber zu Transport, Entsorgung und realistischer Zeitplanung.",
 			href: "/ratgeber/haushaltsaufloesungen-entruempelungen",
+			linkText: "Ratgeber Haushaltsauflösung",
 		},
 		{
 			title: "Seriöse Umzugsfirma erkennen",
 			description: "Red Flags erkennen, die richtigen Fragen stellen und schwarze Schafe vermeiden.",
 			href: "/ratgeber/seriose-umzugsfirma",
+			linkText: "Ratgeber Umzugsfirmen",
 		},
 	];
 </script>
@@ -36,7 +40,7 @@
 					<h3 class="ratgeber-card__title">{article.title}</h3>
 					<p class="ratgeber-card__description">{article.description}</p>
 					<span class="ratgeber-card__link">
-						Jetzt lesen
+						{article.linkText}
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
 							<line x1="5" y1="12" x2="19" y2="12"></line>
 							<polyline points="12 5 19 12 12 19"></polyline>

@@ -14,6 +14,7 @@
     title="Datenschutzerklärung | Aust Umzüge Hildesheim"
     description="Datenschutzerklärung von Aust Umzüge und Haushaltsauflösungen in Hildesheim."
     canonical="https://www.aust-umzuege.de/datenschutz"
+    noindex
 />
 
 <StructuredData schema={breadcrumbs} />

@@ -3,6 +3,7 @@
     interface ServiceBox {
         title: string;
         href: string;
+        linkText: string;
     }
 
     interface Props {
@@ -11,13 +12,14 @@
 
     let {
         services = [
-            { title: "Umzüge Privat & Gewerbe", href: "/leistungen/privatumzug" },
-            { title: "Montagen & Demontagen", href: "/leistungen/montage" },
+            { title: "Umzüge Privat & Gewerbe", href: "/leistungen/privatumzug", linkText: "Zu Privatumzügen" },
+            { title: "Montagen & Demontagen", href: "/leistungen/montage", linkText: "Zum Montageservice" },
             {
                 title: "Haushaltsauflösungen",
                 href: "/leistungen/haushaltsaufloesung",
+                linkText: "Zu Haushaltsauflösungen",
             },
-            { title: "Weitere Leistungen", href: "/leistungen" },
+            { title: "Weitere Leistungen", href: "/leistungen", linkText: "Alle Leistungen ansehen" },
         ],
     }: Props = $props();
 </script>
@@ -28,7 +30,7 @@
             <a href={service.href} class="service-box">
                 <span class="service-box__title">{service.title}</span>
                 <span class="service-box__link">
-                    Hier mehr erfahren
+                    {service.linkText}
                     <svg
                         width="16"
                         height="16"

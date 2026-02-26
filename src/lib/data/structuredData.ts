@@ -724,7 +724,7 @@ export const howToHaushaltsaufloesung = {
 export const howToSerioseUmzugsfirma = {
 	"@type": "HowTo",
 	name: "Seriöse Umzugsfirma finden: Anleitung in 5 Schritten",
-	description: "So erkennst du professionelle Umzugsunternehmen und vermeidest schwarze Schafe – von der Recherche bis zur Vertragsunterzeichnung.",
+	description: "So erkennen Sie professionelle Umzugsunternehmen und vermeiden schwarze Schafe – von der Recherche bis zur Vertragsunterzeichnung.",
 	step: [
 		{
 			"@type": "HowToStep",

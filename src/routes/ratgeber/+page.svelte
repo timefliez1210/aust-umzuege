@@ -57,8 +57,12 @@
         <header class="guides-page__header">
             <h1 class="guides-page__title">Ratgeber & Tipps</h1>
             <p class="guides-page__intro">
-                Profitieren Sie von unserer langjährigen Erfahrung. Hier finden
-                Sie wertvolle Ratschläge für einen reibungslosen Umzug.
+                Ein Umzug bringt viele Fragen mit sich: Was muss wann erledigt werden? Wie verpacke ich
+                empfindliche Gegenstände? Woran erkenne ich eine seriöse Umzugsfirma? In unseren Ratgebern
+                teilen wir das Wissen aus hunderten Umzügen in Hildesheim und Umgebung – praxisnah,
+                ehrlich und kostenlos. Ob Sie gerade den ersten Wohnungswechsel planen oder eine
+                Haushaltsauflösung organisieren müssen: Hier finden Sie konkrete Tipps, Checklisten
+                und Erfahrungswerte, die Ihnen Zeit, Geld und Nerven sparen.
             </p>
         </header>
 

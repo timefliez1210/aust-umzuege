@@ -2,7 +2,7 @@
 	import CTASection from "$lib/components/CTASection.svelte";
 	import MetaTags from "$lib/components/MetaTags.svelte";
 	import StructuredData from "$lib/components/StructuredData.svelte";
-	import { articles, createBreadcrumbs } from "$lib/data/structuredData";
+	import { articles, howToHaushaltsaufloesung, createBreadcrumbs } from "$lib/data/structuredData";
 
 	const breadcrumbs = createBreadcrumbs([
 		{ name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -20,6 +20,7 @@
 />
 
 <StructuredData schema={articles.haushaltsaufloesungen} />
+<StructuredData schema={howToHaushaltsaufloesung} />
 <StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">

@@ -1,6 +1,81 @@
 // Centralized Structured Data for SEO
 // Edit this file to update structured data across the entire site
 
+export interface Review {
+	author: string;
+	rating: number;
+	date: string;
+	text: string;
+	url: string;
+	badge?: string;
+	reviewCount?: number;
+	photoCount?: number;
+}
+
+export const reviews: Review[] = [
+	{
+		author: 'Quadrilla Murmelbahn',
+		rating: 5,
+		date: '2023-02-08',
+		text: 'Wir haben mit der Firma Aust einen weiten Umzug gemacht. Dank guter Abschätzung des Volumens hat er uns das günstigste Angebot gemacht – wo andere Firmen mit einem 7,5 Tonner kommen wollten, sagte er ein 3,5 Tonner reicht. Alles hat rein gepasst und der Umzug reibungslos verlaufen. Die Sachen wurden professionell und gut geschützt geladen, die Mitarbeiter waren freundlich und umsichtig.',
+		url: 'https://maps.app.goo.gl/mdsS98zcNBXUiqSPA',
+		badge: 'Local Guide',
+		reviewCount: 30,
+	},
+	{
+		author: 'Luca Wulf',
+		rating: 5,
+		date: '2023-02-14',
+		text: 'Meine Frau und ich haben unseren Umzug mit Aust Umzüge durchführen lassen. Der Umzug verlief reibungslos und außergewöhnlich zügig. Wir sind über 100km weit weg gezogen und es ist beim Transport kein Möbelstück zu schaden gekommen. Wir können Aust Umzüge bedenkenlos weiterempfehlen! Vielen Dank!',
+		url: 'https://maps.app.goo.gl/qKpZhMhBTjvAdHLu9',
+		badge: 'Local Guide',
+		reviewCount: 8,
+		photoCount: 8,
+	},
+	{
+		author: 'Mathias M.',
+		rating: 5,
+		date: '2020-02-19',
+		text: 'Junger Unternehmer, der seine Arbeit sehr gewissenhaft, schnell und zuverlässig erledigt. Fairer Preis, zeitnahe Absprache und schnelle Erledigung. Bei mir wurde eine Wohnung aufgelöst, was Herr Aust und sein Team sehr schnell erledigt haben. Danke dafür. Sehr zu empfehlen und weiterhin viel Erfolg.',
+		url: 'https://maps.app.goo.gl/qNzfcMr4NYGdrMow5',
+		badge: 'Local Guide',
+		reviewCount: 128,
+		photoCount: 11,
+	},
+	{
+		author: 'Bea',
+		rating: 5,
+		date: '2025-11-12',
+		text: 'Ich bin letzte Woche mit Aust Umzüge umgezogen und ich bin absolut begeistert! Das Team war pünktlich, super freundlich und extrem fleißig. Alles wurde sorgfältig und ordentlich eingepackt, abgebaut, transportiert und wieder aufgebaut. Die Jungs haben richtig tolle Arbeit geleistet – schnell, professionell und mit viel Engagement. Ich kann Aust Umzüge wirklich uneingeschränkt weiterempfehlen.',
+		url: 'https://maps.app.goo.gl/KNcwFdaD9wWhzHZV9',
+		reviewCount: 2,
+		photoCount: 3,
+	},
+	{
+		author: 'Nicole Stein',
+		rating: 5,
+		date: '2025-10-03',
+		text: 'Klare Weiterempfehlung! Herr Aust und sein Team haben den Umzug meiner Mutter in eine betreute Wohnung wunderbar gemacht. Sehr hilfsbereit, zuverlässig und schnell. Die Kommunikation mit Herrn Aust war auch hervorragend. Kann ich uneingeschränkt weiterempfehlen!',
+		url: 'https://maps.app.goo.gl/Dy1aFNHwmrhYvE4v7',
+		reviewCount: 12,
+	},
+	{
+		author: 'Hagen Dittmer',
+		rating: 5,
+		date: '2023-02-21',
+		text: 'Ich habe sehr gute Erfahrungen mit der Firma Aust gemacht. Schnelles unkompliziertes Abchecken des Umzugsvolumens, sehr schnell lag der Kostenvoranschlag vor, Herr Aust war immer schnell zu erreichen, die Möbel wurden sorgfältig verpackt, das Team hat effizient gearbeitet und war sehr freundlich und zuvorkommend. Der Umzug begann pünktlich und blieb im Zeitrahmen.',
+		url: 'https://maps.app.goo.gl/DtDtuZzKhnRgj8yg9',
+		reviewCount: 11,
+	},
+];
+
+export const aggregateRating = {
+	ratingValue: 5.0,
+	reviewCount: 69,
+};
+
+export const allReviewsUrl = "https://www.google.com/maps/place/Aust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen/@52.1557877,9.9517408,17z/data=!4m18!1m9!3m8!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!2sAust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0!3m7!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0?entry=ttu";
+
 export const businessInfo = {
 	"@type": "MovingCompany",
 	"@id": "https://www.aust-umzuege.de/#organization",
@@ -63,11 +138,24 @@ export const businessInfo = {
 	},
 	aggregateRating: {
 		"@type": "AggregateRating",
-		ratingValue: 5.0,
-		reviewCount: 69,
+		ratingValue: aggregateRating.ratingValue,
+		reviewCount: aggregateRating.reviewCount,
 		bestRating: 5,
 		worstRating: 1
-	}
+	},
+	review: reviews.map((r) => ({
+		"@type": "Review",
+		url: r.url,
+		author: { "@type": "Person", name: r.author },
+		datePublished: r.date,
+		reviewRating: {
+			"@type": "Rating",
+			ratingValue: r.rating,
+			bestRating: 5,
+			worstRating: 1
+		},
+		reviewBody: r.text
+	}))
 };
 
 export const services = {
@@ -84,8 +172,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/privatumzug",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	firmenumzug: {
@@ -101,8 +189,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/firmenumzug",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	seniorenumzug: {
@@ -118,8 +206,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/seniorenumzug",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	fernUebersee: {
@@ -135,8 +223,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	umzugshelfer: {
@@ -152,8 +240,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/umzugshelfer",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	montage: {
@@ -169,8 +257,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/montage",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	lagerung: {
@@ -186,8 +274,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/lagerung",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	halteverbot: {
@@ -203,8 +291,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/halteverbot",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	},
 	umzugsberatung: {
@@ -238,8 +326,8 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
 		offers: {
 			"@type": "Offer",
-			availability: "https://schema.org/InStock",
-			priceCurrency: "EUR"
+			priceCurrency: "EUR",
+			priceRange: "€€"
 		}
 	}
 };
@@ -251,9 +339,9 @@ export const articles = {
 		description:
 			"Kostenlose Umzugs-Checkliste: Was Sie 4 Wochen, 1 Woche und am Umzugstag beachten müssen. Strukturierter Plan für stressfreien Wohnungswechsel.",
 		author: {
-			"@type": "Organization",
-			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen"
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
 		},
 		publisher: {
 			"@type": "Organization",
@@ -266,7 +354,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/umzugs-checkliste",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -280,9 +368,9 @@ export const articles = {
 		description:
 			"Professionelle Verpackungstipps für Ihren Umzug: Geschirr, Elektronik, Möbel und empfindliche Gegenstände sicher verpacken.",
 		author: {
-			"@type": "Organization",
-			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen"
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
 		},
 		publisher: {
 			"@type": "Organization",
@@ -295,7 +383,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+		image: "https://www.aust-umzuege.de/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig-600w.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/verpackungstipps",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -309,9 +397,9 @@ export const articles = {
 		description:
 			"Praktischer Ratgeber für Haushaltsauflösungen: Tipps zu Herausforderungen, Transport, Entsorgungsmöglichkeiten und realistischer Zeitplanung.",
 		author: {
-			"@type": "Organization",
-			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen"
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
 		},
 		publisher: {
 			"@type": "Organization",
@@ -324,7 +412,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+		image: "https://www.aust-umzuege.de/Haushaltsaufloesungen-Entruempelungen-carousel-3-800w.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -338,9 +426,9 @@ export const articles = {
 		description:
 			"Seriöse Umzugsfirma finden: Erkennen Sie Red Flags, stellen Sie die richtigen Fragen und vermeiden Sie schwarze Schafe.",
 		author: {
-			"@type": "Organization",
-			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen"
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
 		},
 		publisher: {
 			"@type": "Organization",
@@ -353,7 +441,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+		image: "https://www.aust-umzuege.de/privatumzuege-hildesheim-carousel-1-800w.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -586,6 +674,88 @@ export const howToVerpackungstipps = {
 			text: "Große Möbel zerlegen, Schrauben in beschriftetem Zip-Beutel am Möbelstück befestigen. Glasböden separat verpacken. Polstermöbel mit Decken schützen."
 		}
 	]
+};
+
+export const howToHaushaltsaufloesung = {
+	"@type": "HowTo",
+	name: "Haushaltsauflösung planen: Schritt-für-Schritt-Anleitung",
+	description: "Praktischer Leitfaden für die komplette Wohnungsräumung – von der Zeitplanung über das Sortieren bis zur fachgerechten Entsorgung.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Zeitplanung und Umfang einschätzen",
+			text: "Mindestens eine Woche für eine durchschnittliche Wohnung einplanen, bei einem ganzen Haus mit Keller und Dachboden zwei bis drei Wochen. Jeden Raum einzeln durchgehen und den Aufwand realistisch einschätzen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "In vier Kategorien sortieren",
+			text: "Alle Gegenstände konsequent in vier Kategorien einteilen: Behalten, Verkaufen, Spenden und Entsorgen. Von Anfang an verschiedene Bereiche oder Boxen einrichten, damit nichts durcheinander gerät."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Transport organisieren",
+			text: "Ab einer Zwei-Zimmer-Wohnung lohnt sich ein Transporter fast immer. Alternativ einen Dienstleister beauftragen. Die Zeitersparnis gegenüber vielen PKW-Fahrten ist erheblich."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Fachgerechte Entsorgung durchführen",
+			text: "Sperrmüll beim Wertstoffhof abgeben, Elektrogeräte an Sammelstellen bringen, gut erhaltene Dinge an soziale Einrichtungen spenden. Sondermüll wie Farben oder Chemikalien nur an zugelassenen Annahmestellen entsorgen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Professionelle Hilfe prüfen",
+			text: "Bei großem Umfang, zeitlicher Einschränkung oder emotionaler Belastung einen professionellen Dienstleister für die Haushaltsauflösung beauftragen. Besenreine Übergabe und fachgerechte Entsorgung inklusive."
+		}
+	]
+};
+
+export const howToSerioseUmzugsfirma = {
+	"@type": "HowTo",
+	name: "Seriöse Umzugsfirma finden: Anleitung in 5 Schritten",
+	description: "So erkennst du professionelle Umzugsunternehmen und vermeidest schwarze Schafe – von der Recherche bis zur Vertragsunterzeichnung.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Warnsignale erkennen",
+			text: "Auf Red Flags achten: 100% Vorkasse, nur Barzahlung ohne Rechnung, unrealistisch niedrige Preise, keine Vor-Ort-Besichtigung und Hochdrucktaktiken wie zeitlich begrenzte Angebote."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Qualitätsmerkmale prüfen",
+			text: "Auf positive Zeichen achten: transparenter Festpreis nach Besichtigung, gültige Transport- und Haftpflichtversicherung, feste Geschäftsadresse mit Impressum, professionelle Ausrüstung und geschultes Personal."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Die richtigen Fragen stellen",
+			text: "Beim Erstgespräch gezielt fragen: Ist der Preis ein Festpreis? Welche Versicherungen bestehen? Wie lange existiert die Firma? Kommen die gleichen Mitarbeiter wie bei der Besichtigung? Können Sie Referenzen nennen?"
+		},
+		{
+			"@type": "HowToStep",
+			name: "Mehrere Angebote einholen und vergleichen",
+			text: "Mindestens drei Angebote einholen. Nicht nur den Preis vergleichen, sondern auch den Leistungsumfang, die Versicherungsleistungen und die Kommunikation. Das billigste Angebot ist selten das beste."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Vertrag sorgfältig prüfen",
+			text: "Vor Unterzeichnung den Vertrag genau lesen: Sind alle Leistungen aufgeführt? Ist der Festpreis eindeutig? Gibt es eine Stornierungsklausel? Sind Versicherungsdetails genannt? Erst unterschreiben, wenn alles klar ist."
+		}
+	]
+};
+
+// Quote request page schema
+export const quoteRequestPage = {
+	"@type": "WebPage",
+	name: "Kostenloses Umzugsangebot anfordern",
+	description: "Berechnen Sie Ihr Umzugsvolumen und erhalten Sie ein kostenloses Angebot von Aust Umzüge Hildesheim.",
+	url: "https://www.aust-umzuege.de/kostenloses-angebot",
+	mainEntity: {
+		"@id": "https://www.aust-umzuege.de/#organization"
+	},
+	potentialAction: {
+		"@type": "CommunicateAction",
+		target: "https://www.aust-umzuege.de/kostenloses-angebot",
+		name: "Kostenloses Umzugsangebot anfordern"
+	}
 };
 
 // Breadcrumb helper function

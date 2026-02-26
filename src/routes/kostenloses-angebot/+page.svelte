@@ -3,7 +3,7 @@
     import { Send } from "lucide-svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
-    import { createBreadcrumbs } from "$lib/data/structuredData";
+    import { createBreadcrumbs, quoteRequestPage } from "$lib/data/structuredData";
 
     // Volume calculator bindings
     let volumeM3 = $state(0);
@@ -151,6 +151,7 @@
     canonical="https://www.aust-umzuege.de/kostenloses-angebot"
 />
 
+<StructuredData schema={quoteRequestPage} />
 <StructuredData schema={breadcrumbs} />
 
 <main class="angebot-page">

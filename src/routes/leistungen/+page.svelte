@@ -98,7 +98,7 @@
 </script>
 
 <MetaTags
-    title="Umzugsleistungen Hildesheim | Aust Umzüge"
+    title="Umzugsleistungen Hildesheim – Alle Services | Aust Umzüge"
     description="Alle Umzugsleistungen in Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug, Montage, Haushaltsauflösung und mehr. Kostenlose Beratung und Festpreisgarantie."
     keywords="Umzugsleistungen, Umzugsservice, Privatumzug, Firmenumzug, Montage, Entrümpelung Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen"

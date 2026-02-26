@@ -13,7 +13,7 @@
 
 <MetaTags
 	title="Haushaltsauflösung & Entrümpelung Ratgeber | Aust Umzüge"
-	description="Ratgeber Haushaltsauflösungen: Tipps zu Transport, Entsorgungsmöglichkeiten und realistischer Zeitplanung für Ihre Entrümpelung."
+	description="Ratgeber Haushaltsauflösungen: Praktische Tipps zu Planung, Transport und Entsorgungsmöglichkeiten für Ihre Entrümpelung in Hildesheim und Umgebung."
 	keywords="Haushaltsauflösungen, Entrümpelungen, Hildesheim, Niedersachsen, Wertstoffhof, Sperrmüll"
 	canonical="https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen"
 	ogType="article"

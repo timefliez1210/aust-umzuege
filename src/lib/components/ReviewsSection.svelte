@@ -129,8 +129,6 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						class="review-card"
-						itemscope
-						itemtype="https://schema.org/Review"
 					>
 						<div class="review-card__header">
 							<div class="review-card__author-info">
@@ -138,7 +136,7 @@
 									{review.author.charAt(0)}
 								</div>
 								<div>
-									<strong itemprop="name" class="review-card__name">{review.author}</strong>
+									<strong class="review-card__name">{review.author}</strong>
 									<span class="review-card__meta">
 										{#if review.badge}
 											<span class="review-card__badge">{review.badge}</span>
@@ -154,9 +152,7 @@
 									</span>
 								</div>
 							</div>
-							<div class="review-card__stars" itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating">
-								<meta itemprop="ratingValue" content={review.rating.toString()} />
-								<meta itemprop="bestRating" content="5" />
+							<div class="review-card__stars">
 								{#each Array(review.rating) as _}
 									<svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" aria-hidden="true">
 										<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -164,10 +160,10 @@
 								{/each}
 							</div>
 						</div>
-						<time itemprop="datePublished" datetime={review.date} class="review-card__date">
+						<time datetime={review.date} class="review-card__date">
 							{formatDate(review.date)}
 						</time>
-						<p itemprop="reviewBody" class="review-card__text">{review.text}</p>
+						<p class="review-card__text">{review.text}</p>
 						<span class="review-card__source">
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 								<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

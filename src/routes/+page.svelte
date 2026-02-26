@@ -7,7 +7,11 @@
   import RatgeberTeaser from "$lib/components/RatgeberTeaser.svelte";
   import MetaTags from "$lib/components/MetaTags.svelte";
   import StructuredData from "$lib/components/StructuredData.svelte";
-  import { businessInfo } from "$lib/data/structuredData";
+  import { businessInfo, website, createBreadcrumbs } from "$lib/data/structuredData";
+
+  const breadcrumbs = createBreadcrumbs([
+    { name: "Home" }
+  ]);
 </script>
 
 <MetaTags
@@ -19,6 +23,8 @@
 />
 
 <StructuredData schema={businessInfo} />
+<StructuredData schema={website} />
+<StructuredData schema={breadcrumbs} />
 
 <main>
   <Hero />

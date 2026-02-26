@@ -171,8 +171,8 @@
 </script>
 
 <MetaTags
-    title="Umzugs-Checkliste | Aust Umzüge Ratgeber"
-    description="Kostenlose Umzugs-Checkliste: Was Sie 4 Wochen bis 1 Woche nach dem Umzug erledigen sollten. Telefon, Strom, Ummeldung und mehr."
+    title="Umzugs-Checkliste – Kostenlos als PDF | Aust Umzüge Ratgeber"
+    description="Kostenlose Umzugs-Checkliste als PDF: Was Sie von 4 Wochen vor bis 1 Woche nach dem Umzug erledigen müssen. Strom, Telefon, Ummeldung – strukturiert geplant."
     keywords="Umzugs-Checkliste, Umzugsplanung, Umzug organisieren, Checkliste Wohnungswechsel"
     canonical="https://www.aust-umzuege.de/ratgeber/umzugs-checkliste"
     ogType="article"

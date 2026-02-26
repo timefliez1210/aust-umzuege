@@ -45,8 +45,8 @@
 </script>
 
 <MetaTags
-    title="Firmenumzug Hildesheim | Aust Umzüge"
-    description="Professionelle Firmen- und Büroumzüge. Minimale Ausfallzeiten, IT-Transport und Wochenendservice für Ihr Unternehmen."
+    title="Firmenumzug Hildesheim – Büro & Gewerbe | Aust Umzüge"
+    description="Professioneller Firmenumzug in Hildesheim und Umgebung. Minimale Ausfallzeiten, sicherer IT-Transport und Wochenendservice. Festpreisgarantie nach Besichtigung."
     keywords="Firmenumzug Hildesheim, Büroumzug, Geschäftsumzug, IT-Umzug, Betriebsumzug"
     canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
 />

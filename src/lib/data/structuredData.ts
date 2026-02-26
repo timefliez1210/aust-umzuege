@@ -76,6 +76,18 @@ export const aggregateRating = {
 
 export const allReviewsUrl = "https://www.google.com/maps/place/Aust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen/@52.1557877,9.9517408,17z/data=!4m18!1m9!3m8!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!2sAust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0!3m7!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0?entry=ttu";
 
+export const website = {
+	"@type": "WebSite",
+	"@id": "https://www.aust-umzuege.de/#website",
+	url: "https://www.aust-umzuege.de",
+	name: "Aust Umzüge",
+	description: "Professionelle Umzüge, Haushaltsauflösungen und Montagen in Hildesheim und Umgebung",
+	publisher: {
+		"@id": "https://www.aust-umzuege.de/#organization"
+	},
+	inLanguage: "de-DE"
+};
+
 export const businessInfo = {
 	"@type": "MovingCompany",
 	"@id": "https://www.aust-umzuege.de/#organization",

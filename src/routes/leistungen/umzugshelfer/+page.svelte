@@ -45,8 +45,8 @@
 </script>
 
 <MetaTags
-    title="Umzugshelfer Hildesheim | Aust Umzüge"
-    description="Kräftige Umzugshelfer mieten. Unterstützung beim Tragen, Beladen und Entladen – stundenweise buchbar."
+    title="Umzugshelfer in Hildesheim mieten – Versichert | Aust Umzüge"
+    description="Professionelle Umzugshelfer in Hildesheim stundenweise mieten. Versicherte Helfer für Tragen, Beladen und Entladen. Auch kurzfristig verfügbar – jetzt anfragen."
     keywords="Umzugshelfer Hildesheim, Möbelpacker, Tragehilfe Umzug, stundenweise Helfer"
     canonical="https://www.aust-umzuege.de/leistungen/umzugshelfer"
 />

@@ -43,8 +43,8 @@
 </script>
 
 <MetaTags
-    title="Ratgeber & Tipps | Aust Umzüge Hildesheim"
-    description="Nützliche Tipps und Checklisten rund um den Umzug. Erfahren Sie, wie Sie Ihren Wohnungswechsel stressfrei gestalten."
+    title="Umzugsratgeber & Checklisten | Aust Umzüge Hildesheim"
+    description="Umzugstipps und Checklisten von Ihrem Umzugsunternehmen in Hildesheim. Verpackungstipps, Umzugs-Checkliste und Ratgeber für Haushaltsauflösungen – kostenlos."
     keywords="Umzugstipps, Umzugsratgeber, Umzugscheckliste, Verpackungstipps, Haushaltsauflösung, Umzugsfirma auswählen"
     canonical="https://www.aust-umzuege.de/ratgeber"
 />
@@ -55,7 +55,7 @@
 <main class="guides-page">
     <div class="guides-page__container">
         <header class="guides-page__header">
-            <h1 class="guides-page__title">Ratgeber & Tipps</h1>
+            <h1 class="guides-page__title">Umzugsratgeber & Tipps für Hildesheim</h1>
             <p class="guides-page__intro">
                 Ein Umzug bringt viele Fragen mit sich: Was muss wann erledigt werden? Wie verpacke ich
                 empfindliche Gegenstände? Woran erkenne ich eine seriöse Umzugsfirma? In unseren Ratgebern

@@ -46,7 +46,7 @@
 
 <MetaTags
     title="Montage & Demontage Hildesheim | Aust Umzüge"
-    description="Fachgerechter Möbelaufbau und Küchenmontage in Hildesheim. Unsere Schreiner sorgen für den perfekten Sitz Ihrer Einrichtung – auch ohne Umzug."
+    description="Fachgerechte Möbel- und Küchenmontage in Hildesheim. Unsere Schreiner sorgen für den perfekten Sitz Ihrer Einrichtung – auch als Einzelleistung ohne Umzug."
     keywords="Möbelmontage Hildesheim, Küchenmontage, Möbelaufbau, Schrankaufbau, Demontage"
     canonical="https://www.aust-umzuege.de/leistungen/montage"
 />

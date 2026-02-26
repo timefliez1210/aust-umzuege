@@ -46,7 +46,7 @@
 
 <MetaTags
     title="Lagerung & Einlagerung Hildesheim | Aust Umzüge"
-    description="Sichere Möbellagerung in Hildesheim. Zwischenlagerung beim Umzug, Langzeitlagerung, flexible Laufzeiten. Abholung und Lieferung möglich."
+    description="Sichere Möbellagerung in Hildesheim: Zwischenlagerung beim Umzug oder Langzeitlagerung mit flexiblen Laufzeiten. Abholung und Lieferung inklusive möglich."
     keywords="Möbellagerung Hildesheim, Einlagerung, Zwischenlagerung, Lagerhalle, Langzeitlagerung"
     canonical="https://www.aust-umzuege.de/leistungen/lagerung"
 />

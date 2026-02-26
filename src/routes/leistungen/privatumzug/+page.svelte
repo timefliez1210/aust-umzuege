@@ -45,8 +45,8 @@
 </script>
 
 <MetaTags
-    title="Privatumzug Hildesheim | Aust Umzüge"
-    description="Stressfreier Privatumzug in Hildesheim und Umgebung. Wir bieten Full-Service, Montage und faire Preise für Ihren Wohnungswechsel."
+    title="Privatumzug Hildesheim – Stressfrei umziehen | Aust Umzüge"
+    description="Stressfreier Privatumzug in Hildesheim und Umgebung. Full-Service mit Verpackung, Montage und Transport. Festpreisgarantie nach kostenloser Besichtigung."
     keywords="Privatumzug Hildesheim, Umzug Privatpersonen, Wohnungsumzug, Umzugsfirma Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />

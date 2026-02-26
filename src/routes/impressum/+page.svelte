@@ -2,7 +2,7 @@
     // Impressum - Legal information page
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
-    import { businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -16,7 +16,6 @@
     canonical="https://www.aust-umzuege.de/impressum"
 />
 
-<StructuredData schema={businessInfo} />
 <StructuredData schema={breadcrumbs} />
 
 <main class="impressum">

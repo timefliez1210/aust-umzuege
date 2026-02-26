@@ -45,8 +45,8 @@
 </script>
 
 <MetaTags
-    title="Seniorenumzug Hildesheim | Aust Umzüge"
-    description="Einfühlsamer Seniorenumzug in Hildesheim und Umgebung. Wir helfen beim Umzug ins betreute Wohnen mit Full-Service, Montage und Entsorgung."
+    title="Seniorenumzug Hildesheim – Einfühlsam umziehen | Aust Umzüge"
+    description="Einfühlsamer Seniorenumzug in Hildesheim und Umgebung. Full-Service für den Umzug ins betreute Wohnen. Bis zu 4.180 € Zuschuss von der Pflegekasse möglich."
     keywords="Seniorenumzug Hildesheim, Umzug Senioren, betreutes Wohnen, Seniorenheim Umzug"
     canonical="https://www.aust-umzuege.de/leistungen/seniorenumzug"
 />

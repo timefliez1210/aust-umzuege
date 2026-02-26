@@ -3,6 +3,7 @@
     interface ServiceItem {
         image: string;
         title: string;
+        alt?: string;
         description: string;
         href: string;
     }
@@ -25,6 +26,7 @@
             {
                 image: "/privatumzuege-hildesheim-carousel-1.webp",
                 title: "Privatumzüge",
+                alt: "Privatumzug Hildesheim – Umzugshelfer beim Beladen des Transporters",
                 description:
                     "Ihr Privatumzug in professionellen Händen – von der Planung bis zum Einräumen. Von Hildesheim aus bundesweit und europaweit.",
                 href: "/leistungen/privatumzug",
@@ -32,6 +34,7 @@
             {
                 image: "/umzuege-hildesheim-carousel-1.webp",
                 title: "Gewerbe & Firmenumzüge",
+                alt: "Firmenumzug Hildesheim – Büromöbel werden verladen",
                 description:
                     "Firmenumzüge mit minimaler Ausfallzeit. Wir planen und koordinieren den Umzug Ihres Unternehmens – termingerecht und zuverlässig.",
                 href: "/leistungen/firmenumzug",
@@ -39,6 +42,7 @@
             {
                 image: "/montagen-demontagen-carousel-2.webp",
                 title: "Montagen & Demontagen",
+                alt: "Küchenmontage Hildesheim – Fachgerechter Möbelaufbau durch Monteur",
                 description:
                     "Unsere Monteure bauen auch komplexe Küchen und Möbelsysteme fachgerecht ab und am neuen Standort wieder auf – inklusive Anpassungen.",
                 href: "/leistungen/montage",
@@ -46,6 +50,7 @@
             {
                 image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.webp",
                 title: "Haushaltsauflösungen",
+                alt: "Haushaltsauflösung Hildesheim – Entrümpelung einer Wohnung",
                 description:
                     "Wir lösen Haushalte diskret auf und entrümpeln Keller, Dachboden oder Garage. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
                 href: "/leistungen/haushaltsaufloesung",
@@ -53,6 +58,7 @@
             {
                 image: "/einlagerung-service-hildesheim-carousel-4.webp",
                 title: "Lagerung & Einlagerung",
+                alt: "Einlagerung Hildesheim – Sicherer Lagerraum für Möbel und Umzugsgut",
                 description:
                     "Sichere Lagerung für Ihre Möbel – ob kurzfristig oder langfristig. Flexible Laufzeiten, faire Konditionen.",
                 href: "/leistungen/lagerung",
@@ -60,6 +66,7 @@
             {
                 image: "/seniorenumzuege-hildesheim-carousel-6.webp",
                 title: "Seniorenumzüge",
+                alt: "Seniorenumzug Hildesheim – Sorgfältiger Umzug ins betreute Wohnen",
                 description:
                     "Wir begleiten den Umzug ins betreute Wohnen mit Geduld und Sorgfalt. Vom Einpacken bis zum Einrichten – alles aus einer Hand.",
                 href: "/leistungen/seniorenumzug",
@@ -220,7 +227,7 @@
                                 src={service.image}
                                 srcset="{service.image.replace('.webp', '')}-400w.webp 400w, {service.image.replace('.webp', '')}-600w.webp 600w, {service.image.replace('.webp', '')}-800w.webp 800w"
                                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                alt={service.title}
+                                alt={service.alt || service.title}
                                 class="service-card__image"
                                 loading="lazy"
                                 decoding="async"

@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Wrench size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Demontage & Montage</h1>
+            <h1 class="service-title">Montage & Demontage Hildesheim</h1>
             <p class="service-subtitle">
                 Nicht nur schleppen, sondern auch schrauben – fachgerecht und
                 sauber.

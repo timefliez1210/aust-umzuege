@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Ban size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Halteverbot</h1>
+            <h1 class="service-title">Halteverbot Hildesheim</h1>
             <p class="service-subtitle">
                 Freie Fahrt für Ihren Umzugswagen – ohne Stress und
                 Parkplatzsuche.

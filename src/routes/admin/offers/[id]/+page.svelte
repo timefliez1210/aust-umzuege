@@ -785,8 +785,7 @@
 		color: #64748b;
 	}
 
-	.field input,
-	.field select {
+	.field input {
 		background: #e8ecf1;
 		border: none;
 		border-radius: 8px;

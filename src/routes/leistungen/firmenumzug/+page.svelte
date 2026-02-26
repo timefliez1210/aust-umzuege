@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Building2 size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Firmenumzug</h1>
+            <h1 class="service-title">Firmenumzug Hildesheim</h1>
             <p class="service-subtitle">
                 Effiziente Standortwechsel für Büros, Praxen und Betriebe.
             </p>

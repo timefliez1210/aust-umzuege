@@ -110,7 +110,7 @@
 <main class="services-page">
     <div class="services-page__container">
         <header class="services-page__header">
-            <h1 class="services-page__title">Unsere Leistungen</h1>
+            <h1 class="services-page__title">Umzugsleistungen in Hildesheim & Umgebung</h1>
             <p class="services-page__intro">
                 Wir bieten Ihnen ein umfassendes Spektrum an Dienstleistungen
                 rund um Umzug und Transport. Maßgeschneidert auf Ihre

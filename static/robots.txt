@@ -7,6 +7,10 @@ Allow: /
 Disallow: /api/
 Disallow: /send-mail.php
 Disallow: /_forms.html
+Disallow: /admin/
+Disallow: /foto-angebot
 
 # Sitemap
 Sitemap: https://www.aust-umzuege.de/sitemap.xml
+
+# AI search crawlers – llms.txt available at /llms.txt

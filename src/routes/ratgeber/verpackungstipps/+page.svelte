@@ -3,7 +3,7 @@
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
-    import { articles, createBreadcrumbs } from "$lib/data/structuredData";
+    import { articles, createBreadcrumbs, howToVerpackungstipps } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -15,13 +15,14 @@
 
 <MetaTags
     title="Verpackungstipps für den Umzug | Aust Umzüge Ratgeber"
-    description="Professionelle Verpackungstipps für Ihren Umzug: Geschirr, Elektronik, Möbel und empfindliche Gegenstände sicher verpacken. Mit Profi-Tricks vom Umzugsunternehmen."
+    description="Verpackungstipps vom Profi: Geschirr, Elektronik, Möbel und empfindliche Gegenstände sicher verpacken. Profi-Tricks vom Umzugsunternehmen."
     keywords="Verpackungstipps Umzug, Umzugskartons packen, Geschirr verpacken, Möbel schützen"
     canonical="https://www.aust-umzuege.de/ratgeber/verpackungstipps"
     ogType="article"
 />
 
 <StructuredData schema={articles.verpackungstipps} />
+<StructuredData schema={howToVerpackungstipps} />
 <StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">
@@ -74,7 +75,7 @@
                         Packen Sie stattdessen Raum für Raum. Beschriften Sie jeden Karton mit dem Zimmer und dem groben Inhalt. "Küche – Töpfe" ist besser als "Diverses". Noch besser: Nummerieren Sie die Kartons und führen Sie eine Liste. Klingt übertrieben, spart aber am Ende Stunden.
                     </p>
                     <p>
-                        Beginnen Sie mit Räumen, die Sie bis zum Umzug nicht mehr brauchen – Gästezimmer, Abstellkammer, Keller. Die Küche und das Bad packen Sie erst in den letzten Tagen, weil Sie dort bis zuletzt Dinge benötigen.
+                        Beginnen Sie mit Räumen, die Sie bis zum Umzug nicht mehr brauchen – Gästezimmer, Abstellkammer, Keller. Die Küche und das Bad packen Sie erst in den letzten Tagen, weil Sie dort bis zuletzt Dinge benötigen. Unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> hilft Ihnen dabei, den richtigen Zeitplan einzuhalten.
                     </p>
                 </section>
 
@@ -169,7 +170,7 @@
                         <li><strong>Zu wenig Polsterung:</strong> Lieber zu viel als zu wenig. Wenn der Karton beim Schütteln klappert, fehlt Füllmaterial.</li>
                         <li><strong>Kartons nicht beschriften:</strong> "Sonstiges" hilft niemandem. Seien Sie konkret.</li>
                         <li><strong>Zu spät anfangen:</strong> Packen dauert immer länger als gedacht. Planen Sie mindestens zwei Wochen ein.</li>
-                        <li><strong>Alles mitnehmen:</strong> Ein Umzug ist die perfekte Gelegenheit auszumisten. Was Sie seit Jahren nicht benutzt haben, brauchen Sie wahrscheinlich auch in der neuen Wohnung nicht.</li>
+                        <li><strong>Alles mitnehmen:</strong> Ein Umzug ist die perfekte Gelegenheit auszumisten. Was Sie seit Jahren nicht benutzt haben, brauchen Sie wahrscheinlich auch in der neuen Wohnung nicht. Bei größeren Mengen hilft eine professionelle <a href="/leistungen/haushaltsaufloesung">Entrümpelung</a>.</li>
                     </ul>
                 </section>
 
@@ -182,7 +183,7 @@
                         Besonders bei <a href="/leistungen/seniorenumzug">Seniorenumzügen</a> ist ein Komplett-Service oft die bessere Wahl. Das Verpacken eines ganzen Haushalts ist körperlich anstrengend – da muss man niemandem etwas beweisen.
                     </p>
                     <p>
-                        Wir bieten Verpackungsservice auf Wunsch: Sie zeigen uns, was mitkommt, und wir kümmern uns um den Rest. Von der Küche bis zum Kleiderschrank, vom Einpacken bis zum Auspacken am neuen Ort.
+                        Wir bieten Verpackungsservice in Hildesheim und Umgebung auf Wunsch an: Sie zeigen uns, was mitkommt, und wir kümmern uns um den Rest. Von der Küche bis zum Kleiderschrank, vom Einpacken bis zum Auspacken am neuen Ort.
                     </p>
                 </section>
             </div>

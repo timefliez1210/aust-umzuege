@@ -7,17 +7,20 @@ Redirect 301 /rechtliches/datenschutz https://www.aust-umzuege.de/datenschutz
 Redirect 301 /rechtliches/impressum https://www.aust-umzuege.de/impressum
 Redirect 301 /leistungen/malerarbeiten https://www.aust-umzuege.de/leistungen
 
-# Force HTTPS
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
-
-# Force www
+# Force HTTPS + www in a single redirect (avoids double-hop chain)
+RewriteCond %{HTTPS} off [OR]
 RewriteCond %{HTTP_HOST} !^www\. [NC]
-RewriteRule ^(.*)$ https://www.%{HTTP_HOST}/$1 [R=301,L]
+RewriteRule ^(.*)$ https://www.aust-umzuege.de/$1 [R=301,L]
 
 # Remove trailing slash (except root)
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)/$ /$1 [R=301,L]
+
+# Admin SPA fallback — serve admin.html for all /admin/* routes
+RewriteCond %{REQUEST_URI} ^/admin
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /admin.html [L]
 
 # Serve .html files without extension
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -109,7 +112,7 @@ RewriteRule ^(.*)$ $1.html [L]
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
 
     # CSP - Prevent XSS attacks
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://api.aufraeumhelden.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://api.aufraeumhelden.com; font-src 'self'; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://api.aufraeumhelden.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
 
     # X-Frame-Options - Prevent clickjacking
     Header always set X-Frame-Options "DENY"
@@ -124,4 +127,4 @@ RewriteRule ^(.*)$ $1.html [L]
 </IfModule>
 
 # Error document
-ErrorDocument 404 /index.html
+ErrorDocument 404 /404.html

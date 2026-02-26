@@ -112,7 +112,7 @@
 						<input id="phone" type="tel" bind:value={editPhone} placeholder="+49 ..." />
 					</div>
 					<div class="form-group">
-						<label>Erstellt</label>
+						<span class="form-label">Erstellt</span>
 						<span class="form-value">{formatDate(data.created_at)}</span>
 					</div>
 					<button class="btn btn-primary" onclick={saveCustomer} disabled={saving}>
@@ -187,7 +187,7 @@
 	.card-body.list { padding: 0; }
 
 	.form-group { margin-bottom: 1rem; }
-	.form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.375rem; text-transform: uppercase; letter-spacing: 0.05em; }
+	.form-group label, .form-label { display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.375rem; text-transform: uppercase; letter-spacing: 0.05em; }
 	.form-group input { width: 100%; padding: 0.5rem 0.75rem; background: #e8ecf1; border: none; border-radius: 8px; box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff; color: #1a1a2e; font-size: 0.875rem; outline: none; transition: box-shadow 150ms; }
 	.form-group input:focus { box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99,102,241,0.2); }
 	.form-value { font-size: 0.875rem; color: #94a3b8; }

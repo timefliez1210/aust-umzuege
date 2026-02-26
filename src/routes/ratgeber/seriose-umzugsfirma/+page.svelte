@@ -71,7 +71,7 @@
 						Entscheidung treffen.
 					</p>
 					<p>
-						Dieser Artikel zeigt dir genau, worauf du achten solltest – nicht, um
+						Dieser Artikel zeigt dir genau, worauf du achten solltest – egal ob du in Hildesheim, Hannover oder anderswo in Deutschland suchst. Es geht nicht darum,
 						den billigsten Anbieter zu finden, sondern den richtigen. Einen, bei
 						dem Qualität, Zuverlässigkeit und Transparenz stimmen. Denn am Ende
 						des Tages geht es nicht darum, ein paar Euro zu sparen, sondern darum,
@@ -230,7 +230,7 @@
 					<h3>Professionelle Ausstattung</h3>
 					<p>
 						Eigene Fahrzeuge mit Logo, Möbeldecken, Tragegurte, Hubwagen –
-						professionelle Umzugsunternehmen haben das richtige Werkzeug. Und sie
+						professionelle Umzugsunternehmen haben das richtige Werkzeug und wissen, wie man Möbel <a href="/ratgeber/verpackungstipps">richtig verpackt</a>. Und sie
 						haben geschulte Mitarbeiter, die wissen, wie man ein Sofa um enge
 						Ecken manövriert, ohne Wände zu demolieren.
 					</p>
@@ -427,7 +427,7 @@
 						Nimm dir die Zeit, Angebote zu vergleichen. Stelle die Fragen aus
 						diesem Artikel. Achte auf die Warnsignale. Und vertraue deinem
 						Bauchgefühl: Wenn sich etwas komisch anfühlt, ist es das
-						wahrscheinlich auch.
+						wahrscheinlich auch. Unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> hilft dir, den gesamten Umzug strukturiert zu planen.
 					</p>
 					<p>
 						Ein transparenter, professioneller Service ist keine Utopie – es ist
@@ -565,6 +565,16 @@
 	.article-content strong {
 		color: var(--color-info-bar);
 		font-weight: 600;
+	}
+
+	.article-content a {
+		color: #c44100;
+		text-decoration: underline;
+		font-weight: 500;
+	}
+
+	.article-content a:hover {
+		color: #b93d00;
 	}
 
 	.highlight-box {

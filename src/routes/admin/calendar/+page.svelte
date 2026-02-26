@@ -248,14 +248,14 @@
 </div>
 
 {#if selectedDay}
-	<div class="modal-backdrop" onclick={() => (selectedDay = null)} onkeydown={(e) => { if (e.key === 'Escape') selectedDay = null; }} role="dialog" tabindex="-1">
-		<div class="modal" onclick={(e) => e.stopPropagation()} role="document">
+	<div class="modal-backdrop" onclick={(e) => { if (e.target === e.currentTarget) selectedDay = null; }} onkeydown={(e) => { if (e.key === 'Escape') selectedDay = null; }} role="dialog" tabindex="-1">
+		<div class="modal">
 			<h3>{new Date(selectedDay.date).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h3>
 
 			<div class="modal-section">
-				<label>Kapazitaet</label>
+				<label for="capacity-input">Kapazitaet</label>
 				<div class="capacity-row">
-					<input type="number" min="0" max="10" bind:value={capacityInput} />
+					<input id="capacity-input" type="number" min="0" max="10" bind:value={capacityInput} />
 					<button class="btn btn-primary" onclick={saveCapacity} disabled={savingCapacity}>
 						{savingCapacity ? 'Speichern...' : 'Speichern'}
 					</button>
@@ -264,7 +264,7 @@
 
 			<div class="modal-section">
 				<div class="section-header">
-					<label>Buchungen ({selectedDay.bookings.length})</label>
+					<span class="modal-label">Buchungen ({selectedDay.bookings.length})</span>
 					<button class="btn-icon" onclick={() => showCreateForm = !showCreateForm} title="Neue Buchung">
 						<Plus size={16} />
 					</button>
@@ -366,7 +366,7 @@
 	.modal { background: #ffffff; border: none; border-radius: 16px; box-shadow: 10px 10px 30px #d1d9e6, -10px -10px 30px #ffffff; padding: 1.5rem; width: 90%; max-width: 400px; }
 	.modal h3 { font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 1rem; text-transform: capitalize; }
 	.modal-section { margin-bottom: 1rem; }
-	.modal-section label { display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.375rem; text-transform: uppercase; }
+	.modal-section label, .modal-label { display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.375rem; text-transform: uppercase; }
 	.capacity-row { display: flex; gap: 0.5rem; align-items: center; }
 	.capacity-row input { width: 80px; padding: 0.5rem 0.75rem; background: #e8ecf1; border: none; border-radius: 8px; box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff; color: #1a1a2e; font-size: 0.875rem; outline: none; }
 	.capacity-row input:focus { box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px #6366f1; }
@@ -377,7 +377,7 @@
 	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 	.section-header { display: flex; align-items: center; justify-content: space-between; }
-	.section-header label { margin-bottom: 0; }
+	.section-header .modal-label { margin-bottom: 0; }
 
 	.btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: none; background: #e8ecf1; color: #64748b; cursor: pointer; transition: all 150ms; box-shadow: 2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff; }
 	.btn-icon:hover { color: #1a1a2e; box-shadow: 3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff; }
@@ -396,10 +396,6 @@
 	.booking-link { display: inline-flex; align-items: center; gap: 0.25rem; color: #4338ca; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
 	.booking-link:hover { color: #3730a3; text-decoration: underline; }
 	.booking-route { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.125rem; }
-	.booking-status-badge { font-size: 0.6875rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: 9999px; text-transform: capitalize; }
-	.booking-status-badge.confirmed { background: #dcfce7; color: #16a34a; }
-	.booking-status-badge.pending, .booking-status-badge.tentative { background: #fef3c7; color: #d97706; }
-	.booking-status-badge.cancelled { background: #fee2e2; color: #dc2626; }
 	.booking-details { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
 	.booking-detail { font-size: 0.75rem; color: #475569; font-weight: 500; }
 	.booking-notes { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem; }

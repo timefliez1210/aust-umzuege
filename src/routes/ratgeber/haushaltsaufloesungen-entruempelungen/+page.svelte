@@ -12,8 +12,8 @@
 </script>
 
 <MetaTags
-	title="Haushaltsauflösungen und Entrümpelungen - Praktischer Ratgeber | Aust Umzüge"
-	description="Praktischer Ratgeber für Haushaltsauflösungen: Tipps zu Herausforderungen, Transport (PKW vs. Transporter), Entsorgungsmöglichkeiten und realistischer Zeitplanung."
+	title="Haushaltsauflösung & Entrümpelung Ratgeber | Aust Umzüge"
+	description="Ratgeber Haushaltsauflösungen: Tipps zu Transport, Entsorgungsmöglichkeiten und realistischer Zeitplanung für Ihre Entrümpelung."
 	keywords="Haushaltsauflösungen, Entrümpelungen, Hildesheim, Niedersachsen, Wertstoffhof, Sperrmüll"
 	canonical="https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen"
 	ogType="article"
@@ -105,7 +105,7 @@
 					<p>
 						Diese vier Kategorien solltest du von Anfang an strikt trennen. Am
 						besten richtest du dir gleich verschiedene Bereiche oder Boxen ein.
-						Sonst steht am Ende wieder alles durcheinander.
+						Sonst steht am Ende wieder alles durcheinander. Für Tipps zum sicheren Einpacken schau dir unsere <a href="/ratgeber/verpackungstipps">Verpackungstipps vom Profi</a> an.
 					</p>
 
 					<h3>Die körperliche Belastung</h3>
@@ -294,7 +294,7 @@
 					<p>
 						Das ist ein straffer Plan für eine durchschnittliche Wohnung. Bei
 						größeren Objekten oder wenn du berufstätig bist, plan lieber vier bis
-						sechs Wochen ein.
+						sechs Wochen ein. Falls du gleichzeitig einen Umzug planst, hilft dir unsere <a href="/ratgeber/umzugs-checkliste">Umzugs-Checkliste</a> beim Überblick behalten.
 					</p>
 
 					<h3>Hilfe holen ist keine Schwäche</h3>
@@ -310,7 +310,7 @@
 					<p>
 						<strong>Professionelle Entrümpelungsfirmen</strong> kennen sich aus.
 						Die wissen genau, was wohin muss, haben die richtigen Transporter und
-						erledigen in zwei Tagen, wofür du zwei Wochen bräuchtest.
+						erledigen in zwei Tagen, wofür du zwei Wochen bräuchtest. Unser <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösungs-Service</a> übernimmt die komplette Räumung für dich.
 					</p>
 					<p>Ja, das kostet Geld. Aber rechne mal durch:</p>
 					<ul>
@@ -496,6 +496,16 @@
 	.article-content strong {
 		color: var(--color-info-bar);
 		font-weight: 600;
+	}
+
+	.article-content a {
+		color: #c44100;
+		text-decoration: underline;
+		font-weight: 500;
+	}
+
+	.article-content a:hover {
+		color: #b93d00;
 	}
 
 	.pros-cons {

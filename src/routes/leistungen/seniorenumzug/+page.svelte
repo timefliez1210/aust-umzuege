@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <HeartHandshake size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Seniorenumzug</h1>
+            <h1 class="service-title">Seniorenumzug Hildesheim</h1>
             <p class="service-subtitle">
                 Mit Herz und Verstand – Umzüge für die ältere Generation.
             </p>

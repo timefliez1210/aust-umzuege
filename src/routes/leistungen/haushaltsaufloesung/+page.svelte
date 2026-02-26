@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Trash2 size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Haushaltsauflösungen</h1>
+            <h1 class="service-title">Haushaltsauflösung & Entrümpelung Hildesheim</h1>
             <p class="service-subtitle">
                 Schnell, diskret und besenrein – wir schaffen Platz.
             </p>

@@ -8,7 +8,12 @@ export const businessInfo = {
 	alternateName: "Aust Umzüge",
 	legalName: "Aust Umzüge und Haushaltsauflösungen",
 	url: "https://www.aust-umzuege.de",
-	logo: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+	logo: {
+		"@type": "ImageObject",
+		url: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+		width: 150,
+		height: 150
+	},
 	image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
 	description:
 		"Professionelle Umzüge, Haushaltsauflösungen und Montagen in Hildesheim und Umgebung",
@@ -43,8 +48,8 @@ export const businessInfo = {
 		{
 			"@type": "OpeningHoursSpecification",
 			dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-			opens: "08:00",
-			closes: "18:00"
+			opens: "09:00",
+			closes: "19:00"
 		}
 	],
 	sameAs: [
@@ -55,6 +60,13 @@ export const businessInfo = {
 	founder: {
 		"@type": "Person",
 		name: "Alex Aust"
+	},
+	aggregateRating: {
+		"@type": "AggregateRating",
+		ratingValue: 5.0,
+		reviewCount: 69,
+		bestRating: 5,
+		worstRating: 1
 	}
 };
 
@@ -68,7 +80,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/privatumzug",
 		offers: {
 			"@type": "Offer",
@@ -85,7 +97,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/firmenumzug",
 		offers: {
 			"@type": "Offer",
@@ -102,7 +114,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/seniorenumzug",
 		offers: {
 			"@type": "Offer",
@@ -119,7 +131,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Worldwide"],
+		areaServed: [{ "@type": "Country", name: "Deutschland" }, { "@type": "AdministrativeArea", name: "Weltweit" }],
 		url: "https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug",
 		offers: {
 			"@type": "Offer",
@@ -136,7 +148,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/umzugshelfer",
 		offers: {
 			"@type": "Offer",
@@ -153,7 +165,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/montage",
 		offers: {
 			"@type": "Offer",
@@ -170,7 +182,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/lagerung",
 		offers: {
 			"@type": "Offer",
@@ -187,7 +199,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/halteverbot",
 		offers: {
 			"@type": "Offer",
@@ -204,7 +216,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/umzugsberatung",
 		offers: {
 			"@type": "Offer",
@@ -222,7 +234,7 @@ export const services = {
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
-		areaServed: ["Hildesheim", "Niedersachsen"],
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
 		offers: {
 			"@type": "Offer",
@@ -239,13 +251,21 @@ export const articles = {
 		description:
 			"Kostenlose Umzugs-Checkliste: Was Sie 4 Wochen, 1 Woche und am Umzugstag beachten müssen. Strukturierter Plan für stressfreien Wohnungswechsel.",
 		author: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen"
 		},
 		publisher: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
 		},
-		datePublished: "2024-01-15",
-		dateModified: "2024-01-15",
+		datePublished: "2026-02-13",
+		dateModified: "2026-02-26",
 		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/umzugs-checkliste",
 		mainEntityOfPage: {
@@ -260,13 +280,21 @@ export const articles = {
 		description:
 			"Professionelle Verpackungstipps für Ihren Umzug: Geschirr, Elektronik, Möbel und empfindliche Gegenstände sicher verpacken.",
 		author: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen"
 		},
 		publisher: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
 		},
-		datePublished: "2024-01-15",
-		dateModified: "2024-01-15",
+		datePublished: "2026-02-13",
+		dateModified: "2026-02-26",
 		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/verpackungstipps",
 		mainEntityOfPage: {
@@ -281,13 +309,21 @@ export const articles = {
 		description:
 			"Praktischer Ratgeber für Haushaltsauflösungen: Tipps zu Herausforderungen, Transport, Entsorgungsmöglichkeiten und realistischer Zeitplanung.",
 		author: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen"
 		},
 		publisher: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
 		},
-		datePublished: "2024-01-15",
-		dateModified: "2024-01-15",
+		datePublished: "2026-02-13",
+		dateModified: "2026-02-26",
 		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen",
 		mainEntityOfPage: {
@@ -302,13 +338,21 @@ export const articles = {
 		description:
 			"Seriöse Umzugsfirma finden: Erkennen Sie Red Flags, stellen Sie die richtigen Fragen und vermeiden Sie schwarze Schafe.",
 		author: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen"
 		},
 		publisher: {
-			"@id": "https://www.aust-umzuege.de/#organization"
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge und Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
 		},
-		datePublished: "2024-01-15",
-		dateModified: "2024-01-15",
+		datePublished: "2026-02-13",
+		dateModified: "2026-02-26",
 		image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma",
 		mainEntityOfPage: {
@@ -477,10 +521,76 @@ export const contactPage = {
 	}
 };
 
+// HowTo schemas for rich results
+export const howToUmzugsCheckliste = {
+	"@type": "HowTo",
+	name: "Umzug planen: Die ultimative Checkliste",
+	description: "Schritt-für-Schritt-Anleitung für einen stressfreien Umzug in Hildesheim und Umgebung – von 4 Wochen vorher bis 1 Woche danach.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "4 Wochen vorher: Verträge und Ummeldungen",
+			text: "Telefon, Internet, Strom und Gas ummelden oder kündigen. GEZ ummelden, Arbeitgeber und Behörden informieren. Termin zur Wohnungsübergabe vereinbaren."
+		},
+		{
+			"@type": "HowToStep",
+			name: "3 Wochen vorher: Material und Reparaturen",
+			text: "Umzugsmaterial beschaffen (Kartons, Kleiderboxen, Polsterfolie). Schönheitsreparaturen in der alten Wohnung durchführen. Kinderbetreuung für den Umzugstag organisieren."
+		},
+		{
+			"@type": "HowToStep",
+			name: "2 Wochen vorher: Möbel und Halteverbot",
+			text: "Renovierung der neuen Wohnung starten. Große Möbel demontieren. Halteverbotszone für den Umzugstag bei der Stadt beantragen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "1 Woche vorher: Verpacken und Einkäufe",
+			text: "Gardinenstangen und Lampen demontieren. Alles transportsicher verpacken. Letzte Einkäufe für den Umzugstag erledigen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Nach dem Umzug: Montage und Ummeldung",
+			text: "Möbel montieren, auspacken und verräumen. Verpackungsmaterial entsorgen. Wohnsitz und KFZ ummelden, Adressänderung bekannt geben, Nachsendeantrag stellen."
+		}
+	]
+};
+
+export const howToVerpackungstipps = {
+	"@type": "HowTo",
+	name: "Umzugsgut richtig verpacken: Profi-Anleitung",
+	description: "Professionelle Verpackungstipps für einen sicheren Umzug – vom richtigen Material über Geschirr und Elektronik bis zu Möbeln und Wertgegenständen.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Verpackungsmaterial besorgen",
+			text: "Umzugskartons in verschiedenen Größen, Packpapier, Luftpolsterfolie, breites Klebeband, Edding zum Beschriften und Kleiderboxen besorgen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Zimmer für Zimmer einpacken",
+			text: "Raum für Raum packen und jeden Karton mit Zimmer und Inhalt beschriften. Mit selten genutzten Räumen beginnen, Küche und Bad zuletzt."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Geschirr und Gläser sicher verpacken",
+			text: "Jedes Teil einzeln in Papier einwickeln. Teller hochkant wie Schallplatten stellen. Gläser innen und außen polstern. Kartonboden mit zerknülltem Papier auslegen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Elektronik transportsicher machen",
+			text: "Fernseher aufrecht in Decke oder Luftpolsterfolie wickeln. Festplatte sichern, Kabel beschriften oder fotografieren. Transportsicherungen bei Druckern aktivieren."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Möbel vorbereiten",
+			text: "Große Möbel zerlegen, Schrauben in beschriftetem Zip-Beutel am Möbelstück befestigen. Glasböden separat verpacken. Polstermöbel mit Decken schützen."
+		}
+	]
+};
+
 // Breadcrumb helper function
 export function createBreadcrumbs(items: Array<{ name: string; url?: string }>) {
 	return {
-		"@context": "https://schema.org",
 		"@type": "BreadcrumbList",
 		itemListElement: items.map((item, index) => ({
 			"@type": "ListItem",

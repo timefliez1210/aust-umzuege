@@ -808,20 +808,20 @@
 					{#if editingOrigin}
 						<div class="form-grid">
 							<div class="field full-width">
-								<label>Strasse</label>
-								<input type="text" bind:value={editOrigin.street} />
+								<label for="origin-street">Strasse</label>
+								<input id="origin-street" type="text" bind:value={editOrigin.street} />
 							</div>
 							<div class="field">
-								<label>PLZ</label>
-								<input type="text" bind:value={editOrigin.postal_code} />
+								<label for="origin-plz">PLZ</label>
+								<input id="origin-plz" type="text" bind:value={editOrigin.postal_code} />
 							</div>
 							<div class="field">
-								<label>Stadt</label>
-								<input type="text" bind:value={editOrigin.city} />
+								<label for="origin-city">Stadt</label>
+								<input id="origin-city" type="text" bind:value={editOrigin.city} />
 							</div>
 							<div class="field">
-								<label>Stockwerk</label>
-								<select bind:value={editOrigin.floor}>
+								<label for="origin-floor">Stockwerk</label>
+								<select id="origin-floor" bind:value={editOrigin.floor}>
 									<option value="-1">Keller</option>
 									<option value="0">Erdgeschoss</option>
 									<option value="1">1. OG</option>
@@ -881,20 +881,20 @@
 					{#if editingDest}
 						<div class="form-grid">
 							<div class="field full-width">
-								<label>Strasse</label>
-								<input type="text" bind:value={editDest.street} />
+								<label for="dest-street">Strasse</label>
+								<input id="dest-street" type="text" bind:value={editDest.street} />
 							</div>
 							<div class="field">
-								<label>PLZ</label>
-								<input type="text" bind:value={editDest.postal_code} />
+								<label for="dest-plz">PLZ</label>
+								<input id="dest-plz" type="text" bind:value={editDest.postal_code} />
 							</div>
 							<div class="field">
-								<label>Stadt</label>
-								<input type="text" bind:value={editDest.city} />
+								<label for="dest-city">Stadt</label>
+								<input id="dest-city" type="text" bind:value={editDest.city} />
 							</div>
 							<div class="field">
-								<label>Stockwerk</label>
-								<select bind:value={editDest.floor}>
+								<label for="dest-floor">Stockwerk</label>
+								<select id="dest-floor" bind:value={editDest.floor}>
 									<option value="-1">Keller</option>
 									<option value="0">Erdgeschoss</option>
 									<option value="1">1. OG</option>
@@ -1341,7 +1341,7 @@
 	{@const rItem = items[reviewIndex]}
 	{#if rItem}
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="review-backdrop" onclick={(e) => { if (e.target === e.currentTarget) closeReview(); }}>
+		<div class="review-backdrop" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeReview(); }}>
 			<button class="review-close" onclick={closeReview} aria-label="Schliessen">
 				<X size={24} />
 			</button>
@@ -1371,9 +1371,9 @@
 
 				<div class="review-panel">
 					<div class="review-field">
-						<label>Gegenstand</label>
+						<label for="review-item-name">Gegenstand</label>
 						<input
-							type="text"
+							id="review-item-name" type="text"
 							bind:value={rItem.name}
 							oninput={markDirty}
 							class="review-input"
@@ -1381,9 +1381,9 @@
 					</div>
 					<div class="review-row">
 						<div class="review-field">
-							<label>Volumen (m3)</label>
+							<label for="review-volume">Volumen (m3)</label>
 							<input
-								type="number"
+								id="review-volume" type="number"
 								min="0"
 								step="0.01"
 								bind:value={rItem.volume_m3}
@@ -1392,9 +1392,9 @@
 							/>
 						</div>
 						<div class="review-field">
-							<label>Anzahl</label>
+							<label for="review-quantity">Anzahl</label>
 							<input
-								type="number"
+								id="review-quantity" type="number"
 								min="1"
 								step="1"
 								bind:value={rItem.quantity}
@@ -1670,13 +1670,6 @@
 
 	.video-add-more {
 		cursor: pointer;
-	}
-
-	/* Video Upload */
-	.video-upload-zone {
-		display: flex;
-		align-items: center;
-		justify-content: center;
 	}
 
 	.video-file-input {

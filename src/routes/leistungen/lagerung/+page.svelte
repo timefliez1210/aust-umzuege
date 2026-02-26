@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Warehouse size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Lagerung & Einlagerung</h1>
+            <h1 class="service-title">Lagerung & Einlagerung Hildesheim</h1>
             <p class="service-subtitle">
                 Sicher verwahrt – ob für Wochen oder Jahre.
             </p>

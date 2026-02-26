@@ -82,6 +82,7 @@
             <h1 class="contact-page__title">Kontaktieren Sie uns</h1>
         </header>
 
+        <div class="contact-page__grid">
         <section class="contact-form-section">
             {#if submitSuccess}
                 <div class="contact-form__success">
@@ -93,10 +94,7 @@
                 </div>
             {:else}
             <h2 class="contact-form__heading">
-                Füllen Sie einfach das Kontaktformular aus. <br
-                    class="mobile-break"
-                />
-                Wir melden uns umgehend bei Ihnen.
+                Schreiben Sie uns eine Nachricht
             </h2>
 
             <form
@@ -199,6 +197,56 @@
             </form>
             {/if}
         </section>
+
+        <aside class="contact-info">
+            <h2 class="contact-info__heading">Kontaktdaten</h2>
+
+            <div class="contact-info__item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                </svg>
+                <div>
+                    <span class="contact-info__label">Telefon</span>
+                    <a href="tel:+4951217558379" class="contact-info__value">05121 / 755 83 79</a>
+                </div>
+            </div>
+
+            <div class="contact-info__item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <div>
+                    <span class="contact-info__label">E-Mail</span>
+                    <a href="mailto:info@aust-umzuege.de" class="contact-info__value">info@aust-umzuege.de</a>
+                </div>
+            </div>
+
+            <div class="contact-info__item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <div>
+                    <span class="contact-info__label">Adresse</span>
+                    <a href="https://maps.app.goo.gl/KUs8ajSyfU6iwEqw9" target="_blank" rel="noopener noreferrer" class="contact-info__value">
+                        Kaiserstr. 32<br />31134 Hildesheim
+                    </a>
+                </div>
+            </div>
+
+            <div class="contact-info__item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <div>
+                    <span class="contact-info__label">Bürozeiten</span>
+                    <span class="contact-info__value">Montag – Freitag<br />09:00 – 19:00 Uhr</span>
+                </div>
+            </div>
+        </aside>
+        </div>
     </div>
 </main>
 
@@ -235,9 +283,16 @@
     }
 
     .contact-page__container {
-        max-width: 800px;
+        max-width: 1000px;
         margin-inline: auto;
         padding-inline: var(--container-padding);
+    }
+
+    .contact-page__grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: var(--space-10);
+        align-items: start;
     }
 
     .contact-page__header {
@@ -272,10 +327,6 @@
         font-weight: var(--font-medium);
         margin-bottom: var(--space-8);
         line-height: 1.4;
-    }
-
-    .mobile-break {
-        display: none;
     }
 
     .contact-form {
@@ -393,11 +444,68 @@
         cursor: not-allowed;
     }
 
-    @media (max-width: 640px) {
-        .mobile-break {
-            display: inline;
+    /* Contact info sidebar */
+    .contact-info {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: var(--radius-lg);
+        padding: var(--space-6);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+    }
+
+    .contact-info__heading {
+        color: var(--color-info-bar);
+        font-size: var(--text-lg);
+        font-weight: var(--font-bold);
+        margin: 0;
+    }
+
+    .contact-info__item {
+        display: flex;
+        gap: var(--space-3);
+        align-items: flex-start;
+    }
+
+    .contact-info__item svg {
+        color: var(--color-nav-accent);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .contact-info__label {
+        display: block;
+        font-size: var(--text-xs, 0.75rem);
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: var(--font-semibold);
+        margin-bottom: 2px;
+    }
+
+    .contact-info__value {
+        color: #333;
+        font-size: var(--text-sm);
+        line-height: 1.5;
+        text-decoration: none;
+    }
+
+    a.contact-info__value:hover {
+        color: var(--color-nav-accent);
+    }
+
+    @media (max-width: 768px) {
+        .contact-page__grid {
+            grid-template-columns: 1fr;
         }
 
+        .contact-info {
+            order: -1;
+        }
+    }
+
+    @media (max-width: 640px) {
         .contact-page__title {
             font-size: var(--text-2xl);
         }

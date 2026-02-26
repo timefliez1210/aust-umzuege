@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <MessageSquare size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Umzugsberatung</h1>
+            <h1 class="service-title">Umzugsberatung Hildesheim</h1>
             <p class="service-subtitle">
                 Gute Planung ist der halbe Umzug – kostenlos & unverbindlich.
             </p>

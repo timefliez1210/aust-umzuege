@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Globe size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Fern- & Überseeumzug</h1>
+            <h1 class="service-title">Fern- & Überseeumzug ab Hildesheim</h1>
             <p class="service-subtitle">
                 Grenzenlos umziehen – sicher, pünktlich und gut organisiert.
             </p>

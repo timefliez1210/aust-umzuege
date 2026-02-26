@@ -13,7 +13,7 @@
 
     let {
         tagline = "Professionell & kompetent",
-        heading = "Ihr Partner für Umzüge, Haushaltsauflösungen und Montagen",
+        heading = "Ihr Umzugsunternehmen in Hildesheim – Umzüge, Haushaltsauflösungen & Montagen",
         subheading = "Unverbindlich anfragen und ein kostenloses Angebot erhalten",
         ctaText = "Jetzt anfragen",
         ctaHref = "/kostenloses-angebot",

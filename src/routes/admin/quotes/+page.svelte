@@ -84,11 +84,11 @@
 	let photoFiles = $state<File[]>([]);
 	let photoPreviews = $state<string[]>([]);
 	let draggingOver = $state(false);
-	let photoFileInput: HTMLInputElement;
+	let photoFileInput = $state<HTMLInputElement>(undefined!);
 
 	// Video upload
 	let videoFile = $state<File | null>(null);
-	let videoFileInput: HTMLInputElement;
+	let videoFileInput = $state<HTMLInputElement>(undefined!);
 
 	function handleVideoSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -636,17 +636,17 @@
 				<h3>Details</h3>
 				<div class="details-row">
 					<div class="details-field">
-						<label>Wunschdatum</label>
-						<input type="date" bind:value={preferredDate} class="form-input" />
+						<label for="preferred-date">Wunschdatum</label>
+						<input id="preferred-date" type="date" bind:value={preferredDate} class="form-input" />
 					</div>
 					<div class="details-field">
-						<label>Entfernung (km)</label>
-						<input type="number" bind:value={distanceKm} placeholder="optional" class="form-input" min="0" step="1" />
+						<label for="distance-km">Entfernung (km)</label>
+						<input id="distance-km" type="number" bind:value={distanceKm} placeholder="optional" class="form-input" min="0" step="1" />
 					</div>
 				</div>
 				<div class="details-field" style="margin-top: 0.75rem;">
-					<label>Notizen</label>
-					<textarea bind:value={extraNotes} rows="2" placeholder="Weitere Hinweise..." class="form-input form-textarea"></textarea>
+					<label for="extra-notes">Notizen</label>
+					<textarea id="extra-notes" bind:value={extraNotes} rows="2" placeholder="Weitere Hinweise..." class="form-input form-textarea"></textarea>
 				</div>
 			</div>
 

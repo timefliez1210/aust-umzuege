@@ -33,6 +33,8 @@
 	{/if}
 	{#if canonical}
 		<link rel="canonical" href={canonical} />
+		<link rel="alternate" hreflang="de" href={canonical} />
+		<link rel="alternate" hreflang="x-default" href={canonical} />
 	{/if}
 	{#if noindex}
 		<meta name="robots" content="noindex, follow" />
@@ -48,4 +50,5 @@
 	<meta property="og:image" content={ogImage} />
 	<meta property="og:locale" content="de_DE" />
 	<meta property="og:site_name" content="Aust Umzüge" />
+
 </svelte:head>

@@ -335,10 +335,8 @@
 
 <!-- Confirm Modal -->
 {#if confirmOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={closeConfirm}>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="modal" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-backdrop" role="dialog" tabindex="-1" onclick={(e) => { if (e.target === e.currentTarget) closeConfirm(); }} onkeydown={(e) => { if (e.key === 'Escape') closeConfirm(); }}>
+		<div class="modal">
 			<button class="modal-close" onclick={closeConfirm} aria-label="Schliessen">
 				<X size={18} />
 			</button>
@@ -732,9 +730,5 @@
 			padding-left: 2.75rem;
 		}
 
-		.danger-row {
-			flex-direction: column;
-			align-items: flex-start;
-		}
 	}
 </style>

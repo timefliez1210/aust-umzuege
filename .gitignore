@@ -17,27 +17,38 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+.htaccess
 
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Lighthouse Reports
-lighthouse-reports/
+# Deploy & build scripts (contain server paths)
+deploy-full.py
+deploy-admin.py
+deploy-kas.py
+deploy.sh
+upload-html.py
+inline-css.py
+
+# Source images (originals kept locally, not in repo)
+src/assets/originals/
+
+# Audit & report artifacts
+*-AUDIT-*.md
+*-REPORT*.md
+*-PLAN*.md
+LIGHTHOUSE.md
+lighthouserc.cjs
 
 # Lighthouse CI
 .lighthouseci/
 lighthouse-reports/
 lighthouse-output.log
 
-# Internal Documentation (Private)
-SEO-AUDIT-2026.md
+# Data files
+*.csv
+*.xlsx
 
-# WordPress Backup
+# WordPress backup
 wp-backup/
-
-# Deploy scripts (contain server paths, use env vars for credentials)
-deploy-full.py
-deploy-kas.py
-upload-html.py
-inline-css.py

@@ -51,10 +51,11 @@
 </script>
 
 <div class="price-input">
-	<label class="price-label">{label}</label>
+	<label class="price-label" for={`price-${label.replace(/\s/g, '-').toLowerCase()}`}>{label}</label>
 	<div class="input-row">
 		<div class="input-wrapper">
 			<input
+				id={`price-${label.replace(/\s/g, '-').toLowerCase()}`}
 				type="number"
 				step="0.01"
 				value={editing ? inputText : displayValue}

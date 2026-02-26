@@ -11,25 +11,15 @@
   let { children } = $props();
 
   const siteUrl = "https://www.aust-umzuege.de";
-  const siteName = "Aust Umzüge";
   const defaultImage = "/umzuege-haushaltsaufloesungen-hildesheim-umgebung.webp";
 </script>
 
 <svelte:head>
-  <!-- Canonical URL -->
-  <link rel="canonical" href="{siteUrl}{$page.url.pathname}" />
-
-  <!-- Open Graph -->
-  <meta property="og:site_name" content={siteName} />
-  <meta property="og:locale" content="de_DE" />
-  <meta property="og:type" content="website" />
+  <!-- OG image with dimensions (hero photo for social sharing) -->
   <meta property="og:image" content="{siteUrl}{defaultImage}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="{siteUrl}{defaultImage}" />
 </svelte:head>
 
 {#if $page.url.pathname.startsWith('/admin')}

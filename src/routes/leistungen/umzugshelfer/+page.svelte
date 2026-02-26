@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Users size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Umzugshelfer</h1>
+            <h1 class="service-title">Umzugshelfer Hildesheim</h1>
             <p class="service-subtitle">
                 Starke Hände für Ihren Umzug – flexibel und zuverlässig.
             </p>

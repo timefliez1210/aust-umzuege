@@ -65,7 +65,7 @@
             <div class="icon-wrapper">
                 <Home size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Privatumzug</h1>
+            <h1 class="service-title">Privatumzug Hildesheim</h1>
             <p class="service-subtitle">
                 Ihr Start in ein neues Zuhause – entspannt und professionell.
             </p>

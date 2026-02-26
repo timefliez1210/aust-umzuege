@@ -3,7 +3,7 @@
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
-    import { articles, createBreadcrumbs } from "$lib/data/structuredData";
+    import { articles, createBreadcrumbs, howToUmzugsCheckliste } from "$lib/data/structuredData";
 
     const checklistSections = [
         {
@@ -78,11 +78,13 @@
                     title: "Möbeldemontage",
                     description:
                         "Demontieren Sie große und sperrige Möbelstücke, die nicht in einem Stück verladen und transportiert werden können. Unterschätzen Sie die Küchendemontage dabei nicht, die nimmt viel Zeit in Anspruch. Holen Sie sich am besten Handwerker dazu.",
+                    link: { href: "/leistungen/montage", text: "Demontage & Montage Service" },
                 },
                 {
                     title: "Einrichtung einer Halteverbotszone für den Umzugstag",
                     description:
                         "Ersparen Sie sich die ewige Parkplatzsuche, lange Laufwege am Umzugstag oder sogar Strafzettel wegen falsch parken. Beantragen Sie eine Halteverbotszone am Umzugstag bei der Stadt. Am besten gleich für beide Anschriften, falls ein Parkproblem herrscht.",
+                    link: { href: "/leistungen/halteverbot", text: "Mehr zum Halteverbot-Service" },
                 },
             ],
         },
@@ -98,6 +100,7 @@
                     title: "Alles transportsicher verpacken",
                     description:
                         "Machen Sie Ihr Umzugsgut transportsicher. Die Schränke sind leer geräumt, nun sichern Sie Schubladen, Einsätze, Schranktüren etc., damit diese nicht beim Transport aufgehen oder herausfallen. Einlegeböden empfehlen wir deshalb herauszunehmen.",
+                    link: { href: "/ratgeber/verpackungstipps", text: "Verpackungstipps vom Profi" },
                 },
                 {
                     title: "Einkäufe vor dem Umzug",
@@ -113,6 +116,7 @@
                     title: "Möbelmontage",
                     description:
                         "Montieren Sie Ihre Möbel selber oder engagieren Sie Handwerker für den Möbelaufbau und die Küchenmontage. Falls Sie mit Ihrer Küche umziehen muss diese unter Umständen angepasst werden, hierzu sollten Sie unbedingt Handwerker heranziehen.",
+                    link: { href: "/leistungen/montage", text: "Montage-Service beauftragen" },
                 },
                 {
                     title: "Alles auspacken und verräumen",
@@ -123,6 +127,7 @@
                     title: "Verpackungsmaterial entsorgen",
                     description:
                         "Benutztes Umzugsmaterial und das Verpackungsmaterial von Ihren bestellten Möbeln können Sie nun fachgerecht und vorschriftsmäßig entsorgen. Insofern Sie eine Umzugsfirma beauftragt haben, wird dies auf Wunsch auch von der beauftragten Firma übernommen.",
+                    link: { href: "/leistungen/haushaltsaufloesung", text: "Entrümpelung & Entsorgung" },
                 },
             ],
         },
@@ -174,6 +179,7 @@
 />
 
 <StructuredData schema={articles.umzugsCheckliste} />
+<StructuredData schema={howToUmzugsCheckliste} />
 <StructuredData schema={breadcrumbs} />
 
 <main class="guide-detail">
@@ -194,7 +200,7 @@
 
             <div class="guide-intro">
                 <p>
-                    Ein Umzug will gut geplant sein. Mit unserer Checkliste behalten Sie den Überblick und vergessen nichts Wichtiges. Von der Kündigung bis zur Ummeldung – hier finden Sie alle Aufgaben im zeitlichen Ablauf.
+                    Ein Umzug in Hildesheim und Umgebung will gut geplant sein. Mit unserer Checkliste behalten Sie den Überblick und vergessen nichts Wichtiges. Von der Kündigung bis zur Ummeldung – hier finden Sie alle Aufgaben im zeitlichen Ablauf.
                 </p>
                 <a
                     href="/umzugs-checkliste.pdf"
@@ -219,6 +225,15 @@
                                     <div class="checklist-item__content">
                                         <h3>{item.title}</h3>
                                         <p>{item.description}</p>
+                                        {#if item.link}
+                                            <a href={item.link.href} class="checklist-item__link">
+                                                {item.link.text}
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                                </svg>
+                                            </a>
+                                        {/if}
                                     </div>
                                 </div>
                             {/each}
@@ -378,6 +393,23 @@
         font-size: 1rem;
         line-height: 1.6;
         margin: 0;
+    }
+
+    .checklist-item__link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: #c44100;
+        font-size: var(--text-sm);
+        font-weight: 500;
+        text-decoration: none;
+        margin-top: var(--space-2);
+        transition: gap 0.2s, color 0.2s;
+    }
+
+    .checklist-item__link:hover {
+        color: #b93d00;
+        gap: var(--space-2);
     }
 
     @media (max-width: 640px) {

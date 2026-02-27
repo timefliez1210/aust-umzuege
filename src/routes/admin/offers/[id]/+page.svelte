@@ -7,7 +7,7 @@
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
 	import ImageLightbox from '$lib/components/admin/ImageLightbox.svelte';
 	import RouteMap from '$lib/components/admin/RouteMap.svelte';
-	import { ROW_OPTIONS, rowToLabel, COST_PER_PERSON_HOUR, calculateLaborCents, calculateNonLaborCents, calculateBruttoCents, calculateLaborProfit, reverseCalculateRate } from '$lib/utils/pricing';
+	import { ROW_OPTIONS, rowToLabel, COST_PER_PERSON_HOUR, calculateLaborCents, calculateNonLaborCents, calculateBruttoCents, calculateLaborProfit, reverseCalculateRate, isFlatTotalItem, normalizeFlatTotalItem } from '$lib/utils/pricing';
 	import { ArrowLeft, Send, XCircle, Download, RefreshCw, RotateCcw, Trash2, Pencil, Save, Plus, X } from 'lucide-svelte';
 
 	interface LineItem {
@@ -104,6 +104,16 @@
 		loadOffer();
 	});
 
+	/**
+	 * Fetches the full offer detail from the API and initialises all display and email-draft state.
+	 *
+	 * Called by: $effect (on mount, keyed on the route `id` param)
+	 * Purpose: Populates the offer view with pricing, line items, customer info, and email draft.
+	 *          Also fires a non-blocking POST /api/v1/distance/calculate to fetch route geometry
+	 *          for the RouteMap component. Calls GET /api/v1/admin/offers/{id}.
+	 *
+	 * @returns void (side-effect: sets `offer`, `emailSubject`, `emailBody`, `routeCoordinates`, `loading`)
+	 */
 	async function loadOffer() {
 		loading = true;
 		try {
@@ -133,30 +143,62 @@
 		}
 	}
 
+	/**
+	 * Copies current offer pricing and line items into the editable form fields and enters edit mode.
+	 *
+	 * Called by: Template (onclick on the "Bearbeiten" button)
+	 * Purpose: Seeds the edit form with existing offer data so the user starts from the current state
+	 *          rather than blank fields. Normalises flat-total line items (e.g. Fahrkostenpauschale)
+	 *          using normalizeFlatTotalItem before populating editLineItems.
+	 *
+	 * @returns void (side-effect: populates edit* state variables, sets `editing = true`)
+	 */
 	function startEditing() {
 		if (!offer) return;
 		editPersons = offer.persons;
 		editHours = offer.hours;
 		editRateCents = offer.rate_cents;
 		editBruttoCents = offer.total_brutto_cents;
-		// Map non-labor line items to editable - try to recover row from label
+		// Map non-labor line items to editable - normalize flat-total items (Fahrkostenpauschale)
 		editLineItems = offer.line_items.filter(li => !li.is_labor).map(li => {
+			const normalized = normalizeFlatTotalItem(li);
 			const match = ROW_OPTIONS.find(r => r.label === li.label);
 			return {
 				row: match?.row ?? 99,
 				label: li.label,
 				remark: li.remark ?? '',
-				quantity: li.quantity,
-				unit_price_cents: li.unit_price_cents,
+				quantity: normalized.quantity,
+				unit_price_cents: normalized.unit_price_cents,
 			};
 		});
 		editing = true;
 	}
 
+	/**
+	 * Discards all unsaved changes and returns the page to read-only view mode.
+	 *
+	 * Called by: Template (onclick on the "Abbrechen" button while in edit mode)
+	 * Purpose: Exits the pricing editor without persisting any changes; the offer data is unchanged.
+	 *
+	 * @returns void (side-effect: sets `editing = false`)
+	 */
 	function cancelEditing() {
 		editing = false;
 	}
 
+	/**
+	 * Back-calculates the hourly rate from a manually entered brutto total and updates editRateCents.
+	 *
+	 * Called by: Template (oninput on the brutto price input in the pricing editor)
+	 * Purpose: Allows the user to set a desired total price and have the system derive the implied
+	 *          hourly rate, so the PDF and offer record stay internally consistent.
+	 *
+	 * Math: rate = reverseCalculateRate(bruttoCents, nonLaborCents, persons, hours)
+	 *       where target_netto = bruttoCents / 1.19, labor_netto = target_netto - nonLaborCents,
+	 *       rate = labor_netto / (persons * hours)
+	 *
+	 * @returns void (side-effect: updates `editRateCents` if the computed rate is positive)
+	 */
 	function onBruttoChange() {
 		const rate = reverseCalculateRate(editBruttoCents, nonLaborCents, editPersons, editHours);
 		if (rate > 0) {
@@ -164,14 +206,43 @@
 		}
 	}
 
+	/**
+	 * Appends a new De/Montage line item with default values to the editable line-items list.
+	 *
+	 * Called by: Template (onclick on the "+" add line item button in the pricing editor)
+	 * Purpose: Lets the user add extra charges (e.g. transport, packing material) beyond labor
+	 *          while editing an existing offer's pricing.
+	 *
+	 * @returns void (side-effect: appends to `editLineItems`)
+	 */
 	function addLineItem() {
-		editLineItems = [...editLineItems, { row: 39, label: 'Transporter', remark: '', quantity: 1, unit_price_cents: 6000 }];
+		editLineItems = [...editLineItems, { row: 31, label: 'Demontage', remark: '', quantity: 1, unit_price_cents: 5000 }];
 	}
 
+	/**
+	 * Removes a line item from the editable list by index.
+	 *
+	 * Called by: Template (onclick on the X button next to each line item row in the pricing editor)
+	 * Purpose: Allows the user to delete an unwanted extra charge from the offer before saving.
+	 *
+	 * @param idx - Zero-based index of the line item to remove from `editLineItems`
+	 * @returns void
+	 */
 	function removeLineItem(idx: number) {
 		editLineItems = editLineItems.filter((_, i) => i !== idx);
 	}
 
+	/**
+	 * Resets a line item's label and price to the defaults for the newly selected row type.
+	 *
+	 * Called by: Template (onchange on the row-type <select> for each line item)
+	 * Purpose: Keeps the label and default unit price consistent with the chosen row category
+	 *          (e.g. selecting row 39 "Transporter" auto-fills 60.00). Row 99 "Sonstiges" is
+	 *          left blank so the user can enter a custom label and price.
+	 *
+	 * @param idx - Zero-based index of the line item in `editLineItems` that changed
+	 * @returns void (side-effect: mutates `editLineItems[idx].label` and `.unit_price_cents`)
+	 */
 	function onLineItemRowChange(idx: number) {
 		const item = editLineItems[idx];
 		if (item.row === 99) {
@@ -185,6 +256,17 @@
 		editLineItems = [...editLineItems];
 	}
 
+	/**
+	 * Persists the edited pricing and line items to the API and regenerates the PDF.
+	 *
+	 * Called by: Template (onclick on the "Speichern & PDF" button while in edit mode)
+	 * Purpose: Two-step save workflow — first PATCHes the offer record with new persons/hours/rate
+	 *          and line items, then POSTs to /regenerate so the PDF reflects the new pricing.
+	 *          Calls PATCH /api/v1/admin/offers/{id} then POST /api/v1/admin/offers/{id}/regenerate.
+	 *          On success, exits edit mode and reloads the offer.
+	 *
+	 * @returns void (side-effect: sets `saving`, shows toast, calls loadOffer on success)
+	 */
 	async function saveOffer() {
 		if (!offer) return;
 		saving = true;
@@ -231,6 +313,15 @@
 		}
 	}
 
+	/**
+	 * Regenerates the offer PDF using the currently stored pricing without changing any values.
+	 *
+	 * Called by: Template (onclick on the RefreshCw icon button)
+	 * Purpose: Re-runs the PDF generation pipeline when the PDF is stale or missing,
+	 *          without requiring the user to enter edit mode. Calls POST /api/v1/admin/offers/{id}/regenerate.
+	 *
+	 * @returns void (side-effect: shows toast, reloads the offer)
+	 */
 	async function regenerateOffer() {
 		if (!offer) return;
 		try {
@@ -242,6 +333,16 @@
 		}
 	}
 
+	/**
+	 * Triggers a full re-estimation of the offer, recalculating distance and regenerating the PDF.
+	 *
+	 * Called by: Template (onclick on the "Neu berechnen" button)
+	 * Purpose: Used when address data has changed and the distance-based pricing needs to be
+	 *          recomputed from scratch. Calls POST /api/v1/admin/offers/{id}/re-estimate.
+	 *          Prompts for confirmation before proceeding.
+	 *
+	 * @returns void (side-effect: shows toast, reloads the offer)
+	 */
 	async function reEstimateOffer() {
 		if (!offer) return;
 		if (!confirm('Entfernung neu berechnen und Angebot neu erstellen?')) return;
@@ -254,6 +355,17 @@
 		}
 	}
 
+	/**
+	 * Sends the offer PDF to the customer via email using the editable subject and body draft.
+	 *
+	 * Called by: Template (onclick on the "Senden" button)
+	 * Purpose: Delivers the offer to the customer and transitions the offer status from draft to sent.
+	 *          The email content comes from `emailSubject` and `emailBody`, which are pre-filled
+	 *          by the API and editable by the admin. Calls POST /api/v1/admin/offers/{id}/send.
+	 *          Prompts for confirmation before proceeding.
+	 *
+	 * @returns void (side-effect: shows toast, reloads the offer)
+	 */
 	async function sendOffer() {
 		if (!offer) return;
 		if (!confirm('Angebot an Kunden senden?')) return;
@@ -269,6 +381,15 @@
 		}
 	}
 
+	/**
+	 * Marks the offer as rejected, removing it from the active pipeline.
+	 *
+	 * Called by: Template (onclick on the XCircle "reject" button)
+	 * Purpose: Transitions the offer to the 'rejected' status (e.g. customer declined or quote was wrong).
+	 *          Calls POST /api/v1/admin/offers/{id}/reject. Prompts for confirmation before proceeding.
+	 *
+	 * @returns void (side-effect: shows toast, reloads the offer)
+	 */
 	async function rejectOffer() {
 		if (!offer) return;
 		if (!confirm('Angebot verwerfen?')) return;
@@ -281,6 +402,15 @@
 		}
 	}
 
+	/**
+	 * Permanently deletes the offer and navigates back to the offers list.
+	 *
+	 * Called by: Template (onclick on the Trash2 "delete" button)
+	 * Purpose: Hard-removes an offer that was created in error or is no longer needed.
+	 *          Calls POST /api/v1/admin/offers/{id}/delete. Prompts for confirmation before proceeding.
+	 *
+	 * @returns void (side-effect: shows toast, navigates to /admin/offers)
+	 */
 	async function deleteOffer() {
 		if (!offer) return;
 		if (!confirm('Angebot unwiderruflich loeschen?')) return;
@@ -579,9 +709,13 @@
 									{/if}
 								</div>
 								<div class="li-detail">
-									<span class="li-qty">{li.quantity}</span>
-									<span class="li-unit">&times; {(li.unit_price_cents / 100).toFixed(2)} EUR</span>
-									<span class="li-total">{formatEuro(li.total_cents)}</span>
+									{#if isFlatTotalItem(li)}
+										<span class="li-total">{formatEuro(li.total_cents)}</span>
+									{:else}
+										<span class="li-qty">{li.quantity}</span>
+										<span class="li-unit">&times; {(li.unit_price_cents / 100).toFixed(2)} EUR</span>
+										<span class="li-total">{formatEuro(li.total_cents)}</span>
+									{/if}
 								</div>
 							</div>
 						{/each}

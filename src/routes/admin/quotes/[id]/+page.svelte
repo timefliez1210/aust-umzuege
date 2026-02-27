@@ -9,6 +9,7 @@
 	import { floorLabel, parseFloor } from '$lib/utils/floor';
 	import { sortItems, filterItemsByPhotoIndex } from '$lib/utils/sorting';
 	import { computeTotalVolume } from '$lib/utils/volume';
+	import { normalizeFlatTotalItem } from '$lib/utils/pricing';
 	import { ArrowLeft, Save, FileOutput, RotateCcw, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video, Download, ImagePlus } from 'lucide-svelte';
 
 	interface Address {
@@ -150,6 +151,16 @@
 	let sortKey = $state<'name' | 'quantity' | 'volume_m3' | null>(null);
 	let sortAsc = $state(true);
 
+	/**
+	 * Toggles the column sort key and direction for the estimation items table.
+	 *
+	 * Called by: Template (onclick on column headers — Name, Menge, Volumen)
+	 * Purpose: Allows the admin to sort the items list to spot duplicates, outliers, or
+	 *          the highest-volume items quickly. Clicking the same column again reverses the direction.
+	 *
+	 * @param key - The column to sort by: 'name', 'quantity', or 'volume_m3'
+	 * @returns void (side-effect: updates `sortKey` and `sortAsc`)
+	 */
 	function toggleSort(key: 'name' | 'quantity' | 'volume_m3') {
 		if (sortKey === key) {
 			sortAsc = !sortAsc;
@@ -169,11 +180,14 @@
 
 	// Editable line items
 	const ROW_OPTIONS: { row: number; label: string; defaultCents: number }[] = [
-		{ row: 31, label: 'De/Montage', defaultCents: 5000 },
-		{ row: 32, label: 'Halteverbotszone', defaultCents: 10000 },
-		{ row: 33, label: 'Umzugsmaterial', defaultCents: 3000 },
-		{ row: 39, label: 'Transporter', defaultCents: 6000 },
-		{ row: 42, label: 'Anfahrt/Abfahrt', defaultCents: 3000 },
+		{ row: 31, label: 'Demontage', defaultCents: 5000 },
+		{ row: 32, label: 'Montage', defaultCents: 5000 },
+		{ row: 33, label: 'Halteverbotszone', defaultCents: 10000 },
+		{ row: 34, label: 'Umzugsmaterial', defaultCents: 3000 },
+		{ row: 35, label: 'Möbellift', defaultCents: 0 },
+		{ row: 36, label: 'Verleih Kleiderboxen', defaultCents: 0 },
+		{ row: 37, label: 'Verkauf U-Karton', defaultCents: 0 },
+		{ row: 38, label: 'Verkauf B-Karton', defaultCents: 0 },
 		{ row: 99, label: 'Sonstiges', defaultCents: 0 },
 	];
 
@@ -189,48 +203,99 @@
 
 	let editLineItems = $state<EditLineItem[]>([]);
 
+	/**
+	 * Constructs a new EditLineItem object with sensible defaults for UI state fields.
+	 *
+	 * Called by: computeLineItemsFromNotes (to build auto-generated items), addLineItem (for manual additions)
+	 * Purpose: Centralises line-item construction so all items share a consistent shape including
+	 *          the derived `_priceText` string and the `_editing` flag used by inline price inputs.
+	 *
+	 * @param row - The ROW_OPTIONS row number (e.g. 31 for De/Montage, 39 for Transporter)
+	 * @param label - Human-readable label shown on the PDF line item
+	 * @param quantity - Number of units
+	 * @param unitPriceCents - Unit price in euro cents
+	 * @param remark - Optional remark appended to the line on the PDF (default '')
+	 * @returns A fully initialised EditLineItem ready for use in `editLineItems`
+	 */
 	function mkLineItem(row: number, label: string, quantity: number, unitPriceCents: number, remark: string = ''): EditLineItem {
 		return { row, label, remark, quantity, unitPriceCents, _priceText: (unitPriceCents / 100).toFixed(2), _editing: false };
 	}
 
+	/**
+	 * Auto-generates a suggested set of extra line items by scanning the quote notes for service keywords.
+	 *
+	 * Called by: computePricingDefaults (after loading a new quote), Template (no direct call — triggered via computePricingDefaults)
+	 * Purpose: Reduces manual data entry by pre-filling line items from structured notes entered at quote creation.
+	 *          The backend will independently re-generate Fahrkostenpauschale via ORS, so it is not included here.
+	 *          Matches the auto-generation logic in the backend's `build_line_items()`.
+	 *
+	 * @returns void (side-effect: replaces `editLineItems` with auto-computed items)
+	 */
 	function computeLineItemsFromNotes() {
 		const notes = editNotes.toLowerCase();
 		const items: EditLineItem[] = [];
 
-		if (notes.includes('montage') || notes.includes('demontage')) {
-			items.push(mkLineItem(31, 'De/Montage', 1, 5000));
+		if (notes.includes('demontage')) {
+			items.push(mkLineItem(31, 'Demontage', 1, 5000));
+		}
+		// Check "montage" separately — strip "demontage" occurrences first to avoid false positive
+		if (notes.replace('demontage', '').includes('montage')) {
+			items.push(mkLineItem(32, 'Montage', 1, 5000));
 		}
 
-		let hvCount = 0;
-		if (notes.includes('halteverbot auszug')) hvCount++;
-		if (notes.includes('halteverbot einzug')) hvCount++;
+		const hvAuszug = notes.includes('halteverbot auszug');
+		const hvEinzug = notes.includes('halteverbot einzug');
+		const hvCount = (hvAuszug ? 1 : 0) + (hvEinzug ? 1 : 0);
 		if (hvCount > 0) {
-			items.push(mkLineItem(32, 'Halteverbotszone', hvCount, 10000));
+			const remark = hvAuszug && hvEinzug
+				? 'Beladestelle + Entladestelle'
+				: hvAuszug ? 'Beladestelle' : 'Entladestelle';
+			items.push(mkLineItem(33, 'Halteverbotszone', hvCount, 10000, remark));
 		}
 
 		if (notes.includes('verpackungsservice') || notes.includes('einpackservice')) {
-			items.push(mkLineItem(33, 'Umzugsmaterial', 1, 3000));
-		}
-
-		const vol = editItems.length > 0 ? computedTotal : (editVolume ?? 0);
-		items.push(mkLineItem(39, 'Transporter', vol > 30 ? 2 : 1, 6000));
-
-		if (editDistance > 0) {
-			const price = 30 + editDistance * 1.5;
-			items.push(mkLineItem(42, 'Anfahrt/Abfahrt', 1, Math.round(price * 100)));
+			items.push(mkLineItem(34, 'Umzugsmaterial', 1, 3000, 'Stretchfolie, Decken, Gurte Einzelpreis 30,00 €'));
 		}
 
 		editLineItems = items;
 	}
 
+	/**
+	 * Appends a new De/Montage line item with default values to the editable line-items list.
+	 *
+	 * Called by: Template (onclick on the "+" add line item button in the pricing section)
+	 * Purpose: Allows the admin to add an extra charge not auto-detected from the notes,
+	 *          before generating the offer PDF.
+	 *
+	 * @returns void (side-effect: appends to `editLineItems`)
+	 */
 	function addLineItem() {
-		editLineItems = [...editLineItems, mkLineItem(39, 'Transporter', 1, 6000)];
+		editLineItems = [...editLineItems, mkLineItem(31, 'Demontage', 1, 5000)];
 	}
 
+	/**
+	 * Removes a line item from the editable list by index.
+	 *
+	 * Called by: Template (onclick on the X button next to each extra line item row)
+	 * Purpose: Allows the admin to delete auto-generated or manually added charges before generating the offer.
+	 *
+	 * @param idx - Zero-based index of the line item to remove from `editLineItems`
+	 * @returns void
+	 */
 	function removeLineItem(idx: number) {
 		editLineItems = editLineItems.filter((_, i) => i !== idx);
 	}
 
+	/**
+	 * Resets a line item's label and price to the defaults for the newly selected row type.
+	 *
+	 * Called by: Template (onchange on the row-type <select> for each line item row)
+	 * Purpose: Keeps the label and default unit price in sync with the chosen category after the
+	 *          admin changes the row type. Row 99 "Sonstiges" clears label and price for manual entry.
+	 *
+	 * @param idx - Zero-based index of the changed line item in `editLineItems`
+	 * @returns void (side-effect: mutates label, unitPriceCents, _priceText on the item; triggers reactivity)
+	 */
 	function onLineItemRowChange(idx: number) {
 		const item = editLineItems[idx];
 		const opt = ROW_OPTIONS.find(r => r.row === item.row);
@@ -260,24 +325,67 @@
 	// Item reviewer state
 	let reviewIndex = $state<number | null>(null);
 
+	/**
+	 * Opens the item reviewer lightbox at the position of the clicked item in the sorted list.
+	 *
+	 * Called by: Template (onclick on each row in the estimation items table)
+	 * Purpose: Launches the full-screen image review overlay so the admin can inspect the source photo
+	 *          and bounding box for a detected item before confirming or editing it.
+	 *
+	 * @param item - The EditableItem that was clicked
+	 * @returns void (side-effect: sets `reviewIndex` to the item's position in `sortedItems()`)
+	 */
 	function openReview(item: EditableItem) {
 		const items = sortedItems();
 		const idx = items.indexOf(item);
 		reviewIndex = idx >= 0 ? idx : 0;
 	}
 
+	/**
+	 * Closes the item reviewer lightbox.
+	 *
+	 * Called by: Template (onclick on the lightbox close button), handleKeydown (on Escape key)
+	 * Purpose: Returns the page to the normal items-table view after the admin is done reviewing an item.
+	 *
+	 * @returns void (side-effect: sets `reviewIndex = null`)
+	 */
 	function closeReview() {
 		reviewIndex = null;
 	}
 
+	/**
+	 * Moves the item reviewer to the previous item in the sorted list.
+	 *
+	 * Called by: Template (onclick on the left-chevron button in the reviewer), handleKeydown (ArrowLeft)
+	 * Purpose: Allows the admin to flip through detected items sequentially without closing the lightbox.
+	 *
+	 * @returns void (side-effect: decrements `reviewIndex` if not already at index 0)
+	 */
 	function reviewPrev() {
 		if (reviewIndex !== null && reviewIndex > 0) reviewIndex--;
 	}
 
+	/**
+	 * Moves the item reviewer to the next item in the sorted list.
+	 *
+	 * Called by: Template (onclick on the right-chevron button in the reviewer), handleKeydown (ArrowRight)
+	 * Purpose: Allows the admin to flip through detected items sequentially without closing the lightbox.
+	 *
+	 * @returns void (side-effect: increments `reviewIndex` if not already at the last item)
+	 */
 	function reviewNext() {
 		if (reviewIndex !== null && reviewIndex < sortedItems().length - 1) reviewIndex++;
 	}
 
+	/**
+	 * Deletes the currently reviewed item and adjusts the reviewer index to stay in bounds.
+	 *
+	 * Called by: Template (onclick on the delete button inside the item reviewer lightbox)
+	 * Purpose: Lets the admin discard a falsely-detected item without leaving the reviewer,
+	 *          automatically advancing to the next item or closing the lightbox when the last item is deleted.
+	 *
+	 * @returns void (side-effect: calls deleteItem, then adjusts `reviewIndex`)
+	 */
 	function reviewDelete() {
 		if (reviewIndex === null) return;
 		const items = sortedItems();
@@ -291,6 +399,17 @@
 		}
 	}
 
+	/**
+	 * Handles keyboard shortcuts for the item reviewer and photo filter while no input is focused.
+	 *
+	 * Called by: Template (onkeydown on the document/page root)
+	 * Purpose: Enables keyboard navigation — Escape closes the reviewer or clears the photo filter;
+	 *          ArrowLeft/ArrowRight navigate between items in the reviewer. Keypresses inside
+	 *          input, textarea, or select elements are ignored to avoid conflicts with text entry.
+	 *
+	 * @param e - The native KeyboardEvent
+	 * @returns void
+	 */
 	function handleKeydown(e: KeyboardEvent) {
 		// Don't intercept when typing in inputs
 		const tag = (e.target as HTMLElement)?.tagName;
@@ -319,6 +438,16 @@
 	let photoQueue = $state<File[]>([]);
 	let photoDragging = $state(false);
 
+	/**
+	 * Downloads all source photos and videos for the quote as a single ZIP archive via the browser.
+	 *
+	 * Called by: Template (onclick on the "Alle Medien herunterladen" button in the photos card)
+	 * Purpose: Provides the admin with an offline copy of all customer-supplied media in one action,
+	 *          useful for sharing with the moving crew or archiving. Uses JSZip (dynamically imported)
+	 *          to bundle files fetched from the API_BASE proxy without requiring a server-side ZIP endpoint.
+	 *
+	 * @returns void (side-effect: triggers browser download of `medien_{quoteId}.zip`, sets `downloadingMedia`)
+	 */
 	async function downloadAllMedia() {
 		if (!data) return;
 		downloadingMedia = true;
@@ -369,6 +498,16 @@
 		}
 	}
 
+	/**
+	 * Deletes an estimation entry and all its detected items after confirmation.
+	 *
+	 * Called by: Template (onclick on the X button next to each photo thumbnail and on failed estimation rows)
+	 * Purpose: Removes a bad or duplicate AI analysis run so it no longer influences the volume total
+	 *          or item list. Calls DELETE /api/v1/estimates/{estimationId} then reloads the quote.
+	 *
+	 * @param estimationId - UUID of the EstimationEntry to delete
+	 * @returns void (side-effect: shows toast, calls loadQuote on success)
+	 */
 	async function deleteEstimation(estimationId: string) {
 		if (!confirm('Diese Analyse und alle zugehörigen Gegenstände werden gelöscht.')) return;
 		try {
@@ -380,6 +519,16 @@
 		}
 	}
 
+	/**
+	 * Validates and appends image files to the photo upload queue, rejecting non-images or files over 50 MB.
+	 *
+	 * Called by: handlePhotoSelect (after file picker selection), handlePhotoDrop (after drag-and-drop)
+	 * Purpose: Guards the photo queue so only valid image files reach the upload step.
+	 *          Accepts common image MIME types and extensions including HEIC/HEIF from iOS devices.
+	 *
+	 * @param files - FileList or File array from a file input or drag event
+	 * @returns void (side-effect: appends valid files to `photoQueue`, shows error toast for rejected files)
+	 */
 	function addPhotoFiles(files: FileList | File[]) {
 		const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
 		for (const file of Array.from(files)) {
@@ -396,6 +545,16 @@
 		}
 	}
 
+	/**
+	 * Reads image files from a file-input change event and forwards them to addPhotoFiles.
+	 *
+	 * Called by: Template (onchange on the hidden photo <input type="file"> in the photo-analysis card)
+	 * Purpose: Bridges the native file-input event to the addPhotoFiles validation logic,
+	 *          then resets the input so the same file can be selected again if needed.
+	 *
+	 * @param e - The native change Event from the file input element
+	 * @returns void
+	 */
 	function handlePhotoSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		if (!input.files?.length) return;
@@ -403,25 +562,71 @@
 		input.value = '';
 	}
 
+	/**
+	 * Handles a drag-and-drop event on the photo drop zone and forwards files to addPhotoFiles.
+	 *
+	 * Called by: Template (ondrop on the photo dropzone in the photo-analysis card)
+	 * Purpose: Allows the admin to drop photos directly onto the upload area without opening a file picker.
+	 *
+	 * @param e - The native DragEvent carrying the dropped files
+	 * @returns void
+	 */
 	function handlePhotoDrop(e: DragEvent) {
 		e.preventDefault();
 		photoDragging = false;
 		if (e.dataTransfer?.files) addPhotoFiles(e.dataTransfer.files);
 	}
 
+	/**
+	 * Prevents the browser default drag behavior and activates the photo drop-zone highlight.
+	 *
+	 * Called by: Template (ondragover on the photo dropzone in the photo-analysis card)
+	 * Purpose: Visual feedback so the admin sees the area is a valid drop target for images.
+	 *
+	 * @param e - The native DragEvent
+	 * @returns void
+	 */
 	function handlePhotoDragOver(e: DragEvent) {
 		e.preventDefault();
 		photoDragging = true;
 	}
 
+	/**
+	 * Clears the photo drop-zone drag-over highlight when the cursor leaves the zone.
+	 *
+	 * Called by: Template (ondragleave on the photo dropzone in the photo-analysis card)
+	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
+	 *
+	 * @returns void
+	 */
 	function handlePhotoDragLeave() {
 		photoDragging = false;
 	}
 
+	/**
+	 * Removes a photo from the staged upload queue before it is submitted.
+	 *
+	 * Called by: Template (onclick on the X button next to each queued photo in the upload list)
+	 * Purpose: Lets the admin deselect a photo that was added by mistake before triggering the upload.
+	 *
+	 * @param idx - Zero-based position of the file to remove from `photoQueue`
+	 * @returns void
+	 */
 	function removePhotoFromQueue(idx: number) {
 		photoQueue = photoQueue.filter((_, i) => i !== idx);
 	}
 
+	/**
+	 * Uploads all queued photos to the depth-sensor estimation endpoint and polls for results.
+	 *
+	 * Called by: Template (onclick on the "Fotos analysieren" button in the photo-analysis card)
+	 * Purpose: Sends the queued images to the AI volume estimation pipeline via
+	 *          POST /api/v1/estimates/depth-sensor (multipart FormData with quote_id and images[]).
+	 *          After upload, polls for estimation completion via pollEstimations if any results are
+	 *          still processing, or falls back to loadQuote if all are already complete.
+	 *
+	 * @returns void (side-effect: clears `photoQueue`, shows toast, calls pollEstimations or loadQuote)
+	 */
 	async function uploadPhotos() {
 		if (photoQueue.length === 0 || !data) return;
 
@@ -458,6 +663,16 @@
 		}
 	}
 
+	/**
+	 * Validates and appends video files to the video upload queue, rejecting non-video or oversized files.
+	 *
+	 * Called by: handleVideoSelect (after file picker selection), handleVideoDrop (after drag-and-drop)
+	 * Purpose: Guards the video queue so only valid video files under 500 MB reach the upload step.
+	 *          Checks both MIME type and common video file extensions (.mp4, .mov, .webm, .mkv, .avi).
+	 *
+	 * @param files - FileList or File array from a file input or drag event
+	 * @returns void (side-effect: appends valid files to `videoQueue`, shows error toast for rejected files)
+	 */
 	function addVideoFiles(files: FileList | File[]) {
 		const videoExtensions = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
 		for (const file of Array.from(files)) {
@@ -474,6 +689,16 @@
 		}
 	}
 
+	/**
+	 * Reads video files from a file-input change event and forwards them to addVideoFiles.
+	 *
+	 * Called by: Template (onchange on the hidden video <input type="file"> in the video-analysis card)
+	 * Purpose: Bridges the native file-input event to the addVideoFiles validation logic,
+	 *          then resets the input so the same file can be selected again.
+	 *
+	 * @param e - The native change Event from the file input element
+	 * @returns void
+	 */
 	function handleVideoSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		if (!input.files?.length) return;
@@ -481,30 +706,84 @@
 		input.value = '';
 	}
 
+	/**
+	 * Handles a drag-and-drop event on the video drop zone and forwards files to addVideoFiles.
+	 *
+	 * Called by: Template (ondrop on the video dropzone in the video-analysis card)
+	 * Purpose: Allows the admin to drop video files directly onto the upload area without a file picker.
+	 *
+	 * @param e - The native DragEvent carrying the dropped files
+	 * @returns void
+	 */
 	function handleVideoDrop(e: DragEvent) {
 		e.preventDefault();
 		videoDragging = false;
 		if (e.dataTransfer?.files) addVideoFiles(e.dataTransfer.files);
 	}
 
+	/**
+	 * Prevents the browser default drag behavior and activates the video drop-zone highlight.
+	 *
+	 * Called by: Template (ondragover on the video dropzone in the video-analysis card)
+	 * Purpose: Visual feedback so the admin sees the area is a valid drop target for videos.
+	 *
+	 * @param e - The native DragEvent
+	 * @returns void
+	 */
 	function handleVideoDragOver(e: DragEvent) {
 		e.preventDefault();
 		videoDragging = true;
 	}
 
+	/**
+	 * Clears the video drop-zone drag-over highlight when the cursor leaves the zone.
+	 *
+	 * Called by: Template (ondragleave on the video dropzone in the video-analysis card)
+	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
+	 *
+	 * @returns void
+	 */
 	function handleVideoDragLeave() {
 		videoDragging = false;
 	}
 
+	/**
+	 * Removes a video file from the staged upload queue before it is submitted.
+	 *
+	 * Called by: Template (onclick on the X button next to each queued video in the upload list)
+	 * Purpose: Lets the admin deselect a video that was added by mistake before triggering the upload.
+	 *
+	 * @param idx - Zero-based position of the file to remove from `videoQueue`
+	 * @returns void
+	 */
 	function removeFromQueue(idx: number) {
 		videoQueue = videoQueue.filter((_, i) => i !== idx);
 	}
 
+	/**
+	 * Formats a byte count as a human-readable KB or MB string.
+	 *
+	 * Called by: Template (to display the size of each file in the upload queue)
+	 * Purpose: Renders file sizes in a compact, readable format for the queue list.
+	 *
+	 * @param bytes - File size in bytes
+	 * @returns A formatted string such as "512 KB" or "1.4 MB"
+	 */
 	function formatFileSize(bytes: number): string {
 		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
 		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	}
 
+	/**
+	 * Uploads all queued videos to the video estimation endpoint and polls for results.
+	 *
+	 * Called by: Template (onclick on the "Videos analysieren" button in the video-analysis card)
+	 * Purpose: Sends queued videos to the AI volume estimation pipeline via
+	 *          POST /api/v1/estimates/video (multipart FormData with quote_id and video fields).
+	 *          After upload, polls for completion via pollEstimations if any results are still processing.
+	 *
+	 * @returns void (side-effect: clears `videoQueue`, shows toast, calls pollEstimations or loadQuote)
+	 */
 	async function uploadVideos() {
 		if (videoQueue.length === 0 || !data) return;
 
@@ -541,6 +820,18 @@
 		}
 	}
 
+	/**
+	 * Polls the estimation status endpoint at 5-second intervals until all estimations are done or timed out.
+	 *
+	 * Called by: uploadPhotos (after a photo upload), uploadVideos (after a video upload)
+	 * Purpose: AI estimation runs asynchronously on the server; this loop keeps the UI informed of
+	 *          progress and reloads the quote once all submitted estimations finish (or fail).
+	 *          Polls GET /api/v1/estimates/{id} for each pending estimation ID.
+	 *          Times out after 120 attempts (10 minutes at 5-second intervals).
+	 *
+	 * @param estimationIds - Array of estimation UUIDs returned from the upload response that are still processing
+	 * @returns void (side-effect: updates `videoProgress` label, shows toast on completion/failure, calls loadQuote)
+	 */
 	async function pollEstimations(estimationIds: string[]) {
 		const maxAttempts = 120; // 10 min at 5s intervals
 		const pending = new Set(estimationIds);
@@ -634,10 +925,31 @@
 		estimationsList.filter(e => e.status === 'failed')
 	);
 
+	/**
+	 * Toggles a photo-index filter that narrows the items table to only items seen in a given source photo.
+	 *
+	 * Called by: Template (onclick on each photo thumbnail in the gallery)
+	 * Purpose: Allows the admin to cross-reference a specific photo with the items detected in it,
+	 *          making it easy to verify or correct the AI's output for that image.
+	 *          Clicking the same photo again clears the filter and shows all items.
+	 *
+	 * @param idx - Zero-based index of the source photo in `galleryImages`
+	 * @returns void (side-effect: sets or clears `filterPhotoIndex`)
+	 */
 	function togglePhotoFilter(idx: number) {
 		filterPhotoIndex = filterPhotoIndex === idx ? null : idx;
 	}
 
+	/**
+	 * Copies the API-returned estimation items into the editable items state, resetting the dirty flag.
+	 *
+	 * Called by: loadQuote (after fetching fresh quote data)
+	 * Purpose: Initialises `editItems` from the server response so the admin can edit quantities, volumes,
+	 *          and names before saving. Maps nullable fields to explicit null to satisfy TypeScript.
+	 *
+	 * @param items - Array of EstimationItem objects from the API response
+	 * @returns void (side-effect: sets `editItems` and resets `itemsDirty = false`)
+	 */
 	function initEditItems(items: EstimationItem[]) {
 		editItems = items.map(item => ({
 			name: item.name,
@@ -656,6 +968,25 @@
 		itemsDirty = false;
 	}
 
+	/**
+	 * Calculates suggested persons, hours, rate, and line items for the offer pricing section.
+	 *
+	 * Called by: loadQuote (after data is fetched and items are initialised)
+	 * Purpose: Seeds the pricing editor with an intelligent starting point so the admin doesn't need
+	 *          to compute staffing manually. If a latest_offer already exists, it re-uses that offer's
+	 *          values instead of re-computing. Otherwise applies the floor/elevator heuristic:
+	 *          extra persons for floors without elevators, hours derived from volume.
+	 *
+	 * Math:
+	 *   originExtra = originFloor > 0 && !originElev ? originFloor : 0
+	 *   destExtra   = destFloor > 0 && !destElev   ? destFloor   : 0
+	 *   persons     = max(2, 2 + originExtra + destExtra)
+	 *   hours       = max(1, ceil(volume_m3 / (persons * 2.0)))
+	 *   rate        = 3000 cents (30.00 EUR/h, fixed default)
+	 *
+	 * @returns void (side-effect: updates editPersons, editHours, editRateCents, editBruttoCents,
+	 *          editLineItems, priceDirty)
+	 */
 	function computePricingDefaults() {
 		if (!data) return;
 
@@ -666,16 +997,17 @@
 			editHours = lo.hours;
 			editRateCents = lo.rate_cents;
 			editBruttoCents = lo.total_brutto_cents;
-			// Build editable line items from offer (non-labor only)
+			// Build editable line items from offer (non-labor only, normalize flat-total items)
 			editLineItems = lo.line_items
 				.filter(li => !li.is_labor)
 				.map(li => {
+					const normalized = normalizeFlatTotalItem(li);
 					const match = ROW_OPTIONS.find(r => r.label === li.label);
 					return mkLineItem(
 						match?.row ?? 99,
 						li.label,
-						li.quantity,
-						li.unit_price_cents,
+						normalized.quantity,
+						normalized.unit_price_cents,
 						li.remark ?? '',
 					);
 				});
@@ -709,6 +1041,19 @@
 		loadQuote();
 	});
 
+	/**
+	 * Fetches the full quote detail from the API and initialises all page state.
+	 *
+	 * Called by: $effect (on mount, keyed on the route `id` param), and after any mutation (save, delete, upload)
+	 * Purpose: Primary data loader for the quote detail page. Calls GET /api/v1/quotes/{id},
+	 *          then seeds editVolume, editDistance, editNotes, editItems (via initEditItems),
+	 *          and pricing defaults (via computePricingDefaults). Also fires a non-blocking
+	 *          POST /api/v1/distance/calculate to populate the RouteMap polyline.
+	 *          Handles both the current API shape (top-level `items`) and the legacy shape
+	 *          (`estimation.items`) for backwards compatibility.
+	 *
+	 * @returns void (side-effect: sets `data`, edit* fields, `routeCoordinates`, `loading`)
+	 */
 	async function loadQuote() {
 		loading = true;
 		try {
@@ -751,6 +1096,16 @@
 		}
 	}
 
+	/**
+	 * Persists the edited volume, distance, and notes fields to the API.
+	 *
+	 * Called by: Template (onclick on the "Speichern" button in the Details card)
+	 * Purpose: Saves manual corrections to quote metadata without affecting items or pricing.
+	 *          Calls PATCH /api/v1/quotes/{id} with estimated_volume_m3, distance_km, and notes.
+	 *          On success reloads the quote so derived state (pricing defaults, map) refreshes.
+	 *
+	 * @returns void (side-effect: sets `saving`, shows toast, calls loadQuote on success)
+	 */
 	async function saveQuote() {
 		if (!data) return;
 		saving = true;
@@ -769,6 +1124,17 @@
 		}
 	}
 
+	/**
+	 * Bulk-saves all editable estimation items to the API and updates the volume field.
+	 *
+	 * Called by: Template (onclick on the "Gegenstaende speichern" button in the items card)
+	 * Purpose: Persists any admin corrections to item names, quantities, or volumes made in the
+	 *          inline editable items table. Calls PUT /api/v1/quotes/{id}/estimation-items with
+	 *          the full current items array. After a successful save, syncs editVolume to the
+	 *          computed total so the volume field reflects the corrected item list.
+	 *
+	 * @returns void (side-effect: sets `savingItems`, clears `itemsDirty`, shows toast)
+	 */
 	async function saveItems() {
 		if (!data) return;
 		savingItems = true;
@@ -797,10 +1163,28 @@
 		}
 	}
 
+	/**
+	 * Marks the items list as having unsaved changes, enabling the save button.
+	 *
+	 * Called by: Template (oninput on any editable field in the items table)
+	 * Purpose: Tracks whether the admin has made local edits that have not yet been persisted,
+	 *          so the UI can show a "save" prompt and prevent accidental data loss.
+	 *
+	 * @returns void (side-effect: sets `itemsDirty = true`)
+	 */
 	function markDirty() {
 		itemsDirty = true;
 	}
 
+	/**
+	 * Appends a new blank item row to the editable items list.
+	 *
+	 * Called by: Template (onclick on the "+" button at the bottom of the items table)
+	 * Purpose: Lets the admin manually add a piece of furniture or other item that was missed by the
+	 *          AI estimation or entered without photo analysis.
+	 *
+	 * @returns void (side-effect: appends to `editItems`, sets `itemsDirty = true`)
+	 */
 	function addItem() {
 		editItems = [...editItems, {
 			name: '',
@@ -819,11 +1203,35 @@
 		itemsDirty = true;
 	}
 
+	/**
+	 * Removes a specific item from the editable items list by reference.
+	 *
+	 * Called by: reviewDelete (from the reviewer lightbox), Template (onclick on delete button in each item row)
+	 * Purpose: Lets the admin discard a falsely-detected or duplicate item from the estimation list.
+	 *
+	 * @param item - The EditableItem instance to remove (matched by reference, not index)
+	 * @returns void (side-effect: filters `editItems`, sets `itemsDirty = true`)
+	 */
 	function deleteItem(item: EditableItem) {
 		editItems = editItems.filter((i) => i !== item);
 		itemsDirty = true;
 	}
 
+	/**
+	 * Back-calculates the hourly rate from a manually entered brutto total and updates editRateCents.
+	 *
+	 * Called by: Template (oninput on the brutto price field in the pricing card)
+	 * Purpose: Allows the admin to set a desired final price and have the implied hourly rate
+	 *          computed automatically, keeping persons and hours constant.
+	 *
+	 * Math:
+	 *   targetNetto      = round(editBruttoCents / 1.19)
+	 *   availableForLabor = targetNetto - nonLaborCents
+	 *   editRateCents    = round(availableForLabor / (persons * hours))
+	 *
+	 * @returns void (side-effect: updates `editRateCents` if persons > 0, hours > 0, and availableForLabor > 0;
+	 *          sets `priceDirty = true`)
+	 */
 	function onBruttoChange() {
 		const targetNetto = Math.round(editBruttoCents / 1.19);
 		const availableForLabor = targetNetto - nonLaborCents;
@@ -838,6 +1246,16 @@
 		(data?.offers ?? []).filter(o => o.status !== 'deleted').at(-1) ?? null
 	);
 
+	/**
+	 * Triggers a full re-estimation of the latest offer, recalculating distance and regenerating the PDF.
+	 *
+	 * Called by: Template (onclick on the "Neu berechnen" button in the page header)
+	 * Purpose: Used after address corrections to recompute distance-based pricing and regenerate the offer.
+	 *          Calls POST /api/v1/admin/offers/{latestOfferId}/re-estimate.
+	 *          Prompts for confirmation before proceeding.
+	 *
+	 * @returns void (side-effect: shows toast, calls loadQuote on success)
+	 */
 	async function reEstimateOffer() {
 		if (!latestOffer) return;
 		if (!confirm('Entfernung neu berechnen und Angebot neu erstellen?')) return;
@@ -850,6 +1268,17 @@
 		}
 	}
 
+	/**
+	 * Generates a new offer PDF from the current quote using the admin's edited pricing inputs.
+	 *
+	 * Called by: Template (onclick on the "Angebot erstellen" button in the page header)
+	 * Purpose: Creates the first offer for this quote by posting all pricing parameters to the
+	 *          generation endpoint. Calls POST /api/v1/offers/generate with quote_id, persons, hours,
+	 *          rate, optionally price_cents_netto (when priceDirty), and optionally line_items.
+	 *          Reloads the quote after success so the new offer appears in the offers list.
+	 *
+	 * @returns void (side-effect: shows toast, calls loadQuote on success)
+	 */
 	async function generateOffer() {
 		if (!data) return;
 		try {
@@ -893,6 +1322,18 @@
 
 	let changingStatus = $state(false);
 
+	/**
+	 * Updates the quote's workflow status via the API using the status dropdown.
+	 *
+	 * Called by: Template (onchange on the status <select> in the page header)
+	 * Purpose: Allows the admin to manually override the quote lifecycle state (e.g. mark as paid,
+	 *          cancelled, or done) without going through automated transitions.
+	 *          Calls POST /api/v1/admin/quotes/{id}/status with the new status value.
+	 *          No-ops if the selected value equals the current status.
+	 *
+	 * @param newStatus - The target status string (e.g. 'accepted', 'done', 'paid', 'cancelled')
+	 * @returns void (side-effect: sets `changingStatus`, shows toast, calls loadQuote on success)
+	 */
 	async function setQuoteStatus(newStatus: string) {
 		if (!data) return;
 		if (data.quote.status === newStatus) return;
@@ -909,6 +1350,16 @@
 		}
 	}
 
+	/**
+	 * Permanently deletes the quote and navigates back to the quotes list.
+	 *
+	 * Called by: Template (onclick on the Trash2 delete button in the page header)
+	 * Purpose: Hard-removes a quote that was created in error or is no longer needed.
+	 *          Calls POST /api/v1/admin/quotes/{id}/delete.
+	 *          Prompts for confirmation before proceeding.
+	 *
+	 * @returns void (side-effect: shows toast, navigates to /admin/quotes)
+	 */
 	async function deleteQuote() {
 		if (!data) return;
 		if (!confirm('Anfrage unwiderruflich loeschen?')) return;
@@ -921,6 +1372,15 @@
 		}
 	}
 
+	/**
+	 * Copies the origin address fields into the inline edit form and activates origin edit mode.
+	 *
+	 * Called by: Template (onclick on the "Bearbeiten" button in the origin address card)
+	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
+	 *          existing data rather than an empty form.
+	 *
+	 * @returns void (side-effect: populates `editOrigin`, sets `editingOrigin = true`)
+	 */
 	function startEditOrigin() {
 		if (!data?.origin_address) return;
 		const a = data.origin_address;
@@ -928,6 +1388,15 @@
 		editingOrigin = true;
 	}
 
+	/**
+	 * Copies the destination address fields into the inline edit form and activates destination edit mode.
+	 *
+	 * Called by: Template (onclick on the "Bearbeiten" button in the destination address card)
+	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
+	 *          existing data rather than an empty form.
+	 *
+	 * @returns void (side-effect: populates `editDest`, sets `editingDest = true`)
+	 */
 	function startEditDest() {
 		if (!data?.destination_address) return;
 		const a = data.destination_address;
@@ -935,6 +1404,19 @@
 		editingDest = true;
 	}
 
+	/**
+	 * Saves an edited address (origin or destination) to the API and exits edit mode.
+	 *
+	 * Called by: Template (onclick on the "Speichern" button inside the inline origin/destination address form)
+	 * Purpose: Persists corrections to street, city, postal code, floor, or elevator for either address.
+	 *          Calls PATCH /api/v1/admin/addresses/{addressId} then reloads the quote so the
+	 *          route map and pricing defaults reflect the corrected address.
+	 *
+	 * @param addressId - UUID of the address record to update
+	 * @param fields - Object with the current form values (street, postal_code, city, floor, elevator)
+	 * @param setEditing - Callback to set the editing flag (e.g. `(v) => editingOrigin = v`) to false on success
+	 * @returns void (side-effect: shows toast, calls setEditing(false) and loadQuote on success)
+	 */
 	async function saveAddress(addressId: string, fields: typeof editOrigin, setEditing: (v: boolean) => void) {
 		try {
 			await apiPatch(`/api/v1/admin/addresses/${addressId}`, fields);

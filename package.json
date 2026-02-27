@@ -12,7 +12,9 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lighthouse": "npm run build && npm run preview & sleep 3 && lhci autorun --config=lighthouserc.cjs && kill %1",
 		"lighthouse:mobile": "npm run build && npm run preview & sleep 3 && lhci autorun --config=lighthouserc.cjs --preset=mobile && kill %1",
-		"lighthouse:open": "open lighthouse-reports/index.html || xdg-open lighthouse-reports/index.html"
+		"lighthouse:open": "open lighthouse-reports/index.html || xdg-open lighthouse-reports/index.html",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"devDependencies": {
 		"@lhci/cli": "^0.15.1",
@@ -26,9 +28,11 @@
 		"svelte-check": "^4.3.4",
 		"typescript": "^5.9.3",
 		"vite": "^7.2.6",
+		"vitest": "^4.0.18",
 		"xlsx": "^0.18.5"
 	},
 	"dependencies": {
+		"jszip": "^3.10.1",
 		"leaflet": "^1.9.4",
 		"lucide-svelte": "^0.562.0",
 		"sharp": "^0.34.5",

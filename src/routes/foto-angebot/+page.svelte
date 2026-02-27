@@ -31,11 +31,17 @@
 		email: "",
 		phone: "",
 		date: "",
-		startAddress: "",
+		startStrasse: "",
+		startHausnummer: "",
+		startPlz: "",
+		startOrt: "",
 		startFloor: "",
 		aufzugAuszug: false,
 		halteverbotAuszug: false,
-		endAddress: "",
+		endStrasse: "",
+		endHausnummer: "",
+		endPlz: "",
+		endOrt: "",
 		endFloor: "",
 		aufzugEinzug: false,
 		halteverbotEinzug: false,
@@ -55,8 +61,14 @@
 	const isFormValid = $derived(
 		formData.name !== "" &&
 		formData.email !== "" &&
-		formData.startAddress !== "" &&
-		formData.endAddress !== "" &&
+		formData.startStrasse !== "" &&
+		formData.startHausnummer !== "" &&
+		formData.startPlz !== "" &&
+		formData.startOrt !== "" &&
+		formData.endStrasse !== "" &&
+		formData.endHausnummer !== "" &&
+		formData.endPlz !== "" &&
+		formData.endOrt !== "" &&
 		images.length > 0 &&
 		formData.privacyAccepted,
 	);
@@ -132,11 +144,11 @@
 		fd.append("email", formData.email);
 		if (formData.phone) fd.append("phone", formData.phone);
 		if (formData.date) fd.append("wunschtermin", formData.date);
-		fd.append("auszugsadresse", formData.startAddress);
+		fd.append("auszugsadresse", `${formData.startStrasse} ${formData.startHausnummer}, ${formData.startPlz} ${formData.startOrt}`);
 		if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
 		fd.append("aufzug_auszug", formData.aufzugAuszug ? "true" : "false");
 		fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
-		fd.append("einzugsadresse", formData.endAddress);
+		fd.append("einzugsadresse", `${formData.endStrasse} ${formData.endHausnummer}, ${formData.endPlz} ${formData.endOrt}`);
 		if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
 		fd.append("aufzug_einzug", formData.aufzugEinzug ? "true" : "false");
 		fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
@@ -272,16 +284,15 @@
 
 					<div class="angebot-page__form-grid">
 						<div class="angebot-page__form-group">
-							<label for="startAddress">Auszugsadresse *</label>
-							<input
-								type="text"
-								id="startAddress"
-								bind:value={formData.startAddress}
-								placeholder="Straße, Nr., PLZ, Ort"
-								required
-								toolparamtitle="Auszugsadresse"
-								toolparamdescription="Aktuelle Adresse (Straße, Hausnummer, PLZ, Ort)"
-							/>
+							<label>Auszugsadresse *</label>
+						<div class="angebot-page__address-row">
+							<input type="text" bind:value={formData.startStrasse} placeholder="Straße" required aria-label="Straße (Auszug)" />
+							<input class="angebot-page__address-nr" type="text" bind:value={formData.startHausnummer} placeholder="Nr." required aria-label="Hausnummer (Auszug)" />
+						</div>
+						<div class="angebot-page__address-row">
+							<input class="angebot-page__address-plz" type="text" bind:value={formData.startPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Auszug)" />
+							<input type="text" bind:value={formData.startOrt} placeholder="Ort" required aria-label="Ort (Auszug)" />
+						</div>
 						</div>
 
 						<div class="angebot-page__form-group">
@@ -308,16 +319,15 @@
 						</div>
 
 						<div class="angebot-page__form-group">
-							<label for="endAddress">Einzugsadresse *</label>
-							<input
-								type="text"
-								id="endAddress"
-								bind:value={formData.endAddress}
-								placeholder="Straße, Nr., PLZ, Ort"
-								required
-								toolparamtitle="Einzugsadresse"
-								toolparamdescription="Neue Adresse (Straße, Hausnummer, PLZ, Ort)"
-							/>
+							<label>Einzugsadresse *</label>
+						<div class="angebot-page__address-row">
+							<input type="text" bind:value={formData.endStrasse} placeholder="Straße" required aria-label="Straße (Einzug)" />
+							<input class="angebot-page__address-nr" type="text" bind:value={formData.endHausnummer} placeholder="Nr." required aria-label="Hausnummer (Einzug)" />
+						</div>
+						<div class="angebot-page__address-row">
+							<input class="angebot-page__address-plz" type="text" bind:value={formData.endPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Einzug)" />
+							<input type="text" bind:value={formData.endOrt} placeholder="Ort" required aria-label="Ort (Einzug)" />
+						</div>
 						</div>
 
 						<div class="angebot-page__form-group">
@@ -926,6 +936,25 @@
 	.angebot-page__submit:disabled {
 		background-color: #cbd5e0;
 		cursor: not-allowed;
+	}
+
+	/* ===== Address sub-fields ===== */
+	.angebot-page__address-row {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.angebot-page__address-row input {
+		flex: 1;
+		min-width: 0;
+	}
+
+	input.angebot-page__address-nr {
+		flex: 0 0 80px;
+	}
+
+	input.angebot-page__address-plz {
+		flex: 0 0 100px;
 	}
 
 	/* ===== Responsive ===== */

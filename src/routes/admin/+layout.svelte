@@ -84,8 +84,10 @@
 <Toast />
 
 <style>
+	@import '../../styles/admin.css';
+
 	:global(body) {
-		background: #e8ecf1;
+		background: var(--admin-bg, #e8ecf1);
 	}
 
 	.admin-shell {

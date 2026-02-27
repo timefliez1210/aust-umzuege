@@ -1,8 +1,25 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { reviews, aggregateRating, allReviewsUrl } from '$lib/data/structuredData';
 
 	let currentIndex = $state(0);
 	let windowWidth = $state(0);
+
+	let wkdbRef: HTMLElement;
+
+	onMount(() => {
+		const observer = new IntersectionObserver((entries) => {
+			if (entries[0].isIntersecting) {
+				const script = document.createElement('script');
+				script.src = 'https://www.wkdb-siegel.de/v1/widget-*U1KYzBZGieHw4_-6nHxdAAJcIMPFYjN3MjZX168rmGZaUdiFz-qpDeDRFsDl-EYAR2RdntLcw3loCN_pdlaOdRc2n5QOPEpvVMyHR4urVFPem2XgdpRbGLTEw8cyuERJBmy9f5YJ2gwnP7xrmTdLG4YxDD71XNwNh6POtkZHQIM.js';
+				script.async = true;
+				document.body.appendChild(script);
+				observer.disconnect();
+			}
+		}, { rootMargin: '200px' });
+		observer.observe(wkdbRef);
+		return () => observer.disconnect();
+	});
 
 	const actualVisibleCards = $derived(() => {
 		if (windowWidth === 0) return 2;
@@ -99,107 +116,115 @@
 		</div>
 	{/if}
 
-	<div class="reviews__wrapper">
-		<button
-			class="reviews__nav reviews__nav--prev"
-			onclick={prev}
-			disabled={currentIndex === 0}
-			aria-label="Vorherige Bewertung"
-		>
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-				<polyline points="15 18 9 12 15 6"></polyline>
-			</svg>
-		</button>
+	<div class="reviews__content">
+		<div class="reviews__main">
+			<div class="reviews__wrapper">
+				<button
+					class="reviews__nav reviews__nav--prev"
+					onclick={prev}
+					disabled={currentIndex === 0}
+					aria-label="Vorherige Bewertung"
+				>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+						<polyline points="15 18 9 12 15 6"></polyline>
+					</svg>
+				</button>
 
-		<div
-			class="reviews__viewport"
-			ontouchstart={handleTouchStart}
-			ontouchmove={handleTouchMove}
-			ontouchend={handleTouchEnd}
-			role="region"
-			aria-label="Kundenbewertungen Karussell"
-		>
-			<div
-				class="reviews__track"
-				style="transform: translateX(calc(-{currentIndex} * (100% / {actualVisibleCards()} + var(--gap) / {actualVisibleCards()})))"
-			>
-				{#each reviews as review}
-					<a
-						href={review.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="review-card"
+				<div
+					class="reviews__viewport"
+					ontouchstart={handleTouchStart}
+					ontouchmove={handleTouchMove}
+					ontouchend={handleTouchEnd}
+					role="region"
+					aria-label="Kundenbewertungen Karussell"
+				>
+					<div
+						class="reviews__track"
+						style="transform: translateX(calc(-{currentIndex} * (100% / {actualVisibleCards()} + var(--gap) / {actualVisibleCards()})))"
 					>
-						<div class="review-card__header">
-							<div class="review-card__author-info">
-								<div class="review-card__avatar">
-									{review.author.charAt(0)}
+						{#each reviews as review}
+							<a
+								href={review.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="review-card"
+							>
+								<div class="review-card__header">
+									<div class="review-card__author-info">
+										<div class="review-card__avatar">
+											{review.author.charAt(0)}
+										</div>
+										<div>
+											<strong class="review-card__name">{review.author}</strong>
+											<span class="review-card__meta">
+												{#if review.badge}
+													<span class="review-card__badge">{review.badge}</span>
+													<span class="review-card__separator">·</span>
+												{/if}
+												{#if review.reviewCount}
+													{review.reviewCount} Rezensionen
+												{/if}
+												{#if review.photoCount}
+													<span class="review-card__separator">·</span>
+													{review.photoCount} Fotos
+												{/if}
+											</span>
+										</div>
+									</div>
+									<div class="review-card__stars">
+										{#each Array(review.rating) as _}
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" aria-hidden="true">
+												<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+											</svg>
+										{/each}
+									</div>
 								</div>
-								<div>
-									<strong class="review-card__name">{review.author}</strong>
-									<span class="review-card__meta">
-										{#if review.badge}
-											<span class="review-card__badge">{review.badge}</span>
-											<span class="review-card__separator">·</span>
-										{/if}
-										{#if review.reviewCount}
-											{review.reviewCount} Rezensionen
-										{/if}
-										{#if review.photoCount}
-											<span class="review-card__separator">·</span>
-											{review.photoCount} Fotos
-										{/if}
-									</span>
-								</div>
-							</div>
-							<div class="review-card__stars">
-								{#each Array(review.rating) as _}
-									<svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" aria-hidden="true">
-										<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+								<time datetime={review.date} class="review-card__date">
+									{formatDate(review.date)}
+								</time>
+								<p class="review-card__text">{review.text}</p>
+								<span class="review-card__source">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+										<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+										<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+										<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+										<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
 									</svg>
-								{/each}
-							</div>
-						</div>
-						<time datetime={review.date} class="review-card__date">
-							{formatDate(review.date)}
-						</time>
-						<p class="review-card__text">{review.text}</p>
-						<span class="review-card__source">
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-								<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-								<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-								<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-								<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-							</svg>
-							Auf Google ansehen
-						</span>
-					</a>
-				{/each}
+									Auf Google ansehen
+								</span>
+							</a>
+						{/each}
+					</div>
+				</div>
+
+				<button
+					class="reviews__nav reviews__nav--next"
+					onclick={next}
+					disabled={currentIndex === maxIndex}
+					aria-label="Nächste Bewertung"
+				>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+						<polyline points="9 18 15 12 9 6"></polyline>
+					</svg>
+				</button>
+			</div>
+
+			<div class="reviews__cta">
+				<a href={allReviewsUrl} target="_blank" rel="noopener noreferrer" class="reviews__all-link">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+						<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+						<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+						<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+						<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+					</svg>
+					Alle {aggregateRating.reviewCount} Bewertungen auf Google ansehen
+				</a>
 			</div>
 		</div>
 
-		<button
-			class="reviews__nav reviews__nav--next"
-			onclick={next}
-			disabled={currentIndex === maxIndex}
-			aria-label="Nächste Bewertung"
-		>
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-				<polyline points="9 18 15 12 9 6"></polyline>
-			</svg>
-		</button>
-	</div>
-
-	<div class="reviews__cta">
-		<a href={allReviewsUrl} target="_blank" rel="noopener noreferrer" class="reviews__all-link">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-				<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-				<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-				<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-				<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-			</svg>
-			Alle {aggregateRating.reviewCount} Bewertungen auf Google ansehen
-		</a>
+		<div class="reviews__wkdb" bind:this={wkdbRef}>
+			<div id="wkdb-widget"></div>
+		</div>
 	</div>
 </section>
 
@@ -300,15 +325,33 @@
 		transform: translate(-50%, -50%) scale(1.2);
 	}
 
-	/* Carousel wrapper */
-	.reviews__wrapper {
+	/* Content grid: carousel + wkdb widget */
+	.reviews__content {
 		max-width: var(--container-max);
 		margin-inline: auto;
 		padding-inline: var(--container-padding);
+		display: grid;
+		grid-template-columns: 1fr 320px;
+		gap: var(--space-8);
+		align-items: start;
+	}
+
+	.reviews__main {
+		min-width: 0;
+	}
+
+	/* Carousel wrapper */
+	.reviews__wrapper {
 		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
+	}
+
+	.reviews__wkdb {
+		display: flex;
+		justify-content: center;
+		align-self: center;
 	}
 
 	.reviews__nav {
@@ -461,9 +504,6 @@
 
 	/* All reviews CTA */
 	.reviews__cta {
-		max-width: var(--container-max);
-		margin-inline: auto;
-		padding-inline: var(--container-padding);
 		margin-top: var(--space-8);
 		text-align: center;
 	}
@@ -491,8 +531,16 @@
 		transform: translateY(-2px);
 	}
 
-	/* Tablet: 2 cards */
+	/* Tablet: stack grid, 2 cards */
 	@media (max-width: 1024px) {
+		.reviews__content {
+			grid-template-columns: 1fr;
+		}
+
+		.reviews__wkdb {
+			justify-content: center;
+		}
+
 		.review-card {
 			flex: 0 0 calc((100% - var(--gap)) / 2);
 		}

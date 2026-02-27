@@ -23,6 +23,7 @@
 	let total = $state(0);
 	let loading = $state(true);
 	let statusFilter = $state('');
+
 	let offset = $state(0);
 	const limit = 20;
 
@@ -166,7 +167,11 @@
 	}
 
 	.toolbar {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
 		margin-bottom: 1rem;
+		flex-wrap: wrap;
 	}
 
 	.tabs {

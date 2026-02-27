@@ -28,14 +28,23 @@
         name: "",
         email: "",
         phone: "",
-        startAddress: "",
+        startStrasse: "",
+        startHausnummer: "",
+        startPlz: "",
+        startOrt: "",
         startFloor: "",
         halteverbotAuszug: false,
         hasZwischenstopp: false,
-        zwischenstoppAddress: "",
+        zwischenstoppStrasse: "",
+        zwischenstoppHausnummer: "",
+        zwischenstoppPlz: "",
+        zwischenstoppOrt: "",
         zwischenstoppFloor: "",
         halteverbotZwischenstopp: false,
-        endAddress: "",
+        endStrasse: "",
+        endHausnummer: "",
+        endPlz: "",
+        endOrt: "",
         endFloor: "",
         halteverbotEinzug: false,
         date: "",
@@ -43,6 +52,15 @@
         selectedServices: [] as string[],
         privacyAccepted: false,
     });
+
+    function combineAddress(strasse: string, nr: string, plz: string, ort: string): string {
+        if (!strasse && !nr && !plz && !ort) return "";
+        return `${strasse} ${nr}, ${plz} ${ort}`;
+    }
+
+    const startAddress = $derived(combineAddress(formData.startStrasse, formData.startHausnummer, formData.startPlz, formData.startOrt));
+    const zwischenstoppAddress = $derived(combineAddress(formData.zwischenstoppStrasse, formData.zwischenstoppHausnummer, formData.zwischenstoppPlz, formData.zwischenstoppOrt));
+    const endAddress = $derived(combineAddress(formData.endStrasse, formData.endHausnummer, formData.endPlz, formData.endOrt));
 
     let isSubmitting = $state(false);
     let submitSuccess = $state(false);
@@ -60,9 +78,15 @@
         formData.name !== "" &&
             formData.email !== "" &&
             formData.phone !== "" &&
-            formData.startAddress !== "" &&
+            formData.startStrasse !== "" &&
+            formData.startHausnummer !== "" &&
+            formData.startPlz !== "" &&
+            formData.startOrt !== "" &&
             formData.startFloor !== "" &&
-            formData.endAddress !== "" &&
+            formData.endStrasse !== "" &&
+            formData.endHausnummer !== "" &&
+            formData.endPlz !== "" &&
+            formData.endOrt !== "" &&
             formData.endFloor !== "" &&
             formData.date !== "" &&
             formData.privacyAccepted,
@@ -113,14 +137,23 @@
                     name: "",
                     email: "",
                     phone: "",
-                    startAddress: "",
+                    startStrasse: "",
+                    startHausnummer: "",
+                    startPlz: "",
+                    startOrt: "",
                     startFloor: "",
                     halteverbotAuszug: false,
                     hasZwischenstopp: false,
-                    zwischenstoppAddress: "",
+                    zwischenstoppStrasse: "",
+                    zwischenstoppHausnummer: "",
+                    zwischenstoppPlz: "",
+                    zwischenstoppOrt: "",
                     zwischenstoppFloor: "",
                     halteverbotZwischenstopp: false,
-                    endAddress: "",
+                    endStrasse: "",
+                    endHausnummer: "",
+                    endPlz: "",
+                    endOrt: "",
                     endFloor: "",
                     halteverbotEinzug: false,
                     date: "",
@@ -267,17 +300,16 @@
                     </div>
 
                     <div class="angebot-page__form-group">
-                        <label for="startAddress">Auszugsadresse *</label>
-                        <input
-                            type="text"
-                            id="startAddress"
-                            name="auszugsadresse"
-                            bind:value={formData.startAddress}
-                            placeholder="Straße, Nr., PLZ, Ort"
-                            required
-                            toolparamtitle="Auszugsadresse"
-                            toolparamdescription="Aktuelle Adresse (Straße, Hausnummer, PLZ, Ort)"
-                        />
+                        <label>Auszugsadresse *</label>
+                        <div class="angebot-page__address-row">
+                            <input type="text" bind:value={formData.startStrasse} placeholder="Straße" required aria-label="Straße (Auszug)" />
+                            <input class="angebot-page__address-nr" type="text" bind:value={formData.startHausnummer} placeholder="Nr." required aria-label="Hausnummer (Auszug)" />
+                        </div>
+                        <div class="angebot-page__address-row">
+                            <input class="angebot-page__address-plz" type="text" bind:value={formData.startPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Auszug)" />
+                            <input type="text" bind:value={formData.startOrt} placeholder="Ort" required aria-label="Ort (Auszug)" />
+                        </div>
+                        <input type="hidden" name="auszugsadresse" value={startAddress} toolparamtitle="Auszugsadresse" toolparamdescription="Aktuelle Adresse (Straße, Hausnummer, PLZ, Ort)" />
                     </div>
 
                     <div class="angebot-page__form-group">
@@ -329,14 +361,16 @@
                         </div>
 
                         <div class="angebot-page__form-group">
-                            <label for="zwischenstoppAddress">Zwischenstopp-Adresse</label>
-                            <input
-                                type="text"
-                                id="zwischenstoppAddress"
-                                name="zwischenstopp-adresse"
-                                bind:value={formData.zwischenstoppAddress}
-                                placeholder="Straße, Nr., PLZ, Ort"
-                            />
+                            <label>Zwischenstopp-Adresse</label>
+                            <div class="angebot-page__address-row">
+                                <input type="text" bind:value={formData.zwischenstoppStrasse} placeholder="Straße" aria-label="Straße (Zwischenstopp)" />
+                                <input class="angebot-page__address-nr" type="text" bind:value={formData.zwischenstoppHausnummer} placeholder="Nr." aria-label="Hausnummer (Zwischenstopp)" />
+                            </div>
+                            <div class="angebot-page__address-row">
+                                <input class="angebot-page__address-plz" type="text" bind:value={formData.zwischenstoppPlz} placeholder="PLZ" pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Zwischenstopp)" />
+                                <input type="text" bind:value={formData.zwischenstoppOrt} placeholder="Ort" aria-label="Ort (Zwischenstopp)" />
+                            </div>
+                            <input type="hidden" name="zwischenstopp-adresse" value={zwischenstoppAddress} />
                         </div>
 
                         <div class="angebot-page__form-group">
@@ -365,17 +399,16 @@
                     {/if}
 
                     <div class="angebot-page__form-group">
-                        <label for="endAddress">Einzugsadresse *</label>
-                        <input
-                            type="text"
-                            id="endAddress"
-                            name="einzugsadresse"
-                            bind:value={formData.endAddress}
-                            placeholder="Straße, Nr., PLZ, Ort"
-                            required
-                            toolparamtitle="Einzugsadresse"
-                            toolparamdescription="Neue Adresse (Straße, Hausnummer, PLZ, Ort)"
-                        />
+                        <label>Einzugsadresse *</label>
+                        <div class="angebot-page__address-row">
+                            <input type="text" bind:value={formData.endStrasse} placeholder="Straße" required aria-label="Straße (Einzug)" />
+                            <input class="angebot-page__address-nr" type="text" bind:value={formData.endHausnummer} placeholder="Nr." required aria-label="Hausnummer (Einzug)" />
+                        </div>
+                        <div class="angebot-page__address-row">
+                            <input class="angebot-page__address-plz" type="text" bind:value={formData.endPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Einzug)" />
+                            <input type="text" bind:value={formData.endOrt} placeholder="Ort" required aria-label="Ort (Einzug)" />
+                        </div>
+                        <input type="hidden" name="einzugsadresse" value={endAddress} toolparamtitle="Einzugsadresse" toolparamdescription="Neue Adresse (Straße, Hausnummer, PLZ, Ort)" />
                     </div>
 
                     <div class="angebot-page__form-group">
@@ -840,6 +873,25 @@
     .angebot-page__submit:disabled {
         background-color: #cbd5e0;
         cursor: not-allowed;
+    }
+
+    /* Address sub-fields */
+    .angebot-page__address-row {
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    .angebot-page__address-row input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    input.angebot-page__address-nr {
+        flex: 0 0 80px;
+    }
+
+    input.angebot-page__address-plz {
+        flex: 0 0 100px;
     }
 
     /* Responsive */

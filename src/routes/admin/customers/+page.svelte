@@ -24,6 +24,9 @@
 	let offset = $state(0);
 	const limit = 20;
 
+	let sortKey = $state('created_at');
+	let sortDir = $state<'asc' | 'desc'>('desc');
+
 	// Create form state
 	let showCreateForm = $state(false);
 	let createName = $state('');
@@ -161,6 +164,8 @@
 	<DataTable
 		{columns}
 		rows={customers}
+		bind:sortKey
+		bind:sortDir
 		onRowClick={(row) => goto(`/admin/customers/${(row as Customer).id}`)}
 	>
 		{#snippet row(item, _i)}

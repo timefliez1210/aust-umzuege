@@ -7,10 +7,12 @@
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
 	import ImageLightbox from '$lib/components/admin/ImageLightbox.svelte';
 	import RouteMap from '$lib/components/admin/RouteMap.svelte';
-	import { ArrowLeft, Send, XCircle, Download, RefreshCw, Trash2, Pencil, Save, Plus, X } from 'lucide-svelte';
+	import { ROW_OPTIONS, rowToLabel, COST_PER_PERSON_HOUR, calculateLaborCents, calculateNonLaborCents, calculateBruttoCents, calculateLaborProfit, reverseCalculateRate } from '$lib/utils/pricing';
+	import { ArrowLeft, Send, XCircle, Download, RefreshCw, RotateCcw, Trash2, Pencil, Save, Plus, X } from 'lucide-svelte';
 
 	interface LineItem {
 		label: string;
+		remark: string | null;
 		quantity: number;
 		unit_price_cents: number;
 		total_cents: number;
@@ -20,6 +22,7 @@
 	interface EditLineItem {
 		row: number;
 		label: string;
+		remark: string;
 		quantity: number;
 		unit_price_cents: number;
 	}
@@ -58,18 +61,6 @@
 		bbox: number[] | null;
 	}
 
-	const ROW_OPTIONS: { row: number; label: string }[] = [
-		{ row: 31, label: 'De/Montage' },
-		{ row: 32, label: 'Halteverbotszone' },
-		{ row: 33, label: 'Umzugsmaterial' },
-		{ row: 39, label: 'Transporter' },
-		{ row: 42, label: 'Anfahrt/Abfahrt' },
-	];
-
-	function rowToLabel(row: number): string {
-		return ROW_OPTIONS.find(r => r.row === row)?.label || 'Sonstiges';
-	}
-
 	let offer = $state<OfferDetail | null>(null);
 	let loading = $state(true);
 	let editing = $state(false);
@@ -97,14 +88,11 @@
 	let lightboxItem = $state<OfferItem | null>(null);
 
 	// Derived calculations
-	let laborCents = $derived(editPersons * editHours * editRateCents);
-	let nonLaborCents = $derived(
-		editLineItems.reduce((sum, li) => sum + li.quantity * li.unit_price_cents, 0)
-	);
+	let laborCents = $derived(calculateLaborCents(editPersons, editHours, editRateCents));
+	let nonLaborCents = $derived(calculateNonLaborCents(editLineItems));
 	let calculatedNettoCents = $derived(nonLaborCents + laborCents);
-	let calculatedBruttoCents = $derived(Math.round(calculatedNettoCents * 1.19));
-	const COST_PER_PERSON_HOUR = 18.23;
-	let laborProfit = $derived(editPersons * editHours * (editRateCents / 100 - COST_PER_PERSON_HOUR));
+	let calculatedBruttoCents = $derived(calculateBruttoCents(calculatedNettoCents));
+	let laborProfit = $derived(calculateLaborProfit(editPersons, editHours, editRateCents));
 
 	$effect(() => {
 		if (!rateEditing) {
@@ -155,8 +143,9 @@
 		editLineItems = offer.line_items.filter(li => !li.is_labor).map(li => {
 			const match = ROW_OPTIONS.find(r => r.label === li.label);
 			return {
-				row: match?.row || 0,
+				row: match?.row ?? 99,
 				label: li.label,
+				remark: li.remark ?? '',
 				quantity: li.quantity,
 				unit_price_cents: li.unit_price_cents,
 			};
@@ -169,15 +158,14 @@
 	}
 
 	function onBruttoChange() {
-		const targetNetto = Math.round(editBruttoCents / 1.19);
-		const availableForLabor = targetNetto - nonLaborCents;
-		if (editPersons > 0 && editHours > 0 && availableForLabor > 0) {
-			editRateCents = Math.round(availableForLabor / (editPersons * editHours));
+		const rate = reverseCalculateRate(editBruttoCents, nonLaborCents, editPersons, editHours);
+		if (rate > 0) {
+			editRateCents = rate;
 		}
 	}
 
 	function addLineItem() {
-		editLineItems = [...editLineItems, { row: 39, label: 'Transporter', quantity: 1, unit_price_cents: 6000 }];
+		editLineItems = [...editLineItems, { row: 39, label: 'Transporter', remark: '', quantity: 1, unit_price_cents: 6000 }];
 	}
 
 	function removeLineItem(idx: number) {
@@ -186,7 +174,14 @@
 
 	function onLineItemRowChange(idx: number) {
 		const item = editLineItems[idx];
-		item.label = rowToLabel(item.row);
+		if (item.row === 99) {
+			item.label = '';
+			item.remark = '';
+			item.unit_price_cents = 0;
+		} else {
+			item.label = rowToLabel(item.row);
+			item.remark = '';
+		}
 		editLineItems = [...editLineItems];
 	}
 
@@ -196,9 +191,11 @@
 		try {
 			// Build line_items_json in the format the backend stores
 			const lineItemsJson = editLineItems.map(li => ({
-				row: li.row,
+				description: li.label,
 				quantity: li.quantity,
 				unit_price: li.unit_price_cents / 100,
+				is_labor: false,
+				...(li.remark ? { remark: li.remark } : { remark: null }),
 			}));
 
 			// First PATCH the offer with new pricing + line items
@@ -220,6 +217,7 @@
 					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unit_price_cents / 100,
+					...(li.remark ? { remark: li.remark } : {}),
 				})),
 			});
 
@@ -238,6 +236,18 @@
 		try {
 			await apiPost(`/api/v1/admin/offers/${offer.id}/regenerate`, {});
 			showToast('Angebot wird neu erstellt...', 'success');
+			await loadOffer();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	async function reEstimateOffer() {
+		if (!offer) return;
+		if (!confirm('Entfernung neu berechnen und Angebot neu erstellen?')) return;
+		try {
+			await apiPost(`/api/v1/admin/offers/${offer.id}/re-estimate`, {});
+			showToast('Angebot wird neu berechnet...', 'success');
 			await loadOffer();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
@@ -330,6 +340,10 @@
 					<a href="/admin/quotes/{offer.quote_id}" class="btn btn-outline">
 						Anfrage
 					</a>
+					<button class="btn btn-outline" onclick={reEstimateOffer} title="Neu berechnen">
+						<RotateCcw size={16} />
+						Neu berechnen
+					</button>
 					<button class="btn btn-outline" onclick={regenerateOffer}>
 						<RefreshCw size={16} />
 					</button>
@@ -487,12 +501,31 @@
 
 						{#each editLineItems as li, idx}
 							<div class="line-item editable">
-								<div class="li-edit-row">
+								<div class="li-edit-top">
 									<select bind:value={li.row} onchange={() => onLineItemRowChange(idx)}>
 										{#each ROW_OPTIONS as opt}
 											<option value={opt.row}>{opt.label}</option>
 										{/each}
 									</select>
+									{#if li.row === 99}
+										<input
+											type="text"
+											class="edit-label"
+											bind:value={li.label}
+											placeholder="Bezeichnung"
+										/>
+									{/if}
+									<button class="btn-icon-sm" onclick={() => removeLineItem(idx)}>
+										<X size={14} />
+									</button>
+								</div>
+								<div class="li-edit-bottom">
+									<input
+										type="text"
+										class="edit-remark"
+										bind:value={li.remark}
+										placeholder="Bemerkung"
+									/>
 									<input
 										type="number"
 										class="edit-qty"
@@ -512,9 +545,6 @@
 									/>
 									<span class="li-cent-label">ct</span>
 									<span class="li-total">{formatEuro(li.quantity * li.unit_price_cents)}</span>
-									<button class="btn-icon-sm" onclick={() => removeLineItem(idx)}>
-										<X size={14} />
-									</button>
 								</div>
 							</div>
 						{/each}
@@ -542,7 +572,12 @@
 
 						{#each offer.line_items.filter(x => !x.is_labor) as li}
 							<div class="line-item">
-								<span class="li-name">{li.label}</span>
+								<div>
+									<span class="li-name">{li.label}</span>
+									{#if li.remark}
+										<span class="li-remark">{li.remark}</span>
+									{/if}
+								</div>
 								<div class="li-detail">
 									<span class="li-qty">{li.quantity}</span>
 									<span class="li-unit">&times; {(li.unit_price_cents / 100).toFixed(2)} EUR</span>
@@ -939,15 +974,22 @@
 		font-family: 'JetBrains Mono', 'Fira Code', monospace;
 	}
 
-	/* Editable line item row */
-	.li-edit-row {
+	/* Editable line item rows */
+	.line-item.editable {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.375rem;
+		padding: 0.5rem 0;
+	}
+
+	.li-edit-top {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		width: 100%;
 	}
 
-	.li-edit-row select {
+	.li-edit-top select {
 		background: #e8ecf1;
 		border: none;
 		border-radius: 6px;
@@ -957,6 +999,12 @@
 		outline: none;
 		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
 		min-width: 140px;
+	}
+
+	.li-edit-bottom {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.edit-qty,
@@ -976,6 +1024,47 @@
 	.edit-qty:focus,
 	.edit-price:focus {
 		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.edit-label {
+		background: #e8ecf1;
+		border: none;
+		border-radius: 6px;
+		padding: 0.375rem 0.5rem;
+		font-size: 0.8125rem;
+		color: #334155;
+		outline: none;
+		flex: 1;
+		min-width: 100px;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+	}
+
+	.edit-label:focus {
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.edit-remark {
+		background: #e8ecf1;
+		border: none;
+		border-radius: 6px;
+		padding: 0.375rem 0.5rem;
+		font-size: 0.75rem;
+		color: #64748b;
+		outline: none;
+		flex: 1;
+		min-width: 80px;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+	}
+
+	.edit-remark:focus {
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.li-remark {
+		display: block;
+		font-size: 0.75rem;
+		color: #94a3b8;
+		margin-top: 0.125rem;
 	}
 
 	.li-times {
@@ -1157,13 +1246,9 @@
 			grid-template-columns: 1fr;
 		}
 
-		.li-edit-row {
-			flex-wrap: wrap;
-		}
-
-		.li-edit-row select {
+		.li-edit-top select {
 			min-width: 0;
-			width: 100%;
+			flex: 1;
 		}
 
 		.edit-qty,

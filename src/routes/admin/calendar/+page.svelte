@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import { buildCalendar } from '$lib/utils/calendar';
 	import { ChevronLeft, ChevronRight, Check, X, Trash2, Plus, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
@@ -47,32 +48,6 @@
 	);
 
 	let calendarDays = $derived(buildCalendar(year, month, schedule));
-
-	function buildCalendar(y: number, m: number, sched: DaySchedule[]) {
-		const first = new Date(y, m, 1);
-		const startDay = (first.getDay() + 6) % 7; // Monday=0
-		const daysInMonth = new Date(y, m + 1, 0).getDate();
-		const schedMap = new Map(sched.map((d) => [d.date.split('T')[0], d]));
-
-		const days: { date: number | null; key: string; schedule: DaySchedule | null; isToday: boolean }[] = [];
-		const today = new Date().toISOString().split('T')[0];
-
-		for (let i = 0; i < startDay; i++) {
-			days.push({ date: null, key: `empty-${i}`, schedule: null, isToday: false });
-		}
-
-		for (let d = 1; d <= daysInMonth; d++) {
-			const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-			days.push({
-				date: d,
-				key: dateStr,
-				schedule: schedMap.get(dateStr) || null,
-				isToday: dateStr === today
-			});
-		}
-
-		return days;
-	}
 
 	$effect(() => {
 		loadSchedule();

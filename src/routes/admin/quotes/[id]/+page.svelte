@@ -6,7 +6,10 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import PriceInput from '$lib/components/admin/PriceInput.svelte';
 	import RouteMap from '$lib/components/admin/RouteMap.svelte';
-	import { ArrowLeft, Save, FileOutput, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video } from 'lucide-svelte';
+	import { floorLabel, parseFloor } from '$lib/utils/floor';
+	import { sortItems, filterItemsByPhotoIndex } from '$lib/utils/sorting';
+	import { computeTotalVolume } from '$lib/utils/volume';
+	import { ArrowLeft, Save, FileOutput, RotateCcw, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video, Download, ImagePlus } from 'lucide-svelte';
 
 	interface Address {
 		id: string;
@@ -39,13 +42,15 @@
 		dimensions?: unknown | null;
 	}
 
-	interface Estimation {
+	interface EstimationEntry {
 		id: string;
 		method: string;
-		total_volume_m3: number;
-		items: EstimationItem[];
-		source_images: string[];
-		source_videos: string[];
+		status: string;
+		total_volume_m3: number | null;
+		item_count: number;
+		created_at: string;
+		source_video_url: string | null;
+		source_image_urls: string[];
 	}
 
 	interface OfferSummary {
@@ -57,6 +62,7 @@
 
 	interface OfferLineItemDetail {
 		label: string;
+		remark: string | null;
 		quantity: number;
 		unit_price_cents: number;
 		total_cents: number;
@@ -86,7 +92,8 @@
 		customer: Customer;
 		origin_address: Address | null;
 		destination_address: Address | null;
-		estimation: Estimation | null;
+		estimations: EstimationEntry[];
+		items: EstimationItem[];
 		offers: OfferSummary[];
 		latest_offer: LatestOfferPricing | null;
 	}
@@ -104,24 +111,6 @@
 		seen_in_images: number[] | null;
 		category: string | null;
 		dimensions: unknown | null;
-	}
-
-	function floorLabel(floor: string | null): string {
-		if (!floor) return 'EG';
-		const labels: Record<string, string> = {
-			'0': 'Erdgeschoss', '1': '1. OG', '2': '2. OG', '3': '3. OG',
-			'4': '4. OG', '5': '5. OG', '-1': 'Keller'
-		};
-		return labels[floor] || `${floor}. OG`;
-	}
-
-	function parseFloor(floor: string | null): number {
-		if (!floor) return 0;
-		const s = floor.trim();
-		if (s === 'Erdgeschoss' || s === 'Hochparterre' || s === '0') return 0;
-		if (s === 'Höher als 6. Stock') return 7;
-		const m = s.match(/^(\d+)/);
-		return m ? parseInt(m[1]) : 0;
 	}
 
 	let data = $state<QuoteDetail | null>(null);
@@ -171,32 +160,12 @@
 	}
 
 	let sortedItems = $derived(() => {
-		let items = editItems;
-		// Apply photo filter
-		if (filterPhotoIndex !== null) {
-			const idx = filterPhotoIndex;
-			items = items.filter(item =>
-				item.bbox_image_index === idx ||
-				(item.seen_in_images && item.seen_in_images.includes(idx))
-			);
-		}
-		if (!sortKey) return items;
-		const k = sortKey;
-		const dir = sortAsc ? 1 : -1;
-		return [...items].sort((a, b) => {
-			const av = a[k];
-			const bv = b[k];
-			if (typeof av === 'string' && typeof bv === 'string') {
-				return av.localeCompare(bv, 'de') * dir;
-			}
-			return ((av as number) - (bv as number)) * dir;
-		});
+		const filtered = filterItemsByPhotoIndex(editItems, filterPhotoIndex);
+		return sortItems(filtered, sortKey, sortAsc);
 	});
 
 	// Live-computed total volume from editable items
-	let computedTotal = $derived(
-		editItems.reduce((sum, item) => sum + item.volume_m3 * item.quantity, 0)
-	);
+	let computedTotal = $derived(computeTotalVolume(editItems));
 
 	// Editable line items
 	const ROW_OPTIONS: { row: number; label: string; defaultCents: number }[] = [
@@ -205,11 +174,13 @@
 		{ row: 33, label: 'Umzugsmaterial', defaultCents: 3000 },
 		{ row: 39, label: 'Transporter', defaultCents: 6000 },
 		{ row: 42, label: 'Anfahrt/Abfahrt', defaultCents: 3000 },
+		{ row: 99, label: 'Sonstiges', defaultCents: 0 },
 	];
 
 	interface EditLineItem {
 		row: number;
 		label: string;
+		remark: string;
 		quantity: number;
 		unitPriceCents: number;
 		_priceText: string;
@@ -218,8 +189,8 @@
 
 	let editLineItems = $state<EditLineItem[]>([]);
 
-	function mkLineItem(row: number, label: string, quantity: number, unitPriceCents: number): EditLineItem {
-		return { row, label, quantity, unitPriceCents, _priceText: (unitPriceCents / 100).toFixed(2), _editing: false };
+	function mkLineItem(row: number, label: string, quantity: number, unitPriceCents: number, remark: string = ''): EditLineItem {
+		return { row, label, remark, quantity, unitPriceCents, _priceText: (unitPriceCents / 100).toFixed(2), _editing: false };
 	}
 
 	function computeLineItemsFromNotes() {
@@ -264,9 +235,15 @@
 		const item = editLineItems[idx];
 		const opt = ROW_OPTIONS.find(r => r.row === item.row);
 		if (opt) {
-			item.label = opt.label;
-			item.unitPriceCents = opt.defaultCents;
-			item._priceText = (opt.defaultCents / 100).toFixed(2);
+			if (item.row === 99) {
+				item.label = '';
+				item.unitPriceCents = 0;
+				item._priceText = '0.00';
+			} else {
+				item.label = opt.label;
+				item.unitPriceCents = opt.defaultCents;
+				item._priceText = (opt.defaultCents / 100).toFixed(2);
+			}
 		}
 		editLineItems = [...editLineItems];
 	}
@@ -333,27 +310,190 @@
 	let videoProgress = $state('');
 	let videoFileInput = $state<HTMLInputElement | null>(null);
 	let videoQueue = $state<File[]>([]);
+	let videoDragging = $state(false);
+	let downloadingMedia = $state(false);
+
+	let photoUploading = $state(false);
+	let photoProgress = $state('');
+	let photoFileInput = $state<HTMLInputElement | null>(null);
+	let photoQueue = $state<File[]>([]);
+	let photoDragging = $state(false);
+
+	async function downloadAllMedia() {
+		if (!data) return;
+		downloadingMedia = true;
+		try {
+			const JSZip = (await import('jszip')).default;
+			const zip = new JSZip();
+
+			const images = estimationsList.flatMap(e => e.source_image_urls);
+			const videos = estimationsList.filter(e => e.source_video_url).map(e => e.source_video_url!);
+
+			if (images.length === 0 && videos.length === 0) {
+				showToast('Keine Medien zum Herunterladen vorhanden', 'error');
+				return;
+			}
+
+			const imgFolder = zip.folder('fotos');
+			const vidFolder = zip.folder('videos');
+
+			const imgPromises = images.map(async (url: string, i: number) => {
+				const res = await fetch(API_BASE + url);
+				const blob = await res.blob();
+				const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+				imgFolder!.file(`foto_${i + 1}.${ext}`, blob);
+			});
+
+			const vidPromises = videos.map(async (url: string, i: number) => {
+				const res = await fetch(API_BASE + url);
+				const blob = await res.blob();
+				const ext = blob.type.includes('webm') ? 'webm' : 'mp4';
+				vidFolder!.file(`video_${i + 1}.${ext}`, blob);
+			});
+
+			await Promise.all([...imgPromises, ...vidPromises]);
+
+			const content = await zip.generateAsync({ type: 'blob' });
+			const quoteId = data.quote.id.slice(0, 8);
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(content);
+			link.download = `medien_${quoteId}.zip`;
+			link.click();
+			URL.revokeObjectURL(link.href);
+
+			showToast(`${images.length} Fotos und ${videos.length} Videos heruntergeladen`, 'success');
+		} catch (e) {
+			showToast('Download fehlgeschlagen: ' + (e as Error).message, 'error');
+		} finally {
+			downloadingMedia = false;
+		}
+	}
+
+	async function deleteEstimation(estimationId: string) {
+		if (!confirm('Diese Analyse und alle zugehörigen Gegenstände werden gelöscht.')) return;
+		try {
+			await apiDelete(`/api/v1/estimates/${estimationId}`);
+			showToast('Analyse gelöscht', 'success');
+			await loadQuote();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	function addPhotoFiles(files: FileList | File[]) {
+		const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
+		for (const file of Array.from(files)) {
+			const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+			if (!file.type.startsWith('image/') && !imageExtensions.includes(ext)) {
+				showToast(`${file.name}: Keine Bilddatei`, 'error');
+				continue;
+			}
+			if (file.size > 50 * 1024 * 1024) {
+				showToast(`${file.name} zu gross (max. 50 MB)`, 'error');
+				continue;
+			}
+			photoQueue = [...photoQueue, file];
+		}
+	}
+
+	function handlePhotoSelect(e: Event) {
+		const input = e.target as HTMLInputElement;
+		if (!input.files?.length) return;
+		addPhotoFiles(input.files);
+		input.value = '';
+	}
+
+	function handlePhotoDrop(e: DragEvent) {
+		e.preventDefault();
+		photoDragging = false;
+		if (e.dataTransfer?.files) addPhotoFiles(e.dataTransfer.files);
+	}
+
+	function handlePhotoDragOver(e: DragEvent) {
+		e.preventDefault();
+		photoDragging = true;
+	}
+
+	function handlePhotoDragLeave() {
+		photoDragging = false;
+	}
+
+	function removePhotoFromQueue(idx: number) {
+		photoQueue = photoQueue.filter((_, i) => i !== idx);
+	}
+
+	async function uploadPhotos() {
+		if (photoQueue.length === 0 || !data) return;
+
+		photoUploading = true;
+		const count = photoQueue.length;
+		photoProgress = `${count} Foto${count > 1 ? 's' : ''} wird hochgeladen...`;
+
+		try {
+			const formData = new FormData();
+			formData.append('quote_id', data.quote.id);
+			for (const file of photoQueue) {
+				formData.append('images', file);
+			}
+
+			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/estimates/depth-sensor`, {
+				method: 'POST',
+				body: formData,
+			});
+
+			photoQueue = [];
+			showToast(`${count} Foto${count > 1 ? 's' : ''} hochgeladen — Analyse läuft`, 'success');
+
+			const processingIds = results.filter(r => r.status === 'processing').map(r => r.id);
+			if (processingIds.length > 0) {
+				await pollEstimations(processingIds);
+			} else {
+				await loadQuote();
+			}
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			photoUploading = false;
+			photoProgress = '';
+		}
+	}
+
+	function addVideoFiles(files: FileList | File[]) {
+		const videoExtensions = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
+		for (const file of Array.from(files)) {
+			const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+			if (!file.type.startsWith('video/') && !videoExtensions.includes(ext)) {
+				showToast(`${file.name}: Keine Videodatei`, 'error');
+				continue;
+			}
+			if (file.size > 500 * 1024 * 1024) {
+				showToast(`${file.name} zu gross (max. 500 MB)`, 'error');
+				continue;
+			}
+			videoQueue = [...videoQueue, file];
+		}
+	}
 
 	function handleVideoSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
-		const videoExtensions = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
-		const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-		if (!file.type.startsWith('video/') && !videoExtensions.includes(ext)) {
-			showToast('Bitte eine Videodatei waehlen', 'error');
-			input.value = '';
-			return;
-		}
-		if (file.size > 500 * 1024 * 1024) {
-			showToast(`${file.name} zu gross (max. 500 MB)`, 'error');
-			input.value = '';
-			return;
-		}
-
-		videoQueue = [...videoQueue, file];
+		if (!input.files?.length) return;
+		addVideoFiles(input.files);
 		input.value = '';
+	}
+
+	function handleVideoDrop(e: DragEvent) {
+		e.preventDefault();
+		videoDragging = false;
+		if (e.dataTransfer?.files) addVideoFiles(e.dataTransfer.files);
+	}
+
+	function handleVideoDragOver(e: DragEvent) {
+		e.preventDefault();
+		videoDragging = true;
+	}
+
+	function handleVideoDragLeave() {
+		videoDragging = false;
 	}
 
 	function removeFromQueue(idx: number) {
@@ -443,8 +583,55 @@
 
 	// Photo filter: click a photo to filter items table
 	let filterPhotoIndex = $state<number | null>(null);
-	let galleryImages = $derived(
-		(data?.estimation?.source_images ?? []).map(url => API_BASE + url)
+
+	// Normalize estimations: support new estimations[] array and old estimation singular object
+	let estimationsList = $derived.by(() => {
+		if (data?.estimations?.length) return data.estimations;
+		const legacy = (data as any)?.estimation;
+		if (!legacy) return [];
+		// Map old shape to new EstimationEntry format
+		return [{
+			id: legacy.id ?? '',
+			method: legacy.method ?? '',
+			status: 'completed' as string,
+			total_volume_m3: legacy.total_volume_m3 ?? null,
+			item_count: legacy.items?.length ?? 0,
+			created_at: '',
+			source_video_url: null as string | null,
+			source_image_urls: (legacy.source_images ?? []) as string[],
+		},
+		// If old shape had source_videos, create a separate entry per video
+		...(legacy.source_videos ?? []).map((url: string) => ({
+			id: legacy.id ?? '',
+			method: 'video',
+			status: 'completed' as string,
+			total_volume_m3: null,
+			item_count: 0,
+			created_at: '',
+			source_video_url: url,
+			source_image_urls: [] as string[],
+		}))
+		] as EstimationEntry[];
+	});
+
+	let galleryEntries = $derived(
+		estimationsList
+			.filter(e => e.source_image_urls.length > 0)
+			.flatMap(e => e.source_image_urls.map(url => ({ url: API_BASE + url, estimationId: e.id })))
+	);
+	let galleryImages = $derived(galleryEntries.map(e => e.url));
+
+	let videoEntries = $derived(
+		estimationsList
+			.filter(e => e.source_video_url !== null)
+			.map(e => ({ url: API_BASE + e.source_video_url!, estimationId: e.id }))
+	);
+
+	let processingEstimations = $derived(
+		estimationsList.filter(e => e.status === 'processing')
+	);
+	let failedEstimations = $derived(
+		estimationsList.filter(e => e.status === 'failed')
 	);
 
 	function togglePhotoFilter(idx: number) {
@@ -485,10 +672,11 @@
 				.map(li => {
 					const match = ROW_OPTIONS.find(r => r.label === li.label);
 					return mkLineItem(
-						match?.row ?? 0,
+						match?.row ?? 99,
 						li.label,
 						li.quantity,
 						li.unit_price_cents,
+						li.remark ?? '',
 					);
 				});
 			priceDirty = false;
@@ -529,8 +717,14 @@
 			editVolume = data.quote.volume_m3;
 			editDistance = data.quote.distance_km;
 			editNotes = data.quote.notes || '';
-			if (data.estimation) {
-				initEditItems(data.estimation.items);
+			// items may be top-level (new API) or nested in estimation (old API)
+			const items = (data as any).items?.length
+				? (data as any).items
+				: (data as any).estimation?.items?.length
+					? (data as any).estimation.items
+					: null;
+			if (items) {
+				initEditItems(items);
 			}
 			computePricingDefaults();
 
@@ -639,6 +833,23 @@
 		priceDirty = true;
 	}
 
+	// Most recent non-deleted offer for this quote
+	let latestOffer = $derived(
+		(data?.offers ?? []).filter(o => o.status !== 'deleted').at(-1) ?? null
+	);
+
+	async function reEstimateOffer() {
+		if (!latestOffer) return;
+		if (!confirm('Entfernung neu berechnen und Angebot neu erstellen?')) return;
+		try {
+			await apiPost(`/api/v1/admin/offers/${latestOffer.id}/re-estimate`, {});
+			showToast('Angebot wird neu berechnet...', 'success');
+			await loadQuote();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
 	async function generateOffer() {
 		if (!data) return;
 		try {
@@ -656,6 +867,7 @@
 					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unitPriceCents / 100,
+					...(li.remark ? { remark: li.remark } : {}),
 				}));
 			}
 			await apiPost<{ id: string }>(`/api/v1/offers/generate`, payload);
@@ -751,10 +963,17 @@
 				<StatusBadge status={data.quote.status} />
 			</div>
 			<div class="header-actions">
-				<button class="btn btn-primary" onclick={generateOffer}>
-					<FileOutput size={16} />
-					Angebot erstellen
-				</button>
+				{#if latestOffer}
+					<button class="btn btn-primary" onclick={reEstimateOffer}>
+						<RotateCcw size={16} />
+						Neu berechnen
+					</button>
+				{:else}
+					<button class="btn btn-primary" onclick={generateOffer}>
+						<FileOutput size={16} />
+						Angebot erstellen
+					</button>
+				{/if}
 				<select
 					class="status-select"
 					value={data.quote.status}
@@ -940,11 +1159,6 @@
 				</div>
 			{/if}
 
-			<!-- Route Map -->
-			{#if routeCoordinates}
-				<RouteMap coordinates={routeCoordinates} distanceKm={editDistance} />
-			{/if}
-
 			<!-- Editable Fields -->
 			<div class="card">
 				<div class="card-header">
@@ -970,6 +1184,11 @@
 				</div>
 			</div>
 
+			<!-- Route Map -->
+			{#if routeCoordinates}
+				<RouteMap coordinates={routeCoordinates} distanceKm={editDistance} />
+			{/if}
+
 			<!-- Customer Message -->
 			{#if data.quote.customer_message}
 				<div class="card">
@@ -978,11 +1197,44 @@
 				</div>
 			{/if}
 
+			<!-- Estimation Status (processing / failed) -->
+			{#if processingEstimations.length > 0 || failedEstimations.length > 0}
+				<div class="card full-width">
+					{#each processingEstimations as est}
+						<div class="estimation-status-row">
+							<div class="upload-spinner"></div>
+							<span>{est.method === 'video' ? 'Video' : 'Foto'}-Analyse wird verarbeitet...</span>
+						</div>
+					{/each}
+					{#each failedEstimations as est}
+						<div class="estimation-status-row estimation-failed">
+							<span>{est.method === 'video' ? 'Video' : 'Foto'}-Analyse fehlgeschlagen</span>
+							<button class="btn btn-sm btn-danger" onclick={() => deleteEstimation(est.id)}>
+								<Trash2 size={14} /> Entfernen
+							</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
+
 			<!-- Source Photos Gallery -->
 			{#if galleryImages.length > 0}
 				<div class="card full-width">
 					<div class="card-header">
 						<h3>Fotos ({galleryImages.length})</h3>
+						{#if galleryEntries.length > 0 || videoEntries.length > 0}
+							<button
+								class="download-all-btn"
+								onclick={downloadAllMedia}
+								disabled={downloadingMedia}
+							>
+								{#if downloadingMedia}
+									ZIP wird erstellt…
+								{:else}
+									<Download size={16} /> Alle Medien herunterladen
+								{/if}
+							</button>
+						{/if}
 						{#if filterPhotoIndex !== null}
 							<button class="btn btn-sm" onclick={() => { filterPhotoIndex = null; }}>
 								<X size={14} />
@@ -992,52 +1244,135 @@
 					</div>
 					<div class="photo-grid">
 						{#each galleryImages as url, idx}
-							<button
-								class="photo-thumb-btn"
-								class:photo-active={filterPhotoIndex === idx}
-								onclick={() => togglePhotoFilter(idx)}
-							>
-								<img src={url} alt="Foto {idx + 1}" class="photo-thumb" />
-							</button>
+							<div class="photo-thumb-wrapper">
+								<button
+									class="photo-thumb-btn"
+									class:photo-active={filterPhotoIndex === idx}
+									onclick={() => togglePhotoFilter(idx)}
+								>
+									<img src={url} alt="Foto {idx + 1}" class="photo-thumb" />
+								</button>
+								<button
+									class="photo-delete-btn"
+									onclick={() => deleteEstimation(galleryEntries[idx].estimationId)}
+									title="Analyse löschen"
+								>
+									<X size={12} />
+								</button>
+							</div>
 						{/each}
 					</div>
 				</div>
 			{/if}
+
+			<!-- Photo Upload -->
+			<div class="card full-width">
+				<div class="card-header">
+					<h3>Foto-Analyse</h3>
+				</div>
+				{#if photoUploading}
+					<div class="upload-status">
+						<div class="upload-spinner"></div>
+						<span>{photoProgress}</span>
+					</div>
+				{:else}
+					{#if photoQueue.length > 0}
+						<div class="upload-queue">
+							{#each photoQueue as file, idx}
+								<div class="upload-queue-item">
+									<ImagePlus size={16} />
+									<span class="upload-queue-name">{file.name}</span>
+									<span class="upload-queue-size">{formatFileSize(file.size)}</span>
+									<button class="del-btn" onclick={() => removePhotoFromQueue(idx)} title="Entfernen">
+										<X size={14} />
+									</button>
+								</div>
+							{/each}
+							<div class="upload-queue-actions">
+								<label for="photo-upload" class="btn btn-sm upload-add-more">
+									<Plus size={14} />
+									Weiteres Foto
+								</label>
+								<button class="btn btn-primary" onclick={uploadPhotos}>
+									<Upload size={16} />
+									{photoQueue.length} Foto{photoQueue.length > 1 ? 's' : ''} hochladen
+								</button>
+							</div>
+						</div>
+					{/if}
+					<input
+						type="file"
+						accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+						multiple
+						onchange={handlePhotoSelect}
+						bind:this={photoFileInput}
+						class="upload-file-input"
+						id="photo-upload"
+					/>
+					{#if photoQueue.length === 0}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="upload-drop-label"
+							class:upload-dragging={photoDragging}
+							ondrop={handlePhotoDrop}
+							ondragover={handlePhotoDragOver}
+							ondragleave={handlePhotoDragLeave}
+							onclick={() => photoFileInput?.click()}
+							role="button"
+							tabindex="0"
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') photoFileInput?.click(); }}
+						>
+							<ImagePlus size={24} />
+							<span>Fotos hierher ziehen oder klicken</span>
+							<span class="upload-hint">JPG, PNG, WebP, HEIC (max. 50 MB pro Bild)</span>
+						</div>
+					{/if}
+				{/if}
+			</div>
 
 			<!-- Video Upload -->
 			<div class="card full-width">
 				<div class="card-header">
 					<h3>Video-Analyse</h3>
 				</div>
-				{#if data.estimation?.source_videos && data.estimation.source_videos.length > 0}
+				{#if videoEntries.length > 0}
 					<div class="video-gallery">
-						{#each data.estimation.source_videos as videoUrl}
-							<video controls preload="metadata" class="video-player">
-								<source src={API_BASE + videoUrl} />
-							</video>
+						{#each videoEntries as entry}
+							<div class="video-item">
+								<video controls preload="metadata" class="video-player">
+									<source src={entry.url} />
+								</video>
+								<button
+									class="video-delete-btn"
+									onclick={() => deleteEstimation(entry.estimationId)}
+									title="Video-Analyse löschen"
+								>
+									<Trash2 size={14} /> Löschen
+								</button>
+							</div>
 						{/each}
 					</div>
 				{/if}
 				{#if videoUploading}
-					<div class="video-uploading">
-						<div class="video-spinner"></div>
+					<div class="upload-status">
+						<div class="upload-spinner"></div>
 						<span>{videoProgress}</span>
 					</div>
 				{:else}
 					{#if videoQueue.length > 0}
-						<div class="video-queue">
+						<div class="upload-queue">
 							{#each videoQueue as file, idx}
-								<div class="video-queue-item">
+								<div class="upload-queue-item">
 									<Video size={16} />
-									<span class="video-queue-name">{file.name}</span>
-									<span class="video-queue-size">{formatFileSize(file.size)}</span>
+									<span class="upload-queue-name">{file.name}</span>
+									<span class="upload-queue-size">{formatFileSize(file.size)}</span>
 									<button class="del-btn" onclick={() => removeFromQueue(idx)} title="Entfernen">
 										<X size={14} />
 									</button>
 								</div>
 							{/each}
-							<div class="video-queue-actions">
-								<label for="video-upload" class="btn btn-sm video-add-more">
+							<div class="upload-queue-actions">
+								<label for="video-upload" class="btn btn-sm upload-add-more">
 									<Plus size={14} />
 									Weiteres Video
 								</label>
@@ -1051,17 +1386,29 @@
 					<input
 						type="file"
 						accept="video/*,.mov,.mp4,.webm,.mkv"
+						multiple
 						onchange={handleVideoSelect}
 						bind:this={videoFileInput}
-						class="video-file-input"
+						class="upload-file-input"
 						id="video-upload"
 					/>
 					{#if videoQueue.length === 0}
-						<label for="video-upload" class="video-upload-label">
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="upload-drop-label"
+							class:upload-dragging={videoDragging}
+							ondrop={handleVideoDrop}
+							ondragover={handleVideoDragOver}
+							ondragleave={handleVideoDragLeave}
+							onclick={() => videoFileInput?.click()}
+							role="button"
+							tabindex="0"
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') videoFileInput?.click(); }}
+						>
 							<Video size={24} />
-							<span>Video hinzufuegen</span>
-							<span class="video-hint">MP4, MOV, WebM (max. 500 MB pro Video)</span>
-						</label>
+							<span>Videos hierher ziehen oder klicken</span>
+							<span class="upload-hint">MP4, MOV, WebM (max. 500 MB pro Video)</span>
+						</div>
 					{/if}
 				{/if}
 			</div>
@@ -1073,7 +1420,7 @@
 						{#if filterPhotoIndex !== null}
 							Gegenstaende aus Foto {filterPhotoIndex + 1} ({sortedItems().length})
 						{:else}
-							Erfasste Gegenstaende{data.estimation?.method ? ` (${data.estimation.method})` : ''}
+							Erfasste Gegenstaende ({editItems.length})
 						{/if}
 					</h3>
 						<div class="items-header-actions">
@@ -1261,12 +1608,31 @@
 
 					{#each editLineItems as li, idx}
 						<div class="line-item editable">
-							<div class="li-edit-row">
+							<div class="li-edit-top">
 								<select bind:value={li.row} onchange={() => onLineItemRowChange(idx)}>
 									{#each ROW_OPTIONS as opt}
 										<option value={opt.row}>{opt.label}</option>
 									{/each}
 								</select>
+								{#if li.row === 99}
+									<input
+										type="text"
+										class="edit-li-label"
+										bind:value={li.label}
+										placeholder="Bezeichnung"
+									/>
+								{/if}
+								<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen">
+									<X size={14} />
+								</button>
+							</div>
+							<div class="li-edit-bottom">
+								<input
+									type="text"
+									class="edit-li-remark"
+									bind:value={li.remark}
+									placeholder="Bemerkung"
+								/>
 								<input
 									type="number"
 									class="edit-li-qty"
@@ -1292,9 +1658,6 @@
 								/>
 								<span class="li-eur">EUR</span>
 								<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
-								<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen">
-									<X size={14} />
-								</button>
 							</div>
 						</div>
 					{/each}
@@ -1326,10 +1689,17 @@
 				</div>
 			{/if}
 
-			<button class="btn-generate-bottom" onclick={generateOffer}>
-				<FileOutput size={20} />
-				Angebot erstellen
-			</button>
+			{#if latestOffer}
+				<button class="btn-generate-bottom" onclick={reEstimateOffer}>
+					<RotateCcw size={20} />
+					Neu berechnen
+				</button>
+			{:else}
+				<button class="btn-generate-bottom" onclick={generateOffer}>
+					<FileOutput size={20} />
+					Angebot erstellen
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -1627,15 +1997,15 @@
 		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
 	}
 
-	/* Video Queue */
-	.video-queue {
+	/* Upload Queue (shared by photo & video) */
+	.upload-queue {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 		margin-bottom: 0.75rem;
 	}
 
-	.video-queue-item {
+	.upload-queue-item {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -1645,7 +2015,7 @@
 		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
 	}
 
-	.video-queue-name {
+	.upload-queue-name {
 		flex: 1;
 		font-size: 0.8125rem;
 		color: #334155;
@@ -1654,13 +2024,13 @@
 		white-space: nowrap;
 	}
 
-	.video-queue-size {
+	.upload-queue-size {
 		font-size: 0.75rem;
 		color: #94a3b8;
 		white-space: nowrap;
 	}
 
-	.video-queue-actions {
+	.upload-queue-actions {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -1668,15 +2038,15 @@
 		padding-top: 0.25rem;
 	}
 
-	.video-add-more {
+	.upload-add-more {
 		cursor: pointer;
 	}
 
-	.video-file-input {
+	.upload-file-input {
 		display: none;
 	}
 
-	.video-upload-label {
+	.upload-drop-label {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -1691,18 +2061,19 @@
 		text-align: center;
 	}
 
-	.video-upload-label:hover {
+	.upload-drop-label:hover,
+	.upload-drop-label.upload-dragging {
 		border-color: #6366f1;
 		color: #6366f1;
 		background: rgba(99, 102, 241, 0.04);
 	}
 
-	.video-hint {
+	.upload-hint {
 		font-size: 0.6875rem;
 		color: #94a3b8;
 	}
 
-	.video-uploading {
+	.upload-status {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
@@ -1712,7 +2083,7 @@
 		font-weight: 500;
 	}
 
-	.video-spinner {
+	.upload-spinner {
 		width: 20px;
 		height: 20px;
 		border: 2px solid #e2e8f0;
@@ -2155,17 +2526,20 @@
 	}
 
 	.line-item.editable {
-		padding: 0.375rem 0;
+		padding: 0.5rem 0;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.375rem;
 	}
 
-	.li-edit-row {
+	.li-edit-top {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		width: 100%;
 	}
 
-	.li-edit-row select {
+	.li-edit-top select {
 		background: #e8ecf1;
 		border: none;
 		border-radius: 6px;
@@ -2175,6 +2549,12 @@
 		outline: none;
 		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
 		min-width: 140px;
+	}
+
+	.li-edit-bottom {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.edit-li-qty,
@@ -2193,6 +2573,40 @@
 
 	.edit-li-qty:focus,
 	.edit-li-price:focus {
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.edit-li-label {
+		background: #e8ecf1;
+		border: none;
+		border-radius: 6px;
+		padding: 0.375rem 0.5rem;
+		font-size: 0.8125rem;
+		color: #334155;
+		outline: none;
+		flex: 1;
+		min-width: 100px;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+	}
+
+	.edit-li-label:focus {
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+	}
+
+	.edit-li-remark {
+		background: #e8ecf1;
+		border: none;
+		border-radius: 6px;
+		padding: 0.375rem 0.5rem;
+		font-size: 0.75rem;
+		color: #64748b;
+		outline: none;
+		flex: 1;
+		min-width: 80px;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+	}
+
+	.edit-li-remark:focus {
 		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
@@ -2418,6 +2832,71 @@
 		transform: scale(1.03);
 	}
 
+	.photo-thumb-wrapper {
+		position: relative;
+	}
+
+	.photo-delete-btn {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		width: 22px;
+		height: 22px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		background: rgba(0, 0, 0, 0.6);
+		color: #fff;
+		border: none;
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 150ms ease;
+	}
+
+	.photo-thumb-wrapper:hover .photo-delete-btn {
+		opacity: 1;
+	}
+
+	.video-item {
+		position: relative;
+	}
+
+	.video-delete-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-top: 0.375rem;
+		padding: 0.25rem 0.5rem;
+		font-size: 0.75rem;
+		color: #ef4444;
+		background: none;
+		border: none;
+		cursor: pointer;
+		opacity: 0.7;
+		transition: opacity 150ms ease;
+	}
+
+	.video-delete-btn:hover { opacity: 1; }
+
+	.estimation-status-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		font-size: 0.8125rem;
+		color: #6366f1;
+		border-radius: 8px;
+		background: #f1f5f9;
+		margin-bottom: 0.5rem;
+	}
+
+	.estimation-status-row.estimation-failed {
+		color: #ef4444;
+		background: #fef2f2;
+		justify-content: space-between;
+	}
+
 	@media (max-width: 768px) {
 		.detail-grid {
 			grid-template-columns: 1fr;
@@ -2431,13 +2910,9 @@
 			grid-template-columns: 1fr;
 		}
 
-		.li-edit-row {
-			flex-wrap: wrap;
-		}
-
-		.li-edit-row select {
+		.li-edit-top select {
 			min-width: 0;
-			width: 100%;
+			flex: 1;
 		}
 
 		.edit-li-qty,
@@ -2489,5 +2964,30 @@
 
 	.btn-generate-bottom:hover {
 		background: #4f46e5;
+	}
+
+	.download-all-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		font-size: 0.8125rem;
+		color: var(--admin-primary, #6366f1);
+		background: #ffffff;
+		border: none;
+		border-radius: 8px;
+		box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff;
+		cursor: pointer;
+		transition: all 150ms ease;
+	}
+
+	.download-all-btn:hover:not(:disabled) {
+		background: var(--admin-primary, #6366f1);
+		color: #ffffff;
+	}
+
+	.download-all-btn:disabled {
+		opacity: 0.6;
+		cursor: wait;
 	}
 </style>

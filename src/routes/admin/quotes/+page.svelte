@@ -87,25 +87,49 @@
 	let photoFileInput = $state<HTMLInputElement>(undefined!);
 
 	// Video upload
-	let videoFile = $state<File | null>(null);
+	let videoFiles = $state<File[]>([]);
 	let videoFileInput = $state<HTMLInputElement>(undefined!);
+	let videoDragging = $state(false);
 
-	function handleVideoSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (file && file.type.startsWith('video/')) {
-			if (file.size > 500 * 1024 * 1024) {
-				createError = 'Video zu gross (max. 500 MB)';
-				return;
+	function addVideoFiles(files: FileList | File[]) {
+		for (const file of Array.from(files)) {
+			if (!file.type.startsWith('video/')) {
+				createError = `${file.name}: Keine Videodatei`;
+				continue;
 			}
-			videoFile = file;
+			if (file.size > 500 * 1024 * 1024) {
+				createError = `${file.name} zu gross (max. 500 MB)`;
+				continue;
+			}
+			videoFiles = [...videoFiles, file];
 			createError = '';
 		}
 	}
 
-	function removeVideo() {
-		videoFile = null;
-		if (videoFileInput) videoFileInput.value = '';
+	function handleVideoSelect(e: Event) {
+		const input = e.target as HTMLInputElement;
+		if (!input.files?.length) return;
+		addVideoFiles(input.files);
+		input.value = '';
+	}
+
+	function removeVideo(index: number) {
+		videoFiles = videoFiles.filter((_, i) => i !== index);
+	}
+
+	function handleVideoDrop(e: DragEvent) {
+		e.preventDefault();
+		videoDragging = false;
+		if (e.dataTransfer?.files) addVideoFiles(e.dataTransfer.files);
+	}
+
+	function handleVideoDragOver(e: DragEvent) {
+		e.preventDefault();
+		videoDragging = true;
+	}
+
+	function handleVideoDragLeave() {
+		videoDragging = false;
 	}
 
 	// Services
@@ -367,12 +391,14 @@
 				await apiFetch('/api/v1/estimates/depth-sensor', { method: 'POST', body: formData });
 			}
 
-			// 3. If video mode, upload video to video endpoint
-			if (volumeMode === 'video' && videoFile) {
+			// 3. If video mode, upload videos to video endpoint
+			if (volumeMode === 'video' && videoFiles.length > 0) {
 				createError = '';
 				const formData = new FormData();
 				formData.append('quote_id', res.id);
-				formData.append('video', videoFile);
+				for (const file of videoFiles) {
+					formData.append('video', file);
+				}
 				await apiFetch('/api/v1/estimates/video', { method: 'POST', body: formData });
 			}
 
@@ -547,33 +573,48 @@
 				{#if volumeMode === 'manual'}
 					<VolumeCalculator bind:volumeM3 bind:itemSummary />
 				{:else if volumeMode === 'video'}
-					{#if videoFile}
-						<div class="video-selected">
-							<Video size={20} />
-							<div class="video-selected__info">
-								<span class="video-selected__name">{videoFile.name}</span>
-								<span class="video-selected__size">{(videoFile.size / 1024 / 1024).toFixed(1)} MB</span>
-							</div>
-							<button class="photo-thumb__remove" onclick={removeVideo}>
-								<Trash2 size={12} />
+					{#if videoFiles.length > 0}
+						<div class="video-queue">
+							{#each videoFiles as file, i}
+								<div class="video-selected">
+									<Video size={20} />
+									<div class="video-selected__info">
+										<span class="video-selected__name">{file.name}</span>
+										<span class="video-selected__size">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+									</div>
+									<button class="photo-thumb__remove" onclick={() => removeVideo(i)}>
+										<Trash2 size={12} />
+									</button>
+								</div>
+							{/each}
+							<button class="video-add-more-btn" type="button" onclick={() => videoFileInput.click()}>
+								<Upload size={14} />
+								Weitere Videos
 							</button>
 						</div>
-					{:else}
+					{/if}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					{#if videoFiles.length === 0}
 						<div
 							class="photo-dropzone"
+							class:dragging={videoDragging}
 							role="button"
 							tabindex="0"
+							ondrop={handleVideoDrop}
+							ondragover={handleVideoDragOver}
+							ondragleave={handleVideoDragLeave}
 							onclick={() => videoFileInput.click()}
 							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') videoFileInput.click(); }}
 						>
 							<Video size={32} />
-							<p>Video auswaehlen</p>
+							<p>Videos hierher ziehen oder klicken</p>
 							<span class="photo-dropzone__hint">MP4, MOV, WebM — Raum-Rundgang fuer 3D-Analyse (max. 500 MB)</span>
 						</div>
 					{/if}
 					<input
 						type="file"
 						accept="video/*"
+						multiple
 						class="photo-file-input"
 						bind:this={videoFileInput}
 						onchange={handleVideoSelect}
@@ -1162,6 +1203,32 @@
 	.video-selected__size {
 		font-size: 0.75rem;
 		color: #94a3b8;
+	}
+
+	.video-queue {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.video-add-more-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border: 2px dashed #cbd5e1;
+		border-radius: 8px;
+		background: none;
+		color: #64748b;
+		font-size: 0.8125rem;
+		cursor: pointer;
+		transition: all 150ms ease;
+	}
+
+	.video-add-more-btn:hover {
+		border-color: #6366f1;
+		color: #6366f1;
 	}
 
 	/* Services */

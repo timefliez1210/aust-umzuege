@@ -13,6 +13,21 @@
 	let mapContainer = $state<HTMLDivElement | null>(null);
 	let map: L.Map | null = null;
 
+	/**
+	 * Initialises the Leaflet map after the component mounts in the DOM.
+	 *
+	 * Called by: Svelte (onMount lifecycle hook)
+	 * Purpose: Lazily imports Leaflet (keeping it out of the SSR bundle), creates
+	 *          the map instance on the bound mapContainer element, draws an
+	 *          OpenStreetMap tile layer, renders the route as a purple polyline,
+	 *          and places colour-coded circle markers at the origin (green) and
+	 *          destination (red). Exits early when fewer than two coordinate
+	 *          pairs are provided. Returns a cleanup function that destroys the
+	 *          map instance when the component is unmounted.
+	 *
+	 * @returns A cleanup function that removes the Leaflet map instance to
+	 *          prevent memory leaks when the component is destroyed
+	 */
 	onMount(() => {
 		if (!mapContainer || coordinates.length < 2) return;
 

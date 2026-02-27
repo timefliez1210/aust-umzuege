@@ -16,6 +16,22 @@ export class ApiError extends Error {
 	}
 }
 
+/**
+ * Core authenticated fetch wrapper for all admin API calls.
+ *
+ * Called by: apiGet, apiPost, apiPatch, apiPut, apiDelete (internally),
+ *            quotes/[id]/+page.svelte (directly for multipart uploads and polling),
+ *            quotes/+page.svelte (directly for file upload)
+ * Purpose: Centralises auth header injection, JSON serialisation, and the
+ *          401-refresh-retry cycle so every HTTP method gets identical behaviour.
+ *
+ * @param path - API path relative to API_BASE (e.g. "/api/v1/quotes/123")
+ * @param options - Standard fetch options; body may be any value or FormData
+ * @returns Parsed JSON response cast to T, or the raw Response for non-JSON replies
+ *
+ * Auth flow: attaches Bearer token from auth store; on 401 calls auth.refreshToken()
+ * once and retries; if refresh fails, calls auth.logout() and throws ApiError(401).
+ */
 export async function apiFetch<T = unknown>(path: string, options: FetchOptions = {}): Promise<T> {
 	const { body, headers: customHeaders, ...rest } = options;
 
@@ -65,27 +81,103 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
 	return res as unknown as T;
 }
 
+/**
+ * Sends a GET request to the given API path.
+ *
+ * Called by: admin/+page.svelte (dashboard), quotes/+page.svelte (list),
+ *            quotes/[id]/+page.svelte (detail), offers/+page.svelte (list),
+ *            offers/[id]/+page.svelte (detail), customers/+page.svelte,
+ *            customers/[id]/+page.svelte, emails/+page.svelte,
+ *            emails/[id]/+page.svelte, orders/+page.svelte,
+ *            settings/+page.svelte, calendar/+page.svelte
+ * Purpose: Convenience wrapper so callers do not need to specify method: 'GET'
+ *
+ * @param path - API path relative to API_BASE
+ * @returns Parsed JSON response cast to T
+ */
 export function apiGet<T = unknown>(path: string): Promise<T> {
 	return apiFetch<T>(path, { method: 'GET' });
 }
 
+/**
+ * Sends a POST request with an optional JSON body to the given API path.
+ *
+ * Called by: quotes/+page.svelte (create quote/customer), quotes/[id]/+page.svelte
+ *            (generate offer, status change, delete, re-estimate),
+ *            offers/[id]/+page.svelte (regenerate, send, reject, delete, re-estimate),
+ *            customers/+page.svelte, customers/[id]/+page.svelte,
+ *            emails/+page.svelte, emails/[id]/+page.svelte,
+ *            settings/+page.svelte, calendar/+page.svelte
+ * Purpose: Convenience wrapper for mutating operations that create resources
+ *
+ * @param path - API path relative to API_BASE
+ * @param body - Optional request payload; serialised to JSON automatically
+ * @returns Parsed JSON response cast to T
+ */
 export function apiPost<T = unknown>(path: string, body?: unknown): Promise<T> {
 	return apiFetch<T>(path, { method: 'POST', body });
 }
 
+/**
+ * Sends a PATCH request with a partial JSON body to the given API path.
+ *
+ * Called by: quotes/[id]/+page.svelte (address edits, quote status),
+ *            offers/[id]/+page.svelte (offer field edits),
+ *            customers/[id]/+page.svelte, emails/[id]/+page.svelte,
+ *            calendar/+page.svelte (booking status)
+ * Purpose: Convenience wrapper for partial resource updates
+ *
+ * @param path - API path relative to API_BASE
+ * @param body - Partial update payload; serialised to JSON automatically
+ * @returns Parsed JSON response cast to T
+ */
 export function apiPatch<T = unknown>(path: string, body: unknown): Promise<T> {
 	return apiFetch<T>(path, { method: 'PATCH', body });
 }
 
+/**
+ * Sends a PUT request with a full replacement JSON body to the given API path.
+ *
+ * Called by: quotes/[id]/+page.svelte (estimation items bulk replace),
+ *            calendar/+page.svelte (capacity update)
+ * Purpose: Convenience wrapper for full resource replacement operations
+ *
+ * @param path - API path relative to API_BASE
+ * @param body - Full replacement payload; serialised to JSON automatically
+ * @returns Parsed JSON response cast to T
+ */
 export function apiPut<T = unknown>(path: string, body: unknown): Promise<T> {
 	return apiFetch<T>(path, { method: 'PUT', body });
 }
 
+/**
+ * Sends a DELETE request to the given API path.
+ *
+ * Called by: quotes/[id]/+page.svelte (delete estimation),
+ *            calendar/+page.svelte (delete booking)
+ * Purpose: Convenience wrapper for resource deletion
+ *
+ * @param path - API path relative to API_BASE
+ * @returns Parsed JSON response cast to T (typically an empty body or confirmation)
+ */
 export function apiDelete<T = unknown>(path: string): Promise<T> {
 	return apiFetch<T>(path, { method: 'DELETE' });
 }
 
-/** Fetch a file with auth headers and trigger a browser download. */
+/**
+ * Fetch a file with auth headers and trigger a browser download.
+ *
+ * Called by: offers/[id]/+page.svelte (PDF download button)
+ * Purpose: Downloads a protected binary resource (e.g. offer PDF) and saves it
+ *          using a synthetic anchor-click so the browser treats it as a download
+ *
+ * @param path - API path relative to API_BASE for the file resource
+ * @param filename - The filename the browser should use when saving the file
+ * @returns Resolves when the download has been triggered
+ *
+ * Auth flow: attaches Bearer token; on 401 calls auth.refreshToken() once and
+ * retries; if refresh fails, calls auth.logout() and throws ApiError(401).
+ */
 export async function apiDownload(path: string, filename: string): Promise<void> {
 	const headers: Record<string, string> = {};
 	if (auth.token) {

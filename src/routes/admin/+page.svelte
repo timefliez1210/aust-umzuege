@@ -30,6 +30,16 @@
 		loadDashboard();
 	});
 
+	/**
+	 * Fetches summary KPI data for the admin dashboard from the API.
+	 *
+	 * Called by: $effect (on mount)
+	 * Purpose: Populates the four stat cards (open quotes, pending offers, today's bookings,
+	 *          total customers), the recent activity feed, and the conflict-date alert list.
+	 *          Falls back to zeroed-out mock data on error so the page still renders.
+	 *
+	 * @returns void
+	 */
 	async function loadDashboard() {
 		try {
 			data = await apiGet<DashboardData>('/api/v1/admin/dashboard');

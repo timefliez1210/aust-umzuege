@@ -28,6 +28,16 @@
 		loadCustomer();
 	});
 
+	/**
+	 * Fetches the full detail record for the customer identified by the route parameter.
+	 *
+	 * Called by: $effect (on mount)
+	 * Purpose: Loads customer profile data together with their linked quotes and offers from
+	 *          GET /api/v1/admin/customers/{id}, then seeds the editable form fields so the
+	 *          admin can make changes immediately without re-typing existing values.
+	 *
+	 * @returns void
+	 */
 	async function loadCustomer() {
 		loading = true;
 		try {
@@ -42,6 +52,16 @@
 		}
 	}
 
+	/**
+	 * Persists edited customer fields (name, phone, email) to the API.
+	 *
+	 * Called by: Template ("Speichern" button click)
+	 * Purpose: PATCHes the customer record via PATCH /api/v1/admin/customers/{id} with the
+	 *          current form values, then reloads the customer to confirm the saved state.
+	 *          Displays an inline success or error message rather than using the toast system.
+	 *
+	 * @returns void
+	 */
 	async function saveCustomer() {
 		saving = true;
 		message = null;
@@ -60,6 +80,16 @@
 		}
 	}
 
+	/**
+	 * Permanently deletes the current customer and all associated data after confirmation.
+	 *
+	 * Called by: Template ("Loeschen" button click)
+	 * Purpose: Presents a native browser confirm dialog as a safety gate, then POSTs to
+	 *          POST /api/v1/admin/customers/{id}/delete. On success a toast is shown and the
+	 *          admin is redirected back to the customer list.
+	 *
+	 * @returns void
+	 */
 	async function deleteCustomer() {
 		if (!data) return;
 		if (!confirm(`Kunde "${data.name || data.email}" und alle zugehoerigen Daten unwiderruflich loeschen?`)) return;

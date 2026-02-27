@@ -10,6 +10,15 @@
 	let sidebarCollapsed = $state(false);
 	let mobileOpen = $state(false);
 
+	/**
+	 * Closes the mobile sidebar drawer after every client-side navigation.
+	 *
+	 * Called by: afterNavigate lifecycle hook (SvelteKit, fires after each route change)
+	 * Purpose: Ensures the mobile overlay does not remain visible when the user taps a
+	 *          sidebar link and the route changes, keeping the UI clean on small screens.
+	 *
+	 * @returns void
+	 */
 	afterNavigate(() => {
 		mobileOpen = false;
 	});
@@ -20,6 +29,15 @@
 		}
 	});
 
+	/**
+	 * Logs the current user out and redirects to the login page.
+	 *
+	 * Called by: Template (topbar "Abmelden" button click)
+	 * Purpose: Clears the JWT tokens from the auth store / localStorage via auth.logout(),
+	 *          then navigates away from all protected admin routes to prevent unauthorised access.
+	 *
+	 * @returns void
+	 */
 	function handleLogout() {
 		auth.logout();
 		goto('/admin/login');

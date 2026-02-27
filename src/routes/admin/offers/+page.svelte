@@ -50,6 +50,15 @@
 		loadOffers();
 	});
 
+	/**
+	 * Fetches the paginated offers list from the API and populates the table.
+	 *
+	 * Called by: $effect (on mount and whenever statusFilter or offset change)
+	 * Purpose: Loads offers into the DataTable respecting the active status tab and
+	 *          the current pagination offset. On error, resets the list to empty.
+	 *
+	 * @returns void (side-effect: sets `offers`, `total`, `loading`)
+	 */
 	async function loadOffers() {
 		loading = true;
 		try {
@@ -69,12 +78,29 @@
 		}
 	}
 
+	/**
+	 * Switches the active status tab filter and reloads the offers list from page 1.
+	 *
+	 * Called by: Template (onclick on each tab button — Alle, Entwurf, Gesendet, Akzeptiert, Abgelehnt)
+	 * Purpose: Narrows the offers table to a specific lifecycle status without losing the sort state.
+	 *
+	 * @param value - The status string to filter by ('' for all, 'draft', 'sent', 'accepted', 'rejected')
+	 * @returns void
+	 */
 	function setFilter(value: string) {
 		statusFilter = value;
 		offset = 0;
 		loadOffers();
 	}
 
+	/**
+	 * Moves the pagination offset back by one page and reloads the offers list.
+	 *
+	 * Called by: Template (onclick on the left-chevron pagination button)
+	 * Purpose: Navigates to the previous 20-item page; no-ops if already on page 1.
+	 *
+	 * @returns void
+	 */
 	function prevPage() {
 		if (offset > 0) {
 			offset = Math.max(0, offset - limit);
@@ -82,6 +108,14 @@
 		}
 	}
 
+	/**
+	 * Advances the pagination offset by one page and reloads the offers list.
+	 *
+	 * Called by: Template (onclick on the right-chevron pagination button)
+	 * Purpose: Navigates to the next 20-item page; no-ops if already on the last page.
+	 *
+	 * @returns void
+	 */
 	function nextPage() {
 		if (offset + limit < total) {
 			offset += limit;

@@ -27,6 +27,17 @@
 		emptyMessage?: string;
 	} = $props();
 
+	/**
+	 * Handles a click on a sortable column header button.
+	 *
+	 * Called by: Template (onclick of each sortable column's .sort-btn)
+	 * Purpose: Toggles sort direction when the same column is clicked again, or
+	 *          switches to descending order when a new column is selected. Updates
+	 *          the bindable sortKey and sortDir props so the parent page can
+	 *          re-sort its data array accordingly.
+	 *
+	 * @param key - The column key string that was clicked
+	 */
 	function handleSort(key: string) {
 		if (sortKey === key) {
 			sortDir = sortDir === 'asc' ? 'desc' : 'asc';

@@ -6,6 +6,8 @@ import {
 	calculateBruttoCents,
 	calculateLaborProfit,
 	reverseCalculateRate,
+	isFlatTotalItem,
+	normalizeFlatTotalItem,
 	ROW_OPTIONS,
 } from './pricing';
 
@@ -54,6 +56,22 @@ describe('calculateNonLaborCents', () => {
 
 	it('returns 0 for empty array', () => {
 		expect(calculateNonLaborCents([])).toBe(0);
+	});
+
+	it('returns 0 for flat-total items (qty=0, price=0) — caller must normalize first', () => {
+		// This documents the limitation: flat-total items compute as 0
+		// Callers must use normalizeFlatTotalItem() before passing to this function
+		const items = [{ quantity: 0, unit_price_cents: 0 }];
+		expect(calculateNonLaborCents(items)).toBe(0);
+	});
+
+	it('correctly handles normalized flat-total items', () => {
+		// After normalization: qty=1, unit_price=total → included in sum
+		const items = [
+			{ quantity: 1, unit_price_cents: 4500 }, // normalized Fahrkostenpauschale
+			{ quantity: 2, unit_price_cents: 5000 },  // De/Montage
+		];
+		expect(calculateNonLaborCents(items)).toBe(14500);
 	});
 });
 
@@ -114,5 +132,84 @@ describe('reverseCalculateRate', () => {
 	it('returns 0 when available labor budget is negative', () => {
 		// netto = round(1190 / 1.19) = 1000, nonLabor = 5000 → available = -4000
 		expect(reverseCalculateRate(1190, 5000, 2, 3)).toBe(0);
+	});
+
+	it('produces correct rate when nonLaborCents includes flat-total amounts', () => {
+		// brutto=11900 → netto=10000, flat travel=4500, 2 persons × 3 hours
+		// available for labor = 10000 - 4500 = 5500
+		// rate = round(5500 / 6) = 917
+		expect(reverseCalculateRate(11900, 4500, 2, 3)).toBe(917);
+	});
+
+	it('overstates rate when flat-total amounts are excluded (documents the bug)', () => {
+		// Same scenario but caller forgot to include flat-total in nonLaborCents
+		// rate = round(10000 / 6) = 1667 — WRONG, 750 cents too high
+		const buggyRate = reverseCalculateRate(11900, 0, 2, 3);
+		const correctRate = reverseCalculateRate(11900, 4500, 2, 3);
+		expect(buggyRate).toBe(1667);
+		expect(correctRate).toBe(917);
+		expect(buggyRate).toBeGreaterThan(correctRate);
+	});
+});
+
+describe('isFlatTotalItem', () => {
+	it('returns true for qty=0, price=0, total>0 (Fahrkostenpauschale pattern)', () => {
+		expect(isFlatTotalItem({ quantity: 0, unit_price_cents: 0, total_cents: 4500 })).toBe(true);
+	});
+
+	it('returns false for normal items', () => {
+		expect(isFlatTotalItem({ quantity: 2, unit_price_cents: 3000, total_cents: 6000 })).toBe(false);
+	});
+
+	it('returns false for truly empty items (total=0)', () => {
+		expect(isFlatTotalItem({ quantity: 0, unit_price_cents: 0, total_cents: 0 })).toBe(false);
+	});
+
+	it('returns false when only quantity is 0 but price is set', () => {
+		expect(isFlatTotalItem({ quantity: 0, unit_price_cents: 5000, total_cents: 0 })).toBe(false);
+	});
+});
+
+describe('normalizeFlatTotalItem', () => {
+	it('converts flat-total item to qty=1, unit_price=total', () => {
+		const item = { quantity: 0, unit_price_cents: 0, total_cents: 4500 };
+		const result = normalizeFlatTotalItem(item);
+		expect(result.quantity).toBe(1);
+		expect(result.unit_price_cents).toBe(4500);
+		expect(result.total_cents).toBe(4500);
+	});
+
+	it('leaves normal items unchanged', () => {
+		const item = { quantity: 2, unit_price_cents: 3000, total_cents: 6000 };
+		const result = normalizeFlatTotalItem(item);
+		expect(result.quantity).toBe(2);
+		expect(result.unit_price_cents).toBe(3000);
+	});
+
+	it('does not mutate the original item', () => {
+		const item = { quantity: 0, unit_price_cents: 0, total_cents: 4500 };
+		normalizeFlatTotalItem(item);
+		expect(item.quantity).toBe(0);
+		expect(item.unit_price_cents).toBe(0);
+	});
+
+	it('preserves extra fields on the item', () => {
+		const item = { quantity: 0, unit_price_cents: 0, total_cents: 4500, label: 'Fahrkostenpauschale', is_labor: false };
+		const result = normalizeFlatTotalItem(item);
+		expect(result.label).toBe('Fahrkostenpauschale');
+		expect(result.is_labor).toBe(false);
+		expect(result.quantity).toBe(1);
+	});
+
+	it('makes flat-total items compatible with calculateNonLaborCents', () => {
+		const flatItem = { quantity: 0, unit_price_cents: 0, total_cents: 4500 };
+		const normalItem = { quantity: 2, unit_price_cents: 5000, total_cents: 10000 };
+
+		// Without normalization: flat item contributes 0
+		expect(calculateNonLaborCents([flatItem, normalItem])).toBe(10000);
+
+		// With normalization: flat item contributes 4500
+		const normalized = normalizeFlatTotalItem(flatItem);
+		expect(calculateNonLaborCents([normalized, normalItem])).toBe(14500);
 	});
 });

@@ -33,6 +33,7 @@
         startPlz: "",
         startOrt: "",
         startFloor: "",
+        aufzugAuszug: false,
         halteverbotAuszug: false,
         hasZwischenstopp: false,
         zwischenstoppStrasse: "",
@@ -40,12 +41,14 @@
         zwischenstoppPlz: "",
         zwischenstoppOrt: "",
         zwischenstoppFloor: "",
+        aufzugZwischenstopp: false,
         halteverbotZwischenstopp: false,
         endStrasse: "",
         endHausnummer: "",
         endPlz: "",
         endOrt: "",
         endFloor: "",
+        aufzugEinzug: false,
         halteverbotEinzug: false,
         date: "",
         message: "",
@@ -142,6 +145,7 @@
                     startPlz: "",
                     startOrt: "",
                     startFloor: "",
+                    aufzugAuszug: false,
                     halteverbotAuszug: false,
                     hasZwischenstopp: false,
                     zwischenstoppStrasse: "",
@@ -149,12 +153,14 @@
                     zwischenstoppPlz: "",
                     zwischenstoppOrt: "",
                     zwischenstoppFloor: "",
+                    aufzugZwischenstopp: false,
                     halteverbotZwischenstopp: false,
                     endStrasse: "",
                     endHausnummer: "",
                     endPlz: "",
                     endOrt: "",
                     endFloor: "",
+                    aufzugEinzug: false,
                     halteverbotEinzug: false,
                     date: "",
                     message: "",
@@ -328,14 +334,22 @@
                         </select>
                     </div>
 
-                    <div class="angebot-page__form-group angebot-page__form-group--full">
+                    <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
+                        <label class="angebot-page__checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="aufzug-auszug"
+                                bind:checked={formData.aufzugAuszug}
+                            />
+                            <span>Aufzug vorhanden</span>
+                        </label>
                         <label class="angebot-page__checkbox-label">
                             <input
                                 type="checkbox"
                                 name="halteverbot-auszug"
                                 bind:checked={formData.halteverbotAuszug}
                             />
-                            <span>Halteverbot benötigt? (optional)</span>
+                            <span>Halteverbot benötigt?</span>
                         </label>
                     </div>
 
@@ -386,14 +400,22 @@
                             </select>
                         </div>
 
-                        <div class="angebot-page__form-group angebot-page__form-group--full">
+                        <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
+                            <label class="angebot-page__checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="aufzug-zwischenstopp"
+                                    bind:checked={formData.aufzugZwischenstopp}
+                                />
+                                <span>Aufzug vorhanden</span>
+                            </label>
                             <label class="angebot-page__checkbox-label">
                                 <input
                                     type="checkbox"
                                     name="halteverbot-zwischenstopp"
                                     bind:checked={formData.halteverbotZwischenstopp}
                                 />
-                                <span>Halteverbot benötigt? (optional)</span>
+                                <span>Halteverbot benötigt?</span>
                             </label>
                         </div>
                     {/if}
@@ -427,14 +449,22 @@
                         </select>
                     </div>
 
-                    <div class="angebot-page__form-group angebot-page__form-group--full">
+                    <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
+                        <label class="angebot-page__checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="aufzug-einzug"
+                                bind:checked={formData.aufzugEinzug}
+                            />
+                            <span>Aufzug vorhanden</span>
+                        </label>
                         <label class="angebot-page__checkbox-label">
                             <input
                                 type="checkbox"
                                 name="halteverbot-einzug"
                                 bind:checked={formData.halteverbotEinzug}
                             />
-                            <span>Halteverbot benötigt? (optional)</span>
+                            <span>Halteverbot benötigt?</span>
                         </label>
                     </div>
                 </div>
@@ -645,6 +675,12 @@
 
     .angebot-page__form-group--full {
         grid-column: 1 / -1;
+    }
+
+    .angebot-page__form-group--checks {
+        flex-direction: row;
+        gap: var(--space-3);
+        flex-wrap: wrap;
     }
 
     .angebot-page__form-group label {
@@ -906,6 +942,10 @@
 
         .angebot-page__services-grid {
             grid-template-columns: repeat(2, 1fr);
+        }
+
+        .angebot-page__form-group--checks {
+            flex-direction: column;
         }
 
         .angebot-page__section {

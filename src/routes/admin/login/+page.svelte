@@ -6,6 +6,17 @@
 	let email = $state('');
 	let password = $state('');
 
+	/**
+	 * Handles login form submission by calling the auth store login method.
+	 *
+	 * Called by: Template (form onsubmit event)
+	 * Purpose: Prevents the default browser form submission, delegates credential validation
+	 *          to auth.login() which POSTs to POST /api/v1/auth/login, and redirects to
+	 *          the admin dashboard on success. Any error is surfaced via auth.error.
+	 *
+	 * @param e - The native DOM submit event (used to call preventDefault)
+	 * @returns void
+	 */
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		const success = await auth.login(email, password);

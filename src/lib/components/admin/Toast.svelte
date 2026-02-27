@@ -8,6 +8,23 @@
 	let toasts = $state<ToastItem[]>([]);
 	let nextId = 0;
 
+	/**
+	 * Adds a new toast notification to the stack and auto-dismisses it after 4 seconds.
+	 *
+	 * Called by: quotes/[id]/+page.svelte, offers/[id]/+page.svelte,
+	 *            calendar/+page.svelte, settings/+page.svelte,
+	 *            customers/[id]/+page.svelte, emails/[id]/+page.svelte,
+	 *            emails/+page.svelte (all import and call this from the module context)
+	 * Purpose: Provides a single, globally accessible function that any admin page
+	 *          can call to surface transient feedback (save confirmations, API
+	 *          errors, informational messages) without needing to manage toast
+	 *          state locally. Lives in module context so the shared toasts array
+	 *          is not re-created per component instance.
+	 *
+	 * @param message - The text to display inside the toast
+	 * @param type    - Visual variant: 'success' (green), 'error' (red), or
+	 *                  'info' (blue); defaults to 'info'
+	 */
 	export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
 		const id = nextId++;
 		toasts.push({ id, type, message });
@@ -20,6 +37,15 @@
 <script lang="ts">
 	import { X } from 'lucide-svelte';
 
+	/**
+	 * Immediately removes a toast from the visible stack by its unique id.
+	 *
+	 * Called by: Template (onclick of each toast's close button)
+	 * Purpose: Allows the user to manually dismiss a notification before the
+	 *          4-second auto-dismiss timer fires.
+	 *
+	 * @param id - The numeric id of the ToastItem to remove
+	 */
 	function dismiss(id: number) {
 		toasts = toasts.filter((t) => t.id !== id);
 	}

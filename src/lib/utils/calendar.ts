@@ -16,6 +16,23 @@ export interface BaseDaySchedule {
 	};
 }
 
+/**
+ * Builds a grid of calendar day cells for a given month, merging schedule data from the API.
+ *
+ * Called by: admin/calendar/+page.svelte (as a reactive $derived value whenever
+ *            year, month, or schedule data changes)
+ * Purpose: Transforms a flat list of API schedule objects into a Monday-anchored
+ *          grid ready for direct rendering; leading empty cells align the first day
+ *          of the month to the correct weekday column
+ *
+ * @param y - Full calendar year (e.g. 2026)
+ * @param m - Zero-indexed month (0 = January, 11 = December), matching JS Date convention
+ * @param sched - Array of schedule objects from the API, each keyed by ISO date string
+ * @param today - Optional ISO date string representing today (defaults to current local date);
+ *                used to set the isToday flag on the matching cell
+ * @returns Array of CalendarDay cells ordered left-to-right, top-to-bottom; leading
+ *          cells for pre-month padding have date=null and schedule=null
+ */
 export function buildCalendar<S extends BaseDaySchedule>(
 	y: number,
 	m: number,

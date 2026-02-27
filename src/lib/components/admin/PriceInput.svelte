@@ -28,6 +28,18 @@
 		}
 	});
 
+	/**
+	 * Processes each keystroke in the price input field.
+	 *
+	 * Called by: Template (oninput on the number input element)
+	 * Purpose: Keeps the local inputText string in sync with what the user is
+	 *          typing without resetting the cursor position. Converts the entered
+	 *          euro value to integer cents and writes it back to the bindable
+	 *          bruttoCents prop, applying the 19% VAT factor when the component
+	 *          is in netto mode.
+	 *
+	 * @param e - The native input Event fired by the number input element
+	 */
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
 		inputText = target.value;
@@ -41,10 +53,26 @@
 		}
 	}
 
+	/**
+	 * Marks the input as actively being edited when it receives focus.
+	 *
+	 * Called by: Template (onfocus on the number input element)
+	 * Purpose: Suspends the reactive displayValue sync so the user's raw
+	 *          keystrokes are preserved in inputText rather than being
+	 *          overwritten by the formatted derived value on every render.
+	 */
 	function handleFocus() {
 		editing = true;
 	}
 
+	/**
+	 * Marks the input as no longer being edited when it loses focus.
+	 *
+	 * Called by: Template (onblur on the number input element)
+	 * Purpose: Re-enables the $effect that syncs inputText to the formatted
+	 *          displayValue, so the field snaps to the canonical two-decimal
+	 *          representation after the user finishes typing.
+	 */
 	function handleBlur() {
 		editing = false;
 	}

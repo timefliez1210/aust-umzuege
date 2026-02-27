@@ -166,3 +166,49 @@ Booking statuses: pending → confirmed | cancelled
 - **Modals**: Inline in page components, toggled via `$state` booleans
 - **Design**: Neumorphic (soft inset/outset shadows), indigo primary, German UI throughout
 - **Mobile**: 768px breakpoint, 44px touch targets, sidebar becomes drawer, tables scroll horizontally
+
+## Documentation Standards
+
+### Function-Level Documentation (Required)
+
+Every function in admin frontend code MUST have a NatSpec-style block comment directly above it. This applies to all `.svelte` files under `src/routes/admin/`, all files in `src/lib/components/admin/`, and all shared utilities in `src/lib/utils/` and `src/lib/stores/`.
+
+Format:
+
+```ts
+/**
+ * Short one-line description of what the function does.
+ *
+ * Called by: ComponentName.svelte (on event), $effect (on mount)
+ * Purpose: Business reason this function exists
+ *
+ * @param paramName - Description of the parameter
+ * @returns Description of return value
+ *
+ * Math: formula = a * b / c (only for calculation functions)
+ */
+```
+
+Required fields:
+- One-line description (always)
+- Called by (always) — who triggers this function and how
+- Purpose (always) — the business reason, not just a restatement of the description
+- @param (when function has parameters)
+- @returns (when function returns a value)
+- Math (only for functions with calculations — show the formula)
+
+When adding or modifying any function in admin code, you MUST add or update its documentation comment. When reviewing code, flag any undocumented functions.
+
+### Reference Documentation
+
+These documents must be kept up to date when making relevant changes:
+
+- `src/routes/admin/README.md` — Admin dashboard overview, architecture, components, design system. Update when adding new pages, components, or changing architecture.
+- `src/routes/admin/API.md` — Complete API endpoint reference with request/response shapes. Update when adding new API calls, changing endpoint signatures, or modifying request/response interfaces.
+- `src/routes/admin/CLAUDE.md` — This file. Update when adding new pages, components, endpoints, patterns, or conventions.
+
+When making changes to admin code:
+1. Add/update function-level docs on any new or modified functions
+2. If you add a new API endpoint call, add it to API.md
+3. If you add a new page or component, add it to README.md and CLAUDE.md
+4. If you change conventions or patterns, update CLAUDE.md

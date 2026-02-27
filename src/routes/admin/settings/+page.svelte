@@ -38,6 +38,15 @@
 		loadUsers();
 	});
 
+	/**
+	 * Fetches the list of all admin users from the API.
+	 *
+	 * Called by: $effect (on mount), handleCreate, requestDeleteUser (via executeConfirm)
+	 * Purpose: Populates the users list card via GET /api/v1/admin/users so the admin can
+	 *          see every registered account along with their role and creation date.
+	 *
+	 * @returns void
+	 */
 	async function loadUsers() {
 		try {
 			const data = await apiGet<{ users: UserItem[] }>('/api/v1/admin/users');
@@ -49,6 +58,17 @@
 		}
 	}
 
+	/**
+	 * Handles the new-user form submission and registers the account via the API.
+	 *
+	 * Called by: Template (create-user form onsubmit event)
+	 * Purpose: Validates that name, email, and password are all non-empty, then POSTs to
+	 *          POST /api/v1/auth/register to create the new account with the selected role.
+	 *          On success the form is cleared and the user list reloaded.
+	 *
+	 * @param e - The native DOM submit event (used to call preventDefault)
+	 * @returns void
+	 */
 	async function handleCreate(e: Event) {
 		e.preventDefault();
 		if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) return;
@@ -74,6 +94,17 @@
 		}
 	}
 
+	/**
+	 * Opens the confirmation modal configured to delete the specified user.
+	 *
+	 * Called by: Template (trash icon button click on a user row)
+	 * Purpose: Prepopulates the shared confirm modal with a user-specific title and message,
+	 *          then wires the confirm action to POST /api/v1/admin/users/{id}/delete followed
+	 *          by a user list refresh, protecting against accidental deletion.
+	 *
+	 * @param user - The UserItem whose account should be deleted on confirmation
+	 * @returns void
+	 */
 	function requestDeleteUser(user: UserItem) {
 		openConfirm(
 			`Benutzer loeschen`,
@@ -86,6 +117,18 @@
 		);
 	}
 
+	/**
+	 * Handles the change-password form submission and updates the current user's password.
+	 *
+	 * Called by: Template (change-password form onsubmit event)
+	 * Purpose: Validates that the new password and its confirmation match, then POSTs to
+	 *          POST /api/v1/auth/change-password with the current and new passwords.
+	 *          On success all three password fields are cleared so the form is ready for
+	 *          future use; on mismatch a toast error is shown before the API call.
+	 *
+	 * @param e - The native DOM submit event (used to call preventDefault)
+	 * @returns void
+	 */
 	async function handleChangePassword(e: Event) {
 		e.preventDefault();
 		if (changePw !== confirmPw) {
@@ -110,6 +153,18 @@
 	}
 
 	// Confirm modal helpers
+	/**
+	 * Opens the shared confirmation modal with the provided title, message, and async action.
+	 *
+	 * Called by: requestDeleteUser
+	 * Purpose: Centralises modal state setup so multiple destructive actions across the
+	 *          settings page can reuse the same confirm/cancel UI without duplicating markup.
+	 *
+	 * @param title - Heading text displayed inside the modal
+	 * @param message - Body text explaining what will be deleted or changed
+	 * @param action - Async callback executed when the admin clicks the confirm button
+	 * @returns void
+	 */
 	function openConfirm(title: string, message: string, action: () => Promise<void>) {
 		confirmTitle = title;
 		confirmMessage = message;
@@ -118,11 +173,30 @@
 		confirmOpen = true;
 	}
 
+	/**
+	 * Closes the confirmation modal and clears its action callback.
+	 *
+	 * Called by: Template (modal "Abbrechen" button click, backdrop click, Escape keydown via handleKeydown)
+	 * Purpose: Hides the confirm dialog and nullifies the stored action so a stale callback
+	 *          cannot be triggered if the modal is reopened for a different operation.
+	 *
+	 * @returns void
+	 */
 	function closeConfirm() {
 		confirmOpen = false;
 		confirmAction = null;
 	}
 
+	/**
+	 * Executes the action stored in the confirmation modal and closes the modal on completion.
+	 *
+	 * Called by: Template (modal "Unwiderruflich loeschen" confirm button click)
+	 * Purpose: Runs the async action registered by openConfirm (e.g. delete API call),
+	 *          shows a toast on error, and always closes the modal in the finally block
+	 *          regardless of success or failure.
+	 *
+	 * @returns void
+	 */
 	async function executeConfirm() {
 		if (!confirmAction) return;
 		confirmLoading = true;
@@ -136,12 +210,32 @@
 		}
 	}
 
+	/**
+	 * Returns the background colour, text colour, and display label for a user role badge.
+	 *
+	 * Called by: Template ($derived via {@const badge = roleBadge(user.role)} inside the user list)
+	 * Purpose: Centralises the role-to-colour mapping so the user-list card renders consistent
+	 *          visual badges without repeating inline style logic for each row.
+	 *
+	 * @param role - The user's role string (e.g. "admin" or "operator")
+	 * @returns An object with bg (background hex), color (text hex), and text (display label)
+	 */
 	function roleBadge(role: string) {
 		return role === 'admin'
 			? { bg: '#ede9fe', color: '#7c3aed', text: 'Admin' }
 			: { bg: '#dbeafe', color: '#2563eb', text: 'Operator' };
 	}
 
+	/**
+	 * Closes the confirmation modal when the Escape key is pressed anywhere on the page.
+	 *
+	 * Called by: svelte:window onkeydown (global keyboard event listener)
+	 * Purpose: Provides a standard keyboard escape hatch for the modal so the admin can
+	 *          dismiss it without reaching for the mouse, improving accessibility.
+	 *
+	 * @param e - The native KeyboardEvent fired by the window
+	 * @returns void
+	 */
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape' && confirmOpen) closeConfirm();
 	}

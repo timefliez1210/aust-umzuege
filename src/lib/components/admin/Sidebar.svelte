@@ -36,6 +36,18 @@
 		{ href: '/admin/settings', label: 'Einstellungen', icon: Settings }
 	];
 
+	/**
+	 * Determines whether a navigation link should be marked as active.
+	 *
+	 * Called by: Template (inside {#each} via {@const active = isActive(...)})
+	 * Purpose: Provides exact-match logic for the dashboard root and prefix-match
+	 *          logic for all other routes so that nested pages keep their parent
+	 *          link highlighted.
+	 *
+	 * @param href - The href of the navigation link being evaluated
+	 * @param pathname - The current page URL pathname from the $page store
+	 * @returns True if the link should receive the active style, false otherwise
+	 */
 	function isActive(href: string, pathname: string): boolean {
 		if (href === '/admin') return pathname === '/admin';
 		return pathname.startsWith(href);

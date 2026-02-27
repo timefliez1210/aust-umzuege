@@ -91,6 +91,15 @@
 	let videoFileInput = $state<HTMLInputElement>(undefined!);
 	let videoDragging = $state(false);
 
+	/**
+	 * Validates and appends video files to the upload queue, rejecting non-video or oversized files.
+	 *
+	 * Called by: handleVideoSelect (after file picker selection), handleVideoDrop (after drag-and-drop)
+	 * Purpose: Guards the video queue so only valid video files under 500 MB reach the upload step.
+	 *
+	 * @param files - FileList or File array from a file input or drag event
+	 * @returns void (side-effect: appends to `videoFiles`, sets `createError` on rejection)
+	 */
 	function addVideoFiles(files: FileList | File[]) {
 		for (const file of Array.from(files)) {
 			if (!file.type.startsWith('video/')) {
@@ -106,6 +115,16 @@
 		}
 	}
 
+	/**
+	 * Reads files from a video file-input change event and forwards them to addVideoFiles.
+	 *
+	 * Called by: Template (onchange on the hidden video <input type="file">)
+	 * Purpose: Bridges the native file-input event to the shared addVideoFiles validation logic,
+	 *          then resets the input so the same file can be selected again if needed.
+	 *
+	 * @param e - The native change Event from the file input element
+	 * @returns void
+	 */
 	function handleVideoSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		if (!input.files?.length) return;
@@ -113,21 +132,56 @@
 		input.value = '';
 	}
 
+	/**
+	 * Removes a video file from the staged upload queue by index.
+	 *
+	 * Called by: Template (onclick on the Trash2 button next to each queued video)
+	 * Purpose: Lets the user deselect a video before submitting the create-quote form.
+	 *
+	 * @param index - Zero-based position of the file to remove from `videoFiles`
+	 * @returns void
+	 */
 	function removeVideo(index: number) {
 		videoFiles = videoFiles.filter((_, i) => i !== index);
 	}
 
+	/**
+	 * Handles a drag-and-drop event on the video drop zone and forwards files to addVideoFiles.
+	 *
+	 * Called by: Template (ondrop on the video dropzone element)
+	 * Purpose: Allows the user to drop video files directly onto the upload area instead of using the file picker.
+	 *
+	 * @param e - The native DragEvent carrying the dropped files
+	 * @returns void
+	 */
 	function handleVideoDrop(e: DragEvent) {
 		e.preventDefault();
 		videoDragging = false;
 		if (e.dataTransfer?.files) addVideoFiles(e.dataTransfer.files);
 	}
 
+	/**
+	 * Prevents the browser default drag behavior and activates the video drop-zone highlight.
+	 *
+	 * Called by: Template (ondragover on the video dropzone element)
+	 * Purpose: Visual feedback so the user sees that the area accepts video drops.
+	 *
+	 * @param e - The native DragEvent
+	 * @returns void
+	 */
 	function handleVideoDragOver(e: DragEvent) {
 		e.preventDefault();
 		videoDragging = true;
 	}
 
+	/**
+	 * Clears the video drop-zone drag-over highlight when the cursor leaves the zone.
+	 *
+	 * Called by: Template (ondragleave on the video dropzone element)
+	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
+	 *
+	 * @returns void
+	 */
 	function handleVideoDragLeave() {
 		videoDragging = false;
 	}
@@ -169,6 +223,16 @@
 		loadQuotes();
 	});
 
+	/**
+	 * Fetches the paginated quotes list from the API and populates the DataTable.
+	 *
+	 * Called by: $effect (on mount and whenever statusFilter, searchQuery, or offset change)
+	 * Purpose: Loads quote records filtered by status and free-text search, respecting the
+	 *          current pagination offset. Calls GET /api/v1/admin/quotes with query parameters.
+	 *          On error, resets the list to empty so the page stays usable.
+	 *
+	 * @returns void (side-effect: sets `quotes`, `total`, `loading`)
+	 */
 	async function loadQuotes() {
 		loading = true;
 		try {
@@ -189,17 +253,42 @@
 		}
 	}
 
+	/**
+	 * Switches the active status tab filter and reloads the quotes list from page 1.
+	 *
+	 * Called by: Template (onclick on each status tab button — Alle, Offen, Volumen, etc.)
+	 * Purpose: Narrows the quotes table to a single workflow stage without clearing the search input.
+	 *
+	 * @param value - The status string to filter by ('' for all, or e.g. 'pending', 'offer_generated')
+	 * @returns void
+	 */
 	function setFilter(value: string) {
 		statusFilter = value;
 		offset = 0;
 		loadQuotes();
 	}
 
+	/**
+	 * Resets the pagination offset and triggers a new quote search with the current query string.
+	 *
+	 * Called by: Template (oninput or onsubmit on the search input field)
+	 * Purpose: Ensures search results always start from page 1 when the query changes.
+	 *
+	 * @returns void
+	 */
 	function handleSearch() {
 		offset = 0;
 		loadQuotes();
 	}
 
+	/**
+	 * Moves the pagination offset back by one page and reloads the quotes list.
+	 *
+	 * Called by: Template (onclick on the left-chevron pagination button)
+	 * Purpose: Navigates to the previous 20-item page; no-ops if already on page 1.
+	 *
+	 * @returns void
+	 */
 	function prevPage() {
 		if (offset > 0) {
 			offset = Math.max(0, offset - limit);
@@ -207,6 +296,14 @@
 		}
 	}
 
+	/**
+	 * Advances the pagination offset by one page and reloads the quotes list.
+	 *
+	 * Called by: Template (onclick on the right-chevron pagination button)
+	 * Purpose: Navigates to the next 20-item page; no-ops if already on the last page.
+	 *
+	 * @returns void
+	 */
 	function nextPage() {
 		if (offset + limit < total) {
 			offset += limit;
@@ -216,6 +313,16 @@
 
 	let customerSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
+	/**
+	 * Queries the customers API with the current search string and populates the autocomplete dropdown.
+	 *
+	 * Called by: handleCustomerSearchInput (debounced, 250 ms after keystroke)
+	 * Purpose: Allows finding an existing customer by name or email when creating a new quote manually.
+	 *          Calls GET /api/v1/admin/customers?search=...&limit=8.
+	 *          Skips the API call if the query is shorter than 2 characters.
+	 *
+	 * @returns void (side-effect: sets `customerResults`, `showCustomerDropdown`, `customerSearchLoading`)
+	 */
 	async function searchCustomers() {
 		const q = customerSearch.trim();
 		if (q.length < 2) {
@@ -237,17 +344,44 @@
 		}
 	}
 
+	/**
+	 * Debounces keystrokes in the customer search field and schedules a searchCustomers call.
+	 *
+	 * Called by: Template (oninput on the customer search text input)
+	 * Purpose: Prevents a new API request on every keypress by waiting 250 ms since the last keystroke.
+	 *          Cancels any pending timer before scheduling a new one.
+	 *
+	 * @returns void
+	 */
 	function handleCustomerSearchInput() {
 		if (customerSearchTimer) clearTimeout(customerSearchTimer);
 		customerSearchTimer = setTimeout(searchCustomers, 250);
 	}
 
+	/**
+	 * Confirms the user's customer selection from the autocomplete dropdown and closes it.
+	 *
+	 * Called by: Template (onmousedown on each customer-dropdown item)
+	 * Purpose: Stores the chosen customer so the create-quote API call can reference their ID,
+	 *          and updates the search input text to show the selected customer's name or email.
+	 *
+	 * @param c - The CustomerMatch object the user clicked
+	 * @returns void
+	 */
 	function selectCustomer(c: CustomerMatch) {
 		selectedCustomer = c;
 		customerSearch = c.name || c.email;
 		showCustomerDropdown = false;
 	}
 
+	/**
+	 * Resets all customer-selection and new-customer form state back to empty.
+	 *
+	 * Called by: Template (onclick on the clear button next to a selected customer, and on mode toggle)
+	 * Purpose: Allows the user to pick a different customer or switch between existing/new mode cleanly.
+	 *
+	 * @returns void
+	 */
 	function clearCustomer() {
 		selectedCustomer = null;
 		customerSearch = '';
@@ -257,6 +391,16 @@
 		newCustomerPhone = '';
 	}
 
+	/**
+	 * Compiles all selected service flags and free-text extras into a single comma-separated notes string.
+	 *
+	 * Called by: handleCreateQuote (to assemble the `notes` field of the POST /api/v1/admin/quotes body)
+	 * Purpose: Converts the checkbox-driven service selection (Halteverbot, Montage, etc.) into the
+	 *          plain-text notes format that the API and pricing engine expect for downstream line-item
+	 *          auto-generation.
+	 *
+	 * @returns A comma-separated string of active services and extra notes, or '' if nothing is selected.
+	 */
 	function buildNotes(): string {
 		const parts: string[] = [];
 		if (originFloor) parts.push(`Auszug: ${originFloor}`);
@@ -272,6 +416,16 @@
 		return parts.join(', ');
 	}
 
+	/**
+	 * Validates image files and appends them to the photo queue with blob-URL previews.
+	 *
+	 * Called by: handleDrop (on drag-and-drop), handleFileSelect (on file-picker selection)
+	 * Purpose: Guards the photo queue against non-image files and duplicates (matched by name + size),
+	 *          and generates object URLs so thumbnail previews can be rendered immediately.
+	 *
+	 * @param files - FileList or File array from a file input or drag event
+	 * @returns void (side-effect: appends to `photoFiles` and `photoPreviews`)
+	 */
 	function addPhotos(files: FileList | File[]) {
 		for (const file of files) {
 			if (!file.type.startsWith('image/')) continue;
@@ -282,33 +436,94 @@
 		}
 	}
 
+	/**
+	 * Removes a photo from the staged queue and revokes its blob preview URL to free memory.
+	 *
+	 * Called by: Template (onclick on the remove button of each photo thumbnail)
+	 * Purpose: Lets the user deselect a photo before submitting the create-quote form,
+	 *          and cleans up object URLs to prevent memory leaks.
+	 *
+	 * @param index - Zero-based position of the file to remove from `photoFiles` and `photoPreviews`
+	 * @returns void
+	 */
 	function removePhoto(index: number) {
 		URL.revokeObjectURL(photoPreviews[index]);
 		photoFiles = photoFiles.filter((_, i) => i !== index);
 		photoPreviews = photoPreviews.filter((_, i) => i !== index);
 	}
 
+	/**
+	 * Handles a drag-and-drop event on the photo drop zone and forwards files to addPhotos.
+	 *
+	 * Called by: Template (ondrop on the photo dropzone element in 'photos' volume mode)
+	 * Purpose: Allows the user to drop image files onto the upload area without opening a file picker.
+	 *
+	 * @param e - The native DragEvent carrying the dropped files
+	 * @returns void
+	 */
 	function handleDrop(e: DragEvent) {
 		e.preventDefault();
 		draggingOver = false;
 		if (e.dataTransfer?.files) addPhotos(e.dataTransfer.files);
 	}
 
+	/**
+	 * Prevents the browser default drag behavior and activates the photo drop-zone highlight.
+	 *
+	 * Called by: Template (ondragover on the photo dropzone element)
+	 * Purpose: Visual feedback so the user sees that the area accepts image drops.
+	 *
+	 * @param e - The native DragEvent
+	 * @returns void
+	 */
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
 		draggingOver = true;
 	}
 
+	/**
+	 * Clears the photo drop-zone drag-over highlight when the cursor leaves the zone.
+	 *
+	 * Called by: Template (ondragleave on the photo dropzone element)
+	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
+	 *
+	 * @returns void
+	 */
 	function handleDragLeave() {
 		draggingOver = false;
 	}
 
+	/**
+	 * Reads image files from a file-input change event and forwards them to addPhotos.
+	 *
+	 * Called by: Template (onchange on the hidden photo <input type="file">)
+	 * Purpose: Bridges the native file-input event to the addPhotos validation and preview logic,
+	 *          then resets the input so the same files can be re-selected if needed.
+	 *
+	 * @param e - The native change Event from the file input element
+	 * @returns void
+	 */
 	function handleFileSelect(e: Event) {
 		const input = e.target as HTMLInputElement;
 		if (input.files) addPhotos(input.files);
 		input.value = '';
 	}
 
+	/**
+	 * Validates the create-quote form, creates the quote via the API, and optionally uploads media.
+	 *
+	 * Called by: Template (onclick on the "Anfrage erstellen" submit button)
+	 * Purpose: Orchestrates the full quote-creation workflow:
+	 *          1. Validates required fields (customer, addresses, media in photo/video mode).
+	 *          2. Optionally creates a new customer first via POST /api/v1/admin/customers.
+	 *          3. Creates the quote via POST /api/v1/admin/quotes.
+	 *          4. If volumeMode is 'photos', uploads images via POST /api/v1/estimates/depth-sensor
+	 *             to trigger the vision pipeline and auto-offer generation.
+	 *          5. If volumeMode is 'video', uploads videos via POST /api/v1/estimates/video.
+	 *          6. Navigates to the new quote's detail page.
+	 *
+	 * @returns void (side-effect: navigates to /admin/quotes/{id} on success, sets `createError` on failure)
+	 */
 	async function handleCreateQuote() {
 		if (customerMode === 'existing' && !selectedCustomer) {
 			createError = 'Bitte Kunde auswählen';

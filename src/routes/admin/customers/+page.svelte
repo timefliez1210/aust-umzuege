@@ -46,6 +46,16 @@
 		loadCustomers();
 	});
 
+	/**
+	 * Fetches a paginated, optionally filtered list of customers from the API.
+	 *
+	 * Called by: $effect (on mount and whenever searchQuery, offset, or sortKey changes),
+	 *            handleSearch, prevPage, nextPage
+	 * Purpose: Populates the DataTable with the current page of customer records, supporting
+	 *          server-side search and offset-based pagination via GET /api/v1/admin/customers.
+	 *
+	 * @returns void
+	 */
 	async function loadCustomers() {
 		loading = true;
 		try {
@@ -64,19 +74,56 @@
 		}
 	}
 
+	/**
+	 * Resets pagination to the first page and triggers a fresh customer search.
+	 *
+	 * Called by: Template (search input onkeydown Enter)
+	 * Purpose: Ensures that when a new search term is typed the result set always starts
+	 *          from page 1 rather than an arbitrary mid-list offset.
+	 *
+	 * @returns void
+	 */
 	function handleSearch() {
 		offset = 0;
 		loadCustomers();
 	}
 
+	/**
+	 * Navigates to the previous page of the customer list.
+	 *
+	 * Called by: Template (previous-page pagination button click)
+	 * Purpose: Decrements the offset by one page length (clamped to 0) and reloads the
+	 *          customer list so the user can browse backwards through results.
+	 *
+	 * @returns void
+	 */
 	function prevPage() {
 		if (offset > 0) { offset = Math.max(0, offset - limit); loadCustomers(); }
 	}
 
+	/**
+	 * Navigates to the next page of the customer list.
+	 *
+	 * Called by: Template (next-page pagination button click)
+	 * Purpose: Increments the offset by one page length when more records exist beyond the
+	 *          current window and reloads the list to show the following page.
+	 *
+	 * @returns void
+	 */
 	function nextPage() {
 		if (offset + limit < total) { offset += limit; loadCustomers(); }
 	}
 
+	/**
+	 * Creates a new customer record via the API and navigates to the new customer's detail page.
+	 *
+	 * Called by: Template (create-form submit button click and Enter keydown on email/phone inputs)
+	 * Purpose: Validates that an e-mail address has been provided, then POSTs the new customer
+	 *          data to POST /api/v1/admin/customers. On success the admin is redirected to the
+	 *          created customer's detail page to continue editing.
+	 *
+	 * @returns void
+	 */
 	async function handleCreateCustomer() {
 		if (!createEmail.trim()) {
 			createError = 'E-Mail ist erforderlich';

@@ -54,14 +54,37 @@
 		return () => observer.disconnect();
 	});
 
+	/**
+	 * Moves to the previous image in the gallery.
+	 *
+	 * Called by: Template (onclick of the previous-image nav button), handleKeydown
+	 * Purpose: Decrements currentIndex so the gallery displays the preceding image.
+	 *          Guards against going below index 0 to avoid out-of-bounds access.
+	 */
 	function prev() {
 		if (currentIndex > 0) currentIndex--;
 	}
 
+	/**
+	 * Moves to the next image in the gallery.
+	 *
+	 * Called by: Template (onclick of the next-image nav button), handleKeydown
+	 * Purpose: Increments currentIndex so the gallery displays the following image.
+	 *          Guards against exceeding the last index of the images array.
+	 */
 	function next() {
 		if (currentIndex < images.length - 1) currentIndex++;
 	}
 
+	/**
+	 * Handles keyboard events dispatched on the window while the lightbox is open.
+	 *
+	 * Called by: Template (svelte:window onkeydown binding)
+	 * Purpose: Provides keyboard accessibility — Escape closes the lightbox, and
+	 *          ArrowLeft/ArrowRight navigate between images in gallery mode.
+	 *
+	 * @param e - The KeyboardEvent from the window keydown listener
+	 */
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			onclose();
@@ -72,6 +95,16 @@
 		}
 	}
 
+	/**
+	 * Closes the lightbox when the user clicks directly on the semi-transparent backdrop.
+	 *
+	 * Called by: Template (onclick on the .backdrop element)
+	 * Purpose: Allows the user to dismiss the lightbox by clicking outside the
+	 *          image area. The target/currentTarget check ensures clicks on child
+	 *          elements (image, buttons) do not trigger a close.
+	 *
+	 * @param e - The MouseEvent from the backdrop click listener
+	 */
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
 			onclose();

@@ -49,6 +49,17 @@
 		loadThreads();
 	});
 
+	/**
+	 * Fetches a paginated, optionally searched list of email threads from the API.
+	 *
+	 * Called by: $effect (on mount and whenever searchQuery or offset changes),
+	 *            handleSearch, prevPage, nextPage
+	 * Purpose: Populates the DataTable with the current page of email thread summaries
+	 *          via GET /api/v1/admin/emails, supporting server-side search across customer
+	 *          name, email address, and subject line.
+	 *
+	 * @returns void
+	 */
 	async function loadThreads() {
 		loading = true;
 		try {
@@ -67,19 +78,56 @@
 		}
 	}
 
+	/**
+	 * Resets pagination to the first page and triggers a fresh email thread search.
+	 *
+	 * Called by: Template (search input onkeydown Enter)
+	 * Purpose: Ensures that when a new search term is entered the result set always starts
+	 *          from page 1 rather than a mid-list offset from a previous query.
+	 *
+	 * @returns void
+	 */
 	function handleSearch() {
 		offset = 0;
 		loadThreads();
 	}
 
+	/**
+	 * Navigates to the previous page of the email thread list.
+	 *
+	 * Called by: Template (previous-page pagination button click)
+	 * Purpose: Decrements the offset by one page length (clamped to 0) and reloads the
+	 *          thread list so the admin can browse backwards through correspondence history.
+	 *
+	 * @returns void
+	 */
 	function prevPage() {
 		if (offset > 0) { offset = Math.max(0, offset - limit); loadThreads(); }
 	}
 
+	/**
+	 * Navigates to the next page of the email thread list.
+	 *
+	 * Called by: Template (next-page pagination button click)
+	 * Purpose: Increments the offset by one page length when further threads exist and
+	 *          reloads the list to display the following page of results.
+	 *
+	 * @returns void
+	 */
 	function nextPage() {
 		if (offset + limit < total) { offset += limit; loadThreads(); }
 	}
 
+	/**
+	 * Composes and saves a new outbound email thread as a draft via the API.
+	 *
+	 * Called by: Template ("Erstellen" button click in the compose form)
+	 * Purpose: Validates that all three required compose fields are non-empty, then POSTs
+	 *          to POST /api/v1/admin/emails/compose to create a draft message in a new thread.
+	 *          On success the admin is redirected to the newly created thread's detail page.
+	 *
+	 * @returns void
+	 */
 	async function handleCompose() {
 		if (!composeEmail.trim() || !composeSubject.trim() || !composeBody.trim()) return;
 		composing = true;
@@ -98,6 +146,15 @@
 		}
 	}
 
+	/**
+	 * Dismisses the compose panel and clears all draft compose fields.
+	 *
+	 * Called by: Template ("Abbrechen" button click in the compose form)
+	 * Purpose: Hides the compose form without saving and resets recipient, subject, and body
+	 *          state so the form starts blank the next time it is opened.
+	 *
+	 * @returns void
+	 */
 	function cancelCompose() {
 		showCompose = false;
 		composeEmail = '';

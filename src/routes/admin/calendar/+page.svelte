@@ -53,6 +53,17 @@
 		loadSchedule();
 	});
 
+	/**
+	 * Fetches the booking schedule for the currently displayed calendar month.
+	 *
+	 * Called by: $effect (on mount and whenever currentDate changes), prevMonth, nextMonth,
+	 *            saveCapacity, createBooking, confirmBooking, cancelBooking, deleteBooking
+	 * Purpose: Requests the full month's day schedules from
+	 *          GET /api/v1/calendar/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD and stores them
+	 *          so the calendar grid and day-detail modal stay consistent with server state.
+	 *
+	 * @returns void
+	 */
 	async function loadSchedule() {
 		loading = true;
 		try {
@@ -68,16 +79,46 @@
 		}
 	}
 
+	/**
+	 * Navigates the calendar view to the previous month and reloads its schedule.
+	 *
+	 * Called by: Template (left chevron navigation button click)
+	 * Purpose: Moves currentDate back by one month, which reactively updates the derived
+	 *          year, month, and monthName values and triggers a fresh schedule load.
+	 *
+	 * @returns void
+	 */
 	function prevMonth() {
 		currentDate = new Date(year, month - 1, 1);
 		loadSchedule();
 	}
 
+	/**
+	 * Navigates the calendar view to the next month and reloads its schedule.
+	 *
+	 * Called by: Template (right chevron navigation button click)
+	 * Purpose: Moves currentDate forward by one month, which reactively updates the derived
+	 *          year, month, and monthName values and triggers a fresh schedule load.
+	 *
+	 * @returns void
+	 */
 	function nextMonth() {
 		currentDate = new Date(year, month + 1, 1);
 		loadSchedule();
 	}
 
+	/**
+	 * Opens the day-detail modal for a calendar cell, synthesising a default schedule if none exists.
+	 *
+	 * Called by: Template (calendar cell button click)
+	 * Purpose: Sets selectedDay to the existing DaySchedule for the clicked date or to a
+	 *          default object with capacity 1 and zero bookings when the API returned no data
+	 *          for that day. Also seeds capacityInput and resets the create-booking form.
+	 *
+	 * @param day - The DaySchedule from the API for this date, or null if no data exists
+	 * @param dateNum - The day-of-month number (1–31), or null for a padding cell
+	 * @returns void
+	 */
 	function selectDay(day: DaySchedule | null, dateNum: number | null) {
 		if (!dateNum) return;
 		const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
@@ -87,6 +128,16 @@
 		newBooking = { customer_name: '', customer_email: '', description: '' };
 	}
 
+	/**
+	 * Persists the capacity override for the currently selected day to the API.
+	 *
+	 * Called by: Template ("Speichern" button click in the capacity section of the day modal)
+	 * Purpose: PUTs the new integer capacity value to PUT /api/v1/calendar/capacity/{date},
+	 *          then reloads the schedule and updates selectedDay so the capacity badge in
+	 *          the calendar cell and modal reflect the change immediately.
+	 *
+	 * @returns void
+	 */
 	async function saveCapacity() {
 		if (!selectedDay) return;
 		savingCapacity = true;
@@ -107,6 +158,16 @@
 		}
 	}
 
+	/**
+	 * Creates a new manual booking for the selected day via the API.
+	 *
+	 * Called by: Template ("Buchung erstellen" button click in the create-booking form)
+	 * Purpose: POSTs the new booking details (customer name, email, description) to
+	 *          POST /api/v1/calendar/bookings, resets the inline form, reloads the schedule,
+	 *          and updates selectedDay so the new entry appears in the day-detail modal.
+	 *
+	 * @returns void
+	 */
 	async function createBooking() {
 		if (!selectedDay) return;
 		creatingBooking = true;
@@ -131,6 +192,17 @@
 		}
 	}
 
+	/**
+	 * Transitions a booking's status to "confirmed" via the API.
+	 *
+	 * Called by: Template (confirm icon button click on a booking item in the day modal)
+	 * Purpose: PATCHes the booking status to "confirmed" via PATCH /api/v1/calendar/bookings/{id},
+	 *          then reloads the schedule and refreshes selectedDay so the StatusBadge updates
+	 *          and the confirm button is hidden for the now-confirmed booking.
+	 *
+	 * @param bookingId - The ID of the booking to confirm
+	 * @returns void
+	 */
 	async function confirmBooking(bookingId: string) {
 		if (!selectedDay) return;
 		try {
@@ -145,6 +217,17 @@
 		}
 	}
 
+	/**
+	 * Transitions a booking's status to "cancelled" via the API.
+	 *
+	 * Called by: Template (cancel/X icon button click on a booking item in the day modal)
+	 * Purpose: PATCHes the booking status to "cancelled" via PATCH /api/v1/calendar/bookings/{id},
+	 *          then reloads the schedule and refreshes selectedDay so the StatusBadge updates
+	 *          and the cancel button is hidden for the now-cancelled booking.
+	 *
+	 * @param bookingId - The ID of the booking to cancel
+	 * @returns void
+	 */
 	async function cancelBooking(bookingId: string) {
 		if (!selectedDay) return;
 		try {
@@ -159,6 +242,18 @@
 		}
 	}
 
+	/**
+	 * Permanently deletes a booking from the selected day after a confirmation prompt.
+	 *
+	 * Called by: Template (trash icon button click on a booking item in the day modal)
+	 * Purpose: Presents a native confirm dialog as a safety gate, then issues a DELETE to
+	 *          DELETE /api/v1/calendar/bookings/{id}. After success the schedule is reloaded;
+	 *          if the deleted booking was the last one for the day, selectedDay is cleared
+	 *          to close the modal.
+	 *
+	 * @param bookingId - The ID of the booking to permanently delete
+	 * @returns void
+	 */
 	async function deleteBooking(bookingId: string) {
 		if (!selectedDay) return;
 		if (!confirm('Buchung unwiderruflich loeschen?')) return;

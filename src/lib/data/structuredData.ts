@@ -106,6 +106,23 @@ export const businessInfo = {
 		"Professionelle Umzüge, Haushaltsauflösungen und Montagen in Hildesheim und Umgebung",
 	telephone: "+4951217558379",
 	email: "info@aust-umzuege.de",
+	contactPoint: [
+		{
+			"@type": "ContactPoint",
+			telephone: "+4951217558379",
+			contactType: "customer service",
+			availableLanguage: "German",
+			areaServed: "DE"
+		},
+		{
+			"@type": "ContactPoint",
+			telephone: "+4917670745281",
+			contactType: "customer service",
+			contactOption: "https://api.whatsapp.com/send?phone=4917670745281",
+			availableLanguage: "German",
+			areaServed: "DE"
+		}
+	],
 	address: {
 		"@type": "PostalAddress",
 		streetAddress: "Kaiserstr. 32",

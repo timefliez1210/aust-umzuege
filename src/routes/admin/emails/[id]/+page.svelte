@@ -52,6 +52,16 @@
 		loadThread();
 	});
 
+	/**
+	 * Fetches the full email thread including all messages for the current route ID.
+	 *
+	 * Called by: $effect (on mount), sendDraft, discardDraft, saveEdit, saveReply (after mutations)
+	 * Purpose: Loads thread metadata and the ordered message list from
+	 *          GET /api/v1/admin/emails/{id} so the conversation view stays in sync with
+	 *          the server state after every action.
+	 *
+	 * @returns void
+	 */
 	async function loadThread() {
 		loading = true;
 		error = '';
@@ -64,6 +74,17 @@
 		}
 	}
 
+	/**
+	 * Sends a saved draft message to the customer after a confirmation prompt.
+	 *
+	 * Called by: Template ("Senden" button click on a draft message bubble)
+	 * Purpose: Asks the admin to confirm before transmission, then POSTs to
+	 *          POST /api/v1/admin/emails/messages/{msgId}/send to dispatch the email.
+	 *          Reloads the thread on success so the message status updates to "sent".
+	 *
+	 * @param msgId - The ID of the draft message to send
+	 * @returns void
+	 */
 	async function sendDraft(msgId: string) {
 		if (!confirm('E-Mail jetzt an den Kunden senden?')) return;
 		actionLoading = msgId;
@@ -78,6 +99,17 @@
 		}
 	}
 
+	/**
+	 * Discards a draft message after a confirmation prompt.
+	 *
+	 * Called by: Template ("Verwerfen" button click on a draft message bubble)
+	 * Purpose: Presents a confirmation dialog to prevent accidental discards, then POSTs to
+	 *          POST /api/v1/admin/emails/messages/{msgId}/discard to permanently delete the
+	 *          draft. The thread is reloaded so the discarded message disappears from the UI.
+	 *
+	 * @param msgId - The ID of the draft message to discard
+	 * @returns void
+	 */
 	async function discardDraft(msgId: string) {
 		if (!confirm('Entwurf verwerfen?')) return;
 		actionLoading = msgId;
@@ -92,18 +124,49 @@
 		}
 	}
 
+	/**
+	 * Opens the inline edit form for a draft message, pre-filling it with the current content.
+	 *
+	 * Called by: Template ("Bearbeiten" button click on a draft message bubble)
+	 * Purpose: Sets the active editing ID and seeds the editable subject and body fields with
+	 *          the draft's existing text so the admin can make targeted changes without
+	 *          rewriting the whole message from scratch.
+	 *
+	 * @param msg - The draft EmailMessage object whose content should be loaded into the editor
+	 * @returns void
+	 */
 	function startEdit(msg: EmailMessage) {
 		editingId = msg.id;
 		editSubject = msg.subject || '';
 		editBody = msg.body_text || '';
 	}
 
+	/**
+	 * Closes the inline draft editor and clears temporary edit state without saving.
+	 *
+	 * Called by: Template ("Abbrechen" button click inside the edit form)
+	 * Purpose: Resets editingId, editSubject, and editBody so the message bubble reverts to
+	 *          read-only view and no partial edits linger in state.
+	 *
+	 * @returns void
+	 */
 	function cancelEdit() {
 		editingId = null;
 		editSubject = '';
 		editBody = '';
 	}
 
+	/**
+	 * Saves the edited subject and body of a draft message to the API.
+	 *
+	 * Called by: Template ("Speichern" button click inside the inline edit form)
+	 * Purpose: PATCHes the draft message via PATCH /api/v1/admin/emails/messages/{msgId}
+	 *          with the updated subject and body text, then closes the editor and reloads
+	 *          the thread to reflect the saved content.
+	 *
+	 * @param msgId - The ID of the draft message being edited
+	 * @returns void
+	 */
 	async function saveEdit(msgId: string) {
 		saving = true;
 		try {
@@ -121,6 +184,16 @@
 		}
 	}
 
+	/**
+	 * Creates a new outbound reply message as a draft within the current thread.
+	 *
+	 * Called by: Template ("Als Entwurf speichern" button click in the reply composer)
+	 * Purpose: Validates that the reply body is non-empty, then POSTs to
+	 *          POST /api/v1/admin/emails/{id}/reply to append a draft reply to the thread.
+	 *          Clears the reply form and reloads the thread so the new draft appears inline.
+	 *
+	 * @returns void
+	 */
 	async function saveReply() {
 		if (!replyBody.trim()) return;
 		replying = true;

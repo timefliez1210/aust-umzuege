@@ -57,6 +57,8 @@ Separate SPA with its own layout, auth, and API layer. **See `src/routes/admin/C
 - SPA fallback: `svelte.config.js` → `fallback: 'admin.html'`
 - Not indexed: noindex meta, excluded from sitemap
 - Stores/utils use `.svelte.ts` extension (Svelte 5 runes)
+- Documentation: function-level NatSpec required, see `src/routes/admin/CLAUDE.md` for standards
+- Reference docs: `src/routes/admin/README.md` (overview), `src/routes/admin/API.md` (endpoints)
 
 ### Admin file locations
 - `src/routes/admin/` — pages (dashboard, quotes, offers, customers, emails, calendar, settings)

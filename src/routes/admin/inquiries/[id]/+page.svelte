@@ -12,91 +12,109 @@
 	import { normalizeFlatTotalItem } from '$lib/utils/pricing';
 	import { ArrowLeft, Save, FileOutput, RotateCcw, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video, Download, ImagePlus } from 'lucide-svelte';
 
-	interface Address {
+	interface AddressSnapshot {
 		id: string;
 		street: string;
 		city: string;
 		postal_code: string | null;
+		country: string;
 		floor: string | null;
 		elevator: boolean | null;
+		needs_parking_ban: boolean | null;
+		latitude: number | null;
+		longitude: number | null;
 	}
 
-	interface Customer {
+	interface CustomerSnapshot {
 		id: string;
 		name: string | null;
 		email: string;
 		phone: string | null;
 	}
 
-	interface EstimationItem {
+	interface ItemSnapshot {
 		name: string;
 		volume_m3: number;
 		quantity: number;
 		confidence: number;
+		category: string | null;
+		dimensions: unknown | null;
 		crop_url: string | null;
 		source_image_url: string | null;
 		bbox: number[] | null;
-		crop_s3_key?: string | null;
-		bbox_image_index?: number | null;
-		seen_in_images?: number[] | null;
-		category?: string | null;
-		dimensions?: unknown | null;
+		bbox_image_index: number | null;
+		seen_in_images: number[] | null;
 	}
 
-	interface EstimationEntry {
+	interface EstimationSnapshot {
 		id: string;
 		method: string;
 		status: string;
 		total_volume_m3: number | null;
+		confidence_score: number | null;
 		item_count: number;
-		created_at: string;
-		source_video_url: string | null;
-		source_image_urls: string[];
-	}
-
-	interface OfferSummary {
-		id: string;
-		total_brutto_cents: number | null;
-		status: string;
+		source_images: string[];
+		source_video: string | null;
 		created_at: string;
 	}
 
-	interface OfferLineItemDetail {
+	interface LineItemSnapshot {
 		label: string;
 		remark: string | null;
 		quantity: number;
 		unit_price_cents: number;
 		total_cents: number;
 		is_labor: boolean;
+		is_flat_total: boolean;
 	}
 
-	interface LatestOfferPricing {
-		offer_id: string;
+	interface OfferSnapshot {
+		id: string;
+		offer_number: string | null;
+		status: string;
 		persons: number;
 		hours: number;
 		rate_cents: number;
 		total_netto_cents: number;
 		total_brutto_cents: number;
-		line_items: OfferLineItemDetail[];
+		line_items: LineItemSnapshot[];
+		pdf_url: string | null;
+		valid_until: string | null;
+		created_at: string;
 	}
 
-	interface QuoteDetail {
-		quote: {
-			id: string;
-			volume_m3: number | null;
-			distance_km: number;
-			notes: string | null;
-			status: string;
-			customer_message: string | null;
-			created_at: string;
-		};
-		customer: Customer;
-		origin_address: Address | null;
-		destination_address: Address | null;
-		estimations: EstimationEntry[];
-		items: EstimationItem[];
-		offers: OfferSummary[];
-		latest_offer: LatestOfferPricing | null;
+	interface Services {
+		packing: boolean;
+		assembly: boolean;
+		disassembly: boolean;
+		storage: boolean;
+		disposal: boolean;
+		parking_ban_origin: boolean;
+		parking_ban_destination: boolean;
+	}
+
+	interface InquiryResponse {
+		id: string;
+		status: string;
+		source: string;
+		services: Services;
+		volume_m3: number | null;
+		distance_km: number | null;
+		preferred_date: string | null;
+		notes: string | null;
+		customer_message: string | null;
+		created_at: string;
+		updated_at: string;
+		offer_sent_at: string | null;
+		accepted_at: string | null;
+
+		customer: CustomerSnapshot | null;
+		origin_address: AddressSnapshot | null;
+		destination_address: AddressSnapshot | null;
+		stop_address: AddressSnapshot | null;
+		estimation: EstimationSnapshot | null;
+		items: ItemSnapshot[];
+		offer: OfferSnapshot | null;
 	}
 
 	interface EditableItem {
@@ -107,14 +125,13 @@
 		crop_url: string | null;
 		source_image_url: string | null;
 		bbox: number[] | null;
-		crop_s3_key: string | null;
 		bbox_image_index: number | null;
 		seen_in_images: number[] | null;
 		category: string | null;
 		dimensions: unknown | null;
 	}
 
-	let data = $state<QuoteDetail | null>(null);
+	let data = $state<InquiryResponse | null>(null);
 	let loading = $state(true);
 	let saving = $state(false);
 	let savingItems = $state(false);
@@ -222,10 +239,10 @@
 	}
 
 	/**
-	 * Auto-generates a suggested set of extra line items by scanning the quote notes for service keywords.
+	 * Auto-generates a suggested set of extra line items by scanning the inquiry notes for service keywords.
 	 *
-	 * Called by: computePricingDefaults (after loading a new quote), Template (no direct call — triggered via computePricingDefaults)
-	 * Purpose: Reduces manual data entry by pre-filling line items from structured notes entered at quote creation.
+	 * Called by: computePricingDefaults (after loading a new inquiry), Template (no direct call — triggered via computePricingDefaults)
+	 * Purpose: Reduces manual data entry by pre-filling line items from structured notes entered at inquiry creation.
 	 *          The backend will independently re-generate Fahrkostenpauschale via ORS, so it is not included here.
 	 *          Matches the auto-generation logic in the backend's `build_line_items()`.
 	 *
@@ -439,7 +456,7 @@
 	let photoDragging = $state(false);
 
 	/**
-	 * Downloads all source photos and videos for the quote as a single ZIP archive via the browser.
+	 * Downloads all source photos and videos for the inquiry as a single ZIP archive via the browser.
 	 *
 	 * Called by: Template (onclick on the "Alle Medien herunterladen" button in the photos card)
 	 * Purpose: Provides the admin with an offline copy of all customer-supplied media in one action,
@@ -483,10 +500,10 @@
 			await Promise.all([...imgPromises, ...vidPromises]);
 
 			const content = await zip.generateAsync({ type: 'blob' });
-			const quoteId = data.quote.id.slice(0, 8);
+			const inquiryId = data.id.slice(0, 8);
 			const link = document.createElement('a');
 			link.href = URL.createObjectURL(content);
-			link.download = `medien_${quoteId}.zip`;
+			link.download = `medien_${inquiryId}.zip`;
 			link.click();
 			URL.revokeObjectURL(link.href);
 
@@ -503,17 +520,17 @@
 	 *
 	 * Called by: Template (onclick on the X button next to each photo thumbnail and on failed estimation rows)
 	 * Purpose: Removes a bad or duplicate AI analysis run so it no longer influences the volume total
-	 *          or item list. Calls DELETE /api/v1/estimates/{estimationId} then reloads the quote.
+	 *          or item list. Calls DELETE /api/v1/estimates/{estimationId} then reloads the inquiry.
 	 *
 	 * @param estimationId - UUID of the EstimationEntry to delete
-	 * @returns void (side-effect: shows toast, calls loadQuote on success)
+	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
 	 */
 	async function deleteEstimation(estimationId: string) {
 		if (!confirm('Diese Analyse und alle zugehörigen Gegenstände werden gelöscht.')) return;
 		try {
 			await apiDelete(`/api/v1/estimates/${estimationId}`);
 			showToast('Analyse gelöscht', 'success');
-			await loadQuote();
+			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		}
@@ -621,11 +638,11 @@
 	 *
 	 * Called by: Template (onclick on the "Fotos analysieren" button in the photo-analysis card)
 	 * Purpose: Sends the queued images to the AI volume estimation pipeline via
-	 *          POST /api/v1/estimates/depth-sensor (multipart FormData with quote_id and images[]).
+	 *          POST /api/v1/inquiries/{id}/estimate/depth (multipart FormData with images[]).
 	 *          After upload, polls for estimation completion via pollEstimations if any results are
-	 *          still processing, or falls back to loadQuote if all are already complete.
+	 *          still processing, or falls back to loadInquiry if all are already complete.
 	 *
-	 * @returns void (side-effect: clears `photoQueue`, shows toast, calls pollEstimations or loadQuote)
+	 * @returns void (side-effect: clears `photoQueue`, shows toast, calls pollEstimations or loadInquiry)
 	 */
 	async function uploadPhotos() {
 		if (photoQueue.length === 0 || !data) return;
@@ -636,12 +653,11 @@
 
 		try {
 			const formData = new FormData();
-			formData.append('quote_id', data.quote.id);
 			for (const file of photoQueue) {
 				formData.append('images', file);
 			}
 
-			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/estimates/depth-sensor`, {
+			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/inquiries/${data.id}/estimate/depth`, {
 				method: 'POST',
 				body: formData,
 			});
@@ -653,7 +669,7 @@
 			if (processingIds.length > 0) {
 				await pollEstimations(processingIds);
 			} else {
-				await loadQuote();
+				await loadInquiry();
 			}
 		} catch (e) {
 			showToast((e as Error).message, 'error');
@@ -779,10 +795,10 @@
 	 *
 	 * Called by: Template (onclick on the "Videos analysieren" button in the video-analysis card)
 	 * Purpose: Sends queued videos to the AI volume estimation pipeline via
-	 *          POST /api/v1/estimates/video (multipart FormData with quote_id and video fields).
+	 *          POST /api/v1/inquiries/{id}/estimate/video (multipart FormData with video fields).
 	 *          After upload, polls for completion via pollEstimations if any results are still processing.
 	 *
-	 * @returns void (side-effect: clears `videoQueue`, shows toast, calls pollEstimations or loadQuote)
+	 * @returns void (side-effect: clears `videoQueue`, shows toast, calls pollEstimations or loadInquiry)
 	 */
 	async function uploadVideos() {
 		if (videoQueue.length === 0 || !data) return;
@@ -793,12 +809,11 @@
 
 		try {
 			const formData = new FormData();
-			formData.append('quote_id', data.quote.id);
 			for (const file of videoQueue) {
 				formData.append('video', file);
 			}
 
-			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/estimates/video`, {
+			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/inquiries/${data.id}/estimate/video`, {
 				method: 'POST',
 				body: formData,
 			});
@@ -810,7 +825,7 @@
 			if (processingIds.length > 0) {
 				await pollEstimations(processingIds);
 			} else {
-				await loadQuote();
+				await loadInquiry();
 			}
 		} catch (e) {
 			showToast((e as Error).message, 'error');
@@ -825,12 +840,12 @@
 	 *
 	 * Called by: uploadPhotos (after a photo upload), uploadVideos (after a video upload)
 	 * Purpose: AI estimation runs asynchronously on the server; this loop keeps the UI informed of
-	 *          progress and reloads the quote once all submitted estimations finish (or fail).
+	 *          progress and reloads the inquiry once all submitted estimations finish (or fail).
 	 *          Polls GET /api/v1/estimates/{id} for each pending estimation ID.
 	 *          Times out after 120 attempts (10 minutes at 5-second intervals).
 	 *
 	 * @param estimationIds - Array of estimation UUIDs returned from the upload response that are still processing
-	 * @returns void (side-effect: updates `videoProgress` label, shows toast on completion/failure, calls loadQuote)
+	 * @returns void (side-effect: updates `videoProgress` label, shows toast on completion/failure, calls loadInquiry)
 	 */
 	async function pollEstimations(estimationIds: string[]) {
 		const maxAttempts = 120; // 10 min at 5s intervals
@@ -869,40 +884,38 @@
 		} else {
 			showToast('Video-Analyse abgeschlossen', 'success');
 		}
-		await loadQuote();
+		await loadInquiry();
 	}
 
 	// Photo filter: click a photo to filter items table
 	let filterPhotoIndex = $state<number | null>(null);
 
-	// Normalize estimations: support new estimations[] array and old estimation singular object
-	let estimationsList = $derived.by(() => {
-		if (data?.estimations?.length) return data.estimations;
-		const legacy = (data as any)?.estimation;
-		if (!legacy) return [];
-		// Map old shape to new EstimationEntry format
-		return [{
-			id: legacy.id ?? '',
-			method: legacy.method ?? '',
-			status: 'completed' as string,
-			total_volume_m3: legacy.total_volume_m3 ?? null,
-			item_count: legacy.items?.length ?? 0,
-			created_at: '',
-			source_video_url: null as string | null,
-			source_image_urls: (legacy.source_images ?? []) as string[],
-		},
-		// If old shape had source_videos, create a separate entry per video
-		...(legacy.source_videos ?? []).map((url: string) => ({
-			id: legacy.id ?? '',
-			method: 'video',
-			status: 'completed' as string,
-			total_volume_m3: null,
-			item_count: 0,
-			created_at: '',
-			source_video_url: url,
-			source_image_urls: [] as string[],
-		}))
-		] as EstimationEntry[];
+	// Normalize estimation snapshot into an array for gallery/upload UI compatibility
+	interface EstimationEntry {
+		id: string;
+		method: string;
+		status: string;
+		total_volume_m3: number | null;
+		item_count: number;
+		created_at: string;
+		source_video_url: string | null;
+		source_image_urls: string[];
+	}
+
+	let estimationsList = $derived.by((): EstimationEntry[] => {
+		const est = data?.estimation;
+		if (!est) return [];
+		const entries: EstimationEntry[] = [{
+			id: est.id,
+			method: est.method,
+			status: est.status,
+			total_volume_m3: est.total_volume_m3,
+			item_count: est.item_count,
+			created_at: est.created_at,
+			source_video_url: est.source_video,
+			source_image_urls: est.source_images ?? [],
+		}];
+		return entries;
 	});
 
 	let galleryEntries = $derived(
@@ -943,14 +956,14 @@
 	/**
 	 * Copies the API-returned estimation items into the editable items state, resetting the dirty flag.
 	 *
-	 * Called by: loadQuote (after fetching fresh quote data)
+	 * Called by: loadInquiry (after fetching fresh inquiry data)
 	 * Purpose: Initialises `editItems` from the server response so the admin can edit quantities, volumes,
 	 *          and names before saving. Maps nullable fields to explicit null to satisfy TypeScript.
 	 *
 	 * @param items - Array of EstimationItem objects from the API response
 	 * @returns void (side-effect: sets `editItems` and resets `itemsDirty = false`)
 	 */
-	function initEditItems(items: EstimationItem[]) {
+	function initEditItems(items: ItemSnapshot[]) {
 		editItems = items.map(item => ({
 			name: item.name,
 			volume_m3: item.volume_m3,
@@ -959,7 +972,6 @@
 			crop_url: item.crop_url ?? null,
 			source_image_url: item.source_image_url ?? null,
 			bbox: item.bbox ?? null,
-			crop_s3_key: item.crop_s3_key ?? null,
 			bbox_image_index: item.bbox_image_index ?? null,
 			seen_in_images: item.seen_in_images ?? null,
 			category: item.category ?? null,
@@ -971,7 +983,7 @@
 	/**
 	 * Calculates suggested persons, hours, rate, and line items for the offer pricing section.
 	 *
-	 * Called by: loadQuote (after data is fetched and items are initialised)
+	 * Called by: loadInquiry (after data is fetched and items are initialised)
 	 * Purpose: Seeds the pricing editor with an intelligent starting point so the admin doesn't need
 	 *          to compute staffing manually. If a latest_offer already exists, it re-uses that offer's
 	 *          values instead of re-computing. Otherwise applies the floor/elevator heuristic:
@@ -991,8 +1003,8 @@
 		if (!data) return;
 
 		// If an offer exists with edited values, use those instead of recomputing
-		if (data.latest_offer) {
-			const lo = data.latest_offer;
+		if (data.offer) {
+			const lo = data.offer;
 			editPersons = lo.persons;
 			editHours = lo.hours;
 			editRateCents = lo.rate_cents;
@@ -1024,7 +1036,7 @@
 		const destExtra = destFloor > 0 && !destElev ? destFloor : 0;
 
 		editPersons = Math.max(2, 2 + originExtra + destExtra);
-		const vol = data.quote.volume_m3 ?? 0;
+		const vol = data.volume_m3 ?? 0;
 		editHours = Math.max(1, Math.ceil(vol / (editPersons * 2.0)));
 		editRateCents = 3000;
 		priceDirty = false;
@@ -1038,38 +1050,30 @@
 	});
 
 	$effect(() => {
-		loadQuote();
+		loadInquiry();
 	});
 
 	/**
-	 * Fetches the full quote detail from the API and initialises all page state.
+	 * Fetches the full inquiry detail from the API and initialises all page state.
 	 *
 	 * Called by: $effect (on mount, keyed on the route `id` param), and after any mutation (save, delete, upload)
-	 * Purpose: Primary data loader for the quote detail page. Calls GET /api/v1/quotes/{id},
+	 * Purpose: Primary data loader for the inquiry detail page. Calls GET /api/v1/inquiries/{id},
 	 *          then seeds editVolume, editDistance, editNotes, editItems (via initEditItems),
 	 *          and pricing defaults (via computePricingDefaults). Also fires a non-blocking
-	 *          POST /api/v1/distance/calculate to populate the RouteMap polyline.
-	 *          Handles both the current API shape (top-level `items`) and the legacy shape
-	 *          (`estimation.items`) for backwards compatibility.
+	 *          POST /api/v1/distance/calculate (public) to populate the RouteMap polyline.
 	 *
 	 * @returns void (side-effect: sets `data`, edit* fields, `routeCoordinates`, `loading`)
 	 */
-	async function loadQuote() {
+	async function loadInquiry() {
 		loading = true;
 		try {
 			const id = $page.params.id;
-			data = await apiGet<QuoteDetail>(`/api/v1/quotes/${id}`);
-			editVolume = data.quote.volume_m3;
-			editDistance = data.quote.distance_km;
-			editNotes = data.quote.notes || '';
-			// items may be top-level (new API) or nested in estimation (old API)
-			const items = (data as any).items?.length
-				? (data as any).items
-				: (data as any).estimation?.items?.length
-					? (data as any).estimation.items
-					: null;
-			if (items) {
-				initEditItems(items);
+			data = await apiGet<InquiryResponse>(`/api/v1/inquiries/${id}`);
+			editVolume = data.volume_m3;
+			editDistance = data.distance_km ?? 0;
+			editNotes = data.notes || '';
+			if (data.items?.length) {
+				initEditItems(data.items);
 			}
 			computePricingDefaults();
 
@@ -1097,26 +1101,40 @@
 	}
 
 	/**
+	 * Persists the edited volume, distance, and notes fields to the API without reloading.
+	 *
+	 * Called by: saveInquiry(), generateOffer(), reEstimateOffer()
+	 * Purpose: Writes inquiry metadata to the DB so that subsequent backend reads (e.g. offer
+	 *          generation) see fresh data. Does NOT reload the inquiry or show a toast — callers
+	 *          handle their own UI feedback.
+	 *
+	 * @returns void (side-effect: calls PATCH /api/v1/inquiries/{id})
+	 */
+	async function persistInquiry() {
+		if (!data) return;
+		await apiPatch(`/api/v1/inquiries/${data.id}`, {
+			estimated_volume_m3: editVolume,
+			distance_km: editDistance,
+			notes: editNotes || null
+		});
+	}
+
+	/**
 	 * Persists the edited volume, distance, and notes fields to the API.
 	 *
 	 * Called by: Template (onclick on the "Speichern" button in the Details card)
-	 * Purpose: Saves manual corrections to quote metadata without affecting items or pricing.
-	 *          Calls PATCH /api/v1/quotes/{id} with estimated_volume_m3, distance_km, and notes.
-	 *          On success reloads the quote so derived state (pricing defaults, map) refreshes.
+	 * Purpose: Saves manual corrections to inquiry metadata without affecting items or pricing.
+	 *          Calls persistInquiry() then reloads the inquiry so derived state refreshes.
 	 *
-	 * @returns void (side-effect: sets `saving`, shows toast, calls loadQuote on success)
+	 * @returns void (side-effect: sets `saving`, shows toast, calls loadInquiry on success)
 	 */
-	async function saveQuote() {
+	async function saveInquiry() {
 		if (!data) return;
 		saving = true;
 		try {
-			await apiPatch(`/api/v1/quotes/${data.quote.id}`, {
-				estimated_volume_m3: editVolume,
-				distance_km: editDistance,
-				notes: editNotes || null
-			});
+			await persistInquiry();
 			showToast('Anfrage gespeichert', 'success');
-			await loadQuote();
+			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
@@ -1129,7 +1147,7 @@
 	 *
 	 * Called by: Template (onclick on the "Gegenstaende speichern" button in the items card)
 	 * Purpose: Persists any admin corrections to item names, quantities, or volumes made in the
-	 *          inline editable items table. Calls PUT /api/v1/quotes/{id}/estimation-items with
+	 *          inline editable items table. Calls PUT /api/v1/inquiries/{id}/items with
 	 *          the full current items array. After a successful save, syncs editVolume to the
 	 *          computed total so the volume field reflects the corrected item list.
 	 *
@@ -1139,13 +1157,12 @@
 		if (!data) return;
 		savingItems = true;
 		try {
-			await apiPut(`/api/v1/quotes/${data.quote.id}/estimation-items`, {
+			await apiPut(`/api/v1/inquiries/${data.id}/items`, {
 				items: editItems.map(item => ({
 					name: item.name,
 					volume_m3: item.volume_m3,
 					quantity: item.quantity,
 					confidence: item.confidence,
-					crop_s3_key: item.crop_s3_key,
 					bbox: item.bbox,
 					bbox_image_index: item.bbox_image_index,
 					seen_in_images: item.seen_in_images,
@@ -1241,49 +1258,34 @@
 		priceDirty = true;
 	}
 
-	// Most recent non-deleted offer for this quote
-	let latestOffer = $derived(
-		(data?.offers ?? []).filter(o => o.status !== 'deleted').at(-1) ?? null
-	);
+	// Embedded offer from the inquiry response
+	let latestOffer = $derived(data?.offer ?? null);
 
 	/**
 	 * Triggers a full re-estimation of the latest offer, recalculating distance and regenerating the PDF.
 	 *
 	 * Called by: Template (onclick on the "Neu berechnen" button in the page header)
 	 * Purpose: Used after address corrections to recompute distance-based pricing and regenerate the offer.
-	 *          Calls POST /api/v1/admin/offers/{latestOfferId}/re-estimate.
+	 *          First persists any unsaved items and inquiry metadata so the backend reads fresh data,
+	 *          then calls POST /api/v1/inquiries/{id}/generate-offer with re_estimate flag
+	 *          plus the admin's current pricing inputs (persons, hours, rate, price, line_items).
 	 *          Prompts for confirmation before proceeding.
 	 *
-	 * @returns void (side-effect: shows toast, calls loadQuote on success)
+	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
 	 */
 	async function reEstimateOffer() {
 		if (!latestOffer) return;
 		if (!confirm('Entfernung neu berechnen und Angebot neu erstellen?')) return;
 		try {
-			await apiPost(`/api/v1/admin/offers/${latestOffer.id}/re-estimate`, {});
-			showToast('Angebot wird neu berechnet...', 'success');
-			await loadQuote();
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
-
-	/**
-	 * Generates a new offer PDF from the current quote using the admin's edited pricing inputs.
-	 *
-	 * Called by: Template (onclick on the "Angebot erstellen" button in the page header)
-	 * Purpose: Creates the first offer for this quote by posting all pricing parameters to the
-	 *          generation endpoint. Calls POST /api/v1/offers/generate with quote_id, persons, hours,
-	 *          rate, optionally price_cents_netto (when priceDirty), and optionally line_items.
-	 *          Reloads the quote after success so the new offer appears in the offers list.
-	 *
-	 * @returns void (side-effect: shows toast, calls loadQuote on success)
-	 */
-	async function generateOffer() {
-		if (!data) return;
-		try {
+			// Persist unsaved items first (recalculates total volume)
+			if (itemsDirty) {
+				await saveItems();
+			}
+			// Persist inquiry metadata (volume, distance, notes) so the backend reads fresh data
+			await persistInquiry();
+			// Include admin-edited pricing so the regenerated offer reflects manual overrides
 			const payload: Record<string, unknown> = {
-				quote_id: data.quote.id,
+				re_estimate: true,
 				persons: editPersons,
 				hours: editHours,
 				rate: editRateCents / 100,
@@ -1299,10 +1301,56 @@
 					...(li.remark ? { remark: li.remark } : {}),
 				}));
 			}
-			await apiPost<{ id: string }>(`/api/v1/offers/generate`, payload);
+			await apiPost(`/api/v1/inquiries/${data!.id}/generate-offer`, payload);
+			showToast('Angebot wird neu berechnet...', 'success');
+			await loadInquiry();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	/**
+	 * Generates a new offer PDF from the current quote using the admin's edited pricing inputs.
+	 *
+	 * Called by: Template (onclick on the "Angebot erstellen" button in the page header)
+	 * Purpose: Creates the first offer for this inquiry by posting all pricing parameters to the
+	 *          generation endpoint. First persists any unsaved items (recalculates total volume)
+	 *          and inquiry metadata (volume, distance, notes) so the backend reads fresh data.
+	 *          Then calls POST /api/v1/inquiries/{id}/generate-offer with persons, hours, rate,
+	 *          optionally price_cents_netto (when priceDirty), and optionally line_items.
+	 *          Reloads the inquiry after success so the new offer appears embedded.
+	 *
+	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
+	 */
+	async function generateOffer() {
+		if (!data) return;
+		try {
+			// Persist unsaved items first (recalculates total volume)
+			if (itemsDirty) {
+				await saveItems();
+			}
+			// Persist inquiry metadata (volume, distance, notes) so the backend reads fresh data
+			await persistInquiry();
+			const payload: Record<string, unknown> = {
+				persons: editPersons,
+				hours: editHours,
+				rate: editRateCents / 100,
+			};
+			if (priceDirty) {
+				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
+			}
+			if (editLineItems.length > 0) {
+				payload.line_items = editLineItems.map(li => ({
+					description: li.label,
+					quantity: li.quantity,
+					unit_price: li.unitPriceCents / 100,
+					...(li.remark ? { remark: li.remark } : {}),
+				}));
+			}
+			await apiPost<{ id: string }>(`/api/v1/inquiries/${data.id}/generate-offer`, payload);
 
 			showToast('Angebot erstellt', 'success');
-			await loadQuote();
+			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		}
@@ -1310,11 +1358,14 @@
 
 	const statusOptions: { value: string; label: string }[] = [
 		{ value: 'pending', label: 'Ausstehend' },
-		{ value: 'volume_estimated', label: 'Volumen geschaetzt' },
-		{ value: 'offer_generated', label: 'Angebot erstellt' },
-		{ value: 'offer_sent', label: 'Angebot gesendet' },
+		{ value: 'estimating', label: 'Schaetzung' },
+		{ value: 'estimated', label: 'Volumen' },
+		{ value: 'offer_ready', label: 'Angebot' },
+		{ value: 'sent', label: 'Gesendet' },
 		{ value: 'accepted', label: 'Akzeptiert' },
-		{ value: 'done', label: 'Erledigt' },
+		{ value: 'scheduled', label: 'Geplant' },
+		{ value: 'completed', label: 'Abgeschlossen' },
+		{ value: 'invoiced', label: 'Fakturiert' },
 		{ value: 'paid', label: 'Bezahlt' },
 		{ value: 'rejected', label: 'Abgelehnt' },
 		{ value: 'cancelled', label: 'Storniert' },
@@ -1323,26 +1374,26 @@
 	let changingStatus = $state(false);
 
 	/**
-	 * Updates the quote's workflow status via the API using the status dropdown.
+	 * Updates the inquiry's workflow status via the API using the status dropdown.
 	 *
 	 * Called by: Template (onchange on the status <select> in the page header)
-	 * Purpose: Allows the admin to manually override the quote lifecycle state (e.g. mark as paid,
+	 * Purpose: Allows the admin to manually override the inquiry lifecycle state (e.g. mark as paid,
 	 *          cancelled, or done) without going through automated transitions.
-	 *          Calls POST /api/v1/admin/quotes/{id}/status with the new status value.
+	 *          Calls PATCH /api/v1/inquiries/{id} with the new status value.
 	 *          No-ops if the selected value equals the current status.
 	 *
 	 * @param newStatus - The target status string (e.g. 'accepted', 'done', 'paid', 'cancelled')
-	 * @returns void (side-effect: sets `changingStatus`, shows toast, calls loadQuote on success)
+	 * @returns void (side-effect: sets `changingStatus`, shows toast, calls loadInquiry on success)
 	 */
-	async function setQuoteStatus(newStatus: string) {
+	async function setInquiryStatus(newStatus: string) {
 		if (!data) return;
-		if (data.quote.status === newStatus) return;
+		if (data.status === newStatus) return;
 		changingStatus = true;
 		try {
-			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/status`, { status: newStatus });
+			await apiPatch(`/api/v1/inquiries/${data.id}`, { status: newStatus });
 			const label = statusOptions.find(s => s.value === newStatus)?.label || newStatus;
 			showToast(`Status: ${label}`, 'success');
-			await loadQuote();
+			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
@@ -1351,22 +1402,22 @@
 	}
 
 	/**
-	 * Permanently deletes the quote and navigates back to the quotes list.
+	 * Soft-deletes the inquiry and navigates back to the inquiries list.
 	 *
 	 * Called by: Template (onclick on the Trash2 delete button in the page header)
-	 * Purpose: Hard-removes a quote that was created in error or is no longer needed.
-	 *          Calls POST /api/v1/admin/quotes/{id}/delete.
+	 * Purpose: Cancels an inquiry that was created in error or is no longer needed.
+	 *          Calls DELETE /api/v1/inquiries/{id}.
 	 *          Prompts for confirmation before proceeding.
 	 *
-	 * @returns void (side-effect: shows toast, navigates to /admin/quotes)
+	 * @returns void (side-effect: shows toast, navigates to /admin/inquiries)
 	 */
-	async function deleteQuote() {
+	async function deleteInquiry() {
 		if (!data) return;
 		if (!confirm('Anfrage unwiderruflich loeschen?')) return;
 		try {
-			await apiPost(`/api/v1/admin/quotes/${data.quote.id}/delete`);
+			await apiDelete(`/api/v1/inquiries/${data.id}`);
 			showToast('Anfrage geloescht', 'success');
-			goto('/admin/quotes');
+			goto('/admin/inquiries');
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		}
@@ -1409,20 +1460,20 @@
 	 *
 	 * Called by: Template (onclick on the "Speichern" button inside the inline origin/destination address form)
 	 * Purpose: Persists corrections to street, city, postal code, floor, or elevator for either address.
-	 *          Calls PATCH /api/v1/admin/addresses/{addressId} then reloads the quote so the
+	 *          Calls PATCH /api/v1/admin/addresses/{addressId} then reloads the inquiry so the
 	 *          route map and pricing defaults reflect the corrected address.
 	 *
 	 * @param addressId - UUID of the address record to update
 	 * @param fields - Object with the current form values (street, postal_code, city, floor, elevator)
 	 * @param setEditing - Callback to set the editing flag (e.g. `(v) => editingOrigin = v`) to false on success
-	 * @returns void (side-effect: shows toast, calls setEditing(false) and loadQuote on success)
+	 * @returns void (side-effect: shows toast, calls setEditing(false) and loadInquiry on success)
 	 */
 	async function saveAddress(addressId: string, fields: typeof editOrigin, setEditing: (v: boolean) => void) {
 		try {
 			await apiPatch(`/api/v1/admin/addresses/${addressId}`, fields);
 			showToast('Adresse gespeichert', 'success');
 			setEditing(false);
-			await loadQuote();
+			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		}
@@ -1431,7 +1482,7 @@
 </script>
 
 <div class="page">
-	<a href="/admin/quotes" class="back-link">
+	<a href="/admin/inquiries" class="back-link">
 		<ArrowLeft size={16} />
 		Zurueck zu Anfragen
 	</a>
@@ -1442,7 +1493,7 @@
 		<div class="page-header">
 			<div class="header-left">
 				<h1>Anfrage</h1>
-				<StatusBadge status={data.quote.status} />
+				<StatusBadge status={data.status} />
 			</div>
 			<div class="header-actions">
 				{#if latestOffer}
@@ -1458,15 +1509,15 @@
 				{/if}
 				<select
 					class="status-select"
-					value={data.quote.status}
-					onchange={(e) => setQuoteStatus((e.target as HTMLSelectElement).value)}
+					value={data.status}
+					onchange={(e) => setInquiryStatus((e.target as HTMLSelectElement).value)}
 					disabled={changingStatus}
 				>
 					{#each statusOptions as opt}
-						<option value={opt.value} selected={opt.value === data.quote.status}>{opt.label}</option>
+						<option value={opt.value} selected={opt.value === data.status}>{opt.label}</option>
 					{/each}
 				</select>
-				<button class="btn btn-danger" onclick={deleteQuote}>
+				<button class="btn btn-danger" onclick={deleteInquiry}>
 					<Trash2 size={16} />
 				</button>
 			</div>
@@ -1479,16 +1530,16 @@
 				<div class="info-grid">
 					<div class="info-item">
 						<span class="info-label">Name</span>
-						<span class="info-value">{data.customer.name || '—'}</span>
+						<span class="info-value">{data.customer?.name || '—'}</span>
 					</div>
 					<div class="info-item">
 						<span class="info-label">E-Mail</span>
-						<span class="info-value">{data.customer.email}</span>
+						<span class="info-value">{data.customer?.email}</span>
 					</div>
-					{#if data.customer.phone}
+					{#if data.customer?.phone}
 						<div class="info-item">
 							<span class="info-label">Telefon</span>
-							<span class="info-value">{data.customer.phone}</span>
+							<span class="info-value">{data.customer?.phone}</span>
 						</div>
 					{/if}
 				</div>
@@ -1645,7 +1696,7 @@
 			<div class="card">
 				<div class="card-header">
 					<h3>Details</h3>
-					<button class="btn btn-sm" onclick={saveQuote} disabled={saving}>
+					<button class="btn btn-sm" onclick={saveInquiry} disabled={saving}>
 						<Save size={14} />
 						{saving ? 'Speichern...' : 'Speichern'}
 					</button>
@@ -1672,10 +1723,10 @@
 			{/if}
 
 			<!-- Customer Message -->
-			{#if data.quote.customer_message}
+			{#if data.customer_message}
 				<div class="card">
 					<h3>Kundennachricht</h3>
-					<p class="customer-message">{data.quote.customer_message}</p>
+					<p class="customer-message">{data.customer_message}</p>
 				</div>
 			{/if}
 
@@ -2155,18 +2206,16 @@
 				</div>
 			</div>
 
-			<!-- Linked Offers -->
-			{#if data.offers.length > 0}
+			<!-- Linked Offer -->
+			{#if data.offer}
 				<div class="card full-width">
-					<h3>Angebote</h3>
+					<h3>Angebot</h3>
 					<div class="offers-list">
-						{#each data.offers as offer}
-							<a href="/admin/offers/{offer.id}" class="offer-row">
-								<span class="offer-date">{formatDate(offer.created_at)}</span>
-								<span class="offer-price">{offer.total_brutto_cents != null ? formatEuro(offer.total_brutto_cents) : '—'}</span>
-								<StatusBadge status={offer.status} />
-							</a>
-						{/each}
+						<div class="offer-row">
+							<span class="offer-date">{formatDate(data.offer.created_at)}</span>
+							<span class="offer-price">{data.offer.total_brutto_cents != null ? formatEuro(data.offer.total_brutto_cents) : '—'}</span>
+							<StatusBadge status={data.offer.status} />
+						</div>
 					</div>
 				</div>
 			{/if}

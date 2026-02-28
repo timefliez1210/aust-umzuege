@@ -6,19 +6,22 @@
 	import VolumeCalculator from '$lib/components/VolumeCalculator.svelte';
 	import { Search, ChevronLeft, ChevronRight, Plus, X, Camera, List, Upload, Trash2, Video } from 'lucide-svelte';
 
-	interface Quote {
+	interface InquiryListItem {
 		id: string;
 		customer_name: string | null;
 		customer_email: string;
 		origin_city: string | null;
 		destination_city: string | null;
 		volume_m3: number | null;
+		distance_km: number | null;
 		status: string;
+		has_offer: boolean;
+		offer_status: string | null;
 		created_at: string;
 	}
 
-	interface QuotesResponse {
-		quotes: Quote[];
+	interface InquiriesResponse {
+		inquiries: InquiryListItem[];
 		total: number;
 	}
 
@@ -29,7 +32,7 @@
 		phone: string | null;
 	}
 
-	let quotes = $state<Quote[]>([]);
+	let inquiries = $state<InquiryListItem[]>([]);
 	let total = $state(0);
 	let loading = $state(true);
 	let statusFilter = $state('');
@@ -203,11 +206,14 @@
 	const tabs = [
 		{ value: '', label: 'Alle' },
 		{ value: 'pending', label: 'Offen' },
-		{ value: 'volume_estimated', label: 'Volumen' },
-		{ value: 'offer_generated', label: 'Angebot' },
-		{ value: 'offer_sent', label: 'Gesendet' },
+		{ value: 'estimating', label: 'Schaetzung' },
+		{ value: 'estimated', label: 'Volumen' },
+		{ value: 'offer_ready', label: 'Angebot' },
+		{ value: 'sent', label: 'Gesendet' },
 		{ value: 'accepted', label: 'Akzeptiert' },
-		{ value: 'done', label: 'Erledigt' },
+		{ value: 'scheduled', label: 'Geplant' },
+		{ value: 'completed', label: 'Erledigt' },
+		{ value: 'invoiced', label: 'Fakturiert' },
 		{ value: 'paid', label: 'Bezahlt' }
 	];
 
@@ -220,20 +226,20 @@
 	];
 
 	$effect(() => {
-		loadQuotes();
+		loadInquiries();
 	});
 
 	/**
-	 * Fetches the paginated quotes list from the API and populates the DataTable.
+	 * Fetches the paginated inquiries list from the API and populates the DataTable.
 	 *
 	 * Called by: $effect (on mount and whenever statusFilter, searchQuery, or offset change)
-	 * Purpose: Loads quote records filtered by status and free-text search, respecting the
-	 *          current pagination offset. Calls GET /api/v1/admin/quotes with query parameters.
+	 * Purpose: Loads inquiry records filtered by status and free-text search, respecting the
+	 *          current pagination offset. Calls GET /api/v1/inquiries with query parameters.
 	 *          On error, resets the list to empty so the page stays usable.
 	 *
-	 * @returns void (side-effect: sets `quotes`, `total`, `loading`)
+	 * @returns void (side-effect: sets `inquiries`, `total`, `loading`)
 	 */
-	async function loadQuotes() {
+	async function loadInquiries() {
 		loading = true;
 		try {
 			const params = new URLSearchParams();
@@ -242,11 +248,11 @@
 			params.set('limit', String(limit));
 			params.set('offset', String(offset));
 
-			const res = await apiGet<QuotesResponse>(`/api/v1/admin/quotes?${params}`);
-			quotes = res.quotes;
+			const res = await apiGet<InquiriesResponse>(`/api/v1/inquiries?${params}`);
+			inquiries = res.inquiries;
 			total = res.total;
 		} catch {
-			quotes = [];
+			inquiries = [];
 			total = 0;
 		} finally {
 			loading = false;
@@ -265,7 +271,7 @@
 	function setFilter(value: string) {
 		statusFilter = value;
 		offset = 0;
-		loadQuotes();
+		loadInquiries();
 	}
 
 	/**
@@ -278,7 +284,7 @@
 	 */
 	function handleSearch() {
 		offset = 0;
-		loadQuotes();
+		loadInquiries();
 	}
 
 	/**
@@ -292,7 +298,7 @@
 	function prevPage() {
 		if (offset > 0) {
 			offset = Math.max(0, offset - limit);
-			loadQuotes();
+			loadInquiries();
 		}
 	}
 
@@ -307,7 +313,7 @@
 	function nextPage() {
 		if (offset + limit < total) {
 			offset += limit;
-			loadQuotes();
+			loadInquiries();
 		}
 	}
 
@@ -522,7 +528,7 @@
 	 *          5. If volumeMode is 'video', uploads videos via POST /api/v1/estimates/video.
 	 *          6. Navigates to the new quote's detail page.
 	 *
-	 * @returns void (side-effect: navigates to /admin/quotes/{id} on success, sets `createError` on failure)
+	 * @returns void (side-effect: navigates to /admin/inquiries/{id} on success, sets `createError` on failure)
 	 */
 	async function handleCreateQuote() {
 		if (customerMode === 'existing' && !selectedCustomer) {
@@ -592,32 +598,30 @@
 			}
 
 			// 1. Create the quote
-			const res = await apiPost<{ id: string }>('/api/v1/admin/quotes', body);
+			const res = await apiPost<{ id: string }>('/api/v1/inquiries', body);
 
-			// 2. If photos mode, upload images to depth-sensor endpoint
+			// 2. If photos mode, upload images to depth estimation endpoint
 			if (volumeMode === 'photos' && photoFiles.length > 0) {
 				createError = '';
 				const formData = new FormData();
-				formData.append('quote_id', res.id);
 				for (const file of photoFiles) {
 					formData.append('images', file);
 				}
-				// This runs the vision pipeline, stores estimation, updates quote, and triggers auto offer generation
-				await apiFetch('/api/v1/estimates/depth-sensor', { method: 'POST', body: formData });
+				// This runs the vision pipeline, stores estimation, updates inquiry, and triggers auto offer generation
+				await apiFetch(`/api/v1/inquiries/${res.id}/estimate/depth`, { method: 'POST', body: formData });
 			}
 
 			// 3. If video mode, upload videos to video endpoint
 			if (volumeMode === 'video' && videoFiles.length > 0) {
 				createError = '';
 				const formData = new FormData();
-				formData.append('quote_id', res.id);
 				for (const file of videoFiles) {
 					formData.append('video', file);
 				}
-				await apiFetch('/api/v1/estimates/video', { method: 'POST', body: formData });
+				await apiFetch(`/api/v1/inquiries/${res.id}/estimate/video`, { method: 'POST', body: formData });
 			}
 
-			goto(`/admin/quotes/${res.id}`);
+			goto(`/admin/inquiries/${res.id}`);
 		} catch (e: any) {
 			createError = e.message || 'Fehler beim Erstellen';
 		} finally {
@@ -948,13 +952,13 @@
 
 	<DataTable
 		{columns}
-		rows={quotes}
+		rows={inquiries}
 		bind:sortKey
 		bind:sortDir
-		onRowClick={(row) => goto(`/admin/quotes/${(row as Quote).id}`)}
+		onRowClick={(row) => goto(`/admin/inquiries/${(row as InquiryListItem).id}`)}
 	>
 		{#snippet row(item, _i)}
-			{@const q = item as Quote}
+			{@const q = item as InquiryListItem}
 			<td>{formatDate(q.created_at)}</td>
 			<td>
 				<div class="cell-name">{q.customer_name || q.customer_email}</div>

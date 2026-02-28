@@ -145,7 +145,7 @@
 		rows={orders}
 		bind:sortKey
 		bind:sortDir
-		onRowClick={(row) => goto(`/admin/quotes/${(row as Order).id}`)}
+		onRowClick={(row) => goto(`/admin/inquiries/${(row as Order).id}`)}
 	>
 		{#snippet row(item, _i)}
 			{@const o = item as Order}

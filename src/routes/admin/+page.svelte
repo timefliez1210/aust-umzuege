@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { apiGet, formatDateTime } from '$lib/utils/api.svelte';
-	import { FileText, Receipt, CalendarDays, Users, ArrowRight, AlertTriangle } from 'lucide-svelte';
+	import { FileText, CalendarDays, Users, ArrowRight, AlertTriangle } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
 	interface ConflictDate {
@@ -60,8 +60,8 @@
 	const statCards = $derived(
 		data
 			? [
-					{ label: 'Offene Anfragen', value: data.open_quotes, icon: FileText, color: '#3b82f6', href: '/admin/quotes' },
-					{ label: 'Ausstehende Angebote', value: data.pending_offers, icon: Receipt, color: '#f59e0b', href: '/admin/offers' },
+					{ label: 'Offene Anfragen', value: data.open_quotes, icon: FileText, color: '#3b82f6', href: '/admin/inquiries' },
+					{ label: 'Ausstehende Angebote', value: data.pending_offers, icon: FileText, color: '#f59e0b', href: '/admin/inquiries?status=offer_ready' },
 					{ label: 'Heutige Buchungen', value: data.todays_bookings, icon: CalendarDays, color: '#22c55e', href: '/admin/calendar' },
 					{ label: 'Kunden gesamt', value: data.total_customers, icon: Users, color: '#a855f7', href: '/admin/customers' }
 				]

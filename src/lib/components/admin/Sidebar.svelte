@@ -3,7 +3,6 @@
 	import {
 		LayoutDashboard,
 		FileText,
-		Receipt,
 		Users,
 		Mail,
 		CalendarDays,
@@ -27,8 +26,7 @@
 
 	const links = [
 		{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-		{ href: '/admin/quotes', label: 'Anfragen', icon: FileText },
-		{ href: '/admin/offers', label: 'Angebote', icon: Receipt },
+		{ href: '/admin/inquiries', label: 'Anfragen', icon: FileText },
 		{ href: '/admin/orders', label: 'Auftraege', icon: ClipboardList },
 		{ href: '/admin/customers', label: 'Kunden', icon: Users },
 		{ href: '/admin/emails', label: 'E-Mails', icon: Mail },

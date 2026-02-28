@@ -158,7 +158,7 @@
 						<div class="empty">Keine Anfragen</div>
 					{:else}
 						{#each data.quotes as q}
-							<a href="/admin/quotes/{q.id}" class="list-item">
+							<a href="/admin/inquiries/{q.id}" class="list-item">
 								<div class="list-info">
 									<span>{formatDate(q.created_at)}</span>
 									{#if q.estimated_volume_m3}
@@ -179,7 +179,7 @@
 						<div class="empty">Keine Angebote</div>
 					{:else}
 						{#each data.offers as o}
-							<a href="/admin/offers/{o.id}" class="list-item">
+							<a href="/admin/inquiries/{o.quote_id}" class="list-item">
 								<div class="list-info">
 									<span>{formatEuro(o.price_cents)}</span>
 									<span class="text-muted">{formatDate(o.created_at)}</span>

@@ -16,12 +16,10 @@ The admin panel is a **separate SPA** from the public website. It runs client-si
 |-------|---------|
 | `/admin` | Dashboard — KPIs, recent activity, conflict date alerts |
 | `/admin/login` | Login form (separate layout, no sidebar) |
-| `/admin/quotes` | Quote list + create form (manual, photo, video volume modes) |
-| `/admin/quotes/[id]` | Quote detail — item estimation table, pricing, line items, route map, photo/video upload, item reviewer lightbox |
-| `/admin/offers` | Offer list with status tabs (draft/sent/accepted/rejected) |
-| `/admin/offers/[id]` | Offer detail — PDF download, line items editor, price calculator |
+| `/admin/inquiries` | Inquiry list + create form (manual, photo, video volume modes) |
+| `/admin/inquiries/[id]` | Inquiry detail — item estimation table, pricing, line items, route map, photo/video upload, item reviewer lightbox, embedded offer |
 | `/admin/customers` | Customer directory + create form |
-| `/admin/customers/[id]` | Customer detail with linked quotes/offers |
+| `/admin/customers/[id]` | Customer detail with linked inquiries |
 | `/admin/emails` | Email thread list + compose form |
 | `/admin/emails/[id]` | Email thread detail with draft management |
 | `/admin/calendar` | Monthly calendar — bookings, capacity management |
@@ -71,32 +69,21 @@ All endpoints except login/refresh require a valid JWT via `Authorization: Beare
 ### Dashboard
 - `GET /api/v1/admin/dashboard` → `{open_quotes, pending_offers, todays_bookings, total_customers, recent_activity, conflict_dates}`
 
-### Quotes
-- `GET /api/v1/admin/quotes?status=&search=&limit=&offset=` — list with filters
-- `POST /api/v1/admin/quotes` — create (customer_id, addresses, notes, volume, date, distance)
-- `GET /api/v1/quotes/{id}` → full detail with items, offers, addresses, source images/videos
-- `PATCH /api/v1/quotes/{id}` — update fields (notes, volume_m3, preferred_date, etc.)
-- `PUT /api/v1/quotes/{id}/estimation-items` — bulk update/delete estimation items
-- `POST /api/v1/admin/quotes/{id}/accept` — transition to accepted
-- `POST /api/v1/admin/quotes/{id}/done` — transition to done
-- `POST /api/v1/admin/quotes/{id}/paid` — transition to paid
-- `POST /api/v1/admin/quotes/{id}/delete` — soft delete
+### Inquiries (main resource)
+- `POST /api/v1/inquiries` — create (customer_email, addresses, services, notes)
+- `GET /api/v1/inquiries?status=&search=&has_offer=&limit=&offset=` — list with filters
+- `GET /api/v1/inquiries/{id}` → full detail with customer, addresses, estimation, items, embedded offer
+- `PATCH /api/v1/inquiries/{id}` — update fields and/or transition status
+- `DELETE /api/v1/inquiries/{id}` — soft-delete (→ cancelled)
+- `GET /api/v1/inquiries/{id}/pdf` — download active offer PDF (use `apiDownload()`)
+- `PUT /api/v1/inquiries/{id}/items` — bulk update/delete estimation items
+- `POST /api/v1/inquiries/{id}/estimate/depth` — photo upload (FormData: `images[]`)
+- `POST /api/v1/inquiries/{id}/estimate/video` — video upload (FormData: `video`)
+- `POST /api/v1/inquiries/{id}/generate-offer` — generate/regenerate offer
+- `GET /api/v1/inquiries/{id}/emails` — email thread for this inquiry
 
-### Estimates
-- `POST /api/v1/estimates/depth-sensor` — photo upload (FormData: `quote_id`, `images[]`)
-- `POST /api/v1/estimates/video` — video upload (FormData: `quote_id`, `video`)
+### Media (public)
 - `GET /api/v1/estimates/images/{key}` — **public** image/video proxy (no auth, used by `<img>`/`<video>` tags)
-
-### Offers
-- `GET /api/v1/admin/offers?status=&limit=&offset=` — list with status filter
-- `GET /api/v1/admin/offers/{id}` → offer detail with line items, customer, addresses
-- `POST /api/v1/offers/generate` — generate from quote (quote_id, persons, hours, rate, price)
-- `GET /api/v1/offers/{id}/pdf` — download PDF (use `apiDownload()`, not `<a href>`)
-- `PATCH /api/v1/admin/offers/{id}` — update pricing & line items
-- `POST /api/v1/admin/offers/{id}/regenerate` — regenerate PDF with new pricing
-- `POST /api/v1/admin/offers/{id}/send` — email PDF to customer
-- `POST /api/v1/admin/offers/{id}/reject` — mark rejected
-- `POST /api/v1/admin/offers/{id}/delete` — delete offer
 
 ### Customers
 - `GET /api/v1/admin/customers?search=&limit=&offset=` — list/search
@@ -126,8 +113,7 @@ All endpoints except login/refresh require a valid JWT via `Authorization: Beare
 - `POST /api/v1/admin/users/{id}/delete` — delete user
 
 ### Other
-- `POST /api/v1/distance/calculate` — route geometry (`{addresses: [string, string]}` → legs with geometry)
-- `PATCH /api/v1/admin/addresses/{id}` — update address fields (street, city, postal_code, floor, has_elevator)
+- `PATCH /api/v1/admin/addresses/{id}` — update address fields (street, city, postal_code, floor, elevator)
 
 ## Calendar Data Model
 

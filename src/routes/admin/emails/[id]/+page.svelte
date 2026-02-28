@@ -233,7 +233,7 @@
 				{/if}
 			</div>
 			{#if data.thread.quote_id}
-				<a href="/admin/quotes/{data.thread.quote_id}" class="link-quote">
+				<a href="/admin/inquiries/{data.thread.quote_id}" class="link-quote">
 					<ExternalLink size={14} /> Zur Anfrage
 				</a>
 			{/if}

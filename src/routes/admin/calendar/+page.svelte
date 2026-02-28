@@ -356,7 +356,7 @@
 						<div class="booking-item">
 							<div class="booking-info">
 								{#if booking.quote_id}
-									<a href="/admin/quotes/{booking.quote_id}" class="booking-link">
+									<a href="/admin/inquiries/{booking.quote_id}" class="booking-link">
 										<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
 										<ExternalLink size={12} />
 									</a>

@@ -7,7 +7,7 @@ import os
 import re
 import glob
 
-BUILD_DIR = "/media/timefliez/FileSystem/projects/alex_aust/build"
+BUILD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "build")
 
 # Match <link href="...css" rel="stylesheet">
 LINK_RE = re.compile(

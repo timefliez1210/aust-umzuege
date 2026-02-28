@@ -20,19 +20,14 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
-.htaccess
 
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Deploy & build scripts (contain server paths)
-deploy-full.py
-deploy-admin.py
+# Leftover one-off deploy scripts (not part of the standard workflow)
 deploy-kas.py
-deploy.sh
 upload-html.py
-inline-css.py
 blog-audit-report.md
 seo-audit-report.md
 competitor-analysis-report.md

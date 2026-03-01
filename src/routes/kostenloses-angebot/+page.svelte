@@ -3,7 +3,10 @@
     import { Send } from "lucide-svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
-    import { createBreadcrumbs, quoteRequestPage } from "$lib/data/structuredData";
+    import {
+        createBreadcrumbs,
+        quoteRequestPage,
+    } from "$lib/data/structuredData";
 
     // Volume calculator bindings
     let volumeM3 = $state(0);
@@ -56,14 +59,40 @@
         privacyAccepted: false,
     });
 
-    function combineAddress(strasse: string, nr: string, plz: string, ort: string): string {
+    function combineAddress(
+        strasse: string,
+        nr: string,
+        plz: string,
+        ort: string,
+    ): string {
         if (!strasse && !nr && !plz && !ort) return "";
         return `${strasse} ${nr}, ${plz} ${ort}`;
     }
 
-    const startAddress = $derived(combineAddress(formData.startStrasse, formData.startHausnummer, formData.startPlz, formData.startOrt));
-    const zwischenstoppAddress = $derived(combineAddress(formData.zwischenstoppStrasse, formData.zwischenstoppHausnummer, formData.zwischenstoppPlz, formData.zwischenstoppOrt));
-    const endAddress = $derived(combineAddress(formData.endStrasse, formData.endHausnummer, formData.endPlz, formData.endOrt));
+    const startAddress = $derived(
+        combineAddress(
+            formData.startStrasse,
+            formData.startHausnummer,
+            formData.startPlz,
+            formData.startOrt,
+        ),
+    );
+    const zwischenstoppAddress = $derived(
+        combineAddress(
+            formData.zwischenstoppStrasse,
+            formData.zwischenstoppHausnummer,
+            formData.zwischenstoppPlz,
+            formData.zwischenstoppOrt,
+        ),
+    );
+    const endAddress = $derived(
+        combineAddress(
+            formData.endStrasse,
+            formData.endHausnummer,
+            formData.endPlz,
+            formData.endOrt,
+        ),
+    );
 
     let isSubmitting = $state(false);
     let submitSuccess = $state(false);
@@ -98,9 +127,9 @@
     // Get selected services as comma-separated string
     const selectedServicesText = $derived(
         formData.selectedServices
-            .map(id => additionalServices.find(s => s.id === id)?.label)
+            .map((id) => additionalServices.find((s) => s.id === id)?.label)
             .filter(Boolean)
-            .join(", ") || "Keine"
+            .join(", ") || "Keine",
     );
 
     function toggleService(serviceId: string) {
@@ -129,7 +158,9 @@
         try {
             const response = await fetch("/send-mail.php", {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
                 body: new URLSearchParams(formDataObj as any).toString(),
             });
 
@@ -168,7 +199,8 @@
                     privacyAccepted: false,
                 };
             } else {
-                submitError = "Es gab einen Fehler. Bitte versuchen Sie es erneut.";
+                submitError =
+                    "Es gab einen Fehler. Bitte versuchen Sie es erneut.";
             }
         } catch (error) {
             submitError = "Es gab einen Fehler. Bitte versuchen Sie es erneut.";
@@ -179,7 +211,7 @@
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
-        { name: "Kostenloses Angebot" }
+        { name: "Kostenloses Angebot" },
     ]);
 </script>
 
@@ -208,352 +240,510 @@
         {#if submitSuccess}
             <div class="angebot-page__success">
                 <h2>Vielen Dank für Ihre Anfrage!</h2>
-                <p>Wir haben Ihre Anfrage erhalten und werden uns schnellstmöglich bei Ihnen melden.</p>
-                <a href="/" class="angebot-page__submit angebot-page__submit--centered">
+                <p>
+                    Wir haben Ihre Anfrage erhalten und werden uns
+                    schnellstmöglich bei Ihnen melden.
+                </p>
+                <a
+                    href="/"
+                    class="angebot-page__submit angebot-page__submit--centered"
+                >
                     Zur Startseite
                 </a>
             </div>
         {:else}
-        <form
-            class="angebot-page__form"
-            onsubmit={handleSubmit}
-            name="kostenloses-angebot"
-            method="POST"
-            data-netlify="true"
-            netlify-honeypot="bot-field"
-            toolname="kostenloses-angebot"
-            tooldescription="Kostenloses Umzugsangebot anfordern bei Aust Umzüge Hildesheim. Kontaktdaten, Auszugs-/Einzugsadresse mit Etage, Wunschtermin und Zusatzleistungen angeben."
-        >
-            <!-- Netlify form detection -->
-            <input type="hidden" name="form-name" value="kostenloses-angebot" />
-            <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
+            <form
+                class="angebot-page__form"
+                onsubmit={handleSubmit}
+                name="kostenloses-angebot"
+                method="POST"
+                data-netlify="true"
+                netlify-honeypot="bot-field"
+                toolname="kostenloses-angebot"
+                tooldescription="Kostenloses Umzugsangebot anfordern bei Aust Umzüge Hildesheim. Kontaktdaten, Auszugs-/Einzugsadresse mit Etage, Wunschtermin und Zusatzleistungen angeben."
+            >
+                <!-- Netlify form detection -->
+                <input
+                    type="hidden"
+                    name="form-name"
+                    value="kostenloses-angebot"
+                />
+                <p class="hidden">
+                    <label
+                        >Don't fill this out: <input name="bot-field" /></label
+                    >
+                </p>
 
-            <!-- Hidden fields for volume calculator data -->
-            <input type="hidden" name="umzugsvolumen-m3" value={volumeM3.toFixed(2)} />
-            <input type="hidden" name="gegenstaende-liste" value={itemSummary} />
-            <input type="hidden" name="zusatzleistungen" value={selectedServicesText} />
+                <!-- Hidden fields for volume calculator data -->
+                <input
+                    type="hidden"
+                    name="umzugsvolumen-m3"
+                    value={volumeM3.toFixed(2)}
+                />
+                <input
+                    type="hidden"
+                    name="gegenstaende-liste"
+                    value={itemSummary}
+                />
+                <input
+                    type="hidden"
+                    name="zusatzleistungen"
+                    value={selectedServicesText}
+                />
 
-            <!-- Step 1: Volume Calculator -->
-            <section class="angebot-page__section">
-                <h2 class="angebot-page__section-title">
-                    <span class="angebot-page__step-number">1</span>
-                    Volumenberechnung für Ihren Umzug
-                </h2>
-                <VolumeCalculator bind:volumeM3 bind:itemSummary />
-            </section>
+                <!-- Step 1: Volume Calculator -->
+                <section class="angebot-page__section">
+                    <h2 class="angebot-page__section-title">
+                        <span class="angebot-page__step-number">1</span>
+                        Volumenberechnung für Ihren Umzug
+                    </h2>
+                    <VolumeCalculator bind:volumeM3 bind:itemSummary />
+                </section>
 
-            <!-- Step 2: Contact Form -->
-            <section class="angebot-page__section">
-                <h2 class="angebot-page__section-title">
-                    <span class="angebot-page__step-number">2</span>
-                    Ihre Kontaktdaten
-                </h2>
+                <!-- Step 2: Contact Form -->
+                <section class="angebot-page__section">
+                    <h2 class="angebot-page__section-title">
+                        <span class="angebot-page__step-number">2</span>
+                        Ihre Kontaktdaten
+                    </h2>
 
-                <div class="angebot-page__form-grid">
-                    <div class="angebot-page__form-group">
-                        <label for="name">Ihr Name *</label>
-                        <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            bind:value={formData.name}
-                            placeholder="Max Mustermann"
-                            required
-                            toolparamtitle="Name"
-                            toolparamdescription="Vollständiger Name des Kunden"
-                        />
-                    </div>
-
-                    <div class="angebot-page__form-group">
-                        <label for="email">E-Mail-Adresse *</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            bind:value={formData.email}
-                            placeholder="max@beispiel.de"
-                            required
-                            toolparamtitle="E-Mail"
-                            toolparamdescription="E-Mail-Adresse des Kunden"
-                        />
-                    </div>
-
-                    <div class="angebot-page__form-group">
-                        <label for="phone">Telefonnummer *</label>
-                        <input
-                            type="tel"
-                            id="phone"
-                            name="phone"
-                            bind:value={formData.phone}
-                            placeholder="05121 1234567"
-                            required
-                            toolparamtitle="Telefon"
-                            toolparamdescription="Telefonnummer des Kunden"
-                        />
-                    </div>
-
-                    <div class="angebot-page__form-group">
-                        <label for="date">Wunschtermin *</label>
-                        <input
-                            type="date"
-                            id="date"
-                            name="wunschtermin"
-                            bind:value={formData.date}
-                            required
-                            toolparamtitle="Wunschtermin"
-                            toolparamdescription="Gewünschtes Umzugsdatum im Format JJJJ-MM-TT"
-                        />
-                    </div>
-
-                    <div class="angebot-page__form-group">
-                        <label>Auszugsadresse *</label>
-                        <div class="angebot-page__address-row">
-                            <input type="text" bind:value={formData.startStrasse} placeholder="Straße" required aria-label="Straße (Auszug)" />
-                            <input class="angebot-page__address-nr" type="text" bind:value={formData.startHausnummer} placeholder="Nr." required aria-label="Hausnummer (Auszug)" />
-                        </div>
-                        <div class="angebot-page__address-row">
-                            <input class="angebot-page__address-plz" type="text" bind:value={formData.startPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Auszug)" />
-                            <input type="text" bind:value={formData.startOrt} placeholder="Ort" required aria-label="Ort (Auszug)" />
-                        </div>
-                        <input type="hidden" name="auszugsadresse" value={startAddress} toolparamtitle="Auszugsadresse" toolparamdescription="Aktuelle Adresse (Straße, Hausnummer, PLZ, Ort)" />
-                    </div>
-
-                    <div class="angebot-page__form-group">
-                        <label for="startFloor">Etage Auszug *</label>
-                        <select
-                            id="startFloor"
-                            name="etage-auszug"
-                            bind:value={formData.startFloor}
-                            required
-                            toolparamtitle="Etage Auszug"
-                            toolparamdescription="Stockwerk der Auszugsadresse (Erdgeschoss bis Höher als 6. Stock)"
-                        >
-                            {#each floorOptions as option}
-                                <option value={option.value}>{option.label}</option>
-                            {/each}
-                        </select>
-                    </div>
-
-                    <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
-                        <label class="angebot-page__checkbox-label">
+                    <div class="angebot-page__form-grid">
+                        <div class="angebot-page__form-group">
+                            <label for="name">Ihr Name *</label>
                             <input
-                                type="checkbox"
-                                name="aufzug-auszug"
-                                bind:checked={formData.aufzugAuszug}
+                                type="text"
+                                id="name"
+                                name="name"
+                                bind:value={formData.name}
+                                placeholder="Max Mustermann"
+                                required
+                                toolparamtitle="Name"
+                                toolparamdescription="Vollständiger Name des Kunden"
                             />
-                            <span>Aufzug vorhanden</span>
-                        </label>
-                        <label class="angebot-page__checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="halteverbot-auszug"
-                                bind:checked={formData.halteverbotAuszug}
-                            />
-                            <span>Halteverbot benötigt?</span>
-                        </label>
-                    </div>
-
-                    <!-- Zwischenstopp Toggle -->
-                    <div class="angebot-page__form-group angebot-page__form-group--full">
-                        <button
-                            type="button"
-                            class="angebot-page__zwischenstopp-toggle"
-                            onclick={() => formData.hasZwischenstopp = !formData.hasZwischenstopp}
-                        >
-                            {#if formData.hasZwischenstopp}
-                                <span>− Zwischenstopp entfernen</span>
-                            {:else}
-                                <span>+ Zwischenstopp hinzufügen (optional)</span>
-                            {/if}
-                        </button>
-                    </div>
-
-                    <!-- Zwischenstopp Fields (conditional) -->
-                    {#if formData.hasZwischenstopp}
-                        <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__zwischenstopp-section">
-                            <h3 class="angebot-page__subsection-title">Zwischenstopp</h3>
                         </div>
 
                         <div class="angebot-page__form-group">
-                            <label>Zwischenstopp-Adresse</label>
-                            <div class="angebot-page__address-row">
-                                <input type="text" bind:value={formData.zwischenstoppStrasse} placeholder="Straße" aria-label="Straße (Zwischenstopp)" />
-                                <input class="angebot-page__address-nr" type="text" bind:value={formData.zwischenstoppHausnummer} placeholder="Nr." aria-label="Hausnummer (Zwischenstopp)" />
-                            </div>
-                            <div class="angebot-page__address-row">
-                                <input class="angebot-page__address-plz" type="text" bind:value={formData.zwischenstoppPlz} placeholder="PLZ" pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Zwischenstopp)" />
-                                <input type="text" bind:value={formData.zwischenstoppOrt} placeholder="Ort" aria-label="Ort (Zwischenstopp)" />
-                            </div>
-                            <input type="hidden" name="zwischenstopp-adresse" value={zwischenstoppAddress} />
+                            <label for="email">E-Mail-Adresse *</label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                bind:value={formData.email}
+                                placeholder="max@beispiel.de"
+                                required
+                                toolparamtitle="E-Mail"
+                                toolparamdescription="E-Mail-Adresse des Kunden"
+                            />
                         </div>
 
                         <div class="angebot-page__form-group">
-                            <label for="zwischenstoppFloor">Etage Zwischenstopp</label>
+                            <label for="phone">Telefonnummer *</label>
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                bind:value={formData.phone}
+                                placeholder="05121 1234567"
+                                required
+                                toolparamtitle="Telefon"
+                                toolparamdescription="Telefonnummer des Kunden"
+                            />
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label for="date">Wunschtermin *</label>
+                            <input
+                                type="date"
+                                id="date"
+                                name="wunschtermin"
+                                bind:value={formData.date}
+                                required
+                                toolparamtitle="Wunschtermin"
+                                toolparamdescription="Gewünschtes Umzugsdatum im Format JJJJ-MM-TT"
+                            />
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label>Auszugsadresse *</label>
+                            <div class="angebot-page__address-row">
+                                <input
+                                    type="text"
+                                    bind:value={formData.startStrasse}
+                                    placeholder="Straße"
+                                    required
+                                    aria-label="Straße (Auszug)"
+                                />
+                                <input
+                                    class="angebot-page__address-nr"
+                                    type="text"
+                                    bind:value={formData.startHausnummer}
+                                    placeholder="Nr."
+                                    required
+                                    aria-label="Hausnummer (Auszug)"
+                                />
+                            </div>
+                            <div class="angebot-page__address-row">
+                                <input
+                                    class="angebot-page__address-plz"
+                                    type="text"
+                                    bind:value={formData.startPlz}
+                                    placeholder="PLZ"
+                                    required
+                                    pattern={"[0-9]{5}"}
+                                    inputmode="numeric"
+                                    maxlength="5"
+                                    aria-label="Postleitzahl (Auszug)"
+                                />
+                                <input
+                                    type="text"
+                                    bind:value={formData.startOrt}
+                                    placeholder="Ort"
+                                    required
+                                    aria-label="Ort (Auszug)"
+                                />
+                            </div>
+                            <input
+                                type="hidden"
+                                name="auszugsadresse"
+                                value={startAddress}
+                                toolparamtitle="Auszugsadresse"
+                                toolparamdescription="Aktuelle Adresse (Straße, Hausnummer, PLZ, Ort)"
+                            />
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label for="startFloor">Etage Auszug *</label>
                             <select
-                                id="zwischenstoppFloor"
-                                name="etage-zwischenstopp"
-                                bind:value={formData.zwischenstoppFloor}
+                                id="startFloor"
+                                name="etage-auszug"
+                                bind:value={formData.startFloor}
+                                required
+                                toolparamtitle="Etage Auszug"
+                                toolparamdescription="Stockwerk der Auszugsadresse (Erdgeschoss bis Höher als 6. Stock)"
                             >
                                 {#each floorOptions as option}
-                                    <option value={option.value}>{option.label}</option>
+                                    <option value={option.value}
+                                        >{option.label}</option
+                                    >
                                 {/each}
                             </select>
                         </div>
 
-                        <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
+                        <div
+                            class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks"
+                        >
                             <label class="angebot-page__checkbox-label">
                                 <input
                                     type="checkbox"
-                                    name="aufzug-zwischenstopp"
-                                    bind:checked={formData.aufzugZwischenstopp}
+                                    name="aufzug-auszug"
+                                    bind:checked={formData.aufzugAuszug}
                                 />
                                 <span>Aufzug vorhanden</span>
                             </label>
                             <label class="angebot-page__checkbox-label">
                                 <input
                                     type="checkbox"
-                                    name="halteverbot-zwischenstopp"
-                                    bind:checked={formData.halteverbotZwischenstopp}
+                                    name="halteverbot-auszug"
+                                    bind:checked={formData.halteverbotAuszug}
                                 />
                                 <span>Halteverbot benötigt?</span>
                             </label>
                         </div>
-                    {/if}
 
-                    <div class="angebot-page__form-group">
-                        <label>Einzugsadresse *</label>
-                        <div class="angebot-page__address-row">
-                            <input type="text" bind:value={formData.endStrasse} placeholder="Straße" required aria-label="Straße (Einzug)" />
-                            <input class="angebot-page__address-nr" type="text" bind:value={formData.endHausnummer} placeholder="Nr." required aria-label="Hausnummer (Einzug)" />
-                        </div>
-                        <div class="angebot-page__address-row">
-                            <input class="angebot-page__address-plz" type="text" bind:value={formData.endPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Einzug)" />
-                            <input type="text" bind:value={formData.endOrt} placeholder="Ort" required aria-label="Ort (Einzug)" />
-                        </div>
-                        <input type="hidden" name="einzugsadresse" value={endAddress} toolparamtitle="Einzugsadresse" toolparamdescription="Neue Adresse (Straße, Hausnummer, PLZ, Ort)" />
-                    </div>
-
-                    <div class="angebot-page__form-group">
-                        <label for="endFloor">Etage Einzug *</label>
-                        <select
-                            id="endFloor"
-                            name="etage-einzug"
-                            bind:value={formData.endFloor}
-                            required
-                            toolparamtitle="Etage Einzug"
-                            toolparamdescription="Stockwerk der Einzugsadresse (Erdgeschoss bis Höher als 6. Stock)"
+                        <!-- Zwischenstopp Toggle -->
+                        <div
+                            class="angebot-page__form-group angebot-page__form-group--full"
                         >
-                            {#each floorOptions as option}
-                                <option value={option.value}>{option.label}</option>
-                            {/each}
-                        </select>
-                    </div>
-
-                    <div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
-                        <label class="angebot-page__checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="aufzug-einzug"
-                                bind:checked={formData.aufzugEinzug}
-                            />
-                            <span>Aufzug vorhanden</span>
-                        </label>
-                        <label class="angebot-page__checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="halteverbot-einzug"
-                                bind:checked={formData.halteverbotEinzug}
-                            />
-                            <span>Halteverbot benötigt?</span>
-                        </label>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Step 3: Additional Services -->
-            <section class="angebot-page__section">
-                <h2 class="angebot-page__section-title">
-                    <span class="angebot-page__step-number">3</span>
-                    Gewünschte Zusatzleistungen
-                </h2>
-
-                <div class="angebot-page__services-grid">
-                    {#each additionalServices as service}
-                        <label class="angebot-page__service-option">
-                            <input
-                                type="checkbox"
-                                checked={formData.selectedServices.includes(
-                                    service.id,
-                                )}
-                                onchange={() => toggleService(service.id)}
-                            />
-                            <span class="angebot-page__service-checkbox"></span>
-                            <span class="angebot-page__service-label"
-                                >{service.label}</span
+                            <button
+                                type="button"
+                                class="angebot-page__zwischenstopp-toggle"
+                                onclick={() =>
+                                    (formData.hasZwischenstopp =
+                                        !formData.hasZwischenstopp)}
                             >
-                        </label>
-                    {/each}
-                </div>
-            </section>
+                                {#if formData.hasZwischenstopp}
+                                    <span>− Zwischenstopp entfernen</span>
+                                {:else}
+                                    <span
+                                        >+ Zwischenstopp hinzufügen (optional)</span
+                                    >
+                                {/if}
+                            </button>
+                        </div>
 
-            <!-- Step 4: Message -->
-            <section class="angebot-page__section">
-                <h2 class="angebot-page__section-title">
-                    <span class="angebot-page__step-number">4</span>
-                    Ihre Nachricht (optional)
-                </h2>
+                        <!-- Zwischenstopp Fields (conditional) -->
+                        {#if formData.hasZwischenstopp}
+                            <div
+                                class="angebot-page__form-group angebot-page__form-group--full angebot-page__zwischenstopp-section"
+                            >
+                                <h3 class="angebot-page__subsection-title">
+                                    Zwischenstopp
+                                </h3>
+                            </div>
 
-                <div class="angebot-page__form-group">
-                    <textarea
-                        id="message"
-                        name="nachricht"
-                        bind:value={formData.message}
-                        placeholder="Weitere Details oder Fragen..."
-                        rows={4}
-                        toolparamtitle="Nachricht"
-                        toolparamdescription="Zusätzliche Informationen oder Fragen zum Umzug (optional)"
-                    ></textarea>
-                </div>
-            </section>
+                            <div class="angebot-page__form-group">
+                                <label>Zwischenstopp-Adresse</label>
+                                <div class="angebot-page__address-row">
+                                    <input
+                                        type="text"
+                                        bind:value={
+                                            formData.zwischenstoppStrasse
+                                        }
+                                        placeholder="Straße"
+                                        aria-label="Straße (Zwischenstopp)"
+                                    />
+                                    <input
+                                        class="angebot-page__address-nr"
+                                        type="text"
+                                        bind:value={
+                                            formData.zwischenstoppHausnummer
+                                        }
+                                        placeholder="Nr."
+                                        aria-label="Hausnummer (Zwischenstopp)"
+                                    />
+                                </div>
+                                <div class="angebot-page__address-row">
+                                    <input
+                                        class="angebot-page__address-plz"
+                                        type="text"
+                                        bind:value={formData.zwischenstoppPlz}
+                                        placeholder="PLZ"
+                                        pattern={"[0-9]{5}"}
+                                        inputmode="numeric"
+                                        maxlength="5"
+                                        aria-label="Postleitzahl (Zwischenstopp)"
+                                    />
+                                    <input
+                                        type="text"
+                                        bind:value={formData.zwischenstoppOrt}
+                                        placeholder="Ort"
+                                        aria-label="Ort (Zwischenstopp)"
+                                    />
+                                </div>
+                                <input
+                                    type="hidden"
+                                    name="zwischenstopp-adresse"
+                                    value={zwischenstoppAddress}
+                                />
+                            </div>
 
-            <!-- Privacy & Submit -->
-            <section
-                class="angebot-page__section angebot-page__section--submit"
-            >
-                <label class="angebot-page__privacy">
-                    <input
-                        type="checkbox"
-                        name="datenschutz-akzeptiert"
-                        bind:checked={formData.privacyAccepted}
-                        required
-                    />
-                    <span class="angebot-page__privacy-text">
-                        Ich stimme zu, dass meine Angaben zur Bearbeitung meiner
-                        Anfrage erhoben und verarbeitet werden. Die <a
-                            href="/datenschutz"
-                            target="_blank">Datenschutzerklärung</a
-                        > habe ich zur Kenntnis genommen.
-                    </span>
-                </label>
+                            <div class="angebot-page__form-group">
+                                <label for="zwischenstoppFloor"
+                                    >Etage Zwischenstopp</label
+                                >
+                                <select
+                                    id="zwischenstoppFloor"
+                                    name="etage-zwischenstopp"
+                                    bind:value={formData.zwischenstoppFloor}
+                                >
+                                    {#each floorOptions as option}
+                                        <option value={option.value}
+                                            >{option.label}</option
+                                        >
+                                    {/each}
+                                </select>
+                            </div>
 
-                {#if submitError}
-                    <p class="angebot-page__error">{submitError}</p>
-                {/if}
+                            <div
+                                class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks"
+                            >
+                                <label class="angebot-page__checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        name="aufzug-zwischenstopp"
+                                        bind:checked={
+                                            formData.aufzugZwischenstopp
+                                        }
+                                    />
+                                    <span>Aufzug vorhanden</span>
+                                </label>
+                                <label class="angebot-page__checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        name="halteverbot-zwischenstopp"
+                                        bind:checked={
+                                            formData.halteverbotZwischenstopp
+                                        }
+                                    />
+                                    <span>Halteverbot benötigt?</span>
+                                </label>
+                            </div>
+                        {/if}
 
-                <button
-                    type="submit"
-                    class="angebot-page__submit"
-                    disabled={!isFormValid || isSubmitting}
+                        <div class="angebot-page__form-group">
+                            <label>Einzugsadresse *</label>
+                            <div class="angebot-page__address-row">
+                                <input
+                                    type="text"
+                                    bind:value={formData.endStrasse}
+                                    placeholder="Straße"
+                                    required
+                                    aria-label="Straße (Einzug)"
+                                />
+                                <input
+                                    class="angebot-page__address-nr"
+                                    type="text"
+                                    bind:value={formData.endHausnummer}
+                                    placeholder="Nr."
+                                    required
+                                    aria-label="Hausnummer (Einzug)"
+                                />
+                            </div>
+                            <div class="angebot-page__address-row">
+                                <input
+                                    class="angebot-page__address-plz"
+                                    type="text"
+                                    bind:value={formData.endPlz}
+                                    placeholder="PLZ"
+                                    required
+                                    pattern={"[0-9]{5}"}
+                                    inputmode="numeric"
+                                    maxlength="5"
+                                    aria-label="Postleitzahl (Einzug)"
+                                />
+                                <input
+                                    type="text"
+                                    bind:value={formData.endOrt}
+                                    placeholder="Ort"
+                                    required
+                                    aria-label="Ort (Einzug)"
+                                />
+                            </div>
+                            <input
+                                type="hidden"
+                                name="einzugsadresse"
+                                value={endAddress}
+                                toolparamtitle="Einzugsadresse"
+                                toolparamdescription="Neue Adresse (Straße, Hausnummer, PLZ, Ort)"
+                            />
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label for="endFloor">Etage Einzug *</label>
+                            <select
+                                id="endFloor"
+                                name="etage-einzug"
+                                bind:value={formData.endFloor}
+                                required
+                                toolparamtitle="Etage Einzug"
+                                toolparamdescription="Stockwerk der Einzugsadresse (Erdgeschoss bis Höher als 6. Stock)"
+                            >
+                                {#each floorOptions as option}
+                                    <option value={option.value}
+                                        >{option.label}</option
+                                    >
+                                {/each}
+                            </select>
+                        </div>
+
+                        <div
+                            class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks"
+                        >
+                            <label class="angebot-page__checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="aufzug-einzug"
+                                    bind:checked={formData.aufzugEinzug}
+                                />
+                                <span>Aufzug vorhanden</span>
+                            </label>
+                            <label class="angebot-page__checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="halteverbot-einzug"
+                                    bind:checked={formData.halteverbotEinzug}
+                                />
+                                <span>Halteverbot benötigt?</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 3: Additional Services -->
+                <section class="angebot-page__section">
+                    <h2 class="angebot-page__section-title">
+                        <span class="angebot-page__step-number">3</span>
+                        Gewünschte Zusatzleistungen
+                    </h2>
+
+                    <div class="angebot-page__services-grid">
+                        {#each additionalServices as service}
+                            <label class="angebot-page__service-option">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.selectedServices.includes(
+                                        service.id,
+                                    )}
+                                    onchange={() => toggleService(service.id)}
+                                />
+                                <span class="angebot-page__service-checkbox"
+                                ></span>
+                                <span class="angebot-page__service-label"
+                                    >{service.label}</span
+                                >
+                            </label>
+                        {/each}
+                    </div>
+                </section>
+
+                <!-- Step 4: Message -->
+                <section class="angebot-page__section">
+                    <h2 class="angebot-page__section-title">
+                        <span class="angebot-page__step-number">4</span>
+                        Ihre Nachricht (optional)
+                    </h2>
+
+                    <div class="angebot-page__form-group">
+                        <textarea
+                            id="message"
+                            name="nachricht"
+                            bind:value={formData.message}
+                            placeholder="Weitere Details oder Fragen..."
+                            rows={4}
+                            toolparamtitle="Nachricht"
+                            toolparamdescription="Zusätzliche Informationen oder Fragen zum Umzug (optional)"
+                        ></textarea>
+                    </div>
+                </section>
+
+                <!-- Privacy & Submit -->
+                <section
+                    class="angebot-page__section angebot-page__section--submit"
                 >
-                    {#if isSubmitting}
-                        <span>Wird gesendet...</span>
-                    {:else}
-                        <Send size={20} />
-                        <span>Kostenloses Angebot anfordern</span>
+                    <label class="angebot-page__privacy">
+                        <input
+                            type="checkbox"
+                            name="datenschutz-akzeptiert"
+                            bind:checked={formData.privacyAccepted}
+                            required
+                        />
+                        <span class="angebot-page__privacy-text">
+                            Ich stimme zu, dass meine Angaben zur Bearbeitung
+                            meiner Anfrage erhoben und verarbeitet werden. Die <a
+                                href="/datenschutz"
+                                target="_blank">Datenschutzerklärung</a
+                            > habe ich zur Kenntnis genommen.
+                        </span>
+                    </label>
+
+                    {#if submitError}
+                        <p class="angebot-page__error">{submitError}</p>
                     {/if}
-                </button>
-            </section>
-        </form>
+
+                    <button
+                        type="submit"
+                        class="angebot-page__submit"
+                        disabled={!isFormValid || isSubmitting}
+                    >
+                        {#if isSubmitting}
+                            <span>Wird gesendet...</span>
+                        {:else}
+                            <Send size={20} />
+                            <span>Kostenloses Angebot anfordern</span>
+                        {/if}
+                    </button>
+                </section>
+            </form>
         {/if}
     </div>
 </main>
@@ -567,6 +757,7 @@
         background-color: #f4f6f8;
         min-height: 60vh;
         padding-block: var(--space-12);
+        overflow-x: hidden;
     }
 
     .angebot-page__success {
@@ -912,9 +1103,14 @@
     }
 
     /* Address sub-fields */
+    .angebot-page__form-group {
+        min-width: 0; /* allow grid cell to shrink */
+    }
+
     .angebot-page__address-row {
         display: flex;
         gap: var(--space-2);
+        flex-wrap: wrap;
     }
 
     .angebot-page__address-row input {
@@ -924,10 +1120,12 @@
 
     input.angebot-page__address-nr {
         flex: 0 0 80px;
+        max-width: 80px;
     }
 
     input.angebot-page__address-plz {
         flex: 0 0 100px;
+        max-width: 100px;
     }
 
     /* Responsive */
@@ -956,6 +1154,17 @@
     @media (max-width: 480px) {
         .angebot-page__services-grid {
             grid-template-columns: 1fr;
+        }
+
+        /* Stack address sub-fields vertically on very small screens */
+        .angebot-page__address-row {
+            flex-direction: column;
+        }
+
+        input.angebot-page__address-nr,
+        input.angebot-page__address-plz {
+            flex: 1 1 auto;
+            max-width: 100%;
         }
     }
 </style>

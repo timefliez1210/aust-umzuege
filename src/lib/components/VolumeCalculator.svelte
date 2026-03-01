@@ -1153,6 +1153,8 @@
         display: grid;
         grid-template-columns: 220px 1fr;
         min-height: 400px;
+        width: 100%;
+        overflow: hidden;
     }
 
     /* Sidebar */
@@ -1401,6 +1403,7 @@
     @media (max-width: 767px) {
         .volume-calculator__layout {
             grid-template-columns: 1fr;
+            overflow: hidden;
         }
 
         .volume-calculator__sidebar {
@@ -1410,6 +1413,8 @@
             padding: var(--space-3);
             border-right: none;
             border-bottom: 1px solid #e2e8f0;
+            overflow-x: hidden;
+            max-width: 100%;
         }
 
         .volume-calculator__category {

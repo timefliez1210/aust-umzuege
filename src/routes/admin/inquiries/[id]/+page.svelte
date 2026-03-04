@@ -1,16 +1,44 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
-	import { apiFetch, apiGet, apiPatch, apiPost, apiPut, apiDelete, formatDate, formatEuro, API_BASE } from '$lib/utils/api.svelte';
-	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
-	import PriceInput from '$lib/components/admin/PriceInput.svelte';
-	import RouteMap from '$lib/components/admin/RouteMap.svelte';
-	import { floorLabel, parseFloor } from '$lib/utils/floor';
-	import { sortItems, filterItemsByPhotoIndex } from '$lib/utils/sorting';
-	import { computeTotalVolume } from '$lib/utils/volume';
-	import { normalizeFlatTotalItem } from '$lib/utils/pricing';
-	import { ArrowLeft, Save, FileOutput, RotateCcw, Trash2, X, Pencil, Plus, ChevronLeft, ChevronRight, Upload, Video, Download, ImagePlus } from 'lucide-svelte';
+	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
+	import {
+		apiFetch,
+		apiGet,
+		apiPatch,
+		apiPost,
+		apiPut,
+		apiDelete,
+		apiDownload,
+		formatDate,
+		formatDateTime,
+		formatEuro,
+		API_BASE,
+	} from "$lib/utils/api.svelte";
+	import { showToast } from "$lib/components/admin/Toast.svelte";
+	import StatusBadge from "$lib/components/admin/StatusBadge.svelte";
+	import PriceInput from "$lib/components/admin/PriceInput.svelte";
+	import RouteMap from "$lib/components/admin/RouteMap.svelte";
+	import { floorLabel, parseFloor } from "$lib/utils/floor";
+	import { sortItems, filterItemsByPhotoIndex } from "$lib/utils/sorting";
+	import { computeTotalVolume } from "$lib/utils/volume";
+	import { normalizeFlatTotalItem } from "$lib/utils/pricing";
+	import {
+		ArrowLeft,
+		Save,
+		FileOutput,
+		RotateCcw,
+		Trash2,
+		X,
+		Pencil,
+		Plus,
+		ChevronLeft,
+		ChevronRight,
+		Upload,
+		Video,
+		Download,
+		ImagePlus,
+		Send,
+	} from "lucide-svelte";
 
 	interface AddressSnapshot {
 		id: string;
@@ -142,7 +170,7 @@
 	// Editable fields
 	let editVolume = $state<number | null>(null);
 	let editDistance = $state(0);
-	let editNotes = $state('');
+	let editNotes = $state("");
 
 	// Pricing fields
 	let editPersons = $state(2);
@@ -152,20 +180,32 @@
 	let priceDirty = $state(false);
 
 	// Local string state for rate input to avoid cursor-resetting
-	let rateText = $state('30.00');
+	let rateText = $state("30.00");
 	let rateEditing = $state(false);
 
 	let editingOrigin = $state(false);
 	let editingDest = $state(false);
-	let editOrigin = $state({ street: '', postal_code: '', city: '', floor: '0', elevator: false });
-	let editDest = $state({ street: '', postal_code: '', city: '', floor: '0', elevator: false });
+	let editOrigin = $state({
+		street: "",
+		postal_code: "",
+		city: "",
+		floor: "0",
+		elevator: false,
+	});
+	let editDest = $state({
+		street: "",
+		postal_code: "",
+		city: "",
+		floor: "0",
+		elevator: false,
+	});
 
 	// Editable items
 	let editItems = $state<EditableItem[]>([]);
 	let itemsDirty = $state(false);
 
 	// Items sorting
-	let sortKey = $state<'name' | 'quantity' | 'volume_m3' | null>(null);
+	let sortKey = $state<"name" | "quantity" | "volume_m3" | null>(null);
 	let sortAsc = $state(true);
 
 	/**
@@ -178,7 +218,7 @@
 	 * @param key - The column to sort by: 'name', 'quantity', or 'volume_m3'
 	 * @returns void (side-effect: updates `sortKey` and `sortAsc`)
 	 */
-	function toggleSort(key: 'name' | 'quantity' | 'volume_m3') {
+	function toggleSort(key: "name" | "quantity" | "volume_m3") {
 		if (sortKey === key) {
 			sortAsc = !sortAsc;
 		} else {
@@ -196,17 +236,18 @@
 	let computedTotal = $derived(computeTotalVolume(editItems));
 
 	// Editable line items
-	const ROW_OPTIONS: { row: number; label: string; defaultCents: number }[] = [
-		{ row: 31, label: 'Demontage', defaultCents: 5000 },
-		{ row: 32, label: 'Montage', defaultCents: 5000 },
-		{ row: 33, label: 'Halteverbotszone', defaultCents: 10000 },
-		{ row: 34, label: 'Umzugsmaterial', defaultCents: 3000 },
-		{ row: 35, label: 'Möbellift', defaultCents: 0 },
-		{ row: 36, label: 'Verleih Kleiderboxen', defaultCents: 0 },
-		{ row: 37, label: 'Verkauf U-Karton', defaultCents: 0 },
-		{ row: 38, label: 'Verkauf B-Karton', defaultCents: 0 },
-		{ row: 99, label: 'Sonstiges', defaultCents: 0 },
-	];
+	const ROW_OPTIONS: { row: number; label: string; defaultCents: number }[] =
+		[
+			{ row: 31, label: "Demontage", defaultCents: 5000 },
+			{ row: 32, label: "Montage", defaultCents: 5000 },
+			{ row: 33, label: "Halteverbotszone", defaultCents: 10000 },
+			{ row: 34, label: "Umzugsmaterial", defaultCents: 3000 },
+			{ row: 35, label: "Möbellift", defaultCents: 0 },
+			{ row: 36, label: "Verleih Kleiderboxen", defaultCents: 0 },
+			{ row: 37, label: "Verkauf U-Karton", defaultCents: 0 },
+			{ row: 38, label: "Verkauf B-Karton", defaultCents: 0 },
+			{ row: 99, label: "Sonstiges", defaultCents: 0 },
+		];
 
 	interface EditLineItem {
 		row: number;
@@ -234,8 +275,22 @@
 	 * @param remark - Optional remark appended to the line on the PDF (default '')
 	 * @returns A fully initialised EditLineItem ready for use in `editLineItems`
 	 */
-	function mkLineItem(row: number, label: string, quantity: number, unitPriceCents: number, remark: string = ''): EditLineItem {
-		return { row, label, remark, quantity, unitPriceCents, _priceText: (unitPriceCents / 100).toFixed(2), _editing: false };
+	function mkLineItem(
+		row: number,
+		label: string,
+		quantity: number,
+		unitPriceCents: number,
+		remark: string = "",
+	): EditLineItem {
+		return {
+			row,
+			label,
+			remark,
+			quantity,
+			unitPriceCents,
+			_priceText: (unitPriceCents / 100).toFixed(2),
+			_editing: false,
+		};
 	}
 
 	/**
@@ -252,26 +307,42 @@
 		const notes = editNotes.toLowerCase();
 		const items: EditLineItem[] = [];
 
-		if (notes.includes('demontage')) {
-			items.push(mkLineItem(31, 'Demontage', 1, 5000));
+		if (notes.includes("demontage")) {
+			items.push(mkLineItem(31, "Demontage", 1, 5000));
 		}
 		// Check "montage" separately — strip "demontage" occurrences first to avoid false positive
-		if (notes.replace('demontage', '').includes('montage')) {
-			items.push(mkLineItem(32, 'Montage', 1, 5000));
+		if (notes.replace("demontage", "").includes("montage")) {
+			items.push(mkLineItem(32, "Montage", 1, 5000));
 		}
 
-		const hvAuszug = notes.includes('halteverbot auszug');
-		const hvEinzug = notes.includes('halteverbot einzug');
+		const hvAuszug = notes.includes("halteverbot auszug");
+		const hvEinzug = notes.includes("halteverbot einzug");
 		const hvCount = (hvAuszug ? 1 : 0) + (hvEinzug ? 1 : 0);
 		if (hvCount > 0) {
-			const remark = hvAuszug && hvEinzug
-				? 'Beladestelle + Entladestelle'
-				: hvAuszug ? 'Beladestelle' : 'Entladestelle';
-			items.push(mkLineItem(33, 'Halteverbotszone', hvCount, 10000, remark));
+			const remark =
+				hvAuszug && hvEinzug
+					? "Beladestelle + Entladestelle"
+					: hvAuszug
+						? "Beladestelle"
+						: "Entladestelle";
+			items.push(
+				mkLineItem(33, "Halteverbotszone", hvCount, 10000, remark),
+			);
 		}
 
-		if (notes.includes('verpackungsservice') || notes.includes('einpackservice')) {
-			items.push(mkLineItem(34, 'Umzugsmaterial', 1, 3000, 'Stretchfolie, Decken, Gurte Einzelpreis 30,00 €'));
+		if (
+			notes.includes("verpackungsservice") ||
+			notes.includes("einpackservice")
+		) {
+			items.push(
+				mkLineItem(
+					34,
+					"Umzugsmaterial",
+					1,
+					3000,
+					"Stretchfolie, Decken, Gurte Einzelpreis 30,00 €",
+				),
+			);
 		}
 
 		editLineItems = items;
@@ -287,7 +358,10 @@
 	 * @returns void (side-effect: appends to `editLineItems`)
 	 */
 	function addLineItem() {
-		editLineItems = [...editLineItems, mkLineItem(31, 'Demontage', 1, 5000)];
+		editLineItems = [
+			...editLineItems,
+			mkLineItem(31, "Demontage", 1, 5000),
+		];
 	}
 
 	/**
@@ -315,12 +389,12 @@
 	 */
 	function onLineItemRowChange(idx: number) {
 		const item = editLineItems[idx];
-		const opt = ROW_OPTIONS.find(r => r.row === item.row);
+		const opt = ROW_OPTIONS.find((r) => r.row === item.row);
 		if (opt) {
 			if (item.row === 99) {
-				item.label = '';
+				item.label = "";
 				item.unitPriceCents = 0;
-				item._priceText = '0.00';
+				item._priceText = "0.00";
 			} else {
 				item.label = opt.label;
 				item.unitPriceCents = opt.defaultCents;
@@ -332,12 +406,19 @@
 
 	let laborCents = $derived(editPersons * editHours * editRateCents);
 	let nonLaborCents = $derived(
-		editLineItems.reduce((sum, li) => sum + li.quantity * li.unitPriceCents, 0)
+		editLineItems.reduce(
+			(sum, li) => sum + li.quantity * li.unitPriceCents,
+			0,
+		),
 	);
 	let calculatedNettoCents = $derived(nonLaborCents + laborCents);
-	let calculatedBruttoCents = $derived(Math.round(calculatedNettoCents * 1.19));
+	let calculatedBruttoCents = $derived(
+		Math.round(calculatedNettoCents * 1.19),
+	);
 	const COST_PER_PERSON_HOUR = 18.23;
-	let laborProfit = $derived(editPersons * editHours * (editRateCents / 100 - COST_PER_PERSON_HOUR));
+	let laborProfit = $derived(
+		editPersons * editHours * (editRateCents / 100 - COST_PER_PERSON_HOUR),
+	);
 
 	// Item reviewer state
 	let reviewIndex = $state<number | null>(null);
@@ -391,7 +472,8 @@
 	 * @returns void (side-effect: increments `reviewIndex` if not already at the last item)
 	 */
 	function reviewNext() {
-		if (reviewIndex !== null && reviewIndex < sortedItems().length - 1) reviewIndex++;
+		if (reviewIndex !== null && reviewIndex < sortedItems().length - 1)
+			reviewIndex++;
 	}
 
 	/**
@@ -430,27 +512,66 @@
 	function handleKeydown(e: KeyboardEvent) {
 		// Don't intercept when typing in inputs
 		const tag = (e.target as HTMLElement)?.tagName;
-		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+		if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
 		if (reviewIndex !== null) {
-			if (e.key === 'Escape') { closeReview(); e.preventDefault(); }
-			else if (e.key === 'ArrowLeft') { reviewPrev(); e.preventDefault(); }
-			else if (e.key === 'ArrowRight') { reviewNext(); e.preventDefault(); }
+			if (e.key === "Escape") {
+				closeReview();
+				e.preventDefault();
+			} else if (e.key === "ArrowLeft") {
+				reviewPrev();
+				e.preventDefault();
+			} else if (e.key === "ArrowRight") {
+				reviewNext();
+				e.preventDefault();
+			}
 		} else if (filterPhotoIndex !== null) {
-			if (e.key === 'Escape') { filterPhotoIndex = null; e.preventDefault(); }
+			if (e.key === "Escape") {
+				filterPhotoIndex = null;
+				e.preventDefault();
+			}
+		}
+	}
+
+	// PDF download state
+	let downloadingPdf = $state(false);
+
+	/**
+	 * Downloads the offer PDF for the current inquiry via authenticated fetch.
+	 *
+	 * Called by: Template (onclick on the "PDF herunterladen" button in the offer card)
+	 * Purpose: Uses apiDownload so the Authorization header is included — a plain <a href> tag
+	 *          cannot attach the Bearer token required by the protected endpoint.
+	 *          Calls GET /api/v1/inquiries/{id}/pdf and triggers a browser file download.
+	 *
+	 * @returns void (side-effect: triggers browser PDF download, shows error toast on failure)
+	 */
+	async function downloadPdf() {
+		if (!data) return;
+		downloadingPdf = true;
+		try {
+			const offerNum = data.offer?.offer_number || data.id.slice(0, 8);
+			await apiDownload(
+				`/api/v1/inquiries/${data.id}/pdf`,
+				`angebot_${offerNum}.pdf`,
+			);
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			downloadingPdf = false;
 		}
 	}
 
 	// Video upload state
 	let videoUploading = $state(false);
-	let videoProgress = $state('');
+	let videoProgress = $state("");
 	let videoFileInput = $state<HTMLInputElement | null>(null);
 	let videoQueue = $state<File[]>([]);
 	let videoDragging = $state(false);
 	let downloadingMedia = $state(false);
 
 	let photoUploading = $state(false);
-	let photoProgress = $state('');
+	let photoProgress = $state("");
 	let photoFileInput = $state<HTMLInputElement | null>(null);
 	let photoQueue = $state<File[]>([]);
 	let photoDragging = $state(false);
@@ -469,47 +590,59 @@
 		if (!data) return;
 		downloadingMedia = true;
 		try {
-			const JSZip = (await import('jszip')).default;
+			const JSZip = (await import("jszip")).default;
 			const zip = new JSZip();
 
-			const images = estimationsList.flatMap(e => e.source_image_urls);
-			const videos = estimationsList.filter(e => e.source_video_url).map(e => e.source_video_url!);
+			const images = estimationsList.flatMap((e) => e.source_image_urls);
+			const videos = estimationsList
+				.filter((e) => e.source_video_url)
+				.map((e) => e.source_video_url!);
 
 			if (images.length === 0 && videos.length === 0) {
-				showToast('Keine Medien zum Herunterladen vorhanden', 'error');
+				showToast("Keine Medien zum Herunterladen vorhanden", "error");
 				return;
 			}
 
-			const imgFolder = zip.folder('fotos');
-			const vidFolder = zip.folder('videos');
+			const imgFolder = zip.folder("fotos");
+			const vidFolder = zip.folder("videos");
 
 			const imgPromises = images.map(async (url: string, i: number) => {
 				const res = await fetch(API_BASE + url);
 				const blob = await res.blob();
-				const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+				const ext = blob.type.includes("png")
+					? "png"
+					: blob.type.includes("webp")
+						? "webp"
+						: "jpg";
 				imgFolder!.file(`foto_${i + 1}.${ext}`, blob);
 			});
 
 			const vidPromises = videos.map(async (url: string, i: number) => {
 				const res = await fetch(API_BASE + url);
 				const blob = await res.blob();
-				const ext = blob.type.includes('webm') ? 'webm' : 'mp4';
+				const ext = blob.type.includes("webm") ? "webm" : "mp4";
 				vidFolder!.file(`video_${i + 1}.${ext}`, blob);
 			});
 
 			await Promise.all([...imgPromises, ...vidPromises]);
 
-			const content = await zip.generateAsync({ type: 'blob' });
+			const content = await zip.generateAsync({ type: "blob" });
 			const inquiryId = data.id.slice(0, 8);
-			const link = document.createElement('a');
+			const link = document.createElement("a");
 			link.href = URL.createObjectURL(content);
 			link.download = `medien_${inquiryId}.zip`;
 			link.click();
 			URL.revokeObjectURL(link.href);
 
-			showToast(`${images.length} Fotos und ${videos.length} Videos heruntergeladen`, 'success');
+			showToast(
+				`${images.length} Fotos und ${videos.length} Videos heruntergeladen`,
+				"success",
+			);
 		} catch (e) {
-			showToast('Download fehlgeschlagen: ' + (e as Error).message, 'error');
+			showToast(
+				"Download fehlgeschlagen: " + (e as Error).message,
+				"error",
+			);
 		} finally {
 			downloadingMedia = false;
 		}
@@ -526,13 +659,18 @@
 	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
 	 */
 	async function deleteEstimation(estimationId: string) {
-		if (!confirm('Diese Analyse und alle zugehörigen Gegenstände werden gelöscht.')) return;
+		if (
+			!confirm(
+				"Diese Analyse und alle zugehörigen Gegenstände werden gelöscht.",
+			)
+		)
+			return;
 		try {
 			await apiDelete(`/api/v1/estimates/${estimationId}`);
-			showToast('Analyse gelöscht', 'success');
+			showToast("Analyse gelöscht", "success");
 			await loadInquiry();
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		}
 	}
 
@@ -547,15 +685,27 @@
 	 * @returns void (side-effect: appends valid files to `photoQueue`, shows error toast for rejected files)
 	 */
 	function addPhotoFiles(files: FileList | File[]) {
-		const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'];
+		const imageExtensions = [
+			".jpg",
+			".jpeg",
+			".png",
+			".webp",
+			".heic",
+			".heif",
+		];
 		for (const file of Array.from(files)) {
-			const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-			if (!file.type.startsWith('image/') && !imageExtensions.includes(ext)) {
-				showToast(`${file.name}: Keine Bilddatei`, 'error');
+			const ext = file.name
+				.toLowerCase()
+				.slice(file.name.lastIndexOf("."));
+			if (
+				!file.type.startsWith("image/") &&
+				!imageExtensions.includes(ext)
+			) {
+				showToast(`${file.name}: Keine Bilddatei`, "error");
 				continue;
 			}
 			if (file.size > 50 * 1024 * 1024) {
-				showToast(`${file.name} zu gross (max. 50 MB)`, 'error');
+				showToast(`${file.name} zu gross (max. 50 MB)`, "error");
 				continue;
 			}
 			photoQueue = [...photoQueue, file];
@@ -576,7 +726,7 @@
 		const input = e.target as HTMLInputElement;
 		if (!input.files?.length) return;
 		addPhotoFiles(input.files);
-		input.value = '';
+		input.value = "";
 	}
 
 	/**
@@ -649,33 +799,41 @@
 
 		photoUploading = true;
 		const count = photoQueue.length;
-		photoProgress = `${count} Foto${count > 1 ? 's' : ''} wird hochgeladen...`;
+		photoProgress = `${count} Foto${count > 1 ? "s" : ""} wird hochgeladen...`;
 
 		try {
 			const formData = new FormData();
 			for (const file of photoQueue) {
-				formData.append('images', file);
+				formData.append("images", file);
 			}
 
-			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/inquiries/${data.id}/estimate/depth`, {
-				method: 'POST',
-				body: formData,
-			});
+			const results = await apiFetch<{ id: string; status: string }[]>(
+				`/api/v1/inquiries/${data.id}/estimate/depth`,
+				{
+					method: "POST",
+					body: formData,
+				},
+			);
 
 			photoQueue = [];
-			showToast(`${count} Foto${count > 1 ? 's' : ''} hochgeladen — Analyse läuft`, 'success');
+			showToast(
+				`${count} Foto${count > 1 ? "s" : ""} hochgeladen — Analyse läuft`,
+				"success",
+			);
 
-			const processingIds = results.filter(r => r.status === 'processing').map(r => r.id);
+			const processingIds = results
+				.filter((r) => r.status === "processing")
+				.map((r) => r.id);
 			if (processingIds.length > 0) {
 				await pollEstimations(processingIds);
 			} else {
 				await loadInquiry();
 			}
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		} finally {
 			photoUploading = false;
-			photoProgress = '';
+			photoProgress = "";
 		}
 	}
 
@@ -690,15 +848,20 @@
 	 * @returns void (side-effect: appends valid files to `videoQueue`, shows error toast for rejected files)
 	 */
 	function addVideoFiles(files: FileList | File[]) {
-		const videoExtensions = ['.mp4', '.mov', '.webm', '.mkv', '.avi'];
+		const videoExtensions = [".mp4", ".mov", ".webm", ".mkv", ".avi"];
 		for (const file of Array.from(files)) {
-			const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-			if (!file.type.startsWith('video/') && !videoExtensions.includes(ext)) {
-				showToast(`${file.name}: Keine Videodatei`, 'error');
+			const ext = file.name
+				.toLowerCase()
+				.slice(file.name.lastIndexOf("."));
+			if (
+				!file.type.startsWith("video/") &&
+				!videoExtensions.includes(ext)
+			) {
+				showToast(`${file.name}: Keine Videodatei`, "error");
 				continue;
 			}
 			if (file.size > 500 * 1024 * 1024) {
-				showToast(`${file.name} zu gross (max. 500 MB)`, 'error');
+				showToast(`${file.name} zu gross (max. 500 MB)`, "error");
 				continue;
 			}
 			videoQueue = [...videoQueue, file];
@@ -719,7 +882,7 @@
 		const input = e.target as HTMLInputElement;
 		if (!input.files?.length) return;
 		addVideoFiles(input.files);
-		input.value = '';
+		input.value = "";
 	}
 
 	/**
@@ -805,33 +968,41 @@
 
 		videoUploading = true;
 		const count = videoQueue.length;
-		videoProgress = `${count} Video${count > 1 ? 's' : ''} wird hochgeladen...`;
+		videoProgress = `${count} Video${count > 1 ? "s" : ""} wird hochgeladen...`;
 
 		try {
 			const formData = new FormData();
 			for (const file of videoQueue) {
-				formData.append('video', file);
+				formData.append("video", file);
 			}
 
-			const results = await apiFetch<{ id: string; status: string }[]>(`/api/v1/inquiries/${data.id}/estimate/video`, {
-				method: 'POST',
-				body: formData,
-			});
+			const results = await apiFetch<{ id: string; status: string }[]>(
+				`/api/v1/inquiries/${data.id}/estimate/video`,
+				{
+					method: "POST",
+					body: formData,
+				},
+			);
 
 			videoQueue = [];
-			showToast(`${count} Video${count > 1 ? 's' : ''} hochgeladen — Analyse läuft`, 'success');
+			showToast(
+				`${count} Video${count > 1 ? "s" : ""} hochgeladen — Analyse läuft`,
+				"success",
+			);
 
-			const processingIds = results.filter(r => r.status === 'processing').map(r => r.id);
+			const processingIds = results
+				.filter((r) => r.status === "processing")
+				.map((r) => r.id);
 			if (processingIds.length > 0) {
 				await pollEstimations(processingIds);
 			} else {
 				await loadInquiry();
 			}
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		} finally {
 			videoUploading = false;
-			videoProgress = '';
+			videoProgress = "";
 		}
 	}
 
@@ -855,14 +1026,16 @@
 		const total = estimationIds.length;
 
 		for (let i = 0; i < maxAttempts && pending.size > 0; i++) {
-			await new Promise(r => setTimeout(r, 5000));
+			await new Promise((r) => setTimeout(r, 5000));
 			for (const id of [...pending]) {
 				try {
-					const est = await apiFetch<{ id: string; status: string }>(`/api/v1/estimates/${id}`);
-					if (est.status === 'completed') {
+					const est = await apiFetch<{ id: string; status: string }>(
+						`/api/v1/estimates/${id}`,
+					);
+					if (est.status === "completed") {
 						pending.delete(id);
 						completed++;
-					} else if (est.status === 'failed') {
+					} else if (est.status === "failed") {
 						pending.delete(id);
 						failed++;
 					}
@@ -876,13 +1049,16 @@
 		}
 
 		if (failed > 0 && completed === 0) {
-			showToast('Video-Analyse fehlgeschlagen', 'error');
+			showToast("Video-Analyse fehlgeschlagen", "error");
 		} else if (failed > 0) {
-			showToast(`${completed}/${total} Videos analysiert, ${failed} fehlgeschlagen`, 'warning');
+			showToast(
+				`${completed}/${total} Videos analysiert, ${failed} fehlgeschlagen`,
+				"warning",
+			);
 		} else if (pending.size > 0) {
-			showToast('Video-Analyse Timeout', 'error');
+			showToast("Video-Analyse Timeout", "error");
 		} else {
-			showToast('Video-Analyse abgeschlossen', 'success');
+			showToast("Video-Analyse abgeschlossen", "success");
 		}
 		await loadInquiry();
 	}
@@ -905,37 +1081,47 @@
 	let estimationsList = $derived.by((): EstimationEntry[] => {
 		const est = data?.estimation;
 		if (!est) return [];
-		const entries: EstimationEntry[] = [{
-			id: est.id,
-			method: est.method,
-			status: est.status,
-			total_volume_m3: est.total_volume_m3,
-			item_count: est.item_count,
-			created_at: est.created_at,
-			source_video_url: est.source_video,
-			source_image_urls: est.source_images ?? [],
-		}];
+		const entries: EstimationEntry[] = [
+			{
+				id: est.id,
+				method: est.method,
+				status: est.status,
+				total_volume_m3: est.total_volume_m3,
+				item_count: est.item_count,
+				created_at: est.created_at,
+				source_video_url: est.source_video,
+				source_image_urls: est.source_images ?? [],
+			},
+		];
 		return entries;
 	});
 
 	let galleryEntries = $derived(
 		estimationsList
-			.filter(e => e.source_image_urls.length > 0)
-			.flatMap(e => e.source_image_urls.map(url => ({ url: API_BASE + url, estimationId: e.id })))
+			.filter((e) => e.source_image_urls.length > 0)
+			.flatMap((e) =>
+				e.source_image_urls.map((url) => ({
+					url: API_BASE + url,
+					estimationId: e.id,
+				})),
+			),
 	);
-	let galleryImages = $derived(galleryEntries.map(e => e.url));
+	let galleryImages = $derived(galleryEntries.map((e) => e.url));
 
 	let videoEntries = $derived(
 		estimationsList
-			.filter(e => e.source_video_url !== null)
-			.map(e => ({ url: API_BASE + e.source_video_url!, estimationId: e.id }))
+			.filter((e) => e.source_video_url !== null)
+			.map((e) => ({
+				url: API_BASE + e.source_video_url!,
+				estimationId: e.id,
+			})),
 	);
 
 	let processingEstimations = $derived(
-		estimationsList.filter(e => e.status === 'processing')
+		estimationsList.filter((e) => e.status === "processing"),
 	);
 	let failedEstimations = $derived(
-		estimationsList.filter(e => e.status === 'failed')
+		estimationsList.filter((e) => e.status === "failed"),
 	);
 
 	/**
@@ -964,7 +1150,7 @@
 	 * @returns void (side-effect: sets `editItems` and resets `itemsDirty = false`)
 	 */
 	function initEditItems(items: ItemSnapshot[]) {
-		editItems = items.map(item => ({
+		editItems = items.map((item) => ({
 			name: item.name,
 			volume_m3: item.volume_m3,
 			quantity: item.quantity,
@@ -1011,16 +1197,16 @@
 			editBruttoCents = lo.total_brutto_cents;
 			// Build editable line items from offer (non-labor only, normalize flat-total items)
 			editLineItems = lo.line_items
-				.filter(li => !li.is_labor)
-				.map(li => {
+				.filter((li) => !li.is_labor)
+				.map((li) => {
 					const normalized = normalizeFlatTotalItem(li);
-					const match = ROW_OPTIONS.find(r => r.label === li.label);
+					const match = ROW_OPTIONS.find((r) => r.label === li.label);
 					return mkLineItem(
 						match?.row ?? 99,
 						li.label,
 						normalized.quantity,
 						normalized.unit_price_cents,
-						li.remark ?? '',
+						li.remark ?? "",
 					);
 				});
 			priceDirty = false;
@@ -1071,30 +1257,44 @@
 			data = await apiGet<InquiryResponse>(`/api/v1/inquiries/${id}`);
 			editVolume = data.volume_m3;
 			editDistance = data.distance_km ?? 0;
-			editNotes = data.notes || '';
+			editNotes = data.notes || "";
 			if (data.items?.length) {
 				initEditItems(data.items);
 			}
 			computePricingDefaults();
 
+			// Load emails non-blocking so the inquiry renders first
+			loadEmails();
+
 			// Fetch route geometry from distance calculator (non-blocking)
 			if (data.origin_address && data.destination_address) {
-				const originStr = `${data.origin_address.street}, ${data.origin_address.postal_code || ''} ${data.origin_address.city}`.trim();
-				const destStr = `${data.destination_address.street}, ${data.destination_address.postal_code || ''} ${data.destination_address.city}`.trim();
-				apiPost<{ legs: { geometry: [number, number][] }[] }>(`/api/v1/distance/calculate`, {
-					addresses: [originStr, destStr]
-				})
+				const originStr =
+					`${data.origin_address.street}, ${data.origin_address.postal_code || ""} ${data.origin_address.city}`.trim();
+				const destStr =
+					`${data.destination_address.street}, ${data.destination_address.postal_code || ""} ${data.destination_address.city}`.trim();
+				apiPost<{ legs: { geometry: [number, number][] }[] }>(
+					`/api/v1/distance/calculate`,
+					{
+						addresses: [originStr, destStr],
+					},
+				)
 					.then((r) => {
 						const geo = r.legs?.[0]?.geometry;
 						// geometry is [[lng, lat], ...] — swap to [lat, lng] for Leaflet
-						routeCoordinates = geo?.length >= 2
-							? geo.map(([lng, lat]) => [lat, lng] as [number, number])
-							: null;
+						routeCoordinates =
+							geo?.length >= 2
+								? geo.map(
+										([lng, lat]) =>
+											[lat, lng] as [number, number],
+									)
+								: null;
 					})
-					.catch(() => { routeCoordinates = null; });
+					.catch(() => {
+						routeCoordinates = null;
+					});
 			}
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		} finally {
 			loading = false;
 		}
@@ -1115,7 +1315,7 @@
 		await apiPatch(`/api/v1/inquiries/${data.id}`, {
 			estimated_volume_m3: editVolume,
 			distance_km: editDistance,
-			notes: editNotes || null
+			notes: editNotes || null,
 		});
 	}
 
@@ -1133,10 +1333,10 @@
 		saving = true;
 		try {
 			await persistInquiry();
-			showToast('Anfrage gespeichert', 'success');
+			showToast("Anfrage gespeichert", "success");
 			await loadInquiry();
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		} finally {
 			saving = false;
 		}
@@ -1158,7 +1358,7 @@
 		savingItems = true;
 		try {
 			await apiPut(`/api/v1/inquiries/${data.id}/items`, {
-				items: editItems.map(item => ({
+				items: editItems.map((item) => ({
 					name: item.name,
 					volume_m3: item.volume_m3,
 					quantity: item.quantity,
@@ -1168,13 +1368,13 @@
 					seen_in_images: item.seen_in_images,
 					category: item.category,
 					dimensions: item.dimensions,
-				}))
+				})),
 			});
 			editVolume = computedTotal;
 			itemsDirty = false;
-			showToast('Gegenstaende gespeichert', 'success');
+			showToast("Gegenstaende gespeichert", "success");
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		} finally {
 			savingItems = false;
 		}
@@ -1203,20 +1403,23 @@
 	 * @returns void (side-effect: appends to `editItems`, sets `itemsDirty = true`)
 	 */
 	function addItem() {
-		editItems = [...editItems, {
-			name: '',
-			volume_m3: 0,
-			quantity: 1,
-			confidence: 1.0,
-			crop_url: null,
-			source_image_url: null,
-			bbox: null,
-			crop_s3_key: null,
-			bbox_image_index: null,
-			seen_in_images: null,
-			category: null,
-			dimensions: null,
-		}];
+		editItems = [
+			...editItems,
+			{
+				name: "",
+				volume_m3: 0,
+				quantity: 1,
+				confidence: 1.0,
+				crop_url: null,
+				source_image_url: null,
+				bbox: null,
+				crop_s3_key: null,
+				bbox_image_index: null,
+				seen_in_images: null,
+				category: null,
+				dimensions: null,
+			},
+		];
 		itemsDirty = true;
 	}
 
@@ -1253,7 +1456,9 @@
 		const targetNetto = Math.round(editBruttoCents / 1.19);
 		const availableForLabor = targetNetto - nonLaborCents;
 		if (editPersons > 0 && editHours > 0 && availableForLabor > 0) {
-			editRateCents = Math.round(availableForLabor / (editPersons * editHours));
+			editRateCents = Math.round(
+				availableForLabor / (editPersons * editHours),
+			);
 		}
 		priceDirty = true;
 	}
@@ -1275,7 +1480,8 @@
 	 */
 	async function reEstimateOffer() {
 		if (!latestOffer) return;
-		if (!confirm('Entfernung neu berechnen und Angebot neu erstellen?')) return;
+		if (!confirm("Entfernung neu berechnen und Angebot neu erstellen?"))
+			return;
 		try {
 			// Persist unsaved items first (recalculates total volume)
 			if (itemsDirty) {
@@ -1294,18 +1500,21 @@
 				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
 			}
 			if (editLineItems.length > 0) {
-				payload.line_items = editLineItems.map(li => ({
+				payload.line_items = editLineItems.map((li) => ({
 					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unitPriceCents / 100,
 					...(li.remark ? { remark: li.remark } : {}),
 				}));
 			}
-			await apiPost(`/api/v1/inquiries/${data!.id}/generate-offer`, payload);
-			showToast('Angebot wird neu berechnet...', 'success');
+			await apiPost(
+				`/api/v1/inquiries/${data!.id}/generate-offer`,
+				payload,
+			);
+			showToast("Angebot wird neu berechnet...", "success");
 			await loadInquiry();
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		}
 	}
 
@@ -1340,35 +1549,38 @@
 				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
 			}
 			if (editLineItems.length > 0) {
-				payload.line_items = editLineItems.map(li => ({
+				payload.line_items = editLineItems.map((li) => ({
 					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unitPriceCents / 100,
 					...(li.remark ? { remark: li.remark } : {}),
 				}));
 			}
-			await apiPost<{ id: string }>(`/api/v1/inquiries/${data.id}/generate-offer`, payload);
+			await apiPost<{ id: string }>(
+				`/api/v1/inquiries/${data.id}/generate-offer`,
+				payload,
+			);
 
-			showToast('Angebot erstellt', 'success');
+			showToast("Angebot erstellt", "success");
 			await loadInquiry();
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		}
 	}
 
 	const statusOptions: { value: string; label: string }[] = [
-		{ value: 'pending', label: 'Ausstehend' },
-		{ value: 'estimating', label: 'Schaetzung' },
-		{ value: 'estimated', label: 'Volumen' },
-		{ value: 'offer_ready', label: 'Angebot' },
-		{ value: 'sent', label: 'Gesendet' },
-		{ value: 'accepted', label: 'Akzeptiert' },
-		{ value: 'scheduled', label: 'Geplant' },
-		{ value: 'completed', label: 'Abgeschlossen' },
-		{ value: 'invoiced', label: 'Fakturiert' },
-		{ value: 'paid', label: 'Bezahlt' },
-		{ value: 'rejected', label: 'Abgelehnt' },
-		{ value: 'cancelled', label: 'Storniert' },
+		{ value: "pending", label: "Ausstehend" },
+		{ value: "estimating", label: "Schaetzung" },
+		{ value: "estimated", label: "Volumen" },
+		{ value: "offer_ready", label: "Angebot" },
+		{ value: "sent", label: "Gesendet" },
+		{ value: "accepted", label: "Akzeptiert" },
+		{ value: "scheduled", label: "Geplant" },
+		{ value: "completed", label: "Abgeschlossen" },
+		{ value: "invoiced", label: "Fakturiert" },
+		{ value: "paid", label: "Bezahlt" },
+		{ value: "rejected", label: "Abgelehnt" },
+		{ value: "cancelled", label: "Storniert" },
 	];
 
 	let changingStatus = $state(false);
@@ -1390,12 +1602,16 @@
 		if (data.status === newStatus) return;
 		changingStatus = true;
 		try {
-			await apiPatch(`/api/v1/inquiries/${data.id}`, { status: newStatus });
-			const label = statusOptions.find(s => s.value === newStatus)?.label || newStatus;
-			showToast(`Status: ${label}`, 'success');
+			await apiPatch(`/api/v1/inquiries/${data.id}`, {
+				status: newStatus,
+			});
+			const label =
+				statusOptions.find((s) => s.value === newStatus)?.label ||
+				newStatus;
+			showToast(`Status: ${label}`, "success");
 			await loadInquiry();
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		} finally {
 			changingStatus = false;
 		}
@@ -1413,13 +1629,13 @@
 	 */
 	async function deleteInquiry() {
 		if (!data) return;
-		if (!confirm('Anfrage unwiderruflich loeschen?')) return;
+		if (!confirm("Anfrage unwiderruflich loeschen?")) return;
 		try {
 			await apiDelete(`/api/v1/inquiries/${data.id}`);
-			showToast('Anfrage geloescht', 'success');
-			goto('/admin/inquiries');
+			showToast("Anfrage geloescht", "success");
+			goto("/admin/inquiries");
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		}
 	}
 
@@ -1435,7 +1651,13 @@
 	function startEditOrigin() {
 		if (!data?.origin_address) return;
 		const a = data.origin_address;
-		editOrigin = { street: a.street, postal_code: a.postal_code || '', city: a.city, floor: a.floor || '0', elevator: a.elevator ?? false };
+		editOrigin = {
+			street: a.street,
+			postal_code: a.postal_code || "",
+			city: a.city,
+			floor: a.floor || "0",
+			elevator: a.elevator ?? false,
+		};
 		editingOrigin = true;
 	}
 
@@ -1451,7 +1673,13 @@
 	function startEditDest() {
 		if (!data?.destination_address) return;
 		const a = data.destination_address;
-		editDest = { street: a.street, postal_code: a.postal_code || '', city: a.city, floor: a.floor || '0', elevator: a.elevator ?? false };
+		editDest = {
+			street: a.street,
+			postal_code: a.postal_code || "",
+			city: a.city,
+			floor: a.floor || "0",
+			elevator: a.elevator ?? false,
+		};
 		editingDest = true;
 	}
 
@@ -1468,17 +1696,224 @@
 	 * @param setEditing - Callback to set the editing flag (e.g. `(v) => editingOrigin = v`) to false on success
 	 * @returns void (side-effect: shows toast, calls setEditing(false) and loadInquiry on success)
 	 */
-	async function saveAddress(addressId: string, fields: typeof editOrigin, setEditing: (v: boolean) => void) {
+	async function saveAddress(
+		addressId: string,
+		fields: typeof editOrigin,
+		setEditing: (v: boolean) => void,
+	) {
 		try {
 			await apiPatch(`/api/v1/admin/addresses/${addressId}`, fields);
-			showToast('Adresse gespeichert', 'success');
+			showToast("Adresse gespeichert", "success");
 			setEditing(false);
 			await loadInquiry();
 		} catch (e) {
-			showToast((e as Error).message, 'error');
+			showToast((e as Error).message, "error");
 		}
 	}
 
+	// ─── Email thread (inline, for this inquiry) ───────────────────────────
+
+	interface InquiryEmailThread {
+		id: string;
+		customer_email: string;
+		customer_name: string | null;
+		quote_id: string | null;
+		subject: string | null;
+		created_at: string;
+	}
+
+	interface InquiryEmailMessage {
+		id: string;
+		direction: string;
+		from_address: string;
+		to_address: string;
+		subject: string | null;
+		body_text: string | null;
+		llm_generated: boolean;
+		status: string;
+		created_at: string;
+	}
+
+	interface InquiryThreadWithMessages {
+		thread: InquiryEmailThread;
+		messages: InquiryEmailMessage[];
+	}
+
+	let emailsLoading = $state(false);
+	let emailThreads = $state<InquiryThreadWithMessages[]>([]);
+
+	// Draft editing state
+	let emailEditingId = $state<string | null>(null);
+	let emailEditSubject = $state("");
+	let emailEditBody = $state("");
+	let emailSaving = $state(false);
+	let emailActionLoading = $state<string | null>(null);
+
+	/**
+	 * Loads all email threads for this inquiry plus their messages.
+	 *
+	 * Called by: loadInquiry (after inquiry data is fetched)
+	 * Purpose: Fetches GET /api/v1/inquiries/{id}/emails to get thread list,
+	 *          then fetches GET /api/v1/admin/emails/{threadId} for each thread to get messages.
+	 *
+	 * @returns void (side-effect: sets `emailThreads`, `emailsLoading`)
+	 */
+	async function loadEmails() {
+		if (!data) return;
+		emailsLoading = true;
+		try {
+			const threads = await apiGet<InquiryEmailThread[]>(
+				`/api/v1/inquiries/${data.id}/emails`,
+			);
+			const withMessages = await Promise.all(
+				threads.map(async (thread) => {
+					try {
+						const res = await apiGet<{
+							thread: InquiryEmailThread;
+							messages: InquiryEmailMessage[];
+						}>(`/api/v1/admin/emails/${thread.id}`);
+						return { thread: res.thread, messages: res.messages };
+					} catch {
+						return { thread, messages: [] };
+					}
+				}),
+			);
+			emailThreads = withMessages;
+		} catch {
+			emailThreads = [];
+		} finally {
+			emailsLoading = false;
+		}
+	}
+
+	/**
+	 * Sends a draft email message to the customer after confirmation.
+	 *
+	 * Called by: Template (onclick on "Senden" button in the email section draft bubble)
+	 * Purpose: Calls POST /api/v1/admin/emails/messages/{id}/send to dispatch the email.
+	 *          Reloads emails on success so the message status updates to "sent".
+	 *
+	 * @param msgId - ID of the draft message to send
+	 * @returns void
+	 */
+	async function emailSendDraft(msgId: string) {
+		if (!confirm("E-Mail jetzt an den Kunden senden?")) return;
+		emailActionLoading = msgId;
+		try {
+			const res = await apiPost<{ message: string }>(
+				`/api/v1/admin/emails/messages/${msgId}/send`,
+			);
+			showToast(res.message, "success");
+			await loadEmails();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			emailActionLoading = null;
+		}
+	}
+
+	/**
+	 * Discards a draft email message after confirmation.
+	 *
+	 * Called by: Template (onclick on "Verwerfen" button in the email section draft bubble)
+	 * Purpose: Calls POST /api/v1/admin/emails/messages/{id}/discard to delete the draft.
+	 *          Reloads emails on success so the message disappears.
+	 *
+	 * @param msgId - ID of the draft message to discard
+	 * @returns void
+	 */
+	async function emailDiscardDraft(msgId: string) {
+		if (!confirm("Entwurf verwerfen?")) return;
+		emailActionLoading = msgId;
+		try {
+			await apiPost(`/api/v1/admin/emails/messages/${msgId}/discard`);
+			showToast("Entwurf verworfen", "success");
+			await loadEmails();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			emailActionLoading = null;
+		}
+	}
+
+	/**
+	 * Opens the inline editor for a draft email message pre-filling with existing content.
+	 *
+	 * Called by: Template (onclick on "Bearbeiten" button in the email section draft bubble)
+	 * Purpose: Seeds the editable subject and body fields with the draft's existing text.
+	 *
+	 * @param msg - The InquiryEmailMessage to edit
+	 * @returns void
+	 */
+	function emailStartEdit(msg: InquiryEmailMessage) {
+		emailEditingId = msg.id;
+		emailEditSubject = msg.subject || "";
+		emailEditBody = msg.body_text || "";
+	}
+
+	/**
+	 * Closes the inline email editor without saving.
+	 *
+	 * Called by: Template (onclick on "Abbrechen" inside the inline email editor)
+	 * Purpose: Resets the editing state so the message bubble reverts to read-only view.
+	 *
+	 * @returns void
+	 */
+	function emailCancelEdit() {
+		emailEditingId = null;
+		emailEditSubject = "";
+		emailEditBody = "";
+	}
+
+	/**
+	 * Saves the edited subject and body of a draft email to the API.
+	 *
+	 * Called by: Template (onclick on "Speichern" inside the inline email editor)
+	 * Purpose: PATCHes via PATCH /api/v1/admin/emails/messages/{id}.
+	 *          Closes the editor and reloads emails on success.
+	 *
+	 * @param msgId - ID of the draft message being edited
+	 * @returns void
+	 */
+	async function emailSaveEdit(msgId: string) {
+		emailSaving = true;
+		try {
+			await apiPatch(`/api/v1/admin/emails/messages/${msgId}`, {
+				subject: emailEditSubject || null,
+				body_text: emailEditBody || null,
+			});
+			showToast("Entwurf gespeichert", "success");
+			emailEditingId = null;
+			await loadEmails();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			emailSaving = false;
+		}
+	}
+
+	/**
+	 * Regenerates the LLM response for a draft email message.
+	 *
+	 * Called by: Template (onclick on "Neu generieren" in the email section draft bubble)
+	 * Purpose: Calls POST /api/v1/admin/emails/messages/{id}/regenerate to ask the LLM to
+	 *          rewrite the draft. Reloads emails on success so the updated body appears.
+	 *
+	 * @param msgId - ID of the draft message to regenerate
+	 * @returns void
+	 */
+	async function emailRegenerateLlm(msgId: string) {
+		emailActionLoading = msgId;
+		try {
+			await apiPost(`/api/v1/admin/emails/messages/${msgId}/regenerate`);
+			showToast("Antwort wird neu generiert...", "success");
+			await loadEmails();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			emailActionLoading = null;
+		}
+	}
 </script>
 
 <div class="page">
@@ -1510,11 +1945,16 @@
 				<select
 					class="status-select"
 					value={data.status}
-					onchange={(e) => setInquiryStatus((e.target as HTMLSelectElement).value)}
+					onchange={(e) =>
+						setInquiryStatus((e.target as HTMLSelectElement).value)}
 					disabled={changingStatus}
 				>
 					{#each statusOptions as opt}
-						<option value={opt.value} selected={opt.value === data.status}>{opt.label}</option>
+						<option
+							value={opt.value}
+							selected={opt.value === data.status}
+							>{opt.label}</option
+						>
 					{/each}
 				</select>
 				<button class="btn btn-danger" onclick={deleteInquiry}>
@@ -1530,7 +1970,9 @@
 				<div class="info-grid">
 					<div class="info-item">
 						<span class="info-label">Name</span>
-						<span class="info-value">{data.customer?.name || '—'}</span>
+						<span class="info-value"
+							>{data.customer?.name || "—"}</span
+						>
 					</div>
 					<div class="info-item">
 						<span class="info-label">E-Mail</span>
@@ -1539,7 +1981,9 @@
 					{#if data.customer?.phone}
 						<div class="info-item">
 							<span class="info-label">Telefon</span>
-							<span class="info-value">{data.customer?.phone}</span>
+							<span class="info-value"
+								>{data.customer?.phone}</span
+							>
 						</div>
 					{/if}
 				</div>
@@ -1551,7 +1995,10 @@
 					<div class="card-header">
 						<h3>Von</h3>
 						{#if !editingOrigin}
-							<button class="btn btn-sm" onclick={startEditOrigin}>
+							<button
+								class="btn btn-sm"
+								onclick={startEditOrigin}
+							>
 								<Pencil size={14} />
 								Bearbeiten
 							</button>
@@ -1561,19 +2008,34 @@
 						<div class="form-grid">
 							<div class="field full-width">
 								<label for="origin-street">Strasse</label>
-								<input id="origin-street" type="text" bind:value={editOrigin.street} />
+								<input
+									id="origin-street"
+									type="text"
+									bind:value={editOrigin.street}
+								/>
 							</div>
 							<div class="field">
 								<label for="origin-plz">PLZ</label>
-								<input id="origin-plz" type="text" bind:value={editOrigin.postal_code} />
+								<input
+									id="origin-plz"
+									type="text"
+									bind:value={editOrigin.postal_code}
+								/>
 							</div>
 							<div class="field">
 								<label for="origin-city">Stadt</label>
-								<input id="origin-city" type="text" bind:value={editOrigin.city} />
+								<input
+									id="origin-city"
+									type="text"
+									bind:value={editOrigin.city}
+								/>
 							</div>
 							<div class="field">
 								<label for="origin-floor">Stockwerk</label>
-								<select id="origin-floor" bind:value={editOrigin.floor}>
+								<select
+									id="origin-floor"
+									bind:value={editOrigin.floor}
+								>
 									<option value="-1">Keller</option>
 									<option value="0">Erdgeschoss</option>
 									<option value="1">1. OG</option>
@@ -1585,16 +2047,30 @@
 							</div>
 							<div class="field">
 								<label class="checkbox-label">
-									<input type="checkbox" bind:checked={editOrigin.elevator} />
+									<input
+										type="checkbox"
+										bind:checked={editOrigin.elevator}
+									/>
 									Aufzug
 								</label>
 							</div>
 							<div class="field full-width addr-actions">
-								<button class="btn btn-sm btn-save" onclick={() => saveAddress(data!.origin_address!.id, editOrigin, (v) => editingOrigin = v)}>
+								<button
+									class="btn btn-sm btn-save"
+									onclick={() =>
+										saveAddress(
+											data!.origin_address!.id,
+											editOrigin,
+											(v) => (editingOrigin = v),
+										)}
+								>
 									<Save size={14} />
 									Speichern
 								</button>
-								<button class="btn btn-sm" onclick={() => editingOrigin = false}>
+								<button
+									class="btn btn-sm"
+									onclick={() => (editingOrigin = false)}
+								>
 									Abbrechen
 								</button>
 							</div>
@@ -1604,7 +2080,9 @@
 							<div class="info-item">
 								<span class="info-label">Adresse</span>
 								<span class="info-value">
-									{data.origin_address.street}, {data.origin_address.postal_code || ''} {data.origin_address.city}
+									{data.origin_address.street}, {data
+										.origin_address.postal_code || ""}
+									{data.origin_address.city}
 								</span>
 							</div>
 							<div class="info-item">
@@ -1634,19 +2112,34 @@
 						<div class="form-grid">
 							<div class="field full-width">
 								<label for="dest-street">Strasse</label>
-								<input id="dest-street" type="text" bind:value={editDest.street} />
+								<input
+									id="dest-street"
+									type="text"
+									bind:value={editDest.street}
+								/>
 							</div>
 							<div class="field">
 								<label for="dest-plz">PLZ</label>
-								<input id="dest-plz" type="text" bind:value={editDest.postal_code} />
+								<input
+									id="dest-plz"
+									type="text"
+									bind:value={editDest.postal_code}
+								/>
 							</div>
 							<div class="field">
 								<label for="dest-city">Stadt</label>
-								<input id="dest-city" type="text" bind:value={editDest.city} />
+								<input
+									id="dest-city"
+									type="text"
+									bind:value={editDest.city}
+								/>
 							</div>
 							<div class="field">
 								<label for="dest-floor">Stockwerk</label>
-								<select id="dest-floor" bind:value={editDest.floor}>
+								<select
+									id="dest-floor"
+									bind:value={editDest.floor}
+								>
 									<option value="-1">Keller</option>
 									<option value="0">Erdgeschoss</option>
 									<option value="1">1. OG</option>
@@ -1658,16 +2151,30 @@
 							</div>
 							<div class="field">
 								<label class="checkbox-label">
-									<input type="checkbox" bind:checked={editDest.elevator} />
+									<input
+										type="checkbox"
+										bind:checked={editDest.elevator}
+									/>
 									Aufzug
 								</label>
 							</div>
 							<div class="field full-width addr-actions">
-								<button class="btn btn-sm btn-save" onclick={() => saveAddress(data!.destination_address!.id, editDest, (v) => editingDest = v)}>
+								<button
+									class="btn btn-sm btn-save"
+									onclick={() =>
+										saveAddress(
+											data!.destination_address!.id,
+											editDest,
+											(v) => (editingDest = v),
+										)}
+								>
 									<Save size={14} />
 									Speichern
 								</button>
-								<button class="btn btn-sm" onclick={() => editingDest = false}>
+								<button
+									class="btn btn-sm"
+									onclick={() => (editingDest = false)}
+								>
 									Abbrechen
 								</button>
 							</div>
@@ -1677,7 +2184,9 @@
 							<div class="info-item">
 								<span class="info-label">Adresse</span>
 								<span class="info-value">
-									{data.destination_address.street}, {data.destination_address.postal_code || ''} {data.destination_address.city}
+									{data.destination_address.street}, {data
+										.destination_address.postal_code || ""}
+									{data.destination_address.city}
 								</span>
 							</div>
 							<div class="info-item">
@@ -1696,30 +2205,48 @@
 			<div class="card">
 				<div class="card-header">
 					<h3>Details</h3>
-					<button class="btn btn-sm" onclick={saveInquiry} disabled={saving}>
+					<button
+						class="btn btn-sm"
+						onclick={saveInquiry}
+						disabled={saving}
+					>
 						<Save size={14} />
-						{saving ? 'Speichern...' : 'Speichern'}
+						{saving ? "Speichern..." : "Speichern"}
 					</button>
 				</div>
 				<div class="form-grid">
 					<div class="field">
 						<label for="volume">Volumen (m3)</label>
-						<input id="volume" type="number" step="0.1" bind:value={editVolume} />
+						<input
+							id="volume"
+							type="number"
+							step="0.1"
+							bind:value={editVolume}
+						/>
 					</div>
 					<div class="field">
 						<label for="distance">Entfernung (km)</label>
-						<input id="distance" type="number" step="0.1" bind:value={editDistance} />
+						<input
+							id="distance"
+							type="number"
+							step="0.1"
+							bind:value={editDistance}
+						/>
 					</div>
 					<div class="field full-width">
 						<label for="notes">Notizen / Services</label>
-						<textarea id="notes" rows={3} bind:value={editNotes}></textarea>
+						<textarea id="notes" rows={3} bind:value={editNotes}
+						></textarea>
 					</div>
 				</div>
 			</div>
 
 			<!-- Route Map -->
 			{#if routeCoordinates}
-				<RouteMap coordinates={routeCoordinates} distanceKm={editDistance} />
+				<RouteMap
+					coordinates={routeCoordinates}
+					distanceKm={editDistance}
+				/>
 			{/if}
 
 			<!-- Customer Message -->
@@ -1736,13 +2263,24 @@
 					{#each processingEstimations as est}
 						<div class="estimation-status-row">
 							<div class="upload-spinner"></div>
-							<span>{est.method === 'video' ? 'Video' : 'Foto'}-Analyse wird verarbeitet...</span>
+							<span
+								>{est.method === "video"
+									? "Video"
+									: "Foto"}-Analyse wird verarbeitet...</span
+							>
 						</div>
 					{/each}
 					{#each failedEstimations as est}
 						<div class="estimation-status-row estimation-failed">
-							<span>{est.method === 'video' ? 'Video' : 'Foto'}-Analyse fehlgeschlagen</span>
-							<button class="btn btn-sm btn-danger" onclick={() => deleteEstimation(est.id)}>
+							<span
+								>{est.method === "video"
+									? "Video"
+									: "Foto"}-Analyse fehlgeschlagen</span
+							>
+							<button
+								class="btn btn-sm btn-danger"
+								onclick={() => deleteEstimation(est.id)}
+							>
 								<Trash2 size={14} /> Entfernen
 							</button>
 						</div>
@@ -1769,7 +2307,12 @@
 							</button>
 						{/if}
 						{#if filterPhotoIndex !== null}
-							<button class="btn btn-sm" onclick={() => { filterPhotoIndex = null; }}>
+							<button
+								class="btn btn-sm"
+								onclick={() => {
+									filterPhotoIndex = null;
+								}}
+							>
 								<X size={14} />
 								Filter aufheben
 							</button>
@@ -1780,14 +2323,22 @@
 							<div class="photo-thumb-wrapper">
 								<button
 									class="photo-thumb-btn"
-									class:photo-active={filterPhotoIndex === idx}
+									class:photo-active={filterPhotoIndex ===
+										idx}
 									onclick={() => togglePhotoFilter(idx)}
 								>
-									<img src={url} alt="Foto {idx + 1}" class="photo-thumb" />
+									<img
+										src={url}
+										alt="Foto {idx + 1}"
+										class="photo-thumb"
+									/>
 								</button>
 								<button
 									class="photo-delete-btn"
-									onclick={() => deleteEstimation(galleryEntries[idx].estimationId)}
+									onclick={() =>
+										deleteEstimation(
+											galleryEntries[idx].estimationId,
+										)}
 									title="Analyse löschen"
 								>
 									<X size={12} />
@@ -1814,21 +2365,39 @@
 							{#each photoQueue as file, idx}
 								<div class="upload-queue-item">
 									<ImagePlus size={16} />
-									<span class="upload-queue-name">{file.name}</span>
-									<span class="upload-queue-size">{formatFileSize(file.size)}</span>
-									<button class="del-btn" onclick={() => removePhotoFromQueue(idx)} title="Entfernen">
+									<span class="upload-queue-name"
+										>{file.name}</span
+									>
+									<span class="upload-queue-size"
+										>{formatFileSize(file.size)}</span
+									>
+									<button
+										class="del-btn"
+										onclick={() =>
+											removePhotoFromQueue(idx)}
+										title="Entfernen"
+									>
 										<X size={14} />
 									</button>
 								</div>
 							{/each}
 							<div class="upload-queue-actions">
-								<label for="photo-upload" class="btn btn-sm upload-add-more">
+								<label
+									for="photo-upload"
+									class="btn btn-sm upload-add-more"
+								>
 									<Plus size={14} />
 									Weiteres Foto
 								</label>
-								<button class="btn btn-primary" onclick={uploadPhotos}>
+								<button
+									class="btn btn-primary"
+									onclick={uploadPhotos}
+								>
 									<Upload size={16} />
-									{photoQueue.length} Foto{photoQueue.length > 1 ? 's' : ''} hochladen
+									{photoQueue.length} Foto{photoQueue.length >
+									1
+										? "s"
+										: ""} hochladen
 								</button>
 							</div>
 						</div>
@@ -1853,11 +2422,16 @@
 							onclick={() => photoFileInput?.click()}
 							role="button"
 							tabindex="0"
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') photoFileInput?.click(); }}
+							onkeydown={(e) => {
+								if (e.key === "Enter" || e.key === " ")
+									photoFileInput?.click();
+							}}
 						>
 							<ImagePlus size={24} />
 							<span>Fotos hierher ziehen oder klicken</span>
-							<span class="upload-hint">JPG, PNG, WebP, HEIC (max. 50 MB pro Bild)</span>
+							<span class="upload-hint"
+								>JPG, PNG, WebP, HEIC (max. 50 MB pro Bild)</span
+							>
 						</div>
 					{/if}
 				{/if}
@@ -1872,12 +2446,17 @@
 					<div class="video-gallery">
 						{#each videoEntries as entry}
 							<div class="video-item">
-								<video controls preload="metadata" class="video-player">
+								<video
+									controls
+									preload="metadata"
+									class="video-player"
+								>
 									<source src={entry.url} />
 								</video>
 								<button
 									class="video-delete-btn"
-									onclick={() => deleteEstimation(entry.estimationId)}
+									onclick={() =>
+										deleteEstimation(entry.estimationId)}
 									title="Video-Analyse löschen"
 								>
 									<Trash2 size={14} /> Löschen
@@ -1897,21 +2476,38 @@
 							{#each videoQueue as file, idx}
 								<div class="upload-queue-item">
 									<Video size={16} />
-									<span class="upload-queue-name">{file.name}</span>
-									<span class="upload-queue-size">{formatFileSize(file.size)}</span>
-									<button class="del-btn" onclick={() => removeFromQueue(idx)} title="Entfernen">
+									<span class="upload-queue-name"
+										>{file.name}</span
+									>
+									<span class="upload-queue-size"
+										>{formatFileSize(file.size)}</span
+									>
+									<button
+										class="del-btn"
+										onclick={() => removeFromQueue(idx)}
+										title="Entfernen"
+									>
 										<X size={14} />
 									</button>
 								</div>
 							{/each}
 							<div class="upload-queue-actions">
-								<label for="video-upload" class="btn btn-sm upload-add-more">
+								<label
+									for="video-upload"
+									class="btn btn-sm upload-add-more"
+								>
 									<Plus size={14} />
 									Weiteres Video
 								</label>
-								<button class="btn btn-primary" onclick={uploadVideos}>
+								<button
+									class="btn btn-primary"
+									onclick={uploadVideos}
+								>
 									<Upload size={16} />
-									{videoQueue.length} Video{videoQueue.length > 1 ? 's' : ''} hochladen
+									{videoQueue.length} Video{videoQueue.length >
+									1
+										? "s"
+										: ""} hochladen
 								</button>
 							</div>
 						</div>
@@ -1936,56 +2532,83 @@
 							onclick={() => videoFileInput?.click()}
 							role="button"
 							tabindex="0"
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') videoFileInput?.click(); }}
+							onkeydown={(e) => {
+								if (e.key === "Enter" || e.key === " ")
+									videoFileInput?.click();
+							}}
 						>
 							<Video size={24} />
 							<span>Videos hierher ziehen oder klicken</span>
-							<span class="upload-hint">MP4, MOV, WebM (max. 500 MB pro Video)</span>
+							<span class="upload-hint"
+								>MP4, MOV, WebM (max. 500 MB pro Video)</span
+							>
 						</div>
 					{/if}
 				{/if}
 			</div>
 
-		<!-- Estimation Items (Editable) -->
-				<div class="card full-width">
-					<div class="card-header">
-						<h3>
+			<!-- Estimation Items (Editable) -->
+			<div class="card full-width">
+				<div class="card-header">
+					<h3>
 						{#if filterPhotoIndex !== null}
-							Gegenstaende aus Foto {filterPhotoIndex + 1} ({sortedItems().length})
+							Gegenstaende aus Foto {filterPhotoIndex + 1} ({sortedItems()
+								.length})
 						{:else}
 							Erfasste Gegenstaende ({editItems.length})
 						{/if}
 					</h3>
-						<div class="items-header-actions">
-							<button class="btn btn-sm" onclick={addItem}>
-								<Plus size={14} />
-								Gegenstand
-							</button>
-							<button
-								class="btn btn-sm"
-								class:btn-dirty={itemsDirty}
-								onclick={saveItems}
-								disabled={savingItems || !itemsDirty}
-							>
-								<Save size={14} />
-								{savingItems ? 'Speichern...' : 'Speichern'}
-							</button>
-						</div>
+					<div class="items-header-actions">
+						<button class="btn btn-sm" onclick={addItem}>
+							<Plus size={14} />
+							Gegenstand
+						</button>
+						<button
+							class="btn btn-sm"
+							class:btn-dirty={itemsDirty}
+							onclick={saveItems}
+							disabled={savingItems || !itemsDirty}
+						>
+							<Save size={14} />
+							{savingItems ? "Speichern..." : "Speichern"}
+						</button>
 					</div>
-					{#if editItems.length > 0}
+				</div>
+				{#if editItems.length > 0}
 					<div class="items-table-wrap">
 						<table class="items-table">
 							<thead>
 								<tr>
 									<th class="th-foto">Foto</th>
-									<th class="th-sortable" onclick={() => toggleSort('name')}>
-										Gegenstand {sortKey === 'name' ? (sortAsc ? '\u25B2' : '\u25BC') : ''}
+									<th
+										class="th-sortable"
+										onclick={() => toggleSort("name")}
+									>
+										Gegenstand {sortKey === "name"
+											? sortAsc
+												? "\u25B2"
+												: "\u25BC"
+											: ""}
 									</th>
-									<th class="th-num th-sortable" onclick={() => toggleSort('quantity')}>
-										Anzahl {sortKey === 'quantity' ? (sortAsc ? '\u25B2' : '\u25BC') : ''}
+									<th
+										class="th-num th-sortable"
+										onclick={() => toggleSort("quantity")}
+									>
+										Anzahl {sortKey === "quantity"
+											? sortAsc
+												? "\u25B2"
+												: "\u25BC"
+											: ""}
 									</th>
-									<th class="th-num th-sortable" onclick={() => toggleSort('volume_m3')}>
-										Volumen (m3) {sortKey === 'volume_m3' ? (sortAsc ? '\u25B2' : '\u25BC') : ''}
+									<th
+										class="th-num th-sortable"
+										onclick={() => toggleSort("volume_m3")}
+									>
+										Volumen (m3) {sortKey === "volume_m3"
+											? sortAsc
+												? "\u25B2"
+												: "\u25BC"
+											: ""}
 									</th>
 									<th class="th-num">Konfidenz</th>
 									<th class="th-del"></th>
@@ -1996,8 +2619,17 @@
 									<tr>
 										<td class="crop-cell">
 											{#if item.crop_url}
-												<button class="crop-btn" onclick={() => openReview(item)}>
-													<img src={API_BASE + item.crop_url} alt={item.name} class="crop-thumb" />
+												<button
+													class="crop-btn"
+													onclick={() =>
+														openReview(item)}
+												>
+													<img
+														src={API_BASE +
+															item.crop_url}
+														alt={item.name}
+														class="crop-thumb"
+													/>
 												</button>
 											{:else}
 												<span class="no-crop">—</span>
@@ -2035,7 +2667,11 @@
 											{Math.round(item.confidence * 100)}%
 										</td>
 										<td class="del-cell">
-											<button class="del-btn" onclick={() => deleteItem(item)} title="Entfernen">
+											<button
+												class="del-btn"
+												onclick={() => deleteItem(item)}
+												title="Entfernen"
+											>
 												<X size={14} />
 											</button>
 										</td>
@@ -2044,7 +2680,12 @@
 								<tr class="total-row">
 									<td></td>
 									<td>Gesamt</td>
-									<td>{editItems.reduce((s, i) => s + i.quantity, 0)}</td>
+									<td
+										>{editItems.reduce(
+											(s, i) => s + i.quantity,
+											0,
+										)}</td
+									>
 									<td>{computedTotal.toFixed(2)}</td>
 									<td></td>
 									<td></td>
@@ -2055,7 +2696,7 @@
 				{:else}
 					<p class="empty-items">Noch keine Gegenstaende erfasst.</p>
 				{/if}
-				</div>
+			</div>
 
 			<!-- Pricing Editor -->
 			<div class="card">
@@ -2094,15 +2735,22 @@
 								id="rate"
 								type="number"
 								step={0.5}
-								value={rateEditing ? rateText : (editRateCents / 100).toFixed(2)}
+								value={rateEditing
+									? rateText
+									: (editRateCents / 100).toFixed(2)}
 								oninput={(e) => {
 									const target = e.target as HTMLInputElement;
 									rateText = target.value;
 									const val = parseFloat(target.value);
-									if (!isNaN(val)) editRateCents = Math.round(val * 100);
+									if (!isNaN(val))
+										editRateCents = Math.round(val * 100);
 								}}
-								onfocus={() => { rateEditing = true; }}
-								onblur={() => { rateEditing = false; }}
+								onfocus={() => {
+									rateEditing = true;
+								}}
+								onblur={() => {
+									rateEditing = false;
+								}}
 							/>
 						</div>
 					</div>
@@ -2110,7 +2758,9 @@
 					<button class="btn-link" onclick={onBruttoChange}>
 						Rate aus Gesamtpreis berechnen
 					</button>
-					<span class="labor-profit" class:negative={laborProfit < 0}>{laborProfit.toFixed(2)} &euro;</span>
+					<span class="labor-profit" class:negative={laborProfit < 0}
+						>{laborProfit.toFixed(2)} &euro;</span
+					>
 				</div>
 			</div>
 
@@ -2119,7 +2769,11 @@
 				<div class="card-header">
 					<h3>Positionen</h3>
 					<div class="li-header-actions">
-						<button class="btn btn-sm" onclick={computeLineItemsFromNotes} title="Aus Notizen neu berechnen">
+						<button
+							class="btn btn-sm"
+							onclick={computeLineItemsFromNotes}
+							title="Aus Notizen neu berechnen"
+						>
 							Neu berechnen
 						</button>
 						<button class="btn btn-sm" onclick={addLineItem}>
@@ -2134,17 +2788,26 @@
 						<span class="li-name">{editPersons} Umzugshelfer</span>
 						<div class="li-detail">
 							<span class="li-qty">{editHours} Std.</span>
-							<span class="li-unit">&times; {(editRateCents / 100).toFixed(2)} EUR</span>
-							<span class="li-total">{formatEuro(laborCents)}</span>
+							<span class="li-unit"
+								>&times; {(editRateCents / 100).toFixed(2)} EUR</span
+							>
+							<span class="li-total"
+								>{formatEuro(laborCents)}</span
+							>
 						</div>
 					</div>
 
 					{#each editLineItems as li, idx}
 						<div class="line-item editable">
 							<div class="li-edit-top">
-								<select bind:value={li.row} onchange={() => onLineItemRowChange(idx)}>
+								<select
+									bind:value={li.row}
+									onchange={() => onLineItemRowChange(idx)}
+								>
 									{#each ROW_OPTIONS as opt}
-										<option value={opt.row}>{opt.label}</option>
+										<option value={opt.row}
+											>{opt.label}</option
+										>
 									{/each}
 								</select>
 								{#if li.row === 99}
@@ -2155,7 +2818,11 @@
 										placeholder="Bezeichnung"
 									/>
 								{/if}
-								<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen">
+								<button
+									class="del-btn"
+									onclick={() => removeLineItem(idx)}
+									title="Entfernen"
+								>
 									<X size={14} />
 								</button>
 							</div>
@@ -2179,29 +2846,47 @@
 									class="edit-li-price"
 									min={0}
 									step={0.5}
-									value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)}
+									value={li._editing
+										? li._priceText
+										: (li.unitPriceCents / 100).toFixed(2)}
 									oninput={(e) => {
-										const target = e.target as HTMLInputElement;
+										const target =
+											e.target as HTMLInputElement;
 										li._priceText = target.value;
 										const val = parseFloat(target.value);
-										if (!isNaN(val)) li.unitPriceCents = Math.round(val * 100);
+										if (!isNaN(val))
+											li.unitPriceCents = Math.round(
+												val * 100,
+											);
 									}}
-									onfocus={() => { li._editing = true; }}
-									onblur={() => { li._editing = false; }}
+									onfocus={() => {
+										li._editing = true;
+									}}
+									onblur={() => {
+										li._editing = false;
+									}}
 								/>
 								<span class="li-eur">EUR</span>
-								<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
+								<span class="li-total"
+									>{formatEuro(
+										li.quantity * li.unitPriceCents,
+									)}</span
+								>
 							</div>
 						</div>
 					{/each}
 
 					<div class="line-item total">
 						<span class="li-name">Netto</span>
-						<span class="li-total">{formatEuro(calculatedNettoCents)}</span>
+						<span class="li-total"
+							>{formatEuro(calculatedNettoCents)}</span
+						>
 					</div>
 					<div class="line-item total grand">
 						<span class="li-name">Brutto (inkl. 19% MwSt.)</span>
-						<span class="li-total">{formatEuro(calculatedBruttoCents)}</span>
+						<span class="li-total"
+							>{formatEuro(calculatedBruttoCents)}</span
+						>
 					</div>
 				</div>
 			</div>
@@ -2209,11 +2894,29 @@
 			<!-- Linked Offer -->
 			{#if data.offer}
 				<div class="card full-width">
-					<h3>Angebot</h3>
+					<div class="card-header">
+						<h3>Angebot</h3>
+						<button
+							class="btn btn-sm"
+							onclick={downloadPdf}
+							disabled={downloadingPdf}
+						>
+							<Download size={14} />
+							{downloadingPdf
+								? "Wird geladen..."
+								: "PDF herunterladen"}
+						</button>
+					</div>
 					<div class="offers-list">
 						<div class="offer-row">
-							<span class="offer-date">{formatDate(data.offer.created_at)}</span>
-							<span class="offer-price">{data.offer.total_brutto_cents != null ? formatEuro(data.offer.total_brutto_cents) : '—'}</span>
+							<span class="offer-date"
+								>{formatDate(data.offer.created_at)}</span
+							>
+							<span class="offer-price"
+								>{data.offer.total_brutto_cents != null
+									? formatEuro(data.offer.total_brutto_cents)
+									: "—"}</span
+							>
 							<StatusBadge status={data.offer.status} />
 						</div>
 					</div>
@@ -2235,6 +2938,184 @@
 	{/if}
 </div>
 
+<!-- Email Thread Section (below the main grid) -->
+{#if data}
+	<div class="email-section">
+		<div class="email-section__header">
+			<h2 class="email-section__title">E-Mail-Verlauf</h2>
+			{#if emailThreads.length > 0}
+				<a
+					href="/admin/emails/{emailThreads[0].thread.id}"
+					class="email-section__link"
+				>
+					Vollansicht
+				</a>
+			{/if}
+		</div>
+
+		{#if emailsLoading}
+			<div class="email-loading">E-Mails werden geladen...</div>
+		{:else if emailThreads.length === 0}
+			<div class="email-empty">Noch keine E-Mails für diese Anfrage.</div>
+		{:else}
+			{#each emailThreads as { thread, messages }}
+				<div class="email-thread">
+					{#if thread.subject}
+						<div class="email-thread__subject">
+							{thread.subject}
+						</div>
+					{/if}
+					<div class="email-conversation">
+						{#each messages as msg}
+							<div
+								class="email-msg"
+								class:email-msg--inbound={msg.direction ===
+									"inbound"}
+								class:email-msg--outbound={msg.direction ===
+									"outbound" && msg.status !== "draft"}
+								class:email-msg--draft={msg.status === "draft"}
+							>
+								<div class="email-msg__header">
+									<span class="email-msg__from">
+										{#if msg.status === "draft"}
+											Entwurf an {msg.to_address}
+										{:else if msg.direction === "inbound"}
+											{msg.from_address}
+										{:else}
+											AUST Umzuege
+										{/if}
+									</span>
+									<div class="email-msg__meta">
+										{#if msg.status === "draft"}
+											<span
+												class="email-badge email-badge--draft"
+												>Entwurf</span
+											>
+										{/if}
+										{#if msg.llm_generated}
+											<span
+												class="email-badge email-badge--ai"
+												>KI</span
+											>
+										{/if}
+										<span class="email-msg__date"
+											>{formatDateTime(
+												msg.created_at,
+											)}</span
+										>
+									</div>
+								</div>
+
+								{#if emailEditingId === msg.id}
+									<div class="email-edit-fields">
+										<input
+											class="email-edit-subject"
+											type="text"
+											placeholder="Betreff"
+											bind:value={emailEditSubject}
+										/>
+										<textarea
+											class="email-edit-body"
+											rows="8"
+											placeholder="Nachrichtentext..."
+											bind:value={emailEditBody}
+										></textarea>
+									</div>
+									<div class="email-draft-actions">
+										<button
+											class="btn btn-sm btn-save"
+											onclick={() =>
+												emailSaveEdit(msg.id)}
+											disabled={emailSaving}
+										>
+											<Save size={14} />
+											{emailSaving
+												? "Speichere..."
+												: "Speichern"}
+										</button>
+										<button
+											class="btn btn-sm"
+											onclick={emailCancelEdit}
+											disabled={emailSaving}
+										>
+											Abbrechen
+										</button>
+									</div>
+								{:else}
+									{#if msg.subject}
+										<div class="email-msg__subject">
+											{msg.subject}
+										</div>
+									{/if}
+									<div class="email-msg__body">
+										{msg.body_text || ""}
+									</div>
+
+									{#if msg.status === "draft"}
+										<div class="email-draft-actions">
+											<button
+												class="btn btn-sm btn-primary"
+												onclick={() =>
+													emailSendDraft(msg.id)}
+												disabled={emailActionLoading ===
+													msg.id}
+											>
+												<Send size={14} />
+												{emailActionLoading === msg.id
+													? "Bitte warten..."
+													: "Senden"}
+											</button>
+											<button
+												class="btn btn-sm"
+												onclick={() =>
+													emailStartEdit(msg)}
+												disabled={emailActionLoading ===
+													msg.id}
+											>
+												<Pencil size={14} />
+												Bearbeiten
+											</button>
+											{#if msg.llm_generated}
+												<button
+													class="btn btn-sm"
+													onclick={() =>
+														emailRegenerateLlm(
+															msg.id,
+														)}
+													disabled={emailActionLoading ===
+														msg.id}
+												>
+													<RotateCcw size={14} />
+													Neu generieren
+												</button>
+											{/if}
+											<button
+												class="btn btn-sm btn-danger"
+												onclick={() =>
+													emailDiscardDraft(msg.id)}
+												disabled={emailActionLoading ===
+													msg.id}
+											>
+												<X size={14} />
+												Verwerfen
+											</button>
+										</div>
+									{/if}
+								{/if}
+							</div>
+						{/each}
+						{#if messages.length === 0}
+							<div class="email-empty">
+								Keine Nachrichten in diesem Thread.
+							</div>
+						{/if}
+					</div>
+				</div>
+			{/each}
+		{/if}
+	</div>
+{/if}
+
 <svelte:window onkeydown={handleKeydown} />
 
 {#if reviewIndex !== null}
@@ -2242,19 +3123,37 @@
 	{@const rItem = items[reviewIndex]}
 	{#if rItem}
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="review-backdrop" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeReview(); }}>
-			<button class="review-close" onclick={closeReview} aria-label="Schliessen">
+		<div
+			class="review-backdrop"
+			role="presentation"
+			onclick={(e) => {
+				if (e.target === e.currentTarget) closeReview();
+			}}
+		>
+			<button
+				class="review-close"
+				onclick={closeReview}
+				aria-label="Schliessen"
+			>
 				<X size={24} />
 			</button>
 
 			{#if reviewIndex > 0}
-				<button class="review-nav review-prev" onclick={reviewPrev} aria-label="Vorheriger Gegenstand">
+				<button
+					class="review-nav review-prev"
+					onclick={reviewPrev}
+					aria-label="Vorheriger Gegenstand"
+				>
 					<ChevronLeft size={32} />
 				</button>
 			{/if}
 
 			{#if reviewIndex < items.length - 1}
-				<button class="review-nav review-next" onclick={reviewNext} aria-label="Naechster Gegenstand">
+				<button
+					class="review-nav review-next"
+					onclick={reviewNext}
+					aria-label="Naechster Gegenstand"
+				>
 					<ChevronRight size={32} />
 				</button>
 			{/if}
@@ -2263,7 +3162,11 @@
 				<div class="review-image-wrap">
 					{#key reviewIndex}
 						{#if rItem.crop_url}
-							<img src={API_BASE + rItem.crop_url} alt={rItem.name} class="review-image" />
+							<img
+								src={API_BASE + rItem.crop_url}
+								alt={rItem.name}
+								class="review-image"
+							/>
 						{:else}
 							<div class="review-no-image">Kein Foto</div>
 						{/if}
@@ -2274,7 +3177,8 @@
 					<div class="review-field">
 						<label for="review-item-name">Gegenstand</label>
 						<input
-							id="review-item-name" type="text"
+							id="review-item-name"
+							type="text"
 							bind:value={rItem.name}
 							oninput={markDirty}
 							class="review-input"
@@ -2284,7 +3188,8 @@
 						<div class="review-field">
 							<label for="review-volume">Volumen (m3)</label>
 							<input
-								id="review-volume" type="number"
+								id="review-volume"
+								type="number"
 								min="0"
 								step="0.01"
 								bind:value={rItem.volume_m3}
@@ -2295,7 +3200,8 @@
 						<div class="review-field">
 							<label for="review-quantity">Anzahl</label>
 							<input
-								id="review-quantity" type="number"
+								id="review-quantity"
+								type="number"
 								min="1"
 								step="1"
 								bind:value={rItem.quantity}
@@ -2305,12 +3211,23 @@
 						</div>
 					</div>
 					<div class="review-actions">
-						<button class="review-btn review-btn-delete" onclick={reviewDelete}>
+						<button
+							class="review-btn review-btn-delete"
+							onclick={reviewDelete}
+						>
 							<Trash2 size={14} />
 							Entfernen
 						</button>
-						<span class="review-counter">{reviewIndex + 1} / {items.length}</span>
-						<button class="review-btn review-btn-add" onclick={() => { addItem(); reviewIndex = sortedItems().length - 1; }}>
+						<span class="review-counter"
+							>{reviewIndex + 1} / {items.length}</span
+						>
+						<button
+							class="review-btn review-btn-add"
+							onclick={() => {
+								addItem();
+								reviewIndex = sortedItems().length - 1;
+							}}
+						>
 							<Plus size={14} />
 							Neu
 						</button>
@@ -2320,7 +3237,6 @@
 		</div>
 	{/if}
 {/if}
-
 
 <style>
 	.page {
@@ -2385,7 +3301,9 @@
 		border: none;
 		border-radius: 12px;
 		padding: 1.25rem;
-		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+		box-shadow:
+			5px 5px 15px #d1d9e6,
+			-5px -5px 15px #ffffff;
 	}
 
 	.card.full-width {
@@ -2467,12 +3385,17 @@
 		outline: none;
 		transition: box-shadow 150ms ease;
 		font-family: inherit;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff;
 	}
 
 	.field input:focus,
 	.field textarea:focus {
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff,
+			0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
 	.customer-message {
@@ -2497,12 +3420,18 @@
 		background: #e8ecf1;
 		cursor: pointer;
 		padding: 0;
-		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
-		transition: box-shadow 150ms ease, transform 150ms ease;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
+		transition:
+			box-shadow 150ms ease,
+			transform 150ms ease;
 	}
 
 	.photo-thumb-btn:hover {
-		box-shadow: 5px 5px 12px #c5cdd8, -5px -5px 12px #ffffff;
+		box-shadow:
+			5px 5px 12px #c5cdd8,
+			-5px -5px 12px #ffffff;
 		transform: scale(1.03);
 	}
 
@@ -2525,7 +3454,9 @@
 		width: 100%;
 		border-radius: 10px;
 		background: #1a1a2e;
-		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
 	}
 
 	/* Upload Queue (shared by photo & video) */
@@ -2543,7 +3474,9 @@
 		padding: 0.5rem 0.75rem;
 		background: #e8ecf1;
 		border-radius: 8px;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff;
 	}
 
 	.upload-queue-name {
@@ -2624,7 +3557,9 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	/* Pricing */
@@ -2659,7 +3594,7 @@
 		font-size: 0.8125rem;
 		font-weight: 600;
 		color: #22c55e;
-		font-family: 'JetBrains Mono', 'Fira Code', monospace;
+		font-family: "JetBrains Mono", "Fira Code", monospace;
 	}
 
 	.labor-profit.negative {
@@ -2726,7 +3661,7 @@
 		color: #1a1a2e;
 		min-width: 80px;
 		text-align: right;
-		font-family: 'JetBrains Mono', 'Fira Code', monospace;
+		font-family: "JetBrains Mono", "Fira Code", monospace;
 	}
 
 	/* Items table */
@@ -2845,15 +3780,22 @@
 		font-family: inherit;
 		width: 100%;
 		box-sizing: border-box;
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff;
 	}
 
 	.edit-input:hover {
-		box-shadow: inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff;
+		box-shadow:
+			inset 2px 2px 4px #d1d9e6,
+			inset -2px -2px 4px #ffffff;
 	}
 
 	.edit-input:focus {
-		box-shadow: inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		box-shadow:
+			inset 2px 2px 4px #d1d9e6,
+			inset -2px -2px 4px #ffffff,
+			0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
 	.edit-name {
@@ -2885,7 +3827,9 @@
 		cursor: pointer;
 		padding: 0.25rem;
 		border-radius: 0.25rem;
-		transition: color 150ms ease, background 150ms ease;
+		transition:
+			color 150ms ease,
+			background 150ms ease;
 	}
 
 	.del-btn:hover {
@@ -2952,12 +3896,16 @@
 		border: none;
 		color: #64748b;
 		background: #e8ecf1;
-		box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff;
+		box-shadow:
+			2px 2px 6px #d1d9e6,
+			-2px -2px 6px #ffffff;
 	}
 
 	.btn-sm:hover:not(:disabled) {
 		color: #1a1a2e;
-		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
 	}
 
 	.btn-primary {
@@ -2973,7 +3921,9 @@
 	.btn-danger {
 		background: #ffffff;
 		color: #94a3b8;
-		box-shadow: 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
 	}
 
 	.btn-danger:hover {
@@ -2985,7 +3935,9 @@
 		border-radius: 10px;
 		border: none;
 		background: #e8ecf1;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff;
 		font-size: 0.8125rem;
 		font-weight: 500;
 		color: #1a1a2e;
@@ -2994,7 +3946,10 @@
 	}
 
 	.status-select:focus {
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px #6366f1;
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff,
+			0 0 0 2px #6366f1;
 	}
 
 	.status-select:disabled {
@@ -3016,11 +3971,16 @@
 		font-size: 0.875rem;
 		outline: none;
 		font-family: inherit;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff;
 	}
 
 	.field select:focus {
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		box-shadow:
+			inset 2px 2px 5px #d1d9e6,
+			inset -2px -2px 5px #ffffff,
+			0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
 	.checkbox-label {
@@ -3078,7 +4038,9 @@
 		font-size: 0.8125rem;
 		color: #334155;
 		outline: none;
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff;
 		min-width: 140px;
 	}
 
@@ -3099,12 +4061,17 @@
 		outline: none;
 		width: 70px;
 		text-align: right;
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff;
 	}
 
 	.edit-li-qty:focus,
 	.edit-li-price:focus {
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff,
+			0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
 	.edit-li-label {
@@ -3117,11 +4084,16 @@
 		outline: none;
 		flex: 1;
 		min-width: 100px;
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff;
 	}
 
 	.edit-li-label:focus {
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff,
+			0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
 	.edit-li-remark {
@@ -3134,11 +4106,16 @@
 		outline: none;
 		flex: 1;
 		min-width: 80px;
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff;
 	}
 
 	.edit-li-remark:focus {
-		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			inset -1px -1px 3px #ffffff,
+			0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 
 	.li-times {
@@ -3165,8 +4142,12 @@
 	}
 
 	@keyframes reviewFadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 
 	.review-close {
@@ -3213,8 +4194,12 @@
 		background: rgba(255, 255, 255, 0.25);
 	}
 
-	.review-prev { left: 1rem; }
-	.review-next { right: 1rem; }
+	.review-prev {
+		left: 1rem;
+	}
+	.review-next {
+		right: 1rem;
+	}
 
 	.review-content {
 		display: flex;
@@ -3359,7 +4344,10 @@
 	}
 
 	.photo-active {
-		box-shadow: 0 0 0 3px #6366f1, 3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff;
+		box-shadow:
+			0 0 0 3px #6366f1,
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
 		transform: scale(1.03);
 	}
 
@@ -3408,7 +4396,9 @@
 		transition: opacity 150ms ease;
 	}
 
-	.video-delete-btn:hover { opacity: 1; }
+	.video-delete-btn:hover {
+		opacity: 1;
+	}
 
 	.estimation-status-row {
 		display: flex;
@@ -3470,9 +4460,15 @@
 			overflow-x: auto;
 		}
 
-		.btn { min-height: 44px; }
-		.btn-sm { min-height: 44px; }
-		.header-actions { flex-wrap: wrap; }
+		.btn {
+			min-height: 44px;
+		}
+		.btn-sm {
+			min-height: 44px;
+		}
+		.header-actions {
+			flex-wrap: wrap;
+		}
 	}
 
 	.btn-generate-bottom {
@@ -3507,7 +4503,9 @@
 		background: #ffffff;
 		border: none;
 		border-radius: 8px;
-		box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff;
+		box-shadow:
+			2px 2px 6px #d1d9e6,
+			-2px -2px 6px #ffffff;
 		cursor: pointer;
 		transition: all 150ms ease;
 	}
@@ -3520,5 +4518,228 @@
 	.download-all-btn:disabled {
 		opacity: 0.6;
 		cursor: wait;
+	}
+
+	/* ── Email Thread Section ───────────────────────────────────────── */
+	.email-section {
+		max-width: 1200px;
+		margin-top: 1.5rem;
+	}
+
+	.email-section__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+	}
+
+	.email-section__title {
+		font-size: 1.125rem;
+		font-weight: 700;
+		color: #1a1a2e;
+	}
+
+	.email-section__link {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #6366f1;
+		text-decoration: none;
+		padding: 0.375rem 0.75rem;
+		border: 1px solid #e0e7ff;
+		border-radius: 8px;
+		background: #ffffff;
+		transition: all 150ms ease;
+	}
+
+	.email-section__link:hover {
+		background: #eef2ff;
+		border-color: #c7d2fe;
+	}
+
+	.email-loading,
+	.email-empty {
+		color: #94a3b8;
+		font-size: 0.875rem;
+		padding: 1.5rem;
+		text-align: center;
+		background: #ffffff;
+		border-radius: 12px;
+		box-shadow:
+			5px 5px 15px #d1d9e6,
+			-5px -5px 15px #ffffff;
+	}
+
+	.email-thread {
+		margin-bottom: 1rem;
+	}
+
+	.email-thread__subject {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #64748b;
+		margin-bottom: 0.5rem;
+		padding-left: 0.25rem;
+	}
+
+	.email-conversation {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.email-msg {
+		border-radius: 12px;
+		padding: 1rem 1.25rem;
+		max-width: 85%;
+	}
+
+	.email-msg--inbound {
+		align-self: flex-start;
+		background: #ffffff;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
+	}
+
+	.email-msg--outbound {
+		align-self: flex-end;
+		background: #eef2ff;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
+	}
+
+	.email-msg--draft {
+		align-self: flex-end;
+		background: #fffbeb;
+		border: 2px dashed #f59e0b;
+		box-shadow:
+			3px 3px 8px #d1d9e6,
+			-3px -3px 8px #ffffff;
+	}
+
+	.email-msg__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.email-msg__from {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #334155;
+	}
+
+	.email-msg__meta {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.email-msg__date {
+		font-size: 0.6875rem;
+		color: #94a3b8;
+		white-space: nowrap;
+	}
+
+	.email-badge {
+		display: inline-block;
+		padding: 0.0625rem 0.375rem;
+		border-radius: 9999px;
+		font-size: 0.625rem;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.email-badge--draft {
+		background: #fef3c7;
+		color: #b45309;
+	}
+
+	.email-badge--ai {
+		background: #fef3c7;
+		color: #92400e;
+	}
+
+	.email-msg__subject {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #64748b;
+		margin-bottom: 0.375rem;
+	}
+
+	.email-msg__body {
+		font-size: 0.875rem;
+		color: #334155;
+		line-height: 1.6;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.email-draft-actions {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid #fde68a;
+		flex-wrap: wrap;
+	}
+
+	.email-msg--inbound .email-draft-actions {
+		border-top-color: #e2e8f0;
+	}
+
+	.email-edit-fields {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.email-edit-subject,
+	.email-edit-body {
+		width: 100%;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		color: #1a1a2e;
+		background: #ffffff;
+		outline: none;
+		box-sizing: border-box;
+		font-family: inherit;
+	}
+
+	.email-edit-subject:focus,
+	.email-edit-body:focus {
+		border-color: #6366f1;
+	}
+
+	.email-edit-body {
+		resize: vertical;
+		line-height: 1.5;
+	}
+
+	.btn-save {
+		background: #059669;
+		color: #ffffff;
+		box-shadow: 2px 2px 6px rgba(5, 150, 105, 0.3);
+	}
+
+	.btn-save:hover:not(:disabled) {
+		background: #047857;
+	}
+
+	@media (max-width: 768px) {
+		.email-msg {
+			max-width: 100%;
+		}
+
+		.email-msg__header {
+			gap: 0.375rem;
+		}
 	}
 </style>

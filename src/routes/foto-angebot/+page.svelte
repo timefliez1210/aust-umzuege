@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Send, Camera, X, ImagePlus } from "lucide-svelte";
 
-	const API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/inquiries/photo";
+	const API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
 
 	// Floor options (matching API spec)
 	const floorOptions = [

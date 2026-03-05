@@ -56,6 +56,9 @@
 	interface CustomerSnapshot {
 		id: string;
 		name: string | null;
+		salutation: string | null;
+		first_name: string | null;
+		last_name: string | null;
 		email: string;
 		phone: string | null;
 	}
@@ -1970,9 +1973,14 @@
 				<div class="info-grid">
 					<div class="info-item">
 						<span class="info-label">Name</span>
-						<span class="info-value"
-							>{data.customer?.name || "—"}</span
-						>
+						<span class="info-value name-with-salutation">
+							{#if data.customer?.salutation}
+								<span class="salutation-badge">{data.customer.salutation}</span>
+							{/if}
+							{data.customer?.first_name && data.customer?.last_name
+								? `${data.customer.first_name} ${data.customer.last_name}`
+								: (data.customer?.last_name ?? data.customer?.name ?? "—")}
+						</span>
 					</div>
 					<div class="info-item">
 						<span class="info-label">E-Mail</span>
@@ -3350,6 +3358,24 @@
 	.info-value {
 		font-size: 0.9375rem;
 		color: #1a1a2e;
+	}
+
+	.name-with-salutation {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+
+	.salutation-badge {
+		display: inline-block;
+		padding: 0.1rem 0.45rem;
+		border-radius: 4px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		background: #e0e7ff;
+		color: #4338ca;
+		letter-spacing: 0.03em;
 	}
 
 	.form-grid {

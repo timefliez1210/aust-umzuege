@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Send, Camera, X, ImagePlus, Video, Calendar, ClipboardList } from "lucide-svelte";
+	import { Send, Camera, X, ImagePlus, Video, Calendar, ClipboardList, FileIcon } from "lucide-svelte";
 
 	const PHOTO_API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
 	const VIDEO_API_URL = import.meta.env.VITE_VIDEO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/video";
@@ -65,45 +65,36 @@
 		privacyAccepted: false,
 	});
 
-	// Photo mode
-	let images = $state<File[]>([]);
-	let imagePreviews = $state<string[]>([]);
-	let isDraggingPhoto = $state(false);
-	let photoInput = $state<HTMLInputElement>(null!);
+	// Unified media — any file, any format, any amount
+	let attachments = $state<File[]>([]);
+	let previews    = $state<string[]>([]); // data-URL for images, "" for others
+	let isDragging  = $state(false);
+	let fileInput   = $state<HTMLInputElement>(null!);
 
-	// Video mode
-	let videoFiles = $state<File[]>([]);
-	let isDraggingVideo = $state(false);
-	let videoInput = $state<HTMLInputElement>(null!);
-
-	let isSubmitting = $state(false);
+	let isSubmitting  = $state(false);
 	let submitSuccess = $state(false);
-	let submitError = $state("");
+	let submitError   = $state("");
 
-	// Termin mode: only name + email + phone + date + optional addresses + message
+	const hasAddresses = $derived(
+		formData.startStrasse !== "" && formData.startOrt !== "" &&
+		formData.endStrasse   !== "" && formData.endOrt   !== "",
+	);
+
+	const isBaseValid = $derived(
+		(formData.last_name !== "" || formData.name !== "") &&
+		formData.email !== "" &&
+		formData.privacyAccepted,
+	);
+
+	// Termin: base required; addresses required only when files are attached (need API)
 	const isTerminValid = $derived(
-		(formData.last_name !== "" || formData.name !== "") &&
-		formData.email !== "" &&
-		formData.privacyAccepted,
+		isBaseValid && (attachments.length === 0 || hasAddresses),
 	);
 
-	// Manuell: needs addresses
-	const isManuellValid = $derived(
-		(formData.last_name !== "" || formData.name !== "") &&
-		formData.email !== "" &&
-		formData.startStrasse !== "" &&
-		formData.startHausnummer !== "" &&
-		formData.startPlz !== "" &&
-		formData.startOrt !== "" &&
-		formData.endStrasse !== "" &&
-		formData.endHausnummer !== "" &&
-		formData.endPlz !== "" &&
-		formData.endOrt !== "" &&
-		formData.privacyAccepted,
-	);
-
-	const isFotoValid = $derived(isManuellValid && images.length > 0);
-	const isVideoValid = $derived(isManuellValid && videoFiles.length > 0);
+	// Manuell / foto / video: addresses always required
+	const isManuellValid = $derived(isBaseValid && hasAddresses);
+	const isFotoValid    = $derived(isManuellValid && attachments.length > 0);
+	const isVideoValid   = $derived(isManuellValid && attachments.length > 0);
 
 	const isFormValid = $derived(
 		activeMode === "termin"  ? isTerminValid  :
@@ -127,54 +118,28 @@
 		}
 	}
 
-	// ---- Photo upload helpers ----
-	function addPhotos(files: FileList | File[]) {
+	// ---- Unified media helpers — zero format restrictions ----
+	function addFiles(files: FileList | File[]) {
 		for (const f of Array.from(files)) {
-			if (!f.type.startsWith("image/")) continue;
-			if (f.size > 10 * 1024 * 1024) {
-				submitError = `"${f.name}" ist zu groß (max. 10 MB).`;
-				continue;
+			const idx = attachments.length;
+			attachments = [...attachments, f];
+			previews = [...previews, ""];
+			if (f.type.startsWith("image/")) {
+				const reader = new FileReader();
+				reader.onload = (ev) => {
+					previews = previews.map((p, i) => i === idx ? (ev.target?.result as string) : p);
+				};
+				reader.readAsDataURL(f);
 			}
-			images = [...images, f];
-			const reader = new FileReader();
-			reader.onload = (e) => { imagePreviews = [...imagePreviews, e.target?.result as string]; };
-			reader.readAsDataURL(f);
 		}
 	}
-	function removeImage(i: number) {
-		images = images.filter((_, idx) => idx !== i);
-		imagePreviews = imagePreviews.filter((_, idx) => idx !== i);
+	function removeFile(i: number) {
+		attachments = attachments.filter((_, idx) => idx !== i);
+		previews    = previews.filter((_, idx) => idx !== i);
 	}
-	function handlePhotoDrop(e: DragEvent) {
-		e.preventDefault(); isDraggingPhoto = false;
-		if (e.dataTransfer?.files) addPhotos(e.dataTransfer.files);
-	}
-
-	// ---- Video upload helpers ----
-	const videoExtensions = [".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v"];
-	function addVideos(files: FileList | File[]) {
-		for (const f of Array.from(files)) {
-			const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
-			// Accept if MIME starts with video/ OR if extension is a known video format.
-			// This handles .mov files where browsers may report an empty or generic MIME type.
-			if (!f.type.startsWith("video/") && !videoExtensions.includes(ext)) {
-				submitError = `"${f.name}" ist kein unterstütztes Videoformat.`;
-				continue;
-			}
-			if (f.size > 500 * 1024 * 1024) {
-				submitError = `"${f.name}" ist zu groß (max. 500 MB).`;
-				continue;
-			}
-			videoFiles = [...videoFiles, f];
-			submitError = "";
-		}
-	}
-	function removeVideo(i: number) {
-		videoFiles = videoFiles.filter((_, idx) => idx !== i);
-	}
-	function handleVideoDrop(e: DragEvent) {
-		e.preventDefault(); isDraggingVideo = false;
-		if (e.dataTransfer?.files) addVideos(e.dataTransfer.files);
+	function handleDrop(e: DragEvent) {
+		e.preventDefault(); isDragging = false;
+		if (e.dataTransfer?.files) addFiles(e.dataTransfer.files);
 	}
 
 	// ---- Submit ----
@@ -185,14 +150,14 @@
 		submitError = "";
 
 		try {
-			if (activeMode === "termin") {
-				await submitPhp("via-termin");
-			} else if (activeMode === "manuell") {
-				await submitPhp("manuell-angebot");
-			} else if (activeMode === "foto") {
-				await submitFoto();
-			} else {
+			if (activeMode === "video" && attachments.length > 0) {
 				await submitVideo();
+			} else if (attachments.length > 0 || activeMode === "foto") {
+				await submitApi(PHOTO_API_URL);
+			} else if (activeMode === "termin") {
+				await submitPhp("via-termin");
+			} else {
+				await submitPhp("manuell-angebot");
 			}
 			submitSuccess = true;
 		} catch (err: unknown) {
@@ -219,23 +184,18 @@
 			const { dep, arr } = buildAddressStr();
 			fd.append("auszugsadresse", dep);
 			if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
-			fd.append("aufzug_auszug",     formData.aufzugAuszug     ? "true" : "false");
+			fd.append("aufzug_auszug",      formData.aufzugAuszug      ? "true" : "false");
 			fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
 			fd.append("einzugsadresse", arr);
 			if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
-			fd.append("aufzug_einzug",     formData.aufzugEinzug     ? "true" : "false");
+			fd.append("aufzug_einzug",      formData.aufzugEinzug      ? "true" : "false");
 			fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
 			if (formData.selectedServices.length > 0) {
 				fd.append("zusatzleistungen", formData.selectedServices.join(", "));
 			}
 		} else if (formName === "via-termin") {
-			// Include addresses if provided
-			if (formData.startStrasse && formData.startOrt) {
-				fd.append("auszugsadresse", buildAddressStr().dep);
-			}
-			if (formData.endStrasse && formData.endOrt) {
-				fd.append("einzugsadresse", buildAddressStr().arr);
-			}
+			if (formData.startStrasse && formData.startOrt) fd.append("auszugsadresse", buildAddressStr().dep);
+			if (formData.endStrasse   && formData.endOrt)   fd.append("einzugsadresse", buildAddressStr().arr);
 		}
 
 		const res = await fetch(PHP_URL, { method: "POST", body: fd });
@@ -243,7 +203,7 @@
 		if (!res.ok) throw new Error(data?.error || `Fehler (${res.status})`);
 	}
 
-	async function submitFoto() {
+	function buildCommonFd() {
 		const fd = new FormData();
 		const { dep, arr } = buildAddressStr();
 		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
@@ -255,49 +215,32 @@
 		if (formData.date)  fd.append("wunschtermin", formData.date);
 		fd.append("auszugsadresse", dep);
 		if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
-		fd.append("aufzug_auszug",     formData.aufzugAuszug     ? "true" : "false");
+		fd.append("aufzug_auszug",      formData.aufzugAuszug      ? "true" : "false");
 		fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
 		fd.append("einzugsadresse", arr);
 		if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
-		fd.append("aufzug_einzug",     formData.aufzugEinzug     ? "true" : "false");
+		fd.append("aufzug_einzug",      formData.aufzugEinzug      ? "true" : "false");
 		fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
-		if (formData.selectedServices.length > 0) {
-			fd.append("zusatzleistungen", formData.selectedServices.join(", "));
-		}
+		if (formData.selectedServices.length > 0) fd.append("zusatzleistungen", formData.selectedServices.join(", "));
 		if (formData.message) fd.append("nachricht", formData.message);
-		for (const img of images) fd.append("images", img);
+		return fd;
+	}
 
-		const res = await fetch(PHOTO_API_URL, { method: "POST", body: fd });
+	// Photo/manuell/termin API — all attachments go as images[] (backend accepts any MIME)
+	async function submitApi(url: string) {
+		const fd = buildCommonFd();
+		for (const f of attachments) fd.append("images", f);
+		const res = await fetch(url, { method: "POST", body: fd });
 		if (!res.ok && res.status !== 202) {
 			const data = await res.json().catch(() => null);
 			throw new Error(data?.message || data?.detail || `Fehler (${res.status})`);
 		}
 	}
 
+	// Video API — all attachments go as video fields (backend accepts any MIME)
 	async function submitVideo() {
-		const fd = new FormData();
-		const { dep, arr } = buildAddressStr();
-		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
-		if (formData.salutation) fd.append("anrede", formData.salutation);
-		if (formData.first_name) fd.append("vorname", formData.first_name);
-		if (formData.last_name)  fd.append("nachname", formData.last_name);
-		fd.append("email", formData.email);
-		if (formData.phone) fd.append("phone", formData.phone);
-		if (formData.date)  fd.append("wunschtermin", formData.date);
-		fd.append("auszugsadresse", dep);
-		if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
-		fd.append("aufzug_auszug",     formData.aufzugAuszug     ? "true" : "false");
-		fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
-		fd.append("einzugsadresse", arr);
-		if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
-		fd.append("aufzug_einzug",     formData.aufzugEinzug     ? "true" : "false");
-		fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
-		if (formData.selectedServices.length > 0) {
-			fd.append("zusatzleistungen", formData.selectedServices.join(", "));
-		}
-		if (formData.message) fd.append("nachricht", formData.message);
-		for (const v of videoFiles) fd.append("video", v);
-
+		const fd = buildCommonFd();
+		for (const f of attachments) fd.append("video", f);
 		const res = await fetch(VIDEO_API_URL, { method: "POST", body: fd });
 		if (!res.ok && res.status !== 202) {
 			const data = await res.json().catch(() => null);
@@ -309,8 +252,8 @@
 	const successMessages: Record<Mode, { title: string; body: string }> = {
 		termin:  { title: "Terminanfrage erhalten!", body: "Wir melden uns innerhalb eines Werktages, um einen passenden Termin zu vereinbaren." },
 		manuell: { title: "Anfrage eingegangen!", body: "Wir prüfen Ihre Angaben und senden Ihnen in Kürze ein kostenloses Angebot per E-Mail." },
-		foto:    { title: "Fotos hochgeladen!", body: "Unsere KI analysiert Ihre Fotos und Sie erhalten in Kürze ein präzises Angebot per E-Mail." },
-		video:   { title: "Video hochgeladen!", body: "Unsere 3D-Analyse läuft und Sie erhalten in Kürze ein sehr genaues Angebot per E-Mail." },
+		foto:    { title: "Dateien hochgeladen!", body: "Unsere KI analysiert Ihre Aufnahmen und Sie erhalten in Kürze ein präzises Angebot per E-Mail." },
+		video:   { title: "Dateien hochgeladen!", body: "Unsere 3D-Analyse läuft und Sie erhalten in Kürze ein sehr genaues Angebot per E-Mail." },
 	};
 </script>
 
@@ -359,124 +302,104 @@
 			<form class="ap__form" onsubmit={handleSubmit}>
 
 				<!-- ======================================================
-				     MEDIA SECTION — only for foto / video
+				     MEDIA SECTION — all modes (required for foto/video, optional otherwise)
 				     ====================================================== -->
-				{#if activeMode === "foto"}
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">1</span>
-							Fotos Ihrer Räume *
-						</h2>
-						<p class="ap__hint">
-							Fotografieren Sie jeden Raum möglichst aus einer Ecke.
-							1–3 Fotos pro Raum sind ideal. JPEG oder PNG, max. 10 MB pro Bild.
-						</p>
+				<section class="ap__section">
+					<h2 class="ap__section-title">
+						<span class="ap__step">1</span>
+						{#if activeMode === "foto"}Fotos &amp; Videos *
+						{:else if activeMode === "video"}Videos &amp; Fotos *
+						{:else}Anhänge <span class="ap__step-optional">(optional)</span>
+						{/if}
+					</h2>
+					<p class="ap__hint">
+						{#if activeMode === "video"}
+							Videos für präzise 3D-Analyse — langsam gehen, gute Beleuchtung. Fotos willkommen.
+						{:else if activeMode === "foto"}
+							Jeden Raum aus einer Ecke fotografieren. Videos sind ebenfalls willkommen.
+						{:else}
+							Fotos, Videos oder beliebige Dateien beifügen — hilft uns, ein genaues Angebot zu erstellen.
+						{/if}
+						Jedes Format akzeptiert, beliebig viele Dateien.
+					</p>
 
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="ap__dropzone"
-							class:ap__dropzone--dragging={isDraggingPhoto}
-							ondrop={handlePhotoDrop}
-							ondragover={(e) => { e.preventDefault(); isDraggingPhoto = true; }}
-							ondragleave={() => isDraggingPhoto = false}
-						>
-							{#if images.length === 0}
-								<button type="button" class="ap__dropzone-empty" onclick={() => photoInput.click()}>
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="ap__dropzone"
+						class:ap__dropzone--dragging={isDragging}
+						ondrop={handleDrop}
+						ondragover={(e) => { e.preventDefault(); isDragging = true; }}
+						ondragleave={() => isDragging = false}
+					>
+						{#if attachments.length === 0}
+							<button type="button" class="ap__dropzone-empty" onclick={() => fileInput.click()}>
+								{#if activeMode === "video"}
+									<Video size={44} strokeWidth={1.5} />
+								{:else}
 									<Camera size={44} strokeWidth={1.5} />
-									<span class="ap__dropzone-title">Fotos hinzufügen</span>
-									<span class="ap__dropzone-hint">Klicken oder Bilder hierher ziehen</span>
-								</button>
-							{:else}
-								<div class="ap__photo-grid">
-									{#each imagePreviews as preview, i}
+								{/if}
+								<span class="ap__dropzone-title">Dateien hinzufügen</span>
+								<span class="ap__dropzone-hint">Klicken oder hierher ziehen — jedes Format, beliebig viele</span>
+							</button>
+						{:else}
+							<div class="ap__media-grid">
+								{#each attachments as f, i}
+									{#if previews[i]}
+										<!-- Image with thumbnail preview -->
 										<div class="ap__thumb">
-											<img src={preview} alt="Raum {i + 1}" />
-											<button type="button" class="ap__thumb-remove" onclick={() => removeImage(i)} aria-label="Bild entfernen">
+											<img src={previews[i]} alt={f.name} />
+											<button type="button" class="ap__thumb-remove" onclick={() => removeFile(i)} aria-label="Entfernen">
 												<X size={13} />
 											</button>
 										</div>
-									{/each}
-									<button type="button" class="ap__photo-add" onclick={() => photoInput.click()}>
-										<ImagePlus size={22} />
-										<span>Weitere</span>
-									</button>
-								</div>
-							{/if}
-						</div>
-						<input bind:this={photoInput} type="file" accept="image/jpeg,image/png,image/webp"
-							multiple class="hidden" onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files) addPhotos(t.files); t.value = ""; }} />
-						{#if images.length > 0}
-							<p class="ap__count">{images.length} {images.length === 1 ? "Foto" : "Fotos"} ausgewählt</p>
-						{/if}
-					</section>
-				{/if}
-
-				{#if activeMode === "video"}
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">1</span>
-							Video-Rundgang *
-						</h2>
-						<p class="ap__hint">
-							Laden Sie einen oder mehrere Videos hoch (MP4, MOV, WebM, MKV, AVI — max. 500 MB pro Datei).
-							Tipp: Gehen Sie langsam durch alle Räume und achten Sie auf gute Beleuchtung.
-						</p>
-
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="ap__dropzone"
-							class:ap__dropzone--dragging={isDraggingVideo}
-							ondrop={handleVideoDrop}
-							ondragover={(e) => { e.preventDefault(); isDraggingVideo = true; }}
-							ondragleave={() => isDraggingVideo = false}
-						>
-							{#if videoFiles.length === 0}
-								<button type="button" class="ap__dropzone-empty" onclick={() => videoInput.click()}>
-									<Video size={44} strokeWidth={1.5} />
-									<span class="ap__dropzone-title">Videos auswählen</span>
-									<span class="ap__dropzone-hint">Klicken oder Videos hierher ziehen</span>
-								</button>
-							{:else}
-								<div class="ap__video-list">
-									{#each videoFiles as vf, i}
-										<div class="ap__video-selected">
-											<Video size={24} strokeWidth={1.5} />
-											<div class="ap__video-info">
-												<span class="ap__video-name">{vf.name}</span>
-												<span class="ap__video-size">{(vf.size / 1024 / 1024).toFixed(1)} MB</span>
-											</div>
-											<button type="button" class="ap__video-remove" onclick={() => removeVideo(i)} aria-label="Video entfernen">
-												<X size={18} />
+									{:else}
+										<!-- Non-image: video, doc, etc. -->
+										<div class="ap__file-tile">
+											{#if f.type.startsWith("video/")}
+												<Video size={26} strokeWidth={1.5} class="ap__file-tile-icon" />
+											{:else}
+												<FileIcon size={26} strokeWidth={1.5} class="ap__file-tile-icon" />
+											{/if}
+											<span class="ap__file-name">{f.name}</span>
+											<span class="ap__file-size">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+											<button type="button" class="ap__thumb-remove ap__thumb-remove--tile" onclick={() => removeFile(i)} aria-label="Entfernen">
+												<X size={13} />
 											</button>
 										</div>
-									{/each}
-									<button type="button" class="ap__video-add" onclick={() => videoInput.click()}>
-										<Video size={18} />
-										<span>Weiteres Video</span>
-									</button>
-								</div>
-							{/if}
-						</div>
-						<input bind:this={videoInput} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo,.mp4,.mov,.webm,.mkv,.avi,.m4v" multiple class="hidden"
-							onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files) addVideos(t.files); t.value = ""; }} />
-						{#if videoFiles.length > 0}
-							<p class="ap__count">{videoFiles.length} {videoFiles.length === 1 ? "Video" : "Videos"} ausgewählt</p>
+									{/if}
+								{/each}
+								<button type="button" class="ap__photo-add" onclick={() => fileInput.click()}>
+									<ImagePlus size={22} />
+									<span>Weitere</span>
+								</button>
+							</div>
 						{/if}
-					</section>
-				{/if}
+					</div>
+
+					<!-- No accept filter, no restrictions -->
+					<input bind:this={fileInput} type="file" multiple class="hidden"
+						onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files) addFiles(t.files); t.value = ""; }} />
+
+					{#if attachments.length > 0}
+						<p class="ap__count">{attachments.length} {attachments.length === 1 ? "Datei" : "Dateien"} ausgewählt</p>
+					{/if}
+					{#if activeMode === "termin" && attachments.length > 0 && !hasAddresses}
+						<p class="ap__warn">Bitte Adressen ausfüllen, damit Ihre Dateien hochgeladen werden können.</p>
+					{/if}
+				</section>
 
 				<!-- ======================================================
-				     TERMIN — simple appointment request
+				     TERMIN — appointment details
 				     ====================================================== -->
 				{#if activeMode === "termin"}
 					<section class="ap__section">
 						<h2 class="ap__section-title">
-							<span class="ap__step">1</span>
+							<span class="ap__step">2</span>
 							Terminwunsch
 						</h2>
 						<div class="ap__grid">
 							<div class="ap__field">
-								<label for="termin-date">Gewünschter Besichtungstermin</label>
+								<label for="termin-date">Gewünschter Besichtigungstermin</label>
 								<input type="date" id="termin-date" bind:value={formData.date} />
 							</div>
 							<div class="ap__field">
@@ -487,24 +410,25 @@
 						</div>
 					</section>
 
-					<!-- Optional addresses for termin -->
 					<section class="ap__section">
 						<h2 class="ap__section-title">
-							<span class="ap__step">2</span>
-							Adressen (optional)
+							<span class="ap__step">3</span>
+							Adressen {attachments.length > 0 ? "*" : "(optional)"}
 						</h2>
-						<p class="ap__hint">Hilft uns, den richtigen Mitarbeiter zu schicken.</p>
+						{#if attachments.length === 0}
+							<p class="ap__hint">Hilft uns, den richtigen Mitarbeiter zu schicken.</p>
+						{/if}
 						{@render addressBlock()}
 					</section>
 				{/if}
 
 				<!-- ======================================================
-				     MANUELL — addresses (required)
+				     MANUELL — addresses required
 				     ====================================================== -->
 				{#if activeMode === "manuell"}
 					<section class="ap__section">
 						<h2 class="ap__section-title">
-							<span class="ap__step">1</span>
+							<span class="ap__step">2</span>
 							Umzugsdetails
 						</h2>
 						{@render addressBlock()}
@@ -512,7 +436,7 @@
 
 					<section class="ap__section">
 						<h2 class="ap__section-title">
-							<span class="ap__step">2</span>
+							<span class="ap__step">3</span>
 							Zusatzleistungen (optional)
 						</h2>
 						{@render servicesBlock()}
@@ -520,7 +444,7 @@
 				{/if}
 
 				<!-- ======================================================
-				     FOTO / VIDEO — addresses after media (step 2)
+				     FOTO / VIDEO — addresses + services
 				     ====================================================== -->
 				{#if activeMode === "foto" || activeMode === "video"}
 					<section class="ap__section">
@@ -541,13 +465,11 @@
 				{/if}
 
 				<!-- ======================================================
-				     CONTACT — always last numbered step
+				     CONTACT — always last
 				     ====================================================== -->
 				<section class="ap__section">
 					<h2 class="ap__section-title">
-						<span class="ap__step">
-							{activeMode === "termin" ? 3 : activeMode === "manuell" ? 3 : 4}
-						</span>
+						<span class="ap__step">4</span>
 						Ihre Kontaktdaten
 					</h2>
 					<div class="ap__grid">
@@ -621,8 +543,8 @@
 							<span>
 								{activeMode === "termin"  ? "Terminanfrage senden" :
 								 activeMode === "manuell" ? "Angebot anfordern"    :
-								 activeMode === "foto"    ? "Fotos einreichen"     :
-								                           "Video einreichen"}
+								 activeMode === "foto"    ? "Dateien einreichen"   :
+								                           "Dateien einreichen"}
 							</span>
 						{/if}
 					</button>
@@ -830,11 +752,26 @@
 		font-weight: var(--font-bold);
 		flex-shrink: 0;
 	}
+	.ap__step-optional {
+		font-size: var(--text-sm);
+		font-weight: var(--font-normal);
+		color: #94a3b8;
+		margin-left: var(--space-1);
+	}
 	.ap__hint {
 		color: #64748b;
 		font-size: var(--text-sm);
 		line-height: 1.6;
 		margin: calc(-1 * var(--space-3)) 0 var(--space-4);
+	}
+	.ap__warn {
+		color: #b45309;
+		font-size: var(--text-sm);
+		margin-top: var(--space-2);
+		background: #fef3c7;
+		border: 1px solid #fcd34d;
+		border-radius: var(--radius-md);
+		padding: var(--space-2) var(--space-3);
 	}
 
 	/* ===== Grid / Fields ===== */
@@ -997,8 +934,8 @@
 	.ap__dropzone-title { font-size: var(--text-lg); font-weight: var(--font-semibold); color: #475569; }
 	.ap__dropzone-hint  { font-size: var(--text-sm); color: #94a3b8; }
 
-	/* ===== Photo grid ===== */
-	.ap__photo-grid {
+	/* ===== Media grid (mixed thumbnails + file tiles) ===== */
+	.ap__media-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
 		gap: var(--space-3);
@@ -1027,6 +964,36 @@
 		transition: background-color var(--transition-fast);
 	}
 	.ap__thumb-remove:hover { background-color: #dc2626; }
+	/* File tile for non-image files */
+	.ap__file-tile {
+		position: relative;
+		aspect-ratio: 1;
+		border-radius: var(--radius-md);
+		background-color: #eef2ff;
+		border: 1.5px solid #c7d2fe;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+		padding: var(--space-2);
+		color: #4f46e5;
+		overflow: hidden;
+	}
+	.ap__file-name {
+		font-size: var(--text-xs);
+		color: #1e293b;
+		text-align: center;
+		word-break: break-all;
+		line-height: 1.2;
+		max-height: 2.4em;
+		overflow: hidden;
+	}
+	.ap__file-size { font-size: 10px; color: #64748b; }
+	.ap__thumb-remove--tile {
+		position: absolute;
+		top: 4px; right: 4px;
+	}
 	.ap__photo-add {
 		aspect-ratio: 1;
 		display: flex;
@@ -1044,68 +1011,6 @@
 	}
 	.ap__photo-add:hover { border-color: var(--color-nav-accent); color: var(--color-nav-accent); }
 	.ap__count { color: #64748b; font-size: var(--text-sm); margin-top: var(--space-2); }
-
-	/* ===== Video list ===== */
-	.ap__video-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		padding: var(--space-3);
-	}
-	.ap__video-selected {
-		display: flex;
-		align-items: center;
-		gap: var(--space-4);
-		padding: var(--space-4) var(--space-5);
-		background-color: #f0f4f8;
-		border-radius: var(--radius-md);
-		color: var(--color-nav-accent);
-	}
-	.ap__video-add {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-2);
-		padding: var(--space-3);
-		border: 2px dashed #cbd5e0;
-		border-radius: var(--radius-md);
-		background: none;
-		color: #94a3b8;
-		cursor: pointer;
-		font-size: var(--text-sm);
-		transition: all var(--transition-fast);
-		width: 100%;
-	}
-	.ap__video-add:hover { border-color: var(--color-nav-accent); color: var(--color-nav-accent); }
-	.ap__video-info {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		min-width: 0;
-	}
-	.ap__video-name {
-		font-weight: var(--font-semibold);
-		color: #1e293b;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		font-size: var(--text-sm);
-	}
-	.ap__video-size { font-size: var(--text-xs); color: #64748b; }
-	.ap__video-remove {
-		background: none;
-		border: 1.5px solid #e2e8f0;
-		border-radius: var(--radius-md);
-		padding: var(--space-2);
-		cursor: pointer;
-		color: #94a3b8;
-		display: flex;
-		align-items: center;
-		transition: all var(--transition-fast);
-		flex-shrink: 0;
-	}
-	.ap__video-remove:hover { border-color: #dc2626; color: #dc2626; }
 
 	/* ===== Submit section ===== */
 	.ap__section--submit {
@@ -1194,7 +1099,7 @@
 		.ap__grid { grid-template-columns: 1fr; }
 		.ap__services { grid-template-columns: repeat(2, 1fr); }
 		.ap__section { padding: var(--space-4); }
-		.ap__photo-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
+		.ap__media-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
 		.ap__field--checks { flex-direction: column; }
 		.ap__dropzone-empty { padding: var(--space-6) var(--space-4); }
 		.ap__check { min-height: 44px; }
@@ -1202,7 +1107,6 @@
 	@media (max-width: 480px) {
 		.ap__services { grid-template-columns: 1fr; }
 		.ap__mode-label { font-size: var(--text-xs); }
-		/* Stack street+nr and PLZ+city vertically on very small screens */
 		.ap__addr-row { flex-direction: column; }
 		input.ap__addr-nr,
 		input.ap__addr-plz {

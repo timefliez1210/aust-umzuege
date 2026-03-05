@@ -15,12 +15,7 @@
 <svelte:head>
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-</svelte:head>
-
-{#if $page.url.pathname.startsWith('/admin')}
-  {@render children()}
-{:else}
-  <svelte:head>
+  {#if !$page.url.pathname.startsWith('/admin')}
     <!-- Google Analytics (deferred until after user interaction or idle) -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -46,7 +41,12 @@
         }
       })();
     </script>
-  </svelte:head>
+  {/if}
+</svelte:head>
+
+{#if $page.url.pathname.startsWith('/admin')}
+  {@render children()}
+{:else}
 
   <!-- Skip link for accessibility -->
   <a href="#main-content" class="skip-link">Zum Inhalt springen</a>

@@ -42,7 +42,7 @@ if ($formName === 'kontakt') {
     $body = "=== Neue Kontaktanfrage ===\n\n";
     if ($anrede) $body .= "Anrede: $anrede\n";
     if ($vorname) $body .= "Vorname: $vorname\n";
-    $body .= "Nachname: $name\n";
+    $body .= "Nachname: $nachname\n";
     $body .= "E-Mail: $email\n";
     $body .= "Telefon: $phone\n\n";
     $body .= "Nachricht:\n$message\n";
@@ -75,7 +75,7 @@ if ($formName === 'kontakt') {
     $body .= "--- Kontaktdaten ---\n";
     if ($anrede) $body .= "Anrede: $anrede\n";
     if ($vorname) $body .= "Vorname: $vorname\n";
-    $body .= "Nachname: $name\n";
+    $body .= "Nachname: $nachname\n";
     $body .= "E-Mail: $email\n";
     $body .= "Telefon: $phone\n";
     $body .= "Wunschtermin: $date\n\n";
@@ -118,7 +118,7 @@ if ($formName === 'kontakt') {
     $body = "=== Neue Terminanfrage ===\n\n";
     if ($anrede) $body .= "Anrede: $anrede\n";
     if ($vorname) $body .= "Vorname: $vorname\n";
-    $body .= "Nachname: $name\n";
+    $body .= "Nachname: $nachname\n";
     $body .= "E-Mail: $email\n";
     $body .= "Telefon: $phone\n";
     $body .= "Wunschtermin: $date\n\n";
@@ -157,7 +157,7 @@ if ($formName === 'kontakt') {
     $body .= "--- Kontaktdaten ---\n";
     if ($anrede) $body .= "Anrede: $anrede\n";
     if ($vorname) $body .= "Vorname: $vorname\n";
-    $body .= "Nachname: $name\n";
+    $body .= "Nachname: $nachname\n";
     $body .= "E-Mail: $email\n";
     $body .= "Telefon: $phone\n";
     $body .= "Wunschtermin: $date\n\n";

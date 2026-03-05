@@ -1975,7 +1975,7 @@
 						<span class="info-label">Name</span>
 						<span class="info-value name-with-salutation">
 							{#if data.customer?.salutation}
-								<span class="salutation-badge">{data.customer.salutation}</span>
+								<span class="salutation-badge">{data.customer.salutation === "D" ? "Divers" : data.customer.salutation}</span>
 							{/if}
 							{data.customer?.first_name && data.customer?.last_name
 								? `${data.customer.first_name} ${data.customer.last_name}`

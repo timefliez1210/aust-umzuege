@@ -883,10 +883,10 @@
 	.ap__field textarea { resize: vertical; min-height: 80px; }
 
 	/* ===== Address sub-rows ===== */
-	.ap__addr-row { display: flex; gap: var(--space-2); }
+	.ap__addr-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 	.ap__addr-row input { flex: 1; min-width: 0; }
-	input.ap__addr-nr  { flex: 0 0 80px; }
-	input.ap__addr-plz { flex: 0 0 100px; }
+	input.ap__addr-nr  { flex: 0 0 80px;  max-width: 80px; }
+	input.ap__addr-plz { flex: 0 0 100px; max-width: 100px; }
 
 	/* ===== Checkbox rows ===== */
 	.ap__check {
@@ -1141,14 +1141,24 @@
 	@media (max-width: 767px) {
 		.ap { padding-block: var(--space-8); }
 		.ap__mode-selector { grid-template-columns: repeat(2, 1fr); }
+		.ap__mode-btn { min-height: 64px; }
 		.ap__grid { grid-template-columns: 1fr; }
 		.ap__services { grid-template-columns: repeat(2, 1fr); }
 		.ap__section { padding: var(--space-4); }
 		.ap__photo-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
 		.ap__field--checks { flex-direction: column; }
+		.ap__dropzone-empty { padding: var(--space-6) var(--space-4); }
+		.ap__check { min-height: 44px; }
 	}
 	@media (max-width: 480px) {
 		.ap__services { grid-template-columns: 1fr; }
-		.ap__mode-label { font-size: 11px; }
+		.ap__mode-label { font-size: var(--text-xs); }
+		/* Stack street+nr and PLZ+city vertically on very small screens */
+		.ap__addr-row { flex-direction: column; }
+		input.ap__addr-nr,
+		input.ap__addr-plz {
+			flex: 1 1 auto;
+			max-width: 100%;
+		}
 	}
 </style>

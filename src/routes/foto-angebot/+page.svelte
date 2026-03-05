@@ -72,7 +72,7 @@
 	let photoInput = $state<HTMLInputElement>(null!);
 
 	// Video mode
-	let videoFile = $state<File | null>(null);
+	let videoFiles = $state<File[]>([]);
 	let isDraggingVideo = $state(false);
 	let videoInput = $state<HTMLInputElement>(null!);
 
@@ -103,7 +103,7 @@
 	);
 
 	const isFotoValid = $derived(isManuellValid && images.length > 0);
-	const isVideoValid = $derived(isManuellValid && videoFile !== null);
+	const isVideoValid = $derived(isManuellValid && videoFiles.length > 0);
 
 	const isFormValid = $derived(
 		activeMode === "termin"  ? isTerminValid  :
@@ -151,16 +151,30 @@
 	}
 
 	// ---- Video upload helpers ----
-	function setVideo(f: File) {
-		if (!f.type.startsWith("video/")) { submitError = "Bitte eine Videodatei auswählen (MP4, MOV, etc.)."; return; }
-		if (f.size > 500 * 1024 * 1024) { submitError = `Video zu groß (max. 500 MB).`; return; }
-		videoFile = f;
-		submitError = "";
+	const videoExtensions = [".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v"];
+	function addVideos(files: FileList | File[]) {
+		for (const f of Array.from(files)) {
+			const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
+			// Accept if MIME starts with video/ OR if extension is a known video format.
+			// This handles .mov files where browsers may report an empty or generic MIME type.
+			if (!f.type.startsWith("video/") && !videoExtensions.includes(ext)) {
+				submitError = `"${f.name}" ist kein unterstütztes Videoformat.`;
+				continue;
+			}
+			if (f.size > 500 * 1024 * 1024) {
+				submitError = `"${f.name}" ist zu groß (max. 500 MB).`;
+				continue;
+			}
+			videoFiles = [...videoFiles, f];
+			submitError = "";
+		}
+	}
+	function removeVideo(i: number) {
+		videoFiles = videoFiles.filter((_, idx) => idx !== i);
 	}
 	function handleVideoDrop(e: DragEvent) {
 		e.preventDefault(); isDraggingVideo = false;
-		const f = e.dataTransfer?.files[0];
-		if (f) setVideo(f);
+		if (e.dataTransfer?.files) addVideos(e.dataTransfer.files);
 	}
 
 	// ---- Submit ----
@@ -282,7 +296,7 @@
 			fd.append("zusatzleistungen", formData.selectedServices.join(", "));
 		}
 		if (formData.message) fd.append("nachricht", formData.message);
-		fd.append("video", videoFile!);
+		for (const v of videoFiles) fd.append("video", v);
 
 		const res = await fetch(VIDEO_API_URL, { method: "POST", body: fd });
 		if (!res.ok && res.status !== 202) {
@@ -404,8 +418,8 @@
 							Video-Rundgang *
 						</h2>
 						<p class="ap__hint">
-							Filmen Sie alle Räume in einem Schwenk. MP4, MOV oder WebM, max. 500 MB.
-							Tipp: Gehen Sie langsam und achten Sie auf gute Beleuchtung.
+							Laden Sie einen oder mehrere Videos hoch (MP4, MOV, WebM, MKV, AVI — max. 500 MB pro Datei).
+							Tipp: Gehen Sie langsam durch alle Räume und achten Sie auf gute Beleuchtung.
 						</p>
 
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -416,27 +430,38 @@
 							ondragover={(e) => { e.preventDefault(); isDraggingVideo = true; }}
 							ondragleave={() => isDraggingVideo = false}
 						>
-							{#if !videoFile}
+							{#if videoFiles.length === 0}
 								<button type="button" class="ap__dropzone-empty" onclick={() => videoInput.click()}>
 									<Video size={44} strokeWidth={1.5} />
-									<span class="ap__dropzone-title">Video auswählen</span>
-									<span class="ap__dropzone-hint">Klicken oder Video hierher ziehen</span>
+									<span class="ap__dropzone-title">Videos auswählen</span>
+									<span class="ap__dropzone-hint">Klicken oder Videos hierher ziehen</span>
 								</button>
 							{:else}
-								<div class="ap__video-selected">
-									<Video size={32} strokeWidth={1.5} />
-									<div class="ap__video-info">
-										<span class="ap__video-name">{videoFile.name}</span>
-										<span class="ap__video-size">{(videoFile.size / 1024 / 1024).toFixed(1)} MB</span>
-									</div>
-									<button type="button" class="ap__video-remove" onclick={() => videoFile = null} aria-label="Video entfernen">
-										<X size={18} />
+								<div class="ap__video-list">
+									{#each videoFiles as vf, i}
+										<div class="ap__video-selected">
+											<Video size={24} strokeWidth={1.5} />
+											<div class="ap__video-info">
+												<span class="ap__video-name">{vf.name}</span>
+												<span class="ap__video-size">{(vf.size / 1024 / 1024).toFixed(1)} MB</span>
+											</div>
+											<button type="button" class="ap__video-remove" onclick={() => removeVideo(i)} aria-label="Video entfernen">
+												<X size={18} />
+											</button>
+										</div>
+									{/each}
+									<button type="button" class="ap__video-add" onclick={() => videoInput.click()}>
+										<Video size={18} />
+										<span>Weiteres Video</span>
 									</button>
 								</div>
 							{/if}
 						</div>
-						<input bind:this={videoInput} type="file" accept="video/*" class="hidden"
-							onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files?.[0]) setVideo(t.files[0]); t.value = ""; }} />
+						<input bind:this={videoInput} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo,.mp4,.mov,.webm,.mkv,.avi,.m4v" multiple class="hidden"
+							onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files) addVideos(t.files); t.value = ""; }} />
+						{#if videoFiles.length > 0}
+							<p class="ap__count">{videoFiles.length} {videoFiles.length === 1 ? "Video" : "Videos"} ausgewählt</p>
+						{/if}
 					</section>
 				{/if}
 
@@ -1020,14 +1045,38 @@
 	.ap__photo-add:hover { border-color: var(--color-nav-accent); color: var(--color-nav-accent); }
 	.ap__count { color: #64748b; font-size: var(--text-sm); margin-top: var(--space-2); }
 
-	/* ===== Video selected ===== */
+	/* ===== Video list ===== */
+	.ap__video-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		padding: var(--space-3);
+	}
 	.ap__video-selected {
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
-		padding: var(--space-5) var(--space-6);
+		padding: var(--space-4) var(--space-5);
+		background-color: #f0f4f8;
+		border-radius: var(--radius-md);
 		color: var(--color-nav-accent);
 	}
+	.ap__video-add {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		border: 2px dashed #cbd5e0;
+		border-radius: var(--radius-md);
+		background: none;
+		color: #94a3b8;
+		cursor: pointer;
+		font-size: var(--text-sm);
+		transition: all var(--transition-fast);
+		width: 100%;
+	}
+	.ap__video-add:hover { border-color: var(--color-nav-accent); color: var(--color-nav-accent); }
 	.ap__video-info {
 		flex: 1;
 		display: flex;

@@ -6,6 +6,9 @@
 
     let formData = $state({
         name: "",
+        salutation: "",
+        first_name: "",
+        last_name: "",
         email: "",
         phone: "",
         message: "",
@@ -17,7 +20,7 @@
     let submitError = $state("");
 
     const isFormValid = $derived(
-        formData.name !== "" &&
+        (formData.last_name !== "" || formData.name !== "") &&
             formData.email !== "" &&
             formData.message !== "" &&
             formData.privacyAccepted,
@@ -45,6 +48,9 @@
                 // Reset form
                 formData = {
                     name: "",
+                    salutation: "",
+                    first_name: "",
+                    last_name: "",
                     email: "",
                     phone: "",
                     message: "",
@@ -111,16 +117,42 @@
                 <input type="hidden" name="form-name" value="kontakt" />
                 <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
 
+                <div class="contact-form__group contact-form__group--radio">
+                    <label class="contact-form__radio-label">Anrede:</label>
+                    <div class="contact-form__radio-row">
+                        <label class="contact-form__radio">
+                            <input type="radio" name="anrede" value="Herr" bind:group={formData.salutation} />
+                            <span>Herr</span>
+                        </label>
+                        <label class="contact-form__radio">
+                            <input type="radio" name="anrede" value="Frau" bind:group={formData.salutation} />
+                            <span>Frau</span>
+                        </label>
+                        <label class="contact-form__radio">
+                            <input type="radio" name="anrede" value="D" bind:group={formData.salutation} />
+                            <span>Divers</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="contact-form__group">
                     <input
                         type="text"
-                        id="name"
-                        name="name"
-                        bind:value={formData.name}
-                        placeholder="Ihr Name:"
+                        id="first_name"
+                        name="vorname"
+                        bind:value={formData.first_name}
+                        placeholder="Vorname:"
+                    />
+                </div>
+
+                <div class="contact-form__group">
+                    <input
+                        type="text"
+                        id="last_name"
+                        name="nachname"
+                        bind:value={formData.last_name}
+                        placeholder="Nachname: *"
                         required
-                        toolparamtitle="Name"
-                        toolparamdescription="Vollständiger Name des Absenders"
                     />
                 </div>
 
@@ -333,6 +365,35 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
+    }
+
+    .contact-form__group--radio {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    .contact-form__radio-label {
+        color: #4a5568;
+        font-size: var(--text-sm);
+    }
+    .contact-form__radio-row {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+    }
+    .contact-form__radio {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        cursor: pointer;
+        font-size: var(--text-base);
+        color: #2d3748;
+    }
+    .contact-form__radio input[type="radio"] {
+        width: 1.1rem;
+        height: 1.1rem;
+        accent-color: var(--color-nav-accent);
+        cursor: pointer;
     }
 
     .contact-form__group input,

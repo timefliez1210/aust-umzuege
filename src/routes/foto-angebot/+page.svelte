@@ -1,9 +1,19 @@
 <script lang="ts">
-	import { Send, Camera, X, ImagePlus } from "lucide-svelte";
+	import { Send, Camera, X, ImagePlus, Video, Calendar, ClipboardList } from "lucide-svelte";
 
-	const API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
+	const PHOTO_API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
+	const VIDEO_API_URL = import.meta.env.VITE_VIDEO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/video";
+	const PHP_URL = "/send-mail.php";
 
-	// Floor options (matching API spec)
+	type Mode = "termin" | "manuell" | "foto" | "video";
+
+	const modes: { id: Mode; label: string; icon: typeof Camera; hint: string }[] = [
+		{ id: "termin",  label: "Via Termin", icon: Calendar,      hint: "Termin vereinbaren — wir kommen kostenlos vorbei" },
+		{ id: "manuell", label: "Manuell",    icon: ClipboardList, hint: "Adresse & Details angeben — wir berechnen das Volumen" },
+		{ id: "foto",    label: "Fotos",      icon: Camera,        hint: "Raumfotos hochladen — KI berechnet Volumen automatisch" },
+		{ id: "video",   label: "Video",      icon: Video,         hint: "Rundgang-Video hochladen — präziseste 3D-Analyse" },
+	];
+
 	const floorOptions = [
 		{ value: "", label: "Bitte wählen" },
 		{ value: "Erdgeschoss", label: "Erdgeschoss" },
@@ -19,15 +29,20 @@
 
 	const additionalServices = [
 		{ id: "Möbeldemontage", label: "Möbeldemontage" },
-		{ id: "Möbelmontage", label: "Möbelmontage" },
+		{ id: "Möbelmontage",   label: "Möbelmontage" },
 		{ id: "Einpackservice", label: "Einpackservice" },
-		{ id: "Einlagerung", label: "Einlagerung" },
-		{ id: "Entsorgung", label: "Entsorgung" },
+		{ id: "Einlagerung",    label: "Einlagerung" },
+		{ id: "Entsorgung",     label: "Entsorgung" },
 	];
 
-	// Form state
+	let activeMode = $state<Mode>("termin");
+
+	// Shared form state
 	let formData = $state({
 		name: "",
+		salutation: "",
+		first_name: "",
+		last_name: "",
 		email: "",
 		phone: "",
 		date: "",
@@ -50,16 +65,31 @@
 		privacyAccepted: false,
 	});
 
+	// Photo mode
 	let images = $state<File[]>([]);
 	let imagePreviews = $state<string[]>([]);
-	let isDragging = $state(false);
+	let isDraggingPhoto = $state(false);
+	let photoInput = $state<HTMLInputElement>(null!);
+
+	// Video mode
+	let videoFile = $state<File | null>(null);
+	let isDraggingVideo = $state(false);
+	let videoInput = $state<HTMLInputElement>(null!);
+
 	let isSubmitting = $state(false);
 	let submitSuccess = $state(false);
 	let submitError = $state("");
-	let fileInput = $state<HTMLInputElement>(null!);
 
-	const isFormValid = $derived(
-		formData.name !== "" &&
+	// Termin mode: only name + email + phone + date + optional addresses + message
+	const isTerminValid = $derived(
+		(formData.last_name !== "" || formData.name !== "") &&
+		formData.email !== "" &&
+		formData.privacyAccepted,
+	);
+
+	// Manuell: needs addresses
+	const isManuellValid = $derived(
+		(formData.last_name !== "" || formData.name !== "") &&
 		formData.email !== "" &&
 		formData.startStrasse !== "" &&
 		formData.startHausnummer !== "" &&
@@ -69,416 +99,506 @@
 		formData.endHausnummer !== "" &&
 		formData.endPlz !== "" &&
 		formData.endOrt !== "" &&
-		images.length > 0 &&
 		formData.privacyAccepted,
 	);
 
-	function toggleService(serviceId: string) {
-		if (formData.selectedServices.includes(serviceId)) {
-			formData.selectedServices = formData.selectedServices.filter(s => s !== serviceId);
+	const isFotoValid = $derived(isManuellValid && images.length > 0);
+	const isVideoValid = $derived(isManuellValid && videoFile !== null);
+
+	const isFormValid = $derived(
+		activeMode === "termin"  ? isTerminValid  :
+		activeMode === "manuell" ? isManuellValid :
+		activeMode === "foto"    ? isFotoValid    :
+		isVideoValid,
+	);
+
+	function buildAddressStr() {
+		return {
+			dep: `${formData.startStrasse} ${formData.startHausnummer}, ${formData.startPlz} ${formData.startOrt}`,
+			arr: `${formData.endStrasse} ${formData.endHausnummer}, ${formData.endPlz} ${formData.endOrt}`,
+		};
+	}
+
+	function toggleService(id: string) {
+		if (formData.selectedServices.includes(id)) {
+			formData.selectedServices = formData.selectedServices.filter(s => s !== id);
 		} else {
-			formData.selectedServices = [...formData.selectedServices, serviceId];
+			formData.selectedServices = [...formData.selectedServices, id];
 		}
 	}
 
-	function addFiles(files: FileList | File[]) {
-		const fileArray = Array.from(files);
-		const validFiles = fileArray.filter(f => {
-			if (!f.type.startsWith("image/")) return false;
+	// ---- Photo upload helpers ----
+	function addPhotos(files: FileList | File[]) {
+		for (const f of Array.from(files)) {
+			if (!f.type.startsWith("image/")) continue;
 			if (f.size > 10 * 1024 * 1024) {
 				submitError = `"${f.name}" ist zu groß (max. 10 MB).`;
-				return false;
+				continue;
 			}
-			return true;
-		});
-
-		for (const file of validFiles) {
-			images = [...images, file];
+			images = [...images, f];
 			const reader = new FileReader();
-			reader.onload = (e) => {
-				imagePreviews = [...imagePreviews, e.target?.result as string];
-			};
-			reader.readAsDataURL(file);
+			reader.onload = (e) => { imagePreviews = [...imagePreviews, e.target?.result as string]; };
+			reader.readAsDataURL(f);
 		}
 	}
-
-	function removeImage(index: number) {
-		images = images.filter((_, i) => i !== index);
-		imagePreviews = imagePreviews.filter((_, i) => i !== index);
+	function removeImage(i: number) {
+		images = images.filter((_, idx) => idx !== i);
+		imagePreviews = imagePreviews.filter((_, idx) => idx !== i);
+	}
+	function handlePhotoDrop(e: DragEvent) {
+		e.preventDefault(); isDraggingPhoto = false;
+		if (e.dataTransfer?.files) addPhotos(e.dataTransfer.files);
 	}
 
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		isDragging = false;
-		if (e.dataTransfer?.files) {
-			addFiles(e.dataTransfer.files);
-		}
+	// ---- Video upload helpers ----
+	function setVideo(f: File) {
+		if (!f.type.startsWith("video/")) { submitError = "Bitte eine Videodatei auswählen (MP4, MOV, etc.)."; return; }
+		if (f.size > 500 * 1024 * 1024) { submitError = `Video zu groß (max. 500 MB).`; return; }
+		videoFile = f;
+		submitError = "";
+	}
+	function handleVideoDrop(e: DragEvent) {
+		e.preventDefault(); isDraggingVideo = false;
+		const f = e.dataTransfer?.files[0];
+		if (f) setVideo(f);
 	}
 
-	function handleDragOver(e: DragEvent) {
-		e.preventDefault();
-		isDragging = true;
-	}
-
-	function handleDragLeave() {
-		isDragging = false;
-	}
-
-	function handleFileSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (input.files) {
-			addFiles(input.files);
-			input.value = "";
-		}
-	}
-
+	// ---- Submit ----
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		if (!isFormValid || isSubmitting) return;
-
 		isSubmitting = true;
 		submitError = "";
 
+		try {
+			if (activeMode === "termin") {
+				await submitPhp("via-termin");
+			} else if (activeMode === "manuell") {
+				await submitPhp("manuell-angebot");
+			} else if (activeMode === "foto") {
+				await submitFoto();
+			} else {
+				await submitVideo();
+			}
+			submitSuccess = true;
+		} catch (err: unknown) {
+			submitError = err instanceof Error ? err.message : "Unbekannter Fehler. Bitte erneut versuchen.";
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	async function submitPhp(formName: string) {
 		const fd = new FormData();
-		fd.append("name", formData.name);
+		fd.append("form-name", formName);
+		fd.append("bot-field", "");
+		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
+		if (formData.salutation) fd.append("anrede", formData.salutation);
+		if (formData.first_name) fd.append("vorname", formData.first_name);
+		if (formData.last_name)  fd.append("nachname", formData.last_name);
+		fd.append("email", formData.email);
+		if (formData.phone)   fd.append("phone", formData.phone);
+		if (formData.date)    fd.append("wunschtermin", formData.date);
+		if (formData.message) fd.append("nachricht", formData.message);
+
+		if (formName === "manuell-angebot") {
+			const { dep, arr } = buildAddressStr();
+			fd.append("auszugsadresse", dep);
+			if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
+			fd.append("aufzug_auszug",     formData.aufzugAuszug     ? "true" : "false");
+			fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
+			fd.append("einzugsadresse", arr);
+			if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
+			fd.append("aufzug_einzug",     formData.aufzugEinzug     ? "true" : "false");
+			fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
+			if (formData.selectedServices.length > 0) {
+				fd.append("zusatzleistungen", formData.selectedServices.join(", "));
+			}
+		} else if (formName === "via-termin") {
+			// Include addresses if provided
+			if (formData.startStrasse && formData.startOrt) {
+				fd.append("auszugsadresse", buildAddressStr().dep);
+			}
+			if (formData.endStrasse && formData.endOrt) {
+				fd.append("einzugsadresse", buildAddressStr().arr);
+			}
+		}
+
+		const res = await fetch(PHP_URL, { method: "POST", body: fd });
+		const data = await res.json().catch(() => null);
+		if (!res.ok) throw new Error(data?.error || `Fehler (${res.status})`);
+	}
+
+	async function submitFoto() {
+		const fd = new FormData();
+		const { dep, arr } = buildAddressStr();
+		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
+		if (formData.salutation) fd.append("anrede", formData.salutation);
+		if (formData.first_name) fd.append("vorname", formData.first_name);
+		if (formData.last_name)  fd.append("nachname", formData.last_name);
 		fd.append("email", formData.email);
 		if (formData.phone) fd.append("phone", formData.phone);
-		if (formData.date) fd.append("wunschtermin", formData.date);
-		fd.append("auszugsadresse", `${formData.startStrasse} ${formData.startHausnummer}, ${formData.startPlz} ${formData.startOrt}`);
+		if (formData.date)  fd.append("wunschtermin", formData.date);
+		fd.append("auszugsadresse", dep);
 		if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
-		fd.append("aufzug_auszug", formData.aufzugAuszug ? "true" : "false");
+		fd.append("aufzug_auszug",     formData.aufzugAuszug     ? "true" : "false");
 		fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
-		fd.append("einzugsadresse", `${formData.endStrasse} ${formData.endHausnummer}, ${formData.endPlz} ${formData.endOrt}`);
+		fd.append("einzugsadresse", arr);
 		if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
-		fd.append("aufzug_einzug", formData.aufzugEinzug ? "true" : "false");
+		fd.append("aufzug_einzug",     formData.aufzugEinzug     ? "true" : "false");
 		fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
 		if (formData.selectedServices.length > 0) {
 			fd.append("zusatzleistungen", formData.selectedServices.join(", "));
 		}
 		if (formData.message) fd.append("nachricht", formData.message);
+		for (const img of images) fd.append("images", img);
 
-		for (const img of images) {
-			fd.append("images", img);
-		}
-
-		try {
-			const response = await fetch(API_URL, {
-				method: "POST",
-				body: fd,
-			});
-
-			if (response.ok || response.status === 202) {
-				submitSuccess = true;
-			} else {
-				const data = await response.json().catch(() => null);
-				submitError = data?.message || data?.detail || `Fehler (${response.status}). Bitte versuchen Sie es erneut.`;
-			}
-		} catch (err) {
-			console.error("Fetch error:", err);
-			submitError = "Verbindungsfehler. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.";
-		} finally {
-			isSubmitting = false;
+		const res = await fetch(PHOTO_API_URL, { method: "POST", body: fd });
+		if (!res.ok && res.status !== 202) {
+			const data = await res.json().catch(() => null);
+			throw new Error(data?.message || data?.detail || `Fehler (${res.status})`);
 		}
 	}
+
+	async function submitVideo() {
+		const fd = new FormData();
+		const { dep, arr } = buildAddressStr();
+		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
+		if (formData.salutation) fd.append("anrede", formData.salutation);
+		if (formData.first_name) fd.append("vorname", formData.first_name);
+		if (formData.last_name)  fd.append("nachname", formData.last_name);
+		fd.append("email", formData.email);
+		if (formData.phone) fd.append("phone", formData.phone);
+		if (formData.date)  fd.append("wunschtermin", formData.date);
+		fd.append("auszugsadresse", dep);
+		if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
+		fd.append("aufzug_auszug",     formData.aufzugAuszug     ? "true" : "false");
+		fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
+		fd.append("einzugsadresse", arr);
+		if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
+		fd.append("aufzug_einzug",     formData.aufzugEinzug     ? "true" : "false");
+		fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
+		if (formData.selectedServices.length > 0) {
+			fd.append("zusatzleistungen", formData.selectedServices.join(", "));
+		}
+		if (formData.message) fd.append("nachricht", formData.message);
+		fd.append("video", videoFile!);
+
+		const res = await fetch(VIDEO_API_URL, { method: "POST", body: fd });
+		if (!res.ok && res.status !== 202) {
+			const data = await res.json().catch(() => null);
+			throw new Error(data?.message || data?.detail || `Fehler (${res.status})`);
+		}
+	}
+
+	// Success messages per mode
+	const successMessages: Record<Mode, { title: string; body: string }> = {
+		termin:  { title: "Terminanfrage erhalten!", body: "Wir melden uns innerhalb eines Werktages, um einen passenden Termin zu vereinbaren." },
+		manuell: { title: "Anfrage eingegangen!", body: "Wir prüfen Ihre Angaben und senden Ihnen in Kürze ein kostenloses Angebot per E-Mail." },
+		foto:    { title: "Fotos hochgeladen!", body: "Unsere KI analysiert Ihre Fotos und Sie erhalten in Kürze ein präzises Angebot per E-Mail." },
+		video:   { title: "Video hochgeladen!", body: "Unsere 3D-Analyse läuft und Sie erhalten in Kürze ein sehr genaues Angebot per E-Mail." },
+	};
 </script>
 
 <svelte:head>
-	<title>Foto-Angebot | Aust Umzüge</title>
+	<title>Kostenloses Angebot | Aust Umzüge</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<main class="angebot-page">
-	<div class="angebot-page__container">
-		<header class="angebot-page__header">
-			<h1 class="angebot-page__heading">Angebot mit Fotos anfordern</h1>
-			<p class="angebot-page__subheading">
-				Fotografieren Sie Ihre Räume und erhalten Sie ein präzises, kostenloses Angebot.
-				Unsere KI analysiert Ihre Fotos und erstellt automatisch eine Volumenberechnung.
+<main class="ap">
+	<div class="ap__container">
+		<header class="ap__header">
+			<h1 class="ap__heading">Kostenloses Angebot anfordern</h1>
+			<p class="ap__subheading">
+				Wählen Sie, wie wir Ihr Umzugsvolumen ermitteln sollen — von einfach bis hochpräzise.
 			</p>
 		</header>
 
 		{#if submitSuccess}
-			<div class="angebot-page__success">
-				<h2>Vielen Dank für Ihre Anfrage!</h2>
-				<p>Wir analysieren Ihre Fotos und senden Ihnen in Kürze ein individuelles Angebot per E-Mail.</p>
-				<a href="/" class="angebot-page__submit angebot-page__submit--centered">
-					Zur Startseite
-				</a>
+			<div class="ap__success">
+				<div class="ap__success-icon">✓</div>
+				<h2>{successMessages[activeMode].title}</h2>
+				<p>{successMessages[activeMode].body}</p>
+				<a href="/" class="ap__btn ap__btn--center">Zur Startseite</a>
 			</div>
 		{:else}
-			<form
-				class="angebot-page__form"
-				onsubmit={handleSubmit}
-				toolname="foto-angebot"
-				tooldescription="Umzugsangebot mit Fotos anfordern. Raumfotos hochladen, Auszugs-/Einzugsadresse mit Etage angeben und Kontaktdaten hinterlassen für eine KI-basierte Volumenberechnung."
-			>
-				<!-- Step 1: Photos -->
-				<section class="angebot-page__section">
-					<h2 class="angebot-page__section-title">
-						<span class="angebot-page__step-number">1</span>
-						Fotos Ihrer Räume *
-					</h2>
-					<p class="angebot-page__section-hint">
-						Fotografieren Sie jeden Raum möglichst aus einer Ecke, um den gesamten Inhalt zu erfassen.
-						1–3 Fotos pro Raum sind ideal. JPEG oder PNG, max. 10 MB pro Bild.
-					</p>
-
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div
-						class="photo-upload"
-						class:photo-upload--dragging={isDragging}
-						ondrop={handleDrop}
-						ondragover={handleDragOver}
-						ondragleave={handleDragLeave}
+			<!-- Mode Selector -->
+			<div class="ap__mode-selector">
+				{#each modes as m}
+					<button
+						type="button"
+						class="ap__mode-btn"
+						class:ap__mode-btn--active={activeMode === m.id}
+						onclick={() => { activeMode = m.id; submitError = ""; }}
 					>
-						{#if images.length === 0}
-							<button type="button" class="photo-upload__empty" onclick={() => fileInput.click()}>
-								<Camera size={48} strokeWidth={1.5} />
-								<span class="photo-upload__empty-title">Fotos hinzufügen</span>
-								<span class="photo-upload__empty-hint">Klicken oder Bilder hierher ziehen</span>
-							</button>
-						{:else}
-							<div class="photo-upload__grid">
-								{#each imagePreviews as preview, i}
-									<div class="photo-upload__thumb">
-										<img src={preview} alt="Raum {i + 1}" />
-										<button
-											type="button"
-											class="photo-upload__remove"
-											onclick={() => removeImage(i)}
-											aria-label="Bild entfernen"
-										>
-											<X size={14} />
-										</button>
-										<span class="photo-upload__filename">{images[i].name}</span>
-									</div>
-								{/each}
-								<button type="button" class="photo-upload__add" onclick={() => fileInput.click()}>
-									<ImagePlus size={24} />
-									<span>Weitere</span>
+						<m.icon size={20} strokeWidth={1.8} />
+						<span class="ap__mode-label">{m.label}</span>
+					</button>
+				{/each}
+			</div>
+
+			<!-- Mode hint -->
+			<p class="ap__mode-hint">
+				{modes.find(m => m.id === activeMode)?.hint}
+			</p>
+
+			<form class="ap__form" onsubmit={handleSubmit}>
+
+				<!-- ======================================================
+				     MEDIA SECTION — only for foto / video
+				     ====================================================== -->
+				{#if activeMode === "foto"}
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">1</span>
+							Fotos Ihrer Räume *
+						</h2>
+						<p class="ap__hint">
+							Fotografieren Sie jeden Raum möglichst aus einer Ecke.
+							1–3 Fotos pro Raum sind ideal. JPEG oder PNG, max. 10 MB pro Bild.
+						</p>
+
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="ap__dropzone"
+							class:ap__dropzone--dragging={isDraggingPhoto}
+							ondrop={handlePhotoDrop}
+							ondragover={(e) => { e.preventDefault(); isDraggingPhoto = true; }}
+							ondragleave={() => isDraggingPhoto = false}
+						>
+							{#if images.length === 0}
+								<button type="button" class="ap__dropzone-empty" onclick={() => photoInput.click()}>
+									<Camera size={44} strokeWidth={1.5} />
+									<span class="ap__dropzone-title">Fotos hinzufügen</span>
+									<span class="ap__dropzone-hint">Klicken oder Bilder hierher ziehen</span>
 								</button>
+							{:else}
+								<div class="ap__photo-grid">
+									{#each imagePreviews as preview, i}
+										<div class="ap__thumb">
+											<img src={preview} alt="Raum {i + 1}" />
+											<button type="button" class="ap__thumb-remove" onclick={() => removeImage(i)} aria-label="Bild entfernen">
+												<X size={13} />
+											</button>
+										</div>
+									{/each}
+									<button type="button" class="ap__photo-add" onclick={() => photoInput.click()}>
+										<ImagePlus size={22} />
+										<span>Weitere</span>
+									</button>
+								</div>
+							{/if}
+						</div>
+						<input bind:this={photoInput} type="file" accept="image/jpeg,image/png,image/webp"
+							multiple class="hidden" onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files) addPhotos(t.files); t.value = ""; }} />
+						{#if images.length > 0}
+							<p class="ap__count">{images.length} {images.length === 1 ? "Foto" : "Fotos"} ausgewählt</p>
+						{/if}
+					</section>
+				{/if}
+
+				{#if activeMode === "video"}
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">1</span>
+							Video-Rundgang *
+						</h2>
+						<p class="ap__hint">
+							Filmen Sie alle Räume in einem Schwenk. MP4, MOV oder WebM, max. 500 MB.
+							Tipp: Gehen Sie langsam und achten Sie auf gute Beleuchtung.
+						</p>
+
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="ap__dropzone"
+							class:ap__dropzone--dragging={isDraggingVideo}
+							ondrop={handleVideoDrop}
+							ondragover={(e) => { e.preventDefault(); isDraggingVideo = true; }}
+							ondragleave={() => isDraggingVideo = false}
+						>
+							{#if !videoFile}
+								<button type="button" class="ap__dropzone-empty" onclick={() => videoInput.click()}>
+									<Video size={44} strokeWidth={1.5} />
+									<span class="ap__dropzone-title">Video auswählen</span>
+									<span class="ap__dropzone-hint">Klicken oder Video hierher ziehen</span>
+								</button>
+							{:else}
+								<div class="ap__video-selected">
+									<Video size={32} strokeWidth={1.5} />
+									<div class="ap__video-info">
+										<span class="ap__video-name">{videoFile.name}</span>
+										<span class="ap__video-size">{(videoFile.size / 1024 / 1024).toFixed(1)} MB</span>
+									</div>
+									<button type="button" class="ap__video-remove" onclick={() => videoFile = null} aria-label="Video entfernen">
+										<X size={18} />
+									</button>
+								</div>
+							{/if}
+						</div>
+						<input bind:this={videoInput} type="file" accept="video/*" class="hidden"
+							onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files?.[0]) setVideo(t.files[0]); t.value = ""; }} />
+					</section>
+				{/if}
+
+				<!-- ======================================================
+				     TERMIN — simple appointment request
+				     ====================================================== -->
+				{#if activeMode === "termin"}
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">1</span>
+							Terminwunsch
+						</h2>
+						<div class="ap__grid">
+							<div class="ap__field">
+								<label for="termin-date">Gewünschter Besichtungstermin</label>
+								<input type="date" id="termin-date" bind:value={formData.date} />
+							</div>
+							<div class="ap__field">
+								<label for="termin-msg">Nachricht (optional)</label>
+								<textarea id="termin-msg" bind:value={formData.message} rows={3}
+									placeholder="Erreichbarkeit, Besonderheiten..."></textarea>
+							</div>
+						</div>
+					</section>
+
+					<!-- Optional addresses for termin -->
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">2</span>
+							Adressen (optional)
+						</h2>
+						<p class="ap__hint">Hilft uns, den richtigen Mitarbeiter zu schicken.</p>
+						{@render addressBlock()}
+					</section>
+				{/if}
+
+				<!-- ======================================================
+				     MANUELL — addresses (required)
+				     ====================================================== -->
+				{#if activeMode === "manuell"}
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">1</span>
+							Umzugsdetails
+						</h2>
+						{@render addressBlock()}
+					</section>
+
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">2</span>
+							Zusatzleistungen (optional)
+						</h2>
+						{@render servicesBlock()}
+					</section>
+				{/if}
+
+				<!-- ======================================================
+				     FOTO / VIDEO — addresses after media (step 2)
+				     ====================================================== -->
+				{#if activeMode === "foto" || activeMode === "video"}
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">2</span>
+							Umzugsdetails
+						</h2>
+						{@render addressBlock()}
+					</section>
+
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">3</span>
+							Zusatzleistungen (optional)
+						</h2>
+						{@render servicesBlock()}
+					</section>
+				{/if}
+
+				<!-- ======================================================
+				     CONTACT — always last numbered step
+				     ====================================================== -->
+				<section class="ap__section">
+					<h2 class="ap__section-title">
+						<span class="ap__step">
+							{activeMode === "termin" ? 3 : activeMode === "manuell" ? 3 : 4}
+						</span>
+						Ihre Kontaktdaten
+					</h2>
+					<div class="ap__grid">
+						<div class="ap__field ap__field--full">
+							<label>Anrede</label>
+							<div class="ap__radio-group">
+								<label class="ap__radio">
+									<input type="radio" name="salutation" value="Herr" bind:group={formData.salutation} />
+									<span>Herr</span>
+								</label>
+								<label class="ap__radio">
+									<input type="radio" name="salutation" value="Frau" bind:group={formData.salutation} />
+									<span>Frau</span>
+								</label>
+								<label class="ap__radio">
+									<input type="radio" name="salutation" value="D" bind:group={formData.salutation} />
+									<span>Divers</span>
+								</label>
+							</div>
+						</div>
+						<div class="ap__field">
+							<label for="first_name">Vorname</label>
+							<input type="text" id="first_name" bind:value={formData.first_name} placeholder="Max" />
+						</div>
+						<div class="ap__field">
+							<label for="last_name">Nachname *</label>
+							<input type="text" id="last_name" bind:value={formData.last_name} placeholder="Mustermann" required />
+						</div>
+						<div class="ap__field">
+							<label for="email">E-Mail-Adresse *</label>
+							<input type="email" id="email" bind:value={formData.email} placeholder="max@beispiel.de" required />
+						</div>
+						<div class="ap__field">
+							<label for="phone">Telefonnummer</label>
+							<input type="tel" id="phone" bind:value={formData.phone} placeholder="05121 1234567" />
+						</div>
+						{#if activeMode !== "termin"}
+							<div class="ap__field">
+								<label for="date">Wunschtermin Umzug</label>
+								<input type="date" id="date" bind:value={formData.date} />
 							</div>
 						{/if}
 					</div>
-
-					<input
-						bind:this={fileInput}
-						type="file"
-						accept="image/jpeg,image/png,image/webp"
-						multiple
-						class="hidden"
-						onchange={handleFileSelect}
-					/>
-
-					{#if images.length > 0}
-						<p class="photo-upload__count">{images.length} {images.length === 1 ? "Foto" : "Fotos"} ausgewählt</p>
-					{/if}
-				</section>
-
-				<!-- Step 2: Addresses -->
-				<section class="angebot-page__section">
-					<h2 class="angebot-page__section-title">
-						<span class="angebot-page__step-number">2</span>
-						Umzugsdetails
-					</h2>
-
-					<div class="angebot-page__form-grid">
-						<div class="angebot-page__form-group">
-							<label>Auszugsadresse *</label>
-						<div class="angebot-page__address-row">
-							<input type="text" bind:value={formData.startStrasse} placeholder="Straße" required aria-label="Straße (Auszug)" />
-							<input class="angebot-page__address-nr" type="text" bind:value={formData.startHausnummer} placeholder="Nr." required aria-label="Hausnummer (Auszug)" />
-						</div>
-						<div class="angebot-page__address-row">
-							<input class="angebot-page__address-plz" type="text" bind:value={formData.startPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Auszug)" />
-							<input type="text" bind:value={formData.startOrt} placeholder="Ort" required aria-label="Ort (Auszug)" />
-						</div>
-						</div>
-
-						<div class="angebot-page__form-group">
-							<label for="startFloor">Etage Auszug</label>
-							<select id="startFloor" bind:value={formData.startFloor}
-							toolparamtitle="Etage Auszug"
-							toolparamdescription="Stockwerk der Auszugsadresse"
-						>
-								{#each floorOptions as option}
-									<option value={option.value}>{option.label}</option>
-								{/each}
-							</select>
-						</div>
-
-						<div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
-							<label class="angebot-page__checkbox-label">
-								<input type="checkbox" bind:checked={formData.aufzugAuszug} />
-								<span>Aufzug vorhanden</span>
-							</label>
-							<label class="angebot-page__checkbox-label">
-								<input type="checkbox" bind:checked={formData.halteverbotAuszug} />
-								<span>Halteverbot benötigt</span>
-							</label>
-						</div>
-
-						<div class="angebot-page__form-group">
-							<label>Einzugsadresse *</label>
-						<div class="angebot-page__address-row">
-							<input type="text" bind:value={formData.endStrasse} placeholder="Straße" required aria-label="Straße (Einzug)" />
-							<input class="angebot-page__address-nr" type="text" bind:value={formData.endHausnummer} placeholder="Nr." required aria-label="Hausnummer (Einzug)" />
-						</div>
-						<div class="angebot-page__address-row">
-							<input class="angebot-page__address-plz" type="text" bind:value={formData.endPlz} placeholder="PLZ" required pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5" aria-label="Postleitzahl (Einzug)" />
-							<input type="text" bind:value={formData.endOrt} placeholder="Ort" required aria-label="Ort (Einzug)" />
-						</div>
-						</div>
-
-						<div class="angebot-page__form-group">
-							<label for="endFloor">Etage Einzug</label>
-							<select id="endFloor" bind:value={formData.endFloor}
-							toolparamtitle="Etage Einzug"
-							toolparamdescription="Stockwerk der Einzugsadresse"
-						>
-								{#each floorOptions as option}
-									<option value={option.value}>{option.label}</option>
-								{/each}
-							</select>
-						</div>
-
-						<div class="angebot-page__form-group angebot-page__form-group--full angebot-page__form-group--checks">
-							<label class="angebot-page__checkbox-label">
-								<input type="checkbox" bind:checked={formData.aufzugEinzug} />
-								<span>Aufzug vorhanden</span>
-							</label>
-							<label class="angebot-page__checkbox-label">
-								<input type="checkbox" bind:checked={formData.halteverbotEinzug} />
-								<span>Halteverbot benötigt</span>
-							</label>
-						</div>
-
-						<div class="angebot-page__form-group">
-							<label for="date">Wunschtermin</label>
-							<input
-								type="date"
-								id="date"
-								bind:value={formData.date}
-								toolparamtitle="Wunschtermin"
-								toolparamdescription="Gewünschtes Umzugsdatum (optional)"
-							/>
-						</div>
-					</div>
-				</section>
-
-				<!-- Step 3: Additional Services -->
-				<section class="angebot-page__section">
-					<h2 class="angebot-page__section-title">
-						<span class="angebot-page__step-number">3</span>
-						Zusatzleistungen (optional)
-					</h2>
-
-					<div class="angebot-page__services-grid">
-						{#each additionalServices as service}
-							<label class="angebot-page__service-option">
-								<input
-									type="checkbox"
-									checked={formData.selectedServices.includes(service.id)}
-									onchange={() => toggleService(service.id)}
-								/>
-								<span class="angebot-page__service-checkbox"></span>
-								<span class="angebot-page__service-label">{service.label}</span>
-							</label>
-						{/each}
-					</div>
-				</section>
-
-				<!-- Step 4: Contact + Message -->
-				<section class="angebot-page__section">
-					<h2 class="angebot-page__section-title">
-						<span class="angebot-page__step-number">4</span>
-						Ihre Kontaktdaten
-					</h2>
-
-					<div class="angebot-page__form-grid">
-						<div class="angebot-page__form-group">
-							<label for="name">Ihr Name *</label>
-							<input
-								type="text"
-								id="name"
-								bind:value={formData.name}
-								placeholder="Max Mustermann"
-								required
-								toolparamtitle="Name"
-								toolparamdescription="Vollständiger Name des Kunden"
-							/>
-						</div>
-
-						<div class="angebot-page__form-group">
-							<label for="email">E-Mail-Adresse *</label>
-							<input
-								type="email"
-								id="email"
-								bind:value={formData.email}
-								placeholder="max@beispiel.de"
-								required
-								toolparamtitle="E-Mail"
-								toolparamdescription="E-Mail-Adresse des Kunden"
-							/>
-						</div>
-
-						<div class="angebot-page__form-group">
-							<label for="phone">Telefonnummer</label>
-							<input
-								type="tel"
-								id="phone"
-								bind:value={formData.phone}
-								placeholder="05121 1234567"
-								toolparamtitle="Telefon"
-								toolparamdescription="Telefonnummer des Kunden (optional)"
-							/>
-						</div>
-					</div>
-
-					<div class="angebot-page__form-group" style="margin-top: var(--space-4);">
+					<div class="ap__field" style="margin-top: var(--space-4);">
 						<label for="message">Nachricht (optional)</label>
-						<textarea
-							id="message"
-							bind:value={formData.message}
-							placeholder="Besonderheiten wie Klavier, Tresor, enge Treppenhäuser..."
-							rows={3}
-							toolparamtitle="Nachricht"
-							toolparamdescription="Besonderheiten oder zusätzliche Informationen zum Umzug (optional)"
-						></textarea>
+						<textarea id="message" bind:value={formData.message} rows={3}
+							placeholder="Klavier, Tresor, enge Treppenhäuser..."></textarea>
 					</div>
 				</section>
 
 				<!-- Privacy & Submit -->
-				<section class="angebot-page__section angebot-page__section--submit">
-					<label class="angebot-page__privacy">
-						<input
-							type="checkbox"
-							bind:checked={formData.privacyAccepted}
-							required
-						/>
-						<span class="angebot-page__privacy-text">
-							Ich stimme zu, dass meine Angaben und Fotos zur Bearbeitung meiner
-							Anfrage erhoben und verarbeitet werden. Die <a
-								href="/datenschutz"
-								target="_blank">Datenschutzerklärung</a
-							> habe ich zur Kenntnis genommen.
+				<section class="ap__section ap__section--submit">
+					<label class="ap__privacy">
+						<input type="checkbox" bind:checked={formData.privacyAccepted} required />
+						<span class="ap__privacy-text">
+							Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage verarbeitet werden.
+							Die <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> habe ich zur Kenntnis genommen.
 						</span>
 					</label>
 
 					{#if submitError}
-						<p class="angebot-page__error">{submitError}</p>
+						<p class="ap__error">{submitError}</p>
 					{/if}
 
-					<button
-						type="submit"
-						class="angebot-page__submit"
-						disabled={!isFormValid || isSubmitting}
-					>
+					<button type="submit" class="ap__btn" disabled={!isFormValid || isSubmitting}>
 						{#if isSubmitting}
+							<span class="ap__spinner"></span>
 							<span>Wird gesendet...</span>
 						{:else}
 							<Send size={20} />
-							<span>Kostenloses Angebot anfordern</span>
+							<span>
+								{activeMode === "termin"  ? "Terminanfrage senden" :
+								 activeMode === "manuell" ? "Angebot anfordern"    :
+								 activeMode === "foto"    ? "Fotos einreichen"     :
+								                           "Video einreichen"}
+							</span>
 						{/if}
 					</button>
 				</section>
@@ -487,37 +607,120 @@
 	</div>
 </main>
 
-<style>
-	.hidden {
-		display: none;
-	}
+<!-- ======================================================
+     Shared snippets
+     ====================================================== -->
+{#snippet addressBlock()}
+	<div class="ap__grid">
+		<div class="ap__field">
+			<label>Auszugsadresse *</label>
+			<div class="ap__addr-row">
+				<input type="text" bind:value={formData.startStrasse} placeholder="Straße"
+					required={activeMode !== "termin"} aria-label="Straße (Auszug)" />
+				<input class="ap__addr-nr" type="text" bind:value={formData.startHausnummer} placeholder="Nr."
+					required={activeMode !== "termin"} aria-label="Hausnummer (Auszug)" />
+			</div>
+			<div class="ap__addr-row">
+				<input class="ap__addr-plz" type="text" bind:value={formData.startPlz} placeholder="PLZ"
+					pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5"
+					required={activeMode !== "termin"} aria-label="PLZ (Auszug)" />
+				<input type="text" bind:value={formData.startOrt} placeholder="Ort"
+					required={activeMode !== "termin"} aria-label="Ort (Auszug)" />
+			</div>
+		</div>
 
-	/* ===== Page Layout (matches kostenloses-angebot) ===== */
-	.angebot-page {
+		<div class="ap__field">
+			<label for="startFloor">Etage Auszug</label>
+			<select id="startFloor" bind:value={formData.startFloor}>
+				{#each floorOptions as o}<option value={o.value}>{o.label}</option>{/each}
+			</select>
+		</div>
+
+		<div class="ap__field ap__field--full ap__field--checks">
+			<label class="ap__check">
+				<input type="checkbox" bind:checked={formData.aufzugAuszug} />
+				<span>Aufzug vorhanden</span>
+			</label>
+			<label class="ap__check">
+				<input type="checkbox" bind:checked={formData.halteverbotAuszug} />
+				<span>Halteverbot benötigt</span>
+			</label>
+		</div>
+
+		<div class="ap__field">
+			<label>Einzugsadresse *</label>
+			<div class="ap__addr-row">
+				<input type="text" bind:value={formData.endStrasse} placeholder="Straße"
+					required={activeMode !== "termin"} aria-label="Straße (Einzug)" />
+				<input class="ap__addr-nr" type="text" bind:value={formData.endHausnummer} placeholder="Nr."
+					required={activeMode !== "termin"} aria-label="Hausnummer (Einzug)" />
+			</div>
+			<div class="ap__addr-row">
+				<input class="ap__addr-plz" type="text" bind:value={formData.endPlz} placeholder="PLZ"
+					pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5"
+					required={activeMode !== "termin"} aria-label="PLZ (Einzug)" />
+				<input type="text" bind:value={formData.endOrt} placeholder="Ort"
+					required={activeMode !== "termin"} aria-label="Ort (Einzug)" />
+			</div>
+		</div>
+
+		<div class="ap__field">
+			<label for="endFloor">Etage Einzug</label>
+			<select id="endFloor" bind:value={formData.endFloor}>
+				{#each floorOptions as o}<option value={o.value}>{o.label}</option>{/each}
+			</select>
+		</div>
+
+		<div class="ap__field ap__field--full ap__field--checks">
+			<label class="ap__check">
+				<input type="checkbox" bind:checked={formData.aufzugEinzug} />
+				<span>Aufzug vorhanden</span>
+			</label>
+			<label class="ap__check">
+				<input type="checkbox" bind:checked={formData.halteverbotEinzug} />
+				<span>Halteverbot benötigt</span>
+			</label>
+		</div>
+	</div>
+{/snippet}
+
+{#snippet servicesBlock()}
+	<div class="ap__services">
+		{#each additionalServices as s}
+			<label class="ap__service">
+				<input type="checkbox" checked={formData.selectedServices.includes(s.id)} onchange={() => toggleService(s.id)} />
+				<span class="ap__service-box"></span>
+				<span class="ap__service-label">{s.label}</span>
+			</label>
+		{/each}
+	</div>
+{/snippet}
+
+<style>
+	.hidden { display: none; }
+
+	/* ===== Page ===== */
+	.ap {
 		background-color: #f4f6f8;
 		min-height: 60vh;
 		padding-block: var(--space-12);
 	}
-
-	.angebot-page__container {
+	.ap__container {
 		max-width: 900px;
 		margin-inline: auto;
 		padding-inline: var(--container-padding);
 	}
-
-	.angebot-page__header {
+	.ap__header {
 		text-align: center;
-		margin-bottom: var(--space-10);
+		margin-bottom: var(--space-8);
 	}
-
-	.angebot-page__heading {
+	.ap__heading {
 		color: var(--color-info-bar);
 		font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
 		font-weight: var(--font-bold);
-		margin: 0 0 var(--space-4);
+		margin: 0 0 var(--space-3);
 	}
-
-	.angebot-page__subheading {
+	.ap__subheading {
 		color: #4a5568;
 		font-size: var(--text-lg);
 		line-height: 1.6;
@@ -526,48 +729,61 @@
 		margin-inline: auto;
 	}
 
-	/* ===== Success ===== */
-	.angebot-page__success {
+	/* ===== Mode selector ===== */
+	.ap__mode-selector {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+	}
+	.ap__mode-btn {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-4) var(--space-2);
 		background-color: var(--color-text);
+		border: 2px solid #e2e8f0;
 		border-radius: var(--radius-lg);
-		padding: var(--space-10);
-		box-shadow: var(--shadow-md);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		color: #64748b;
+	}
+	.ap__mode-btn:hover {
+		border-color: var(--color-nav-accent);
+		color: var(--color-nav-accent);
+	}
+	.ap__mode-btn--active {
+		border-color: var(--color-nav-accent);
+		background-color: rgba(196, 65, 0, 0.06);
+		color: var(--color-nav-accent);
+	}
+	.ap__mode-label {
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+	}
+	.ap__mode-hint {
 		text-align: center;
-	}
-
-	.angebot-page__success h2 {
-		color: var(--color-info-bar);
-		margin: 0 0 var(--space-4);
-	}
-
-	.angebot-page__success p {
-		color: #4a5568;
+		color: #64748b;
+		font-size: var(--text-sm);
 		margin: 0 0 var(--space-6);
 	}
 
-	.angebot-page__error {
-		color: #dc2626;
-		font-size: var(--text-sm);
-		margin: 0;
-		text-align: center;
-	}
-
 	/* ===== Form ===== */
-	.angebot-page__form {
+	.ap__form {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-8);
+		gap: var(--space-6);
 	}
 
 	/* ===== Sections ===== */
-	.angebot-page__section {
+	.ap__section {
 		background-color: var(--color-text);
 		border-radius: var(--radius-lg);
 		padding: var(--space-6);
 		box-shadow: var(--shadow-md);
 	}
-
-	.angebot-page__section-title {
+	.ap__section-title {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
@@ -576,15 +792,7 @@
 		font-weight: var(--font-bold);
 		margin: 0 0 var(--space-5);
 	}
-
-	.angebot-page__section-hint {
-		color: #64748b;
-		font-size: var(--text-sm);
-		line-height: 1.6;
-		margin: calc(-1 * var(--space-3)) 0 var(--space-4);
-	}
-
-	.angebot-page__step-number {
+	.ap__step {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -597,48 +805,66 @@
 		font-weight: var(--font-bold);
 		flex-shrink: 0;
 	}
+	.ap__hint {
+		color: #64748b;
+		font-size: var(--text-sm);
+		line-height: 1.6;
+		margin: calc(-1 * var(--space-3)) 0 var(--space-4);
+	}
 
-	/* ===== Form Grid ===== */
-	.angebot-page__form-grid {
+	/* ===== Grid / Fields ===== */
+	.ap__grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
 		gap: var(--space-4);
 	}
-
-	.angebot-page__form-group {
+	.ap__field {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
 	}
-
-	.angebot-page__form-group--full {
-		grid-column: 1 / -1;
+	.ap__field--full { grid-column: 1 / -1; }
+	.ap__radio-group {
+		display: flex;
+		gap: var(--space-4);
+		flex-wrap: wrap;
 	}
-
-	.angebot-page__form-group--checks {
+	.ap__radio {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		cursor: pointer;
+		font-size: var(--text-base);
+		color: #2d3748;
+	}
+	.ap__radio input[type="radio"] {
+		width: 1.1rem;
+		height: 1.1rem;
+		accent-color: var(--color-nav-accent);
+		cursor: pointer;
+	}
+	.ap__field--checks {
 		flex-direction: row;
 		gap: var(--space-3);
 		flex-wrap: wrap;
 	}
-
-	.angebot-page__form-group label {
+	.ap__field label {
 		color: #4a5568;
 		font-size: var(--text-sm);
 		font-weight: var(--font-medium);
 	}
-
-	.angebot-page__form-group input,
-	.angebot-page__form-group textarea,
-	.angebot-page__form-group select {
+	.ap__field input,
+	.ap__field textarea,
+	.ap__field select {
 		padding: var(--space-3) var(--space-4);
 		border: 1.5px solid #e2e8f0;
 		border-radius: var(--radius-md);
 		font-size: var(--text-base);
 		background-color: #f8fafc;
 		transition: all var(--transition-fast);
+		font-family: inherit;
 	}
-
-	.angebot-page__form-group select {
+	.ap__field select {
 		cursor: pointer;
 		appearance: none;
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -646,23 +872,24 @@
 		background-position: right 12px center;
 		padding-right: var(--space-10);
 	}
-
-	.angebot-page__form-group input:focus,
-	.angebot-page__form-group textarea:focus,
-	.angebot-page__form-group select:focus {
+	.ap__field input:focus,
+	.ap__field textarea:focus,
+	.ap__field select:focus {
 		border-color: var(--color-nav-accent);
 		background-color: var(--color-text);
 		outline: none;
-		box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.1);
+		box-shadow: 0 0 0 3px rgba(196, 65, 0, 0.1);
 	}
+	.ap__field textarea { resize: vertical; min-height: 80px; }
 
-	.angebot-page__form-group textarea {
-		resize: vertical;
-		min-height: 80px;
-	}
+	/* ===== Address sub-rows ===== */
+	.ap__addr-row { display: flex; gap: var(--space-2); }
+	.ap__addr-row input { flex: 1; min-width: 0; }
+	input.ap__addr-nr  { flex: 0 0 80px; }
+	input.ap__addr-plz { flex: 0 0 100px; }
 
-	/* ===== Checkbox Labels ===== */
-	.angebot-page__checkbox-label {
+	/* ===== Checkbox rows ===== */
+	.ap__check {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
@@ -673,31 +900,17 @@
 		cursor: pointer;
 		transition: all var(--transition-fast);
 	}
+	.ap__check:hover { background-color: #edf2f7; }
+	.ap__check input[type="checkbox"] { cursor: pointer; width: 18px; height: 18px; }
+	.ap__check span { color: #4a5568; font-size: var(--text-sm); font-weight: var(--font-medium); }
 
-	.angebot-page__checkbox-label:hover {
-		background-color: #edf2f7;
-	}
-
-	.angebot-page__checkbox-label input[type="checkbox"] {
-		cursor: pointer;
-		width: 18px;
-		height: 18px;
-	}
-
-	.angebot-page__checkbox-label span {
-		color: #4a5568;
-		font-size: var(--text-sm);
-		font-weight: var(--font-medium);
-	}
-
-	/* ===== Services Grid ===== */
-	.angebot-page__services-grid {
+	/* ===== Services grid ===== */
+	.ap__services {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
 		gap: var(--space-3);
 	}
-
-	.angebot-page__service-option {
+	.ap__service {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
@@ -708,18 +921,10 @@
 		cursor: pointer;
 		transition: all var(--transition-fast);
 	}
-
-	.angebot-page__service-option:hover {
-		background-color: #edf2f7;
-	}
-
-	.angebot-page__service-option input {
-		display: none;
-	}
-
-	.angebot-page__service-checkbox {
-		width: 20px;
-		height: 20px;
+	.ap__service:hover { background-color: #edf2f7; }
+	.ap__service input { display: none; }
+	.ap__service-box {
+		width: 20px; height: 20px;
 		border: 2px solid #cbd5e0;
 		border-radius: var(--radius-sm);
 		display: flex;
@@ -728,38 +933,30 @@
 		transition: all var(--transition-fast);
 		flex-shrink: 0;
 	}
-
-	.angebot-page__service-option input:checked + .angebot-page__service-checkbox {
+	.ap__service input:checked + .ap__service-box {
 		background-color: var(--color-nav-accent);
 		border-color: var(--color-nav-accent);
 	}
-
-	.angebot-page__service-option input:checked + .angebot-page__service-checkbox::after {
+	.ap__service input:checked + .ap__service-box::after {
 		content: "\2713";
 		color: white;
 		font-size: 12px;
 		font-weight: bold;
 	}
+	.ap__service-label { color: #4a5568; font-size: var(--text-sm); }
 
-	.angebot-page__service-label {
-		color: #4a5568;
-		font-size: var(--text-sm);
-	}
-
-	/* ===== Photo Upload ===== */
-	.photo-upload {
+	/* ===== Dropzone ===== */
+	.ap__dropzone {
 		border: 2px dashed #cbd5e0;
 		border-radius: var(--radius-lg);
-		transition: all var(--transition-fast);
 		background-color: #f8fafc;
+		transition: all var(--transition-fast);
 	}
-
-	.photo-upload--dragging {
+	.ap__dropzone--dragging {
 		border-color: var(--color-nav-accent);
-		background-color: rgba(230, 81, 0, 0.05);
+		background-color: rgba(196, 65, 0, 0.05);
 	}
-
-	.photo-upload__empty {
+	.ap__dropzone-empty {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -771,50 +968,30 @@
 		background: none;
 		border: none;
 	}
+	.ap__dropzone-empty:hover { color: var(--color-nav-accent); }
+	.ap__dropzone-title { font-size: var(--text-lg); font-weight: var(--font-semibold); color: #475569; }
+	.ap__dropzone-hint  { font-size: var(--text-sm); color: #94a3b8; }
 
-	.photo-upload__empty:hover {
-		color: var(--color-nav-accent);
-	}
-
-	.photo-upload__empty-title {
-		font-size: var(--text-lg);
-		font-weight: var(--font-semibold);
-		color: #475569;
-	}
-
-	.photo-upload__empty-hint {
-		font-size: var(--text-sm);
-		color: #94a3b8;
-	}
-
-	.photo-upload__grid {
+	/* ===== Photo grid ===== */
+	.ap__photo-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
 		gap: var(--space-3);
 		padding: var(--space-4);
 	}
-
-	.photo-upload__thumb {
+	.ap__thumb {
 		position: relative;
 		aspect-ratio: 1;
 		border-radius: var(--radius-md);
 		overflow: hidden;
 		background-color: #e2e8f0;
 	}
-
-	.photo-upload__thumb img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.photo-upload__remove {
+	.ap__thumb img { width: 100%; height: 100%; object-fit: cover; }
+	.ap__thumb-remove {
 		position: absolute;
-		top: 4px;
-		right: 4px;
-		width: 24px;
-		height: 24px;
-		background-color: rgba(0, 0, 0, 0.6);
+		top: 4px; right: 4px;
+		width: 22px; height: 22px;
+		background-color: rgba(0,0,0,0.6);
 		color: white;
 		border: none;
 		border-radius: var(--radius-full);
@@ -824,26 +1001,8 @@
 		cursor: pointer;
 		transition: background-color var(--transition-fast);
 	}
-
-	.photo-upload__remove:hover {
-		background-color: #dc2626;
-	}
-
-	.photo-upload__filename {
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-		color: white;
-		font-size: 10px;
-		padding: 12px 6px 4px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.photo-upload__add {
+	.ap__thumb-remove:hover { background-color: #dc2626; }
+	.ap__photo-add {
 		aspect-ratio: 1;
 		display: flex;
 		flex-direction: column;
@@ -858,54 +1017,67 @@
 		font-size: var(--text-xs);
 		transition: all var(--transition-fast);
 	}
+	.ap__photo-add:hover { border-color: var(--color-nav-accent); color: var(--color-nav-accent); }
+	.ap__count { color: #64748b; font-size: var(--text-sm); margin-top: var(--space-2); }
 
-	.photo-upload__add:hover {
-		border-color: var(--color-nav-accent);
+	/* ===== Video selected ===== */
+	.ap__video-selected {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-5) var(--space-6);
 		color: var(--color-nav-accent);
 	}
-
-	.photo-upload__count {
-		color: #64748b;
-		font-size: var(--text-sm);
-		margin-top: var(--space-2);
+	.ap__video-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		min-width: 0;
 	}
+	.ap__video-name {
+		font-weight: var(--font-semibold);
+		color: #1e293b;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-size: var(--text-sm);
+	}
+	.ap__video-size { font-size: var(--text-xs); color: #64748b; }
+	.ap__video-remove {
+		background: none;
+		border: 1.5px solid #e2e8f0;
+		border-radius: var(--radius-md);
+		padding: var(--space-2);
+		cursor: pointer;
+		color: #94a3b8;
+		display: flex;
+		align-items: center;
+		transition: all var(--transition-fast);
+		flex-shrink: 0;
+	}
+	.ap__video-remove:hover { border-color: #dc2626; color: #dc2626; }
 
-	/* ===== Privacy & Submit ===== */
-	.angebot-page__section--submit {
+	/* ===== Submit section ===== */
+	.ap__section--submit {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-5);
 		align-items: center;
 	}
-
-	.angebot-page__privacy {
+	.ap__privacy {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--space-3);
 		cursor: pointer;
 	}
+	.ap__privacy input { margin-top: 4px; flex-shrink: 0; }
+	.ap__privacy-text { color: #4a5568; font-size: var(--text-sm); line-height: 1.6; }
+	.ap__privacy-text a { color: var(--color-nav-accent); text-decoration: none; }
+	.ap__privacy-text a:hover { text-decoration: underline; }
+	.ap__error { color: #dc2626; font-size: var(--text-sm); margin: 0; text-align: center; }
 
-	.angebot-page__privacy input {
-		margin-top: 4px;
-		flex-shrink: 0;
-	}
-
-	.angebot-page__privacy-text {
-		color: #4a5568;
-		font-size: var(--text-sm);
-		line-height: 1.6;
-	}
-
-	.angebot-page__privacy-text a {
-		color: var(--color-nav-accent);
-		text-decoration: none;
-	}
-
-	.angebot-page__privacy-text a:hover {
-		text-decoration: underline;
-	}
-
-	.angebot-page__submit {
+	.ap__btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -922,71 +1094,61 @@
 		cursor: pointer;
 		transition: all var(--transition-fast);
 		text-decoration: none;
+		font-family: inherit;
 	}
+	.ap__btn--center { margin-inline: auto; }
+	.ap__btn:hover:not(:disabled) { background-color: #b83b00; transform: translateY(-2px); }
+	.ap__btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
 
-	.angebot-page__submit--centered {
-		margin-inline: auto;
-	}
-
-	.angebot-page__submit:hover:not(:disabled) {
-		background-color: #d84a00;
-		transform: translateY(-2px);
-	}
-
-	.angebot-page__submit:disabled {
-		background-color: #cbd5e0;
-		cursor: not-allowed;
-	}
-
-	/* ===== Address sub-fields ===== */
-	.angebot-page__address-row {
+	/* ===== Success ===== */
+	.ap__success {
+		background-color: var(--color-text);
+		border-radius: var(--radius-lg);
+		padding: var(--space-12) var(--space-10);
+		box-shadow: var(--shadow-md);
+		text-align: center;
 		display: flex;
-		gap: var(--space-2);
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
 	}
+	.ap__success-icon {
+		width: 64px; height: 64px;
+		background-color: var(--color-nav-accent);
+		color: white;
+		border-radius: var(--radius-full);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 28px;
+		font-weight: bold;
+	}
+	.ap__success h2 { color: var(--color-info-bar); margin: 0; }
+	.ap__success p  { color: #4a5568; margin: 0; max-width: 480px; }
 
-	.angebot-page__address-row input {
-		flex: 1;
-		min-width: 0;
+	/* ===== Spinner ===== */
+	.ap__spinner {
+		width: 18px; height: 18px;
+		border: 2px solid rgba(255,255,255,0.4);
+		border-top-color: white;
+		border-radius: var(--radius-full);
+		animation: spin 0.7s linear infinite;
+		flex-shrink: 0;
 	}
-
-	input.angebot-page__address-nr {
-		flex: 0 0 80px;
-	}
-
-	input.angebot-page__address-plz {
-		flex: 0 0 100px;
-	}
+	@keyframes spin { to { transform: rotate(360deg); } }
 
 	/* ===== Responsive ===== */
 	@media (max-width: 767px) {
-		.angebot-page {
-			padding-block: var(--space-8);
-		}
-
-		.angebot-page__form-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.angebot-page__services-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.angebot-page__section {
-			padding: var(--space-4);
-		}
-
-		.photo-upload__grid {
-			grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-		}
-
-		.angebot-page__form-group--checks {
-			flex-direction: column;
-		}
+		.ap { padding-block: var(--space-8); }
+		.ap__mode-selector { grid-template-columns: repeat(2, 1fr); }
+		.ap__grid { grid-template-columns: 1fr; }
+		.ap__services { grid-template-columns: repeat(2, 1fr); }
+		.ap__section { padding: var(--space-4); }
+		.ap__photo-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
+		.ap__field--checks { flex-direction: column; }
 	}
-
 	@media (max-width: 480px) {
-		.angebot-page__services-grid {
-			grid-template-columns: 1fr;
-		}
+		.ap__services { grid-template-columns: 1fr; }
+		.ap__mode-label { font-size: 11px; }
 	}
 </style>

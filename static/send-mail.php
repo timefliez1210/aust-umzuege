@@ -30,21 +30,29 @@ $to = 'angebot@aust-umzuege.de';
 
 if ($formName === 'kontakt') {
     // Simple contact form
-    $name = clean($_POST['name'] ?? '');
+    $anrede = clean($_POST['anrede'] ?? '');
+    $vorname = clean($_POST['vorname'] ?? '');
+    $nachname = clean($_POST['nachname'] ?? '');
+    $name = $nachname ? trim("$vorname $nachname") : clean($_POST['name'] ?? '');
     $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
     $phone = clean($_POST['phone'] ?? '');
     $message = clean($_POST['nachricht'] ?? '');
 
     $subject = "Neue Kontaktanfrage von $name";
     $body = "=== Neue Kontaktanfrage ===\n\n";
-    $body .= "Name: $name\n";
+    if ($anrede) $body .= "Anrede: $anrede\n";
+    if ($vorname) $body .= "Vorname: $vorname\n";
+    $body .= "Nachname: $name\n";
     $body .= "E-Mail: $email\n";
     $body .= "Telefon: $phone\n\n";
     $body .= "Nachricht:\n$message\n";
 
 } elseif ($formName === 'kostenloses-angebot') {
     // Quote request form
-    $name = clean($_POST['name'] ?? '');
+    $anrede = clean($_POST['anrede'] ?? '');
+    $vorname = clean($_POST['vorname'] ?? '');
+    $nachname = clean($_POST['nachname'] ?? '');
+    $name = $nachname ? trim("$vorname $nachname") : clean($_POST['name'] ?? '');
     $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
     $phone = clean($_POST['phone'] ?? '');
     $date = clean($_POST['wunschtermin'] ?? '');
@@ -65,7 +73,9 @@ if ($formName === 'kontakt') {
     $subject = "Neues Angebotsanfrage von $name";
     $body = "=== Neue Angebotsanfrage ===\n\n";
     $body .= "--- Kontaktdaten ---\n";
-    $body .= "Name: $name\n";
+    if ($anrede) $body .= "Anrede: $anrede\n";
+    if ($vorname) $body .= "Vorname: $vorname\n";
+    $body .= "Nachname: $name\n";
     $body .= "E-Mail: $email\n";
     $body .= "Telefon: $phone\n";
     $body .= "Wunschtermin: $date\n\n";
@@ -87,6 +97,83 @@ if ($formName === 'kontakt') {
     $body .= "Geschätztes Volumen: $volume m³\n";
     $body .= "Gegenstände: $items\n";
     $body .= "Zusatzleistungen: $services\n\n";
+    if (!empty($message)) {
+        $body .= "--- Nachricht ---\n$message\n";
+    }
+
+} elseif ($formName === 'via-termin') {
+    // Appointment booking request
+    $anrede = clean($_POST['anrede'] ?? '');
+    $vorname = clean($_POST['vorname'] ?? '');
+    $nachname = clean($_POST['nachname'] ?? '');
+    $name = $nachname ? trim("$vorname $nachname") : clean($_POST['name'] ?? '');
+    $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $phone = clean($_POST['phone'] ?? '');
+    $date = clean($_POST['wunschtermin'] ?? '');
+    $startAddress = clean($_POST['auszugsadresse'] ?? '');
+    $endAddress = clean($_POST['einzugsadresse'] ?? '');
+    $message = clean($_POST['nachricht'] ?? '');
+
+    $subject = "Terminanfrage Kostenvoranschlag von $name";
+    $body = "=== Neue Terminanfrage ===\n\n";
+    if ($anrede) $body .= "Anrede: $anrede\n";
+    if ($vorname) $body .= "Vorname: $vorname\n";
+    $body .= "Nachname: $name\n";
+    $body .= "E-Mail: $email\n";
+    $body .= "Telefon: $phone\n";
+    $body .= "Wunschtermin: $date\n\n";
+    if (!empty($startAddress)) {
+        $body .= "Auszugsadresse: $startAddress\n";
+    }
+    if (!empty($endAddress)) {
+        $body .= "Einzugsadresse: $endAddress\n";
+    }
+    if (!empty($message)) {
+        $body .= "\nNachricht:\n$message\n";
+    }
+
+} elseif ($formName === 'manuell-angebot') {
+    // Manual quote request (addresses + services, no photos)
+    $anrede = clean($_POST['anrede'] ?? '');
+    $vorname = clean($_POST['vorname'] ?? '');
+    $nachname = clean($_POST['nachname'] ?? '');
+    $name = $nachname ? trim("$vorname $nachname") : clean($_POST['name'] ?? '');
+    $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $phone = clean($_POST['phone'] ?? '');
+    $date = clean($_POST['wunschtermin'] ?? '');
+    $startAddress = clean($_POST['auszugsadresse'] ?? '');
+    $startFloor = clean($_POST['etage_auszug'] ?? '');
+    $aufzugAuszug = ($_POST['aufzug_auszug'] ?? '') === 'true' ? 'Ja' : 'Nein';
+    $halteverbotAuszug = ($_POST['halteverbot_auszug'] ?? '') === 'true' ? 'Ja' : 'Nein';
+    $endAddress = clean($_POST['einzugsadresse'] ?? '');
+    $endFloor = clean($_POST['etage_einzug'] ?? '');
+    $aufzugEinzug = ($_POST['aufzug_einzug'] ?? '') === 'true' ? 'Ja' : 'Nein';
+    $halteverbotEinzug = ($_POST['halteverbot_einzug'] ?? '') === 'true' ? 'Ja' : 'Nein';
+    $services = clean($_POST['zusatzleistungen'] ?? '');
+    $message = clean($_POST['nachricht'] ?? '');
+
+    $subject = "Manuelle Angebotsanfrage von $name";
+    $body = "=== Neue Angebotsanfrage (manuell) ===\n\n";
+    $body .= "--- Kontaktdaten ---\n";
+    if ($anrede) $body .= "Anrede: $anrede\n";
+    if ($vorname) $body .= "Vorname: $vorname\n";
+    $body .= "Nachname: $name\n";
+    $body .= "E-Mail: $email\n";
+    $body .= "Telefon: $phone\n";
+    $body .= "Wunschtermin: $date\n\n";
+    $body .= "--- Auszugsadresse ---\n";
+    $body .= "Adresse: $startAddress\n";
+    $body .= "Etage: $startFloor\n";
+    $body .= "Aufzug: $aufzugAuszug\n";
+    $body .= "Halteverbot: $halteverbotAuszug\n\n";
+    $body .= "--- Einzugsadresse ---\n";
+    $body .= "Adresse: $endAddress\n";
+    $body .= "Etage: $endFloor\n";
+    $body .= "Aufzug: $aufzugEinzug\n";
+    $body .= "Halteverbot: $halteverbotEinzug\n\n";
+    if (!empty($services)) {
+        $body .= "Zusatzleistungen: $services\n\n";
+    }
     if (!empty($message)) {
         $body .= "--- Nachricht ---\n$message\n";
     }

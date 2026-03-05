@@ -29,6 +29,9 @@
     // Form state
     let formData = $state({
         name: "",
+        salutation: "",
+        first_name: "",
+        last_name: "",
         email: "",
         phone: "",
         startStrasse: "",
@@ -107,7 +110,7 @@
     ];
 
     const isFormValid = $derived(
-        formData.name !== "" &&
+        (formData.last_name !== "" || formData.name !== "") &&
             formData.email !== "" &&
             formData.phone !== "" &&
             formData.startStrasse !== "" &&
@@ -169,6 +172,9 @@
                 // Reset form
                 formData = {
                     name: "",
+                    salutation: "",
+                    first_name: "",
+                    last_name: "",
                     email: "",
                     phone: "",
                     startStrasse: "",
@@ -308,17 +314,44 @@
                     </h2>
 
                     <div class="angebot-page__form-grid">
+                        <div class="angebot-page__form-group angebot-page__form-group--full">
+                            <label>Anrede</label>
+                            <div class="angebot-page__radio-group">
+                                <label class="angebot-page__radio">
+                                    <input type="radio" name="anrede" value="Herr" bind:group={formData.salutation} />
+                                    <span>Herr</span>
+                                </label>
+                                <label class="angebot-page__radio">
+                                    <input type="radio" name="anrede" value="Frau" bind:group={formData.salutation} />
+                                    <span>Frau</span>
+                                </label>
+                                <label class="angebot-page__radio">
+                                    <input type="radio" name="anrede" value="D" bind:group={formData.salutation} />
+                                    <span>Divers</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="angebot-page__form-group">
-                            <label for="name">Ihr Name *</label>
+                            <label for="first_name">Vorname</label>
                             <input
                                 type="text"
-                                id="name"
-                                name="name"
-                                bind:value={formData.name}
-                                placeholder="Max Mustermann"
+                                id="first_name"
+                                name="vorname"
+                                bind:value={formData.first_name}
+                                placeholder="Max"
+                            />
+                        </div>
+
+                        <div class="angebot-page__form-group">
+                            <label for="last_name">Nachname *</label>
+                            <input
+                                type="text"
+                                id="last_name"
+                                name="nachname"
+                                bind:value={formData.last_name}
+                                placeholder="Mustermann"
                                 required
-                                toolparamtitle="Name"
-                                toolparamdescription="Vollständiger Name des Kunden"
                             />
                         </div>
 
@@ -866,6 +899,27 @@
 
     .angebot-page__form-group--full {
         grid-column: 1 / -1;
+    }
+
+    .angebot-page__radio-group {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+    }
+    .angebot-page__radio {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        cursor: pointer;
+        font-size: var(--text-base);
+        color: #2d3748;
+        font-weight: normal;
+    }
+    .angebot-page__radio input[type="radio"] {
+        width: 1.1rem;
+        height: 1.1rem;
+        accent-color: var(--color-nav-accent);
+        cursor: pointer;
     }
 
     .angebot-page__form-group--checks {

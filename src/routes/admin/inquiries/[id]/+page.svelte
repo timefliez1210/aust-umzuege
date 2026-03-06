@@ -2570,21 +2570,6 @@
 							Erfasste Gegenstaende ({editItems.length})
 						{/if}
 					</h3>
-					<div class="items-header-actions">
-						<button class="btn btn-sm" onclick={addItem}>
-							<Plus size={14} />
-							Gegenstand
-						</button>
-						<button
-							class="btn btn-sm"
-							class:btn-dirty={itemsDirty}
-							onclick={saveItems}
-							disabled={savingItems || !itemsDirty}
-						>
-							<Save size={14} />
-							{savingItems ? "Speichern..." : "Speichern"}
-						</button>
-					</div>
 				</div>
 				{#if editItems.length > 0}
 					<div class="items-table-wrap">
@@ -2708,6 +2693,21 @@
 				{:else}
 					<p class="empty-items">Noch keine Gegenstaende erfasst.</p>
 				{/if}
+				<div class="items-footer-actions">
+					<button class="btn btn-sm" onclick={addItem}>
+						<Plus size={14} />
+						Gegenstand
+					</button>
+					<button
+						class="btn btn-sm"
+						class:btn-dirty={itemsDirty}
+						onclick={saveItems}
+						disabled={savingItems || !itemsDirty}
+					>
+						<Save size={14} />
+						{savingItems ? "Speichern..." : "Speichern"}
+					</button>
+				</div>
 			</div>
 
 			<!-- Pricing Editor -->
@@ -2780,6 +2780,19 @@
 			<div class="card">
 				<div class="card-header">
 					<h3>Positionen</h3>
+					<div class="header-actions">
+						<button
+							class="btn btn-sm"
+							onclick={computeLineItemsFromNotes}
+							title="Aus Notizen neu berechnen"
+						>
+							Neu berechnen
+						</button>
+						<button class="btn btn-sm" onclick={addLineItem}>
+							<Plus size={14} />
+							Position
+						</button>
+					</div>
 				</div>
 				<div class="line-items">
 					<!-- Labor (always shown, driven by persons/hours/rate) -->
@@ -2896,19 +2909,6 @@
 						<span class="li-total"
 							>{formatEuro(calculatedBruttoCents)}</span
 						>
-					</div>
-					<div class="li-footer-actions">
-						<button
-							class="btn btn-sm"
-							onclick={computeLineItemsFromNotes}
-							title="Aus Notizen neu berechnen"
-						>
-							Neu berechnen
-						</button>
-						<button class="btn btn-sm" onclick={addLineItem}>
-							<Plus size={14} />
-							Position
-						</button>
 					</div>
 				</div>
 			</div>
@@ -3742,9 +3742,11 @@
 		padding: 0.5rem 0.75rem;
 	}
 
-	.items-header-actions {
+	.items-footer-actions {
 		display: flex;
+		justify-content: flex-end;
 		gap: 0.375rem;
+		padding: 0.75rem 1rem 0.25rem;
 	}
 
 	.empty-items {
@@ -4053,15 +4055,6 @@
 	}
 
 	/* Editable line items */
-	.li-footer-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.375rem;
-		padding: 0.75rem 1rem 0.25rem;
-		border-top: 1px solid #e2e8f0;
-		margin-top: 0.5rem;
-	}
-
 	.line-item.editable {
 		padding: 0.5rem 0;
 		display: flex;

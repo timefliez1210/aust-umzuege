@@ -239,17 +239,19 @@
 	let computedTotal = $derived(computeTotalVolume(editItems));
 
 	// Editable line items
-	const ROW_OPTIONS: { row: number; label: string; defaultCents: number }[] =
+	const ROW_OPTIONS: { row: number; label: string; defaultCents: number; defaultRemark: string }[] =
 		[
-			{ row: 31, label: "Demontage", defaultCents: 5000 },
-			{ row: 32, label: "Montage", defaultCents: 5000 },
-			{ row: 33, label: "Halteverbotszone", defaultCents: 10000 },
-			{ row: 34, label: "Umzugsmaterial", defaultCents: 3000 },
-			{ row: 35, label: "Möbellift", defaultCents: 0 },
-			{ row: 36, label: "Verleih Kleiderboxen", defaultCents: 0 },
-			{ row: 37, label: "Verkauf U-Karton", defaultCents: 0 },
-			{ row: 38, label: "Verkauf B-Karton", defaultCents: 0 },
-			{ row: 99, label: "Sonstiges", defaultCents: 0 },
+			{ row: 30, label: "Fahrkostenpauschale", defaultCents: 0, defaultRemark: "" },
+			{ row: 31, label: "Demontage", defaultCents: 5000, defaultRemark: "" },
+			{ row: 32, label: "Montage", defaultCents: 5000, defaultRemark: "" },
+			{ row: 33, label: "Halteverbotszone", defaultCents: 10000, defaultRemark: "" },
+			{ row: 34, label: "Umzugsmaterial", defaultCents: 3000, defaultRemark: "Stretchfolie, Decken, Gurte" },
+			{ row: 35, label: "Möbellift", defaultCents: 0, defaultRemark: "" },
+			{ row: 36, label: "Verleih Kleiderboxen", defaultCents: 1000, defaultRemark: "610x520x1370" },
+			{ row: 37, label: "Verkauf Seidenpapier", defaultCents: 500, defaultRemark: "500x750" },
+			{ row: 38, label: "Verkauf U-Karton", defaultCents: 210, defaultRemark: "590x318x328" },
+			{ row: 39, label: "Verkauf B-Karton", defaultCents: 220, defaultRemark: "400x318x328" },
+			{ row: 99, label: "Sonstiges", defaultCents: 0, defaultRemark: "" },
 		];
 
 	interface EditLineItem {
@@ -398,10 +400,12 @@
 				item.label = "";
 				item.unitPriceCents = 0;
 				item._priceText = "0.00";
+				item.remark = "";
 			} else {
 				item.label = opt.label;
 				item.unitPriceCents = opt.defaultCents;
 				item._priceText = (opt.defaultCents / 100).toFixed(2);
+				item.remark = opt.defaultRemark;
 			}
 		}
 		editLineItems = [...editLineItems];
@@ -1198,9 +1202,9 @@
 			editHours = lo.hours;
 			editRateCents = lo.rate_cents;
 			editBruttoCents = lo.total_brutto_cents;
-			// Build editable line items from offer (non-labor only, normalize flat-total items)
+			// Build editable line items from offer (non-labor only; Nürnbergerversicherung is fixed non-editable)
 			editLineItems = lo.line_items
-				.filter((li) => !li.is_labor)
+				.filter((li) => !li.is_labor && li.label !== "Nürnbergerversicherung")
 				.map((li) => {
 					const normalized = normalizeFlatTotalItem(li);
 					const match = ROW_OPTIONS.find((r) => r.label === li.label);
@@ -2776,19 +2780,6 @@
 			<div class="card">
 				<div class="card-header">
 					<h3>Positionen</h3>
-					<div class="li-header-actions">
-						<button
-							class="btn btn-sm"
-							onclick={computeLineItemsFromNotes}
-							title="Aus Notizen neu berechnen"
-						>
-							Neu berechnen
-						</button>
-						<button class="btn btn-sm" onclick={addLineItem}>
-							<Plus size={14} />
-							Position
-						</button>
-					</div>
 				</div>
 				<div class="line-items">
 					<!-- Labor (always shown, driven by persons/hours/rate) -->
@@ -2804,6 +2795,7 @@
 							>
 						</div>
 					</div>
+
 
 					{#each editLineItems as li, idx}
 						<div class="line-item editable">
@@ -2884,6 +2876,15 @@
 						</div>
 					{/each}
 
+					<!-- Nürnbergerversicherung: fixed non-editable last item, always €0 -->
+					<div class="line-item">
+						<span class="li-name">Nürnbergerversicherung</span>
+						<div class="li-detail">
+							<span class="li-qty">Deckungssumme: 620,00 Euro / m³</span>
+							<span class="li-total">inklusive</span>
+						</div>
+					</div>
+
 					<div class="line-item total">
 						<span class="li-name">Netto</span>
 						<span class="li-total"
@@ -2895,6 +2896,19 @@
 						<span class="li-total"
 							>{formatEuro(calculatedBruttoCents)}</span
 						>
+					</div>
+					<div class="li-footer-actions">
+						<button
+							class="btn btn-sm"
+							onclick={computeLineItemsFromNotes}
+							title="Aus Notizen neu berechnen"
+						>
+							Neu berechnen
+						</button>
+						<button class="btn btn-sm" onclick={addLineItem}>
+							<Plus size={14} />
+							Position
+						</button>
 					</div>
 				</div>
 			</div>
@@ -3665,6 +3679,8 @@
 		font-weight: 500;
 	}
 
+
+
 	.li-detail {
 		display: flex;
 		align-items: center;
@@ -4037,9 +4053,13 @@
 	}
 
 	/* Editable line items */
-	.li-header-actions {
+	.li-footer-actions {
 		display: flex;
+		justify-content: flex-end;
 		gap: 0.375rem;
+		padding: 0.75rem 1rem 0.25rem;
+		border-top: 1px solid #e2e8f0;
+		margin-top: 0.5rem;
 	}
 
 	.line-item.editable {

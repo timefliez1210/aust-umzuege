@@ -3103,6 +3103,7 @@
 
 <!-- Mitarbeiter Card (visible for accepted+ statuses) -->
 {#if showEmployeeCard && data}
+	{@const emps = data.employees ?? []}
 	<div class="employees-section">
 		<div class="card">
 			<div class="card-header">
@@ -3113,7 +3114,6 @@
 				</button>
 			</div>
 
-			{@const emps = data.employees ?? []}
 			{#if emps.length > 0}
 				<div class="emp-table-wrapper">
 					<table class="emp-table">

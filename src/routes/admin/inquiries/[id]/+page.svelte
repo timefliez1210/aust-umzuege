@@ -146,6 +146,23 @@
 		estimation: EstimationSnapshot | null;
 		items: ItemSnapshot[];
 		offer: OfferSnapshot | null;
+		employees: EmployeeAssignment[];
+	}
+
+	interface EmployeeAssignment {
+		employee_id: string;
+		first_name: string;
+		last_name: string;
+		planned_hours: number;
+		actual_hours: number | null;
+		notes: string | null;
+	}
+
+	interface EmployeeOption {
+		id: string;
+		first_name: string;
+		last_name: string;
+		email: string;
 	}
 
 	interface EditableItem {
@@ -1749,12 +1766,136 @@
 	let emailsLoading = $state(false);
 	let emailThreads = $state<InquiryThreadWithMessages[]>([]);
 
+	// Employee assignment state
+	let showAssignModal = $state(false);
+	let availableEmployees = $state<EmployeeOption[]>([]);
+	let assignEmployeeId = $state('');
+	let assignPlannedHours = $state('4');
+	let assignNotes = $state('');
+	let assignLoading = $state(false);
+	let employeeSaving = $state<string | null>(null);
+
 	// Draft editing state
 	let emailEditingId = $state<string | null>(null);
 	let emailEditSubject = $state("");
 	let emailEditBody = $state("");
 	let emailSaving = $state(false);
 	let emailActionLoading = $state<string | null>(null);
+
+	// --- Employee assignment functions ---
+
+	const employeeStatuses = ['accepted', 'scheduled', 'completed', 'invoiced', 'paid'];
+
+	/**
+	 * Whether the Mitarbeiter card should be visible.
+	 *
+	 * Called by: Template (conditional rendering)
+	 * Purpose: Only show employee assignments for inquiries past offer_sent.
+	 */
+	let showEmployeeCard = $derived(
+		data != null && employeeStatuses.includes(data.status)
+	);
+
+	/**
+	 * Opens the assign modal and loads available employees.
+	 *
+	 * Called by: Template (Zuweisen button)
+	 * Purpose: Fetches active employees for the dropdown.
+	 */
+	async function openAssignModal() {
+		try {
+			const res = await apiGet<{ employees: EmployeeOption[] }>(
+				'/api/v1/admin/employees?active=true&limit=100'
+			);
+			// Filter out already-assigned employees
+			const assignedIds = new Set((data?.employees ?? []).map((e) => e.employee_id));
+			availableEmployees = res.employees.filter((e) => !assignedIds.has(e.id));
+			assignEmployeeId = availableEmployees[0]?.id ?? '';
+			assignPlannedHours = '4';
+			assignNotes = '';
+			showAssignModal = true;
+		} catch {
+			showToast('Mitarbeiterliste konnte nicht geladen werden', 'error');
+		}
+	}
+
+	/**
+	 * Assigns an employee to the current inquiry.
+	 *
+	 * Called by: Template (assign modal submit)
+	 * Purpose: POST /api/v1/inquiries/{id}/employees with employee_id and planned_hours.
+	 */
+	async function handleAssign() {
+		if (!data || !assignEmployeeId) return;
+		assignLoading = true;
+		try {
+			await apiPost(`/api/v1/inquiries/${data.id}/employees`, {
+				employee_id: assignEmployeeId,
+				planned_hours: parseFloat(assignPlannedHours) || 0,
+				notes: assignNotes || null
+			});
+			showToast('Mitarbeiter zugewiesen', 'success');
+			showAssignModal = false;
+			await reloadInquiry();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			assignLoading = false;
+		}
+	}
+
+	/**
+	 * Updates planned or actual hours for an assignment.
+	 *
+	 * Called by: Template (inline edit blur)
+	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id}.
+	 */
+	async function updateEmployeeHours(empId: string, field: 'planned_hours' | 'actual_hours', value: string) {
+		if (!data) return;
+		const numValue = parseFloat(value);
+		if (isNaN(numValue)) return;
+		employeeSaving = empId;
+		try {
+			await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, {
+				[field]: numValue
+			});
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			employeeSaving = null;
+		}
+	}
+
+	/**
+	 * Removes an employee from the current inquiry.
+	 *
+	 * Called by: Template (remove button)
+	 * Purpose: DELETE /api/v1/inquiries/{id}/employees/{emp_id}.
+	 */
+	async function removeEmployee(empId: string) {
+		if (!data || !confirm('Mitarbeiter von dieser Anfrage entfernen?')) return;
+		try {
+			await apiDelete(`/api/v1/inquiries/${data.id}/employees/${empId}`);
+			showToast('Mitarbeiter entfernt', 'success');
+			await reloadInquiry();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		}
+	}
+
+	/**
+	 * Reloads the inquiry data without full page reload.
+	 *
+	 * Called by: handleAssign, removeEmployee
+	 * Purpose: Refreshes data after employee assignment changes.
+	 */
+	async function reloadInquiry() {
+		if (!data) return;
+		try {
+			const res = await apiGet<InquiryResponse>(`/api/v1/inquiries/${data.id}`);
+			data = res;
+		} catch { /* keep existing data */ }
+	}
 
 	/**
 	 * Loads all email threads for this inquiry plus their messages.
@@ -2959,6 +3100,126 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Mitarbeiter Card (visible for accepted+ statuses) -->
+{#if showEmployeeCard && data}
+	<div class="employees-section">
+		<div class="card">
+			<div class="card-header">
+				<h3>Mitarbeiter</h3>
+				<button class="btn btn-sm" onclick={openAssignModal}>
+					<Plus size={14} />
+					Zuweisen
+				</button>
+			</div>
+
+			{#if data.employees.length > 0}
+				<div class="emp-table-wrapper">
+					<table class="emp-table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th class="num">Geplant (h)</th>
+								<th class="num">Ist (h)</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each data.employees as emp}
+								<tr>
+									<td>{emp.first_name} {emp.last_name}</td>
+									<td class="num">
+										<input
+											type="number"
+											step="0.5"
+											class="inline-input"
+											value={emp.planned_hours}
+											onblur={(e) => updateEmployeeHours(emp.employee_id, 'planned_hours', (e.target as HTMLInputElement).value)}
+										/>
+									</td>
+									<td class="num">
+										{#if ['completed', 'invoiced', 'paid'].includes(data.status)}
+											<input
+												type="number"
+												step="0.5"
+												class="inline-input"
+												value={emp.actual_hours ?? ''}
+												placeholder="—"
+												onblur={(e) => updateEmployeeHours(emp.employee_id, 'actual_hours', (e.target as HTMLInputElement).value)}
+											/>
+										{:else}
+											<span class="muted">{emp.actual_hours?.toFixed(1) ?? '—'}</span>
+										{/if}
+									</td>
+									<td>
+										<button
+											class="btn-icon danger"
+											title="Entfernen"
+											onclick={() => removeEmployee(emp.employee_id)}
+										>
+											<Trash2 size={14} />
+										</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+						<tfoot>
+							<tr class="total-row">
+								<td><strong>Gesamt</strong></td>
+								<td class="num"><strong>{data.employees.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)}</strong></td>
+								<td class="num">
+									<strong>
+										{#if data.employees.some(e => e.actual_hours != null)}
+											{data.employees.reduce((s, e) => s + (e.actual_hours ?? 0), 0).toFixed(1)}
+										{:else}
+											—
+										{/if}
+									</strong>
+								</td>
+								<td></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			{:else}
+				<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Assign modal -->
+	{#if showAssignModal}
+		<div class="modal-overlay" onclick={() => (showAssignModal = false)}>
+			<div class="modal" onclick={(e) => e.stopPropagation()}>
+				<h3>Mitarbeiter zuweisen</h3>
+				<form onsubmit={(e) => { e.preventDefault(); handleAssign(); }}>
+					<div class="field" style="margin-bottom:0.75rem">
+						<label for="assign-emp">Mitarbeiter</label>
+						<select id="assign-emp" bind:value={assignEmployeeId}>
+							{#each availableEmployees as emp}
+								<option value={emp.id}>{emp.first_name} {emp.last_name} ({emp.email})</option>
+							{/each}
+						</select>
+					</div>
+					<div class="field" style="margin-bottom:0.75rem">
+						<label for="assign-hours">Geplante Stunden</label>
+						<input id="assign-hours" type="number" step="0.5" bind:value={assignPlannedHours} />
+					</div>
+					<div class="field" style="margin-bottom:0.75rem">
+						<label for="assign-notes">Notizen</label>
+						<input id="assign-notes" type="text" bind:value={assignNotes} placeholder="Optional" />
+					</div>
+					<div class="modal-actions">
+						<button type="button" class="btn" onclick={() => (showAssignModal = false)}>Abbrechen</button>
+						<button type="submit" class="btn btn-primary" disabled={assignLoading || !assignEmployeeId}>
+							{assignLoading ? 'Zuweisen...' : 'Zuweisen'}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	{/if}
+{/if}
 
 <!-- Email Thread Section (below the main grid) -->
 {#if data}
@@ -4566,6 +4827,87 @@
 	.download-all-btn:disabled {
 		opacity: 0.6;
 		cursor: wait;
+	}
+
+	/* ── Employees Section ─────────────────────────────────────────── */
+
+	.employees-section {
+		margin-bottom: 1.5rem;
+	}
+
+	.emp-table-wrapper {
+		overflow-x: auto;
+	}
+
+	.emp-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.875rem;
+	}
+
+	.emp-table th {
+		text-align: left;
+		padding: 0.5rem 0.75rem;
+		border-bottom: 2px solid #e2e8f0;
+		color: #64748b;
+		font-weight: 600;
+		font-size: 0.8125rem;
+	}
+
+	.emp-table td {
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid #f1f5f9;
+	}
+
+	.emp-table .num {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.emp-table .total-row td {
+		border-top: 2px solid #e2e8f0;
+		border-bottom: none;
+	}
+
+	.inline-input {
+		width: 60px;
+		padding: 0.25rem 0.375rem;
+		border: 1px solid #e2e8f0;
+		border-radius: 0.25rem;
+		font-size: 0.875rem;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.inline-input:focus {
+		border-color: #818cf8;
+		outline: none;
+	}
+
+	.btn-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.25rem;
+		border: none;
+		background: transparent;
+		border-radius: 0.25rem;
+		cursor: pointer;
+		color: #94a3b8;
+		transition: all 150ms;
+	}
+
+	.btn-icon.danger:hover {
+		color: #dc2626;
+		background: #fef2f2;
+	}
+
+	.empty-hint {
+		color: #94a3b8;
+		font-size: 0.875rem;
+		text-align: center;
+		padding: 1rem 0;
+		margin: 0;
 	}
 
 	/* ── Email Thread Section ───────────────────────────────────────── */

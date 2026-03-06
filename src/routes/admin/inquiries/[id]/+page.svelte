@@ -146,7 +146,7 @@
 		estimation: EstimationSnapshot | null;
 		items: ItemSnapshot[];
 		offer: OfferSnapshot | null;
-		employees: EmployeeAssignment[];
+		employees?: EmployeeAssignment[];
 	}
 
 	interface EmployeeAssignment {
@@ -1808,7 +1808,7 @@
 				'/api/v1/admin/employees?active=true&limit=100'
 			);
 			// Filter out already-assigned employees
-			const assignedIds = new Set((data?.employees ?? []).map((e) => e.employee_id));
+			const assignedIds = new Set((data?.employees ?? []).map((e: EmployeeAssignment) => e.employee_id));
 			availableEmployees = res.employees.filter((e) => !assignedIds.has(e.id));
 			assignEmployeeId = availableEmployees[0]?.id ?? '';
 			assignPlannedHours = '4';
@@ -3113,7 +3113,8 @@
 				</button>
 			</div>
 
-			{#if data.employees.length > 0}
+			{@const emps = data.employees ?? []}
+			{#if emps.length > 0}
 				<div class="emp-table-wrapper">
 					<table class="emp-table">
 						<thead>
@@ -3125,7 +3126,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each data.employees as emp}
+							{#each emps as emp}
 								<tr>
 									<td>{emp.first_name} {emp.last_name}</td>
 									<td class="num">
@@ -3166,11 +3167,11 @@
 						<tfoot>
 							<tr class="total-row">
 								<td><strong>Gesamt</strong></td>
-								<td class="num"><strong>{data.employees.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)}</strong></td>
+								<td class="num"><strong>{emps.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)}</strong></td>
 								<td class="num">
 									<strong>
-										{#if data.employees.some(e => e.actual_hours != null)}
-											{data.employees.reduce((s, e) => s + (e.actual_hours ?? 0), 0).toFixed(1)}
+										{#if emps.some(e => e.actual_hours != null)}
+											{emps.reduce((s, e) => s + (e.actual_hours ?? 0), 0).toFixed(1)}
 										{:else}
 											—
 										{/if}

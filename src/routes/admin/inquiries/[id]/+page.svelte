@@ -3881,6 +3881,15 @@
 		background: rgba(239, 68, 68, 0.08);
 	}
 
+	.del-cell .del-btn {
+		color: #ef4444;
+	}
+
+	.del-cell .del-btn :global(svg) {
+		width: calc(14px * 1.3);
+		height: calc(14px * 1.3);
+	}
+
 	/* Dirty state indicator for save button */
 	.btn-dirty {
 		background: #6366f1 !important;

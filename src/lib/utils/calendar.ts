@@ -7,13 +7,11 @@ export interface CalendarDay<S extends BaseDaySchedule = BaseDaySchedule> {
 
 export interface BaseDaySchedule {
 	date: string;
-	bookings: unknown[];
-	availability: {
-		capacity: number;
-		booked: number;
-		available: boolean;
-		remaining: number;
-	};
+	inquiries: unknown[];
+	available: boolean;
+	capacity: number;
+	booked: number;
+	remaining: number;
 }
 
 /**

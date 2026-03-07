@@ -93,11 +93,8 @@ All endpoints except login/refresh require a valid JWT via `Authorization: Beare
 - `POST /api/v1/admin/customers/{id}/delete` — delete customer
 
 ### Calendar
-- `GET /api/v1/calendar/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD` → `{dates: DaySchedule[]}`
+- `GET /api/v1/calendar/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD` → `DaySchedule[]` (flat fields: available, capacity, booked, remaining, inquiries[])
 - `PUT /api/v1/calendar/capacity/{date}` — set daily capacity override
-- `POST /api/v1/calendar/bookings` — create (booking_date, customer_name, customer_email, description)
-- `PATCH /api/v1/calendar/bookings/{id}` — update status (confirmed/cancelled)
-- `DELETE /api/v1/calendar/bookings/{id}` — delete booking
 
 ### Emails
 - `GET /api/v1/admin/emails?search=&limit=&offset=` — list threads
@@ -118,13 +115,13 @@ All endpoints except login/refresh require a valid JWT via `Authorization: Beare
 ## Calendar Data Model
 
 ```
-DaySchedule: { date, bookings[], availability: { capacity, booked, available, remaining } }
-BookingItem: { id, quote_id, customer_name, customer_email, description, status }
-Booking statuses: pending → confirmed | cancelled
+DaySchedule: { date, available, capacity, booked, remaining, inquiries[] }
+InquiryItem: { inquiry_id, customer_name, departure_address, arrival_address, volume_m3, status, offer_price_cents }
 ```
 
 - Monthly grid view (Mon-Sun), cell shows booked/capacity badge
-- Day click opens modal: capacity editor, booking list, create booking form
+- Calendar hydrates directly from inquiries — no separate bookings table
+- Day click opens modal: capacity editor + list of inquiries (click through to inquiry detail)
 - Dashboard surfaces conflict dates (overbooked days)
 
 ## Auth Patterns

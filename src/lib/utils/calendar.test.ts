@@ -38,20 +38,26 @@ describe('buildCalendar', () => {
 	it('maps schedule data to correct days', () => {
 		const sched: BaseDaySchedule[] = [{
 			date: '2026-02-10',
-			bookings: [],
-			availability: { capacity: 2, booked: 1, available: true, remaining: 1 },
+			inquiries: [],
+			available: true,
+			capacity: 2,
+			booked: 1,
+			remaining: 1,
 		}];
 		const days = buildCalendar(2026, 1, sched, '2026-02-15');
 		const day10 = days.find(d => d.date === 10);
 		expect(day10!.schedule).toBeTruthy();
-		expect(day10!.schedule!.availability.booked).toBe(1);
+		expect(day10!.schedule!.booked).toBe(1);
 	});
 
 	it('handles schedule dates with T-suffix', () => {
 		const sched: BaseDaySchedule[] = [{
 			date: '2026-02-10T00:00:00Z',
-			bookings: [],
-			availability: { capacity: 1, booked: 0, available: true, remaining: 1 },
+			inquiries: [],
+			available: true,
+			capacity: 1,
+			booked: 0,
+			remaining: 1,
 		}];
 		const days = buildCalendar(2026, 1, sched, '2026-02-15');
 		const day10 = days.find(d => d.date === 10);

@@ -1,32 +1,27 @@
 <script lang="ts">
-	import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '$lib/utils/api.svelte';
+	import { apiGet, apiPut } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { buildCalendar } from '$lib/utils/calendar';
-	import { ChevronLeft, ChevronRight, Check, X, Trash2, Plus, ExternalLink } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
-	interface BookingItem {
-		id: string;
-		quote_id: string | null;
+	interface InquiryItem {
+		inquiry_id: string;
 		customer_name: string | null;
-		customer_email: string | null;
 		departure_address: string | null;
 		arrival_address: string | null;
 		volume_m3: number | null;
-		offer_price_cents: number | null;
-		description: string | null;
 		status: string;
+		offer_price_cents: number | null;
 	}
 
 	interface DaySchedule {
 		date: string;
-		bookings: BookingItem[];
-		availability: {
-			capacity: number;
-			booked: number;
-			available: boolean;
-			remaining: number;
-		};
+		available: boolean;
+		capacity: number;
+		booked: number;
+		remaining: number;
+		inquiries: InquiryItem[];
 	}
 
 	let currentDate = $state(new Date());
@@ -35,11 +30,6 @@
 	let selectedDay = $state<DaySchedule | null>(null);
 	let capacityInput = $state('');
 	let savingCapacity = $state(false);
-
-	// Create booking form
-	let showCreateForm = $state(false);
-	let newBooking = $state({ customer_name: '', customer_email: '', description: '' });
-	let creatingBooking = $state(false);
 
 	let year = $derived(currentDate.getFullYear());
 	let month = $derived(currentDate.getMonth());
@@ -54,10 +44,9 @@
 	});
 
 	/**
-	 * Fetches the booking schedule for the currently displayed calendar month.
+	 * Fetches the inquiry schedule for the currently displayed calendar month.
 	 *
-	 * Called by: $effect (on mount and whenever currentDate changes), prevMonth, nextMonth,
-	 *            saveCapacity, createBooking, confirmBooking, cancelBooking, deleteBooking
+	 * Called by: $effect (on mount and whenever currentDate changes), prevMonth, nextMonth, saveCapacity
 	 * Purpose: Requests the full month's day schedules from
 	 *          GET /api/v1/calendar/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD and stores them
 	 *          so the calendar grid and day-detail modal stay consistent with server state.
@@ -112,8 +101,8 @@
 	 *
 	 * Called by: Template (calendar cell button click)
 	 * Purpose: Sets selectedDay to the existing DaySchedule for the clicked date or to a
-	 *          default object with capacity 1 and zero bookings when the API returned no data
-	 *          for that day. Also seeds capacityInput and resets the create-booking form.
+	 *          default object with capacity 1 and zero inquiries when the API returned no data
+	 *          for that day. Also seeds capacityInput.
 	 *
 	 * @param day - The DaySchedule from the API for this date, or null if no data exists
 	 * @param dateNum - The day-of-month number (1–31), or null for a padding cell
@@ -122,10 +111,8 @@
 	function selectDay(day: DaySchedule | null, dateNum: number | null) {
 		if (!dateNum) return;
 		const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
-		selectedDay = day || { date: dateStr, bookings: [], availability: { capacity: 1, booked: 0, available: true, remaining: 1 } };
-		capacityInput = String(selectedDay.availability.capacity);
-		showCreateForm = false;
-		newBooking = { customer_name: '', customer_email: '', description: '' };
+		selectedDay = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1 };
+		capacityInput = String(selectedDay.capacity);
 	}
 
 	/**
@@ -158,118 +145,6 @@
 		}
 	}
 
-	/**
-	 * Creates a new manual booking for the selected day via the API.
-	 *
-	 * Called by: Template ("Buchung erstellen" button click in the create-booking form)
-	 * Purpose: POSTs the new booking details (customer name, email, description) to
-	 *          POST /api/v1/calendar/bookings, resets the inline form, reloads the schedule,
-	 *          and updates selectedDay so the new entry appears in the day-detail modal.
-	 *
-	 * @returns void
-	 */
-	async function createBooking() {
-		if (!selectedDay) return;
-		creatingBooking = true;
-		try {
-			const dateStr = selectedDay.date.split('T')[0];
-			await apiPost('/api/v1/calendar/bookings', {
-				booking_date: dateStr,
-				customer_name: newBooking.customer_name || null,
-				customer_email: newBooking.customer_email || null,
-				description: newBooking.description || null,
-			});
-			showToast('Buchung erstellt', 'success');
-			showCreateForm = false;
-			newBooking = { customer_name: '', customer_email: '', description: '' };
-			await loadSchedule();
-			const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-			if (updated) selectedDay = updated;
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		} finally {
-			creatingBooking = false;
-		}
-	}
-
-	/**
-	 * Transitions a booking's status to "confirmed" via the API.
-	 *
-	 * Called by: Template (confirm icon button click on a booking item in the day modal)
-	 * Purpose: PATCHes the booking status to "confirmed" via PATCH /api/v1/calendar/bookings/{id},
-	 *          then reloads the schedule and refreshes selectedDay so the StatusBadge updates
-	 *          and the confirm button is hidden for the now-confirmed booking.
-	 *
-	 * @param bookingId - The ID of the booking to confirm
-	 * @returns void
-	 */
-	async function confirmBooking(bookingId: string) {
-		if (!selectedDay) return;
-		try {
-			await apiPatch(`/api/v1/calendar/bookings/${bookingId}`, { status: 'confirmed' });
-			showToast('Buchung bestaetigt', 'success');
-			const dateStr = selectedDay.date.split('T')[0];
-			await loadSchedule();
-			const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-			if (updated) selectedDay = updated;
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
-
-	/**
-	 * Transitions a booking's status to "cancelled" via the API.
-	 *
-	 * Called by: Template (cancel/X icon button click on a booking item in the day modal)
-	 * Purpose: PATCHes the booking status to "cancelled" via PATCH /api/v1/calendar/bookings/{id},
-	 *          then reloads the schedule and refreshes selectedDay so the StatusBadge updates
-	 *          and the cancel button is hidden for the now-cancelled booking.
-	 *
-	 * @param bookingId - The ID of the booking to cancel
-	 * @returns void
-	 */
-	async function cancelBooking(bookingId: string) {
-		if (!selectedDay) return;
-		try {
-			await apiPatch(`/api/v1/calendar/bookings/${bookingId}`, { status: 'cancelled' });
-			showToast('Buchung storniert', 'success');
-			const dateStr = selectedDay.date.split('T')[0];
-			await loadSchedule();
-			const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-			if (updated) selectedDay = updated;
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
-
-	/**
-	 * Permanently deletes a booking from the selected day after a confirmation prompt.
-	 *
-	 * Called by: Template (trash icon button click on a booking item in the day modal)
-	 * Purpose: Presents a native confirm dialog as a safety gate, then issues a DELETE to
-	 *          DELETE /api/v1/calendar/bookings/{id}. After success the schedule is reloaded;
-	 *          if the deleted booking was the last one for the day, selectedDay is cleared
-	 *          to close the modal.
-	 *
-	 * @param bookingId - The ID of the booking to permanently delete
-	 * @returns void
-	 */
-	async function deleteBooking(bookingId: string) {
-		if (!selectedDay) return;
-		if (!confirm('Buchung unwiderruflich loeschen?')) return;
-		try {
-			await apiDelete(`/api/v1/calendar/bookings/${bookingId}`);
-			showToast('Buchung geloescht', 'success');
-			const dateStr = selectedDay.date.split('T')[0];
-			await loadSchedule();
-			const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-			if (updated) selectedDay = updated;
-			else selectedDay = null;
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
-
 	const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 </script>
 
@@ -294,8 +169,8 @@
 				{#if day.date === null}
 					<div class="cal-cell empty"></div>
 				{:else}
-					{@const booked = day.schedule?.availability?.booked || 0}
-					{@const capacity = day.schedule?.availability?.capacity || 1}
+					{@const booked = day.schedule?.booked || 0}
+					{@const capacity = day.schedule?.capacity || 1}
 					{@const full = booked >= capacity}
 					{@const overbooked = booked > capacity}
 					<button
@@ -333,73 +208,35 @@
 			</div>
 
 			<div class="modal-section">
-				<div class="section-header">
-					<span class="modal-label">Buchungen ({selectedDay.bookings.length})</span>
-					<button class="btn-icon" onclick={() => showCreateForm = !showCreateForm} title="Neue Buchung">
-						<Plus size={16} />
-					</button>
-				</div>
+				<span class="modal-label">Auftraege ({selectedDay.inquiries.length})</span>
 
-				{#if showCreateForm}
-					<div class="create-form">
-						<input type="text" placeholder="Kundenname" bind:value={newBooking.customer_name} />
-						<input type="email" placeholder="E-Mail" bind:value={newBooking.customer_email} />
-						<input type="text" placeholder="Beschreibung" bind:value={newBooking.description} />
-						<button class="btn btn-primary" onclick={createBooking} disabled={creatingBooking}>
-							{creatingBooking ? 'Erstellen...' : 'Buchung erstellen'}
-						</button>
-					</div>
-				{/if}
-
-				{#if selectedDay.bookings.length > 0}
-					{#each selectedDay.bookings as booking}
+				{#if selectedDay.inquiries.length > 0}
+					{#each selectedDay.inquiries as inq}
 						<div class="booking-item">
 							<div class="booking-info">
-								{#if booking.quote_id}
-									<a href="/admin/inquiries/{booking.quote_id}" class="booking-link">
-										<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
-										<ExternalLink size={12} />
-									</a>
-								{:else}
-									<span class="booking-name">{booking.customer_name || booking.customer_email || 'Unbekannt'}</span>
-								{/if}
-								<StatusBadge status={booking.status} />
+								<a href="/admin/inquiries/{inq.inquiry_id}" class="booking-link">
+									<span class="booking-name">{inq.customer_name || 'Unbekannt'}</span>
+									<ExternalLink size={12} />
+								</a>
+								<StatusBadge status={inq.status} />
 							</div>
-							{#if booking.departure_address || booking.arrival_address}
-								<span class="booking-route">{booking.departure_address || '?'} → {booking.arrival_address || '?'}</span>
+							{#if inq.departure_address || inq.arrival_address}
+								<span class="booking-route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
 							{/if}
-							{#if booking.volume_m3 || booking.offer_price_cents}
+							{#if inq.volume_m3 || inq.offer_price_cents}
 								<div class="booking-details">
-									{#if booking.volume_m3}
-										<span class="booking-detail">📦 {booking.volume_m3.toFixed(1)} m³</span>
+									{#if inq.volume_m3}
+										<span class="booking-detail">📦 {inq.volume_m3.toFixed(1)} m³</span>
 									{/if}
-									{#if booking.offer_price_cents}
-										<span class="booking-detail">💰 {(booking.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
+									{#if inq.offer_price_cents}
+										<span class="booking-detail">💰 {(inq.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
 									{/if}
 								</div>
 							{/if}
-							{#if booking.description}
-								<span class="booking-notes">{booking.description}</span>
-							{/if}
-							<div class="booking-actions">
-								{#if booking.status !== 'confirmed'}
-									<button class="btn-icon btn-confirm" onclick={() => confirmBooking(booking.id)} title="Bestaetigen">
-										<Check size={14} />
-									</button>
-								{/if}
-								{#if booking.status !== 'cancelled'}
-									<button class="btn-icon btn-cancel" onclick={() => cancelBooking(booking.id)} title="Stornieren">
-										<X size={14} />
-									</button>
-								{/if}
-								<button class="btn-icon btn-delete" onclick={() => deleteBooking(booking.id)} title="Loeschen">
-									<Trash2 size={14} />
-								</button>
-							</div>
 						</div>
 					{/each}
-				{:else if !showCreateForm}
-					<p class="text-muted">Keine Buchungen</p>
+				{:else}
+					<p class="text-muted">Keine Auftraege</p>
 				{/if}
 			</div>
 		</div>
@@ -446,19 +283,6 @@
 	.btn-primary:hover:not(:disabled) { background: #4f46e5; }
 	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-	.section-header { display: flex; align-items: center; justify-content: space-between; }
-	.section-header .modal-label { margin-bottom: 0; }
-
-	.btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: none; background: #e8ecf1; color: #64748b; cursor: pointer; transition: all 150ms; box-shadow: 2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff; }
-	.btn-icon:hover { color: #1a1a2e; box-shadow: 3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff; }
-	.btn-confirm:hover { color: #16a34a; }
-	.btn-cancel:hover { color: #f59e0b; }
-	.btn-delete:hover { color: #ef4444; }
-
-	.create-form { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px; }
-	.create-form input { padding: 0.5rem 0.75rem; background: #e8ecf1; border: none; border-radius: 8px; box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff; color: #1a1a2e; font-size: 0.875rem; outline: none; }
-	.create-form input:focus { box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2); }
-
 	.booking-item { padding: 0.625rem 0; border-bottom: 1px solid #f1f5f9; }
 	.booking-item:last-child { border-bottom: none; }
 	.booking-info { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
@@ -468,8 +292,6 @@
 	.booking-route { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.125rem; }
 	.booking-details { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
 	.booking-detail { font-size: 0.75rem; color: #475569; font-weight: 500; }
-	.booking-notes { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem; }
-	.booking-actions { display: flex; gap: 0.375rem; }
 	.text-muted { color: #94a3b8; font-size: 0.875rem; }
 
 	@media (max-width: 768px) {

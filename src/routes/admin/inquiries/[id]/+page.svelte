@@ -1134,7 +1134,7 @@
 
 	let videoEntries = $derived(
 		estimationsList
-			.filter((e) => e.source_video_url !== null)
+			.filter((e) => e.source_video_url)
 			.map((e) => ({
 				url: API_BASE + e.source_video_url!,
 				estimationId: e.id,

@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.fernUebersee} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/fernumzug-ueberseeumzug-hildesheim-lkw-beladung.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug",
+    "name": "Fernumzug & Überseeumzug Hildesheim – Aust Umzüge LKW Beladung",
+    "description": "Aust Umzüge Mitarbeiter beladen einen LKW für einen Fernumzug oder Überseeumzug ab Hildesheim. Internationaler Umzugsservice mit Zollabwicklung und weltweitem Partnernetzwerk.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 1288,
+    "height": 831
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Grenzenlos umziehen – sicher, pünktlich und gut organisiert.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/fernumzug-ueberseeumzug-hildesheim-lkw-beladung.webp"
+                srcset="/fernumzug-ueberseeumzug-hildesheim-lkw-beladung-400w.webp 400w,
+                        /fernumzug-ueberseeumzug-hildesheim-lkw-beladung-600w.webp 600w,
+                        /fernumzug-ueberseeumzug-hildesheim-lkw-beladung-800w.webp 800w,
+                        /fernumzug-ueberseeumzug-hildesheim-lkw-beladung.webp 1288w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge LKW wird beladen für Fernumzug und Überseeumzug ab Hildesheim"
+                width="1288"
+                height="831"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -212,6 +244,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

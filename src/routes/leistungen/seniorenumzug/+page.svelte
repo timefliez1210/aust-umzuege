@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.seniorenumzug} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/seniorenumzug-hildesheim-umzugskartons-tragen.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/seniorenumzug",
+    "name": "Seniorenumzug Hildesheim – Aust Umzüge Mitarbeiter beim Kartons tragen",
+    "description": "Aust Umzüge Mitarbeiter trägt Umzugskartons beim einfühlsamen Seniorenumzug in Hildesheim. Full-Service für den Umzug ins betreute Wohnen oder Pflegeheim.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 921,
+    "height": 724
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Mit Herz und Verstand – Umzüge für die ältere Generation.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/seniorenumzug-hildesheim-umzugskartons-tragen.webp"
+                srcset="/seniorenumzug-hildesheim-umzugskartons-tragen-400w.webp 400w,
+                        /seniorenumzug-hildesheim-umzugskartons-tragen-600w.webp 600w,
+                        /seniorenumzug-hildesheim-umzugskartons-tragen-800w.webp 800w,
+                        /seniorenumzug-hildesheim-umzugskartons-tragen.webp 921w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Mitarbeiter trägt Umzugskartons beim Seniorenumzug in Hildesheim"
+                width="921"
+                height="724"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -214,6 +246,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

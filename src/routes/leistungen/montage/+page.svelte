@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.montage} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/moebelmontage-demontage-hildesheim-schrank.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/montage",
+    "name": "Möbelmontage & Demontage Hildesheim – Aust Umzüge Schrankmontage",
+    "description": "Aust Umzüge Mitarbeiter montiert einen Schrank beim professionellen Möbelmontage- und Demontageservice in Hildesheim. Fachgerechter Auf- und Abbau aller Möbel und Küchen.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 1848,
+    "height": 996
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -71,6 +88,21 @@
                 sauber.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/moebelmontage-demontage-hildesheim-schrank.webp"
+                srcset="/moebelmontage-demontage-hildesheim-schrank-400w.webp 400w,
+                        /moebelmontage-demontage-hildesheim-schrank-600w.webp 600w,
+                        /moebelmontage-demontage-hildesheim-schrank-800w.webp 800w,
+                        /moebelmontage-demontage-hildesheim-schrank.webp 1848w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Mitarbeiter montiert Schrank beim Möbelmontage-Service in Hildesheim"
+                width="1848"
+                height="996"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -210,6 +242,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

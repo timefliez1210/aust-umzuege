@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.umzugsberatung} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/umzugsberatung-hildesheim-kostenlos-vor-ort.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/umzugsberatung",
+    "name": "Umzugsberatung Hildesheim – Aust Umzüge kostenloser Vor-Ort-Termin",
+    "description": "Aust Umzüge Berater beim kostenlosen Vor-Ort-Termin in Hildesheim. Unverbindliche Umzugsberatung mit Festpreisangebot direkt vor Ort.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 828,
+    "height": 524
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Gute Planung ist der halbe Umzug – kostenlos & unverbindlich.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/umzugsberatung-hildesheim-kostenlos-vor-ort.webp"
+                srcset="/umzugsberatung-hildesheim-kostenlos-vor-ort-400w.webp 400w,
+                        /umzugsberatung-hildesheim-kostenlos-vor-ort-600w.webp 600w,
+                        /umzugsberatung-hildesheim-kostenlos-vor-ort-800w.webp 800w,
+                        /umzugsberatung-hildesheim-kostenlos-vor-ort.webp 828w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Berater beim kostenlosen Vor-Ort-Termin zur Umzugsberatung in Hildesheim"
+                width="828"
+                height="524"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -208,6 +240,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.umzugshelfer} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/umzugshelfer-hildesheim-moebelpacker.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/umzugshelfer",
+    "name": "Umzugshelfer Hildesheim – Aust Umzüge Möbelpacker im Einsatz",
+    "description": "Professioneller Umzugshelfer von Aust Umzüge Hildesheim beim Möbeltransport. Versicherte Umzugshelfer stundenweise mieten – zuverlässig und kurzfristig verfügbar.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 903,
+    "height": 609
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Starke Hände für Ihren Umzug – flexibel und zuverlässig.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/umzugshelfer-hildesheim-moebelpacker.webp"
+                srcset="/umzugshelfer-hildesheim-moebelpacker-400w.webp 400w,
+                        /umzugshelfer-hildesheim-moebelpacker-600w.webp 600w,
+                        /umzugshelfer-hildesheim-moebelpacker-800w.webp 800w,
+                        /umzugshelfer-hildesheim-moebelpacker.webp 903w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Umzugshelfer von Aust Umzüge Hildesheim – professioneller Möbelpacker im Einsatz"
+                width="903"
+                height="609"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -212,6 +244,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

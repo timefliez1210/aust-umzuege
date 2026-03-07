@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.privatumzug} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/umzug-hildesheim-umzugshelfer-moebel-tragen.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/privatumzug",
+    "name": "Umzug Hildesheim – Aust Umzüge Mitarbeiter beim Möbeltransport",
+    "description": "Zwei Mitarbeiter von Aust Umzüge tragen Möbel beim Privatumzug in Hildesheim. Professioneller Umzugsservice mit Festpreisgarantie.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 916,
+    "height": 610
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Ihr Start in ein neues Zuhause – entspannt und professionell.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/umzug-hildesheim-umzugshelfer-moebel-tragen.webp"
+                srcset="/umzug-hildesheim-umzugshelfer-moebel-tragen-400w.webp 400w,
+                        /umzug-hildesheim-umzugshelfer-moebel-tragen-600w.webp 600w,
+                        /umzug-hildesheim-umzugshelfer-moebel-tragen-800w.webp 800w,
+                        /umzug-hildesheim-umzugshelfer-moebel-tragen.webp 916w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Mitarbeiter tragen Möbel beim Privatumzug in Hildesheim"
+                width="916"
+                height="610"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -332,6 +364,20 @@
     .feature-list :global(.check-icon) {
         color: var(--color-nav-accent);
         flex-shrink: 0;
+    }
+
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
     }
 
     /* CTA Box */

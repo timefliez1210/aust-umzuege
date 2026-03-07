@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.halteverbot} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/halteverbot-umzug-hildesheim-lkw-beladung.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/halteverbot",
+    "name": "Halteverbot Umzug Hildesheim – Aust Umzüge LKW HI-AU 999",
+    "description": "Aust Umzüge LKW mit Hildesheimer Kennzeichen beim Umzugseinsatz. Halteverbotszone beantragen und aufstellen für einen reibungslosen Umzug in Hildesheim.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 1200,
+    "height": 925
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -71,6 +88,21 @@
                 Parkplatzsuche.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/halteverbot-umzug-hildesheim-lkw-beladung.webp"
+                srcset="/halteverbot-umzug-hildesheim-lkw-beladung-400w.webp 400w,
+                        /halteverbot-umzug-hildesheim-lkw-beladung-600w.webp 600w,
+                        /halteverbot-umzug-hildesheim-lkw-beladung-800w.webp 800w,
+                        /halteverbot-umzug-hildesheim-lkw-beladung.webp 1200w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge LKW mit Hildesheimer Kennzeichen HI-AU beim beladenen Umzugseinsatz mit Halteverbotszone"
+                width="1200"
+                height="925"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -204,6 +236,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

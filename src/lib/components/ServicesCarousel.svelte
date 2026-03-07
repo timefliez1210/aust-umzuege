@@ -222,7 +222,7 @@
             >
                 {#each services as service}
                     <article class="service-card">
-                        <a href={service.href} class="service-card__image-wrapper" aria-label={service.title}>
+                        <a href={service.href} class="service-card__image-wrapper">
                             <img
                                 src={service.image}
                                 srcset="{service.image.replace('.webp', '')}-400w.webp 400w, {service.image.replace('.webp', '')}-600w.webp 600w, {service.image.replace('.webp', '')}-800w.webp 800w"
@@ -253,7 +253,7 @@
                         <p class="service-card__description">
                             {service.description}
                         </p>
-                        <a href={service.href} class="service-card__link" aria-label="Mehr erfahren über {service.title}">
+                        <a href={service.href} class="service-card__link">
                             Mehr über {service.title}
                             <svg
                                 width="16"

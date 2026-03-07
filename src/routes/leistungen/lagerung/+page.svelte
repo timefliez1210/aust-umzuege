@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.lagerung} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/einlagerung-lagerung-hildesheim-moebel-stapler.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/lagerung",
+    "name": "Einlagerung & Lagerung Hildesheim – Aust Umzüge Möbel einlagern",
+    "description": "Aust Umzüge Mitarbeiter lagern Möbel mit einem Stapler sicher ein. Professionelle Einlagerung und Lagerung in Hildesheim – flexibel und trocken.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 1500,
+    "height": 1058
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Sicher verwahrt – ob für Wochen oder Jahre.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/einlagerung-lagerung-hildesheim-moebel-stapler.webp"
+                srcset="/einlagerung-lagerung-hildesheim-moebel-stapler-400w.webp 400w,
+                        /einlagerung-lagerung-hildesheim-moebel-stapler-600w.webp 600w,
+                        /einlagerung-lagerung-hildesheim-moebel-stapler-800w.webp 800w,
+                        /einlagerung-lagerung-hildesheim-moebel-stapler.webp 1500w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Mitarbeiter lagern Möbel mit Stapler ein – Einlagerung und Lagerung in Hildesheim"
+                width="1500"
+                height="1058"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -211,6 +243,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

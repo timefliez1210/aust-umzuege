@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.haushaltsaufloesung} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/haushaltsaufloesung-hildesheim-entrumpeln-container.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
+    "name": "Haushaltsauflösung Hildesheim – Aust Umzüge Team beim Entrümpeln",
+    "description": "Drei Mitarbeiter von Aust Umzüge beladen einen Container bei einer Haushaltsauflösung in Hildesheim. Professionelles Entrümpeln und Entsorgen aus einer Hand.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 1500,
+    "height": 845
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Schnell, diskret und besenrein – wir schaffen Platz.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/haushaltsaufloesung-hildesheim-entrumpeln-container.webp"
+                srcset="/haushaltsaufloesung-hildesheim-entrumpeln-container-400w.webp 400w,
+                        /haushaltsaufloesung-hildesheim-entrumpeln-container-600w.webp 600w,
+                        /haushaltsaufloesung-hildesheim-entrumpeln-container-800w.webp 800w,
+                        /haushaltsaufloesung-hildesheim-entrumpeln-container.webp 1500w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Team entrümpelt Haushalt in Hildesheim – drei Mitarbeiter beim Beladen eines Containers"
+                width="1500"
+                height="845"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -213,6 +245,20 @@
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+    }
+
     .back-link {
         display: inline-flex;
         align-items: center;

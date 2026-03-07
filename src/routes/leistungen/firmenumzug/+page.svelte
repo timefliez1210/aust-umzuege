@@ -53,6 +53,23 @@
 
 <StructuredData schema={services.firmenumzug} />
 <StructuredData schema={breadcrumbs} />
+<StructuredData schema={{
+    "@type": "ImageObject",
+    "contentUrl": "https://www.aust-umzuege.de/firmenumzug-hildesheim-umzugshelfer-bueroumzug.webp",
+    "url": "https://www.aust-umzuege.de/leistungen/firmenumzug",
+    "name": "Firmenumzug Hildesheim – Aust Umzüge Team beim Büroumzug",
+    "description": "Zwei Mitarbeiter von Aust Umzüge koordinieren einen Firmenumzug in Hildesheim. Professioneller Büro- und Gewerbeumzug mit minimaler Ausfallzeit.",
+    "author": {
+        "@type": "Organization",
+        "name": "Aust Umzüge",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "license": "https://www.aust-umzuege.de/impressum",
+    "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
+    "creditText": "Aust Umzüge Hildesheim",
+    "width": 2252,
+    "height": 1643
+}} />
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -70,6 +87,21 @@
                 Effiziente Standortwechsel für Büros, Praxen und Betriebe.
             </p>
         </header>
+
+        <div class="hero-image">
+            <img
+                src="/firmenumzug-hildesheim-umzugshelfer-bueroumzug.webp"
+                srcset="/firmenumzug-hildesheim-umzugshelfer-bueroumzug-400w.webp 400w,
+                        /firmenumzug-hildesheim-umzugshelfer-bueroumzug-600w.webp 600w,
+                        /firmenumzug-hildesheim-umzugshelfer-bueroumzug-800w.webp 800w,
+                        /firmenumzug-hildesheim-umzugshelfer-bueroumzug.webp 2252w"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
+                alt="Aust Umzüge Mitarbeiter koordinieren Firmenumzug in Hildesheim"
+                width="2252"
+                height="1643"
+                fetchpriority="high"
+            />
+        </div>
 
         <div class="service-content">
             <div class="text-column">
@@ -216,6 +248,20 @@
         max-width: 1000px;
         margin-inline: auto;
         padding-inline: var(--container-padding);
+    }
+
+    .hero-image {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .hero-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
     }
 
     .back-link {

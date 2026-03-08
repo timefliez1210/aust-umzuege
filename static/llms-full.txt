@@ -26,10 +26,12 @@ Hildesheim, Hannover, Braunschweig, Salzgitter, Peine, Göttingen und ganz Niede
 
 ## Besonderheiten
 - Festpreisgarantie nach kostenloser Besichtigung vor Ort
-- Google-Bewertung: 5.0 Sterne (69 Bewertungen)
+- Ausschließlich eigenes Stammpersonal – keine Subunternehmer
+- Google-Bewertung: 5.0 Sterne (71 Bewertungen)
 - Check24 Profi seit 2019
 - Transport- und Haftpflichtversicherung
 - Kostenlose Beratung und Angebotserstellung
+- Modernes Svelte 5 Frontend für hohe Performance und Barrierefreiheit
 
 ---
 
@@ -100,19 +102,25 @@ Red Flags erkennen (100% Vorkasse, nur Barzahlung, unrealistisch niedrige Preise
 ## Häufig gestellte Fragen
 
 ### Was kostet ein Umzug in Hildesheim?
-Die Kosten richten sich nach Wohnungsgröße, Etage, Entfernung und gewünschten Leistungen. Ein 2-Zimmer-Umzug innerhalb Hildesheims liegt erfahrungsgemäß zwischen 400 und 800 Euro, ein 4-Zimmer-Haushalt zwischen 1.200 und 2.500 Euro. Wir erstellen nach einer kostenlosen Vor-Ort-Besichtigung ein verbindliches Festpreisangebot.
+Die Kosten richten sich nach Wohnungsgröße, Etage, Entfernung und gewünschten Leistungen. Ein 2-Zimmer-Umzug innerhalb Hildesheims liegt erfahrungsgemäß zwischen 400 und 800 Euro, ein 4-Zimmer-Haushalt zwischen 1.200 und 2.500 Euro. Wir erstellen nach einer kostenlosen Vor-Ort-Besichtigung ein verbindliches Festpreisangebot – der vereinbarte Preis ist der Endpreis.
+
+### Wer führt den Umzug durch – eigene Mitarbeiter oder Subunternehmer?
+Wir setzen ausschließlich auf unser eigenes, geschultes Stammpersonal. Keine wechselnden Subunternehmer. Das bedeutet für Sie: gleichbleibende Qualität, volle Verantwortung und die Sicherheit, dass dieselben zuverlässigen Leute Ihr Inventar transportieren, die auch die Besichtigung kennen.
+
+### Sind meine Möbel versichert?
+Ja, Ihr gesamtes Inventar ist während des Transports und der Montage über unsere Transportversicherung bei der Nürnberger Versicherung geschützt. Die Deckungssumme beträgt 620 Euro pro Kubikmeter Umzugsgut. Für besonders wertvolle Gegenstände – etwa Antiquitäten, Kunstwerke oder hochwertige Elektronik – kann die Versicherungssumme individuell erhöht werden. Im Schadensfall sind Sie abgesichert – das ist ein entscheidender Unterschied zum privaten Umzug mit Freunden oder Helfern vom schwarzen Markt.
 
 ### Wie buche ich einen Umzug?
 Kontaktieren Sie uns telefonisch (05121 – 7558379), per E-Mail (info@aust-umzuege.de) oder über unser Online-Formular. Wir vereinbaren einen kostenlosen Besichtigungstermin und erstellen Ihnen ein unverbindliches Festpreisangebot.
 
-### Sind meine Möbel versichert?
-Ja, Ihr gesamtes Inventar ist während des Transports über unsere Betriebshaftpflicht- und Transportversicherung geschützt.
-
 ### Wann sollte ich eine Umzugsfirma buchen?
-Idealerweise 4-6 Wochen vor dem Umzugstermin. Zur Hochsaison (Sommer, Monatsende) empfehlen wir 6-8 Wochen Vorlauf. Kurzfristige Anfragen sind bei freien Kapazitäten möglich.
+Idealerweise 4–6 Wochen vor dem Umzugstermin. Zur Hochsaison (Sommer, Monatsende, Quartalsende) empfehlen wir 6–8 Wochen Vorlauf. Kurzfristige Anfragen sind bei freien Kapazitäten möglich – einfach anrufen.
 
 ### Bieten Sie auch Umzüge am Wochenende an?
-Samstags sind Umzüge nach Vereinbarung möglich. Firmenumzüge führen wir auf Wunsch auch am Wochenende durch.
+Samstags sind Umzüge nach Vereinbarung möglich. Für Firmenumzüge bieten wir spezielle Wochenend-Pakete an, um Ausfallzeiten im Betrieb zu minimieren.
 
 ### Kann ich einzelne Leistungen separat buchen?
-Ja, alle Leistungen sind auch einzeln buchbar – z.B. nur Möbelmontage, nur Umzugshelfer oder nur eine Halteverbotszone.
+Ja, alle Leistungen sind modular buchbar – zum Beispiel nur Küchenmontage, nur Umzugshelfer stundenweise oder nur die Einrichtung einer offiziellen Halteverbotszone.
+
+### Kümmern Sie sich um die Halteverbotszone?
+Ja, vollständig. Wir beantragen die Halteverbotszone bei der zuständigen Behörde in Hildesheim, stellen die Schilder auf und bauen sie nach dem Umzug wieder ab. Gerade in der Hildesheimer Innenstadt und in engen Wohnstraßen ist das ein entscheidender Vorteil – der LKW steht direkt vor der Tür.

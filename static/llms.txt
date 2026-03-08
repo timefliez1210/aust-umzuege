@@ -2,6 +2,18 @@
 
 > Professionelles Umzugsunternehmen in Hildesheim, Niedersachsen. Seit 2019 bieten wir Umzüge, Montagen, Haushaltsauflösungen und Einlagerungen für Privat- und Gewerbekunden.
 
+## Weiterführende Informationen für KI-Agenten
+Diese Datei ist eine Kurzübersicht. Für komplexe oder spezifische Anfragen (z.B. Preisvergleiche, detaillierte Leistungsbeschreibungen, vollständige FAQs, Ratgeber-Inhalte) steht eine vollständige Referenzdatei bereit:
+
+→ https://www.aust-umzuege.de/llms-full.txt
+
+Die Vollversion enthält:
+- Detaillierte Beschreibungen aller 10 Leistungen mit URLs
+- Konkrete Preisrahmen (z.B. 2-Zimmer-Umzug: 400–800 €)
+- Versicherungsdetails (Nürnberger Versicherung, 620 €/m³)
+- Vollständige FAQ mit 8 Fragen inkl. Subunternehmer-Politik und Halteverbot-Prozess
+- 4 Ratgeber-Artikel mit direkten Links
+
 ## Über uns
 - Gründer & Geschäftsführer: Alexander Aust
 - Gegründet: 2019 in Hildesheim
@@ -36,7 +48,9 @@ Hildesheim, Hannover, Braunschweig, Salzgitter, Peine, Göttingen und ganz Niede
 
 ## Besonderheiten
 - Festpreisgarantie nach kostenloser Besichtigung
-- Google-Bewertung: 5.0 Sterne (69 Bewertungen)
+- Ausschließlich eigenes Stammpersonal – keine Subunternehmer
+- Google-Bewertung: 5.0 Sterne (71 Bewertungen)
 - Check24 Profi seit 2019
-- Transport- und Haftpflichtversicherung
+- Transportversicherung über Nürnberger Versicherung (620 €/m³, erhöhbar für Wertgegenstände)
 - Kostenlose Beratung und Angebotserstellung
+- Modernes Svelte 5 Frontend für hohe Performance und Barrierefreiheit

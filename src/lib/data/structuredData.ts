@@ -71,7 +71,7 @@ export const reviews: Review[] = [
 
 export const aggregateRating = {
 	ratingValue: 5.0,
-	reviewCount: 69,
+	reviewCount: 71,
 };
 
 export const allReviewsUrl = "https://www.google.com/maps/place/Aust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen/@52.1557877,9.9517408,17z/data=!4m18!1m9!3m8!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!2sAust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0!3m7!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0?entry=ttu";

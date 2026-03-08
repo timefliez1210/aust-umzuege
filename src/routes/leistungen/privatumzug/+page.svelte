@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -56,6 +56,7 @@
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />
 
+<StructuredData schema={businessInfo} />
 <StructuredData schema={services.privatumzug} />
 <StructuredData schema={{
     "@type": "Review",
@@ -94,6 +95,8 @@
     "license": "https://www.aust-umzuege.de/impressum",
     "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
     "creditText": "Aust Umzüge Hildesheim",
+    "creator": { "@type": "Organization", "name": "Aust Umzüge & Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
+    "copyrightNotice": "© 2026 Aust Umzüge & Haushaltsauflösungen. Alle Rechte vorbehalten.",
     "width": 916,
     "height": 610
 }} />

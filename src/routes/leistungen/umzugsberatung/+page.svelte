@@ -4,7 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
-    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -51,6 +51,7 @@
     canonical="https://www.aust-umzuege.de/leistungen/umzugsberatung"
 />
 
+<StructuredData schema={businessInfo} />
 <StructuredData schema={services.umzugsberatung} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
@@ -67,6 +68,8 @@
     "license": "https://www.aust-umzuege.de/impressum",
     "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
     "creditText": "Aust Umzüge Hildesheim",
+    "creator": { "@type": "Organization", "name": "Aust Umzüge & Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
+    "copyrightNotice": "© 2026 Aust Umzüge & Haushaltsauflösungen. Alle Rechte vorbehalten.",
     "width": 828,
     "height": 524
 }} />

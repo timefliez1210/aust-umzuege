@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -38,6 +39,10 @@
             answer: "Ja, bei beruflich bedingten Umzügen können Sie die Kosten als Werbungskosten absetzen. Die Umzugskostenpauschale liegt aktuell bei 964 Euro pro Person. Auch privat veranlasste Umzüge lassen sich teilweise als haushaltsnahe Dienstleistung geltend machen (20% der Arbeitskosten, max. 4.000 Euro). Sie erhalten von uns eine ordnungsgemäße Rechnung."
         },
         {
+            question: "Welche versteckten Kosten erwarten mich bei einem Umzug?",
+            answer: "Bei vielen Umzugsunternehmen entstehen nachträglich Mehrkosten, weil Volumen falsch geschätzt, Fahrstrecken zu knapp kalkuliert oder Zusatzleistungen erst vor Ort in Rechnung gestellt werden. Das Ergebnis: Der Endpreis liegt deutlich über dem, was im Angebot stand. Bei Aust Umzüge funktioniert das anders. Wir besichtigen Ihren Haushalt kostenlos vor Ort, kalkulieren sorgfältig und geben Ihnen ein verbindliches Festpreisangebot – ohne Kleingedrucktes. Was draufsteht, ist auch das, was Sie zahlen. Egal ob der Umzug eine Stunde länger dauert oder eine Etage schwieriger ist als erwartet."
+        },
+        {
             question: "Brauche ich eine Halteverbotszone für den Umzug?",
             answer: "In den meisten Fällen ja – besonders in Innenstadtlagen und engen Straßen. Eine Halteverbotszone spart erheblich Zeit und Kosten, weil der LKW direkt vor der Tür parken kann. Wir übernehmen auf Wunsch die komplette Beantragung und Aufstellung. Der Service kostet in Hildesheim ca. 100-200 Euro pro Zone."
         }
@@ -52,6 +57,28 @@
 />
 
 <StructuredData schema={services.privatumzug} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Fee Leandra" },
+    "reviewBody": "Ich bin von dem Service von Aust Umzüge begeistert. Den Umzug meiner Mutter von Niedersachsen nach Nordrhein-Westfalen haben wir in die Hände von Herrn Aust gegeben. Das war die beste Entscheidung, die wir treffen konnten. Das freundliche Team strahlte eine Ruhe aus, die uns den Stress zum größten Teil genommen hat. Bei diesem Umzugsunternehmen fühlt man sich verstanden und gut aufgehoben."
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Werner Ströer" },
+    "reviewBody": "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Mein Fazit: Super Arbeit, immer wieder. Hier gebe ich eine volle Empfehlung."
+}} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
@@ -219,6 +246,18 @@
             </div>
 
             <div class="cta-column">
+                <ServiceReviews reviews={[
+                    {
+                        author: "Fee Leandra",
+                        text: "Ich bin von dem Service von Aust Umzüge begeistert.\n\nDen Umzug meiner Mutter von Niedersachsen nach Nordrhein-Westfalen haben wir in die Hände von Herrn Aust gegeben. Das war die beste Entscheidung, die wir treffen konnten.\n\nDer erste Besichtigungstermin konnte kurzfristig für den Samstag vereinbart werden. Der Kostenvoranschlag kam recht zügig.\n\nDer Umzugstag begann pünktlich. Nach ungefähr 3 Stunden war alles gesichert in beiden Lkw verstaut und die lange Reise ging los.\n\nDas freundliche Team strahlte eine Ruhe aus, die uns den Stress zum größten Teil genommen hat. Und das vom kompletten fünfköpfigen Team, an einem sehr stressigen Tag für uns.\n\nBei diesem Umzugsunternehmen fühlt man sich verstanden und gut aufgehoben. Vielen Dank nochmal.",
+                        url: "https://share.google/wcrSeYVmuCQSYIUN8"
+                    },
+                    {
+                        author: "Werner Ströer, Hildesheim",
+                        text: "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel (teilweise kompliziert) wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Selbst nach einem sehr anstrengenden Arbeitstag haben die Mitarbeiter mir noch die Freude gemacht und große, schwere Bilder aufgehangen.\n\nMein Fazit: Super Arbeit, immer wieder. Ich bin normalerweise zurückhaltend und vorsichtig. Hier aber gebe ich eine volle Empfehlung.",
+                        url: "https://share.google/hiPith7uQXcwi9c2F"
+                    }
+                ]} />
                 <div class="cta-box">
                     <h3>Bereit für den Umzug?</h3>
                     <p>

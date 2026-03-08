@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -52,6 +53,28 @@
 />
 
 <StructuredData schema={services.haushaltsaufloesung} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Google-Nutzer" },
+    "reviewBody": "Die Haushaltsauflösung hat prima geklappt - von der Kontaktaufnahme über die gemeinsame Besichtigung und das Angebot bis zur Durchführung und Abrechnung. Das Team war pünktlich und sehr sorgfältig und freundlich. Kann ich gutenGewissens weiter empfehlen."
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Marion Schröder" },
+    "reviewBody": "Sehr professionell und ordentlich gearbeitet. Umzug 240km Strecke, pünktlich, sehr vertrauenserweckend. Die Entrümpelung perfekt und sauber gemacht. Kann ich nur empfehlen!"
+}} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
@@ -204,6 +227,18 @@
             </div>
 
             <div class="cta-column">
+                <ServiceReviews reviews={[
+                    {
+                        author: "Google-Nutzer",
+                        text: "Die Haushaltsauflösung hat prima geklappt - von der Kontaktaufnahme über die gemeinsame Besichtigung und das Angebot bis zur Durchführung und Abrechnung. Das Team war pünktlich und sehr sorgfältig und freundlich. Kann ich guten Gewissens weiter empfehlen.\n\n(3-Zimmer-Wohnung und Keller mit z.T. noch gut gefüllten Schränken)",
+                        url: "https://share.google/U5XOIm6w0B25gJllz"
+                    },
+                    {
+                        author: "Marion Schröder",
+                        text: "Sehr professionell und ordentlich gearbeitet. Umzug 240km Strecke, pünktlich, sehr vertrauenserweckend. Die Entrümpelung perfekt und sauber gemacht. Kann ich nur empfehlen!",
+                        url: "https://share.google/oPaNJQHodxh7c4CBv"
+                    }
+                ]} />
                 <div class="cta-box">
                     <h3>Objekt zu räumen?</h3>
                     <p>

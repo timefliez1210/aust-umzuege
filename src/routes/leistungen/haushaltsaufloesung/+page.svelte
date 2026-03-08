@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -52,6 +52,7 @@
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />
 
+<StructuredData schema={businessInfo} />
 <StructuredData schema={services.haushaltsaufloesung} />
 <StructuredData schema={{
     "@type": "Review",
@@ -61,7 +62,7 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
-    "author": { "@type": "Person", "name": "Google-Nutzer" },
+    "author": { "@type": "Person", "name": "Michael Sack" },
     "reviewBody": "Die Haushaltsauflösung hat prima geklappt - von der Kontaktaufnahme über die gemeinsame Besichtigung und das Angebot bis zur Durchführung und Abrechnung. Das Team war pünktlich und sehr sorgfältig und freundlich. Kann ich gutenGewissens weiter empfehlen."
 }} />
 <StructuredData schema={{
@@ -229,7 +230,7 @@
             <div class="cta-column">
                 <ServiceReviews reviews={[
                     {
-                        author: "Google-Nutzer",
+                        author: "Michael Sack",
                         text: "Die Haushaltsauflösung hat prima geklappt - von der Kontaktaufnahme über die gemeinsame Besichtigung und das Angebot bis zur Durchführung und Abrechnung. Das Team war pünktlich und sehr sorgfältig und freundlich. Kann ich guten Gewissens weiter empfehlen.\n\n(3-Zimmer-Wohnung und Keller mit z.T. noch gut gefüllten Schränken)",
                         url: "https://share.google/U5XOIm6w0B25gJllz"
                     },

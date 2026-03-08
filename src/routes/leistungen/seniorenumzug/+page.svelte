@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -52,6 +53,28 @@
 />
 
 <StructuredData schema={services.seniorenumzug} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Sabine Winkler" },
+    "reviewBody": "Vielen herzlichen Dank! Auch an Ihr Team! Der Umzug von meinem Vater vom Haus in betreutes Wohnen hat hervorragend geklappt. Pünktlich, schnell und alle waren sehr vorsichtig mit dem Inventar. Kann ich nur weiterempfehlen!"
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Nicole Stein" },
+    "reviewBody": "Herr Aust und sein Team haben den Umzug meiner Mutter in eine betreute Wohnung wunderbar gemacht. Sehr hilfsbereit, zuverlässig und schnell. Die Kommunikation mit Herrn Aust war auch hervorragend. Kann ich uneingeschränkt weiterempfehlen!"
+}} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
@@ -206,6 +229,18 @@
             </div>
 
             <div class="cta-column">
+                <ServiceReviews reviews={[
+                    {
+                        author: "Sabine Winkler",
+                        text: "Vielen herzlichen Dank! Auch an Ihr Team! Der Umzug von meinem Vater vom Haus in betreutes Wohnen hat hervorragend geklappt. Pünktlich, schnell und alle waren sehr vorsichtig mit dem Inventar. War für das Team nicht immer so einfach.\n\nKann ich nur weiterempfehlen und macht weiter so!",
+                        url: "https://share.google/y7txElbbYR4q8vsAz"
+                    },
+                    {
+                        author: "Nicole Stein",
+                        text: "Klare Weiterempfehlung!\n\nHerr Aust und sein Team haben den Umzug meiner Mutter in eine betreute Wohnung wunderbar gemacht. Sehr hilfsbereit, zuverlässig und schnell. Die Kommunikation mit Herrn Aust war auch hervorragend. Kann ich uneingeschränkt weiterempfehlen!",
+                        url: "https://share.google/injfTF4lD8nwDae7s"
+                    }
+                ]} />
                 <div class="cta-box">
                     <h3>Wir beraten Sie gerne</h3>
                     <p>

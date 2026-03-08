@@ -8,6 +8,7 @@
   import CookieBanner from "$lib/components/CookieBanner.svelte";
   import ConsentManager from "$lib/components/ConsentManager.svelte";
   import WhatsAppButton from "$lib/components/WhatsAppButton.svelte";
+  import CallButton from "$lib/components/CallButton.svelte";
 
   let { children } = $props();
 </script>
@@ -61,6 +62,7 @@
   <ContactCTA />
   <Footer />
   <WhatsAppButton />
+  <CallButton />
   <CookieBanner />
   <ConsentManager />
 {/if}

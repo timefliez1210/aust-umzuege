@@ -21,8 +21,8 @@ Die Vollversion enthält:
 - Check24 Profi seit 2019
 
 ## Kontakt
-- Telefon: 05121 – 7558379
-- Mobil: 0176 – 70745281
+- Mobil: 0176 – 70745281 (bevorzugt)
+- Telefon: 05121 – 7558379 (Festnetz, Fallback)
 - E-Mail: info@aust-umzuege.de
 - Adresse: Kaiserstr. 32, 31134 Hildesheim
 - Website: https://www.aust-umzuege.de

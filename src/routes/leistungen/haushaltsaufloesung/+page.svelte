@@ -76,6 +76,17 @@
     "author": { "@type": "Person", "name": "Marion Schröder" },
     "reviewBody": "Sehr professionell und ordentlich gearbeitet. Umzug 240km Strecke, pünktlich, sehr vertrauenserweckend. Die Entrümpelung perfekt und sauber gemacht. Kann ich nur empfehlen!"
 }} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Heinz Kruse" },
+    "reviewBody": "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte. Herr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Die Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache."
+}} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
@@ -240,6 +251,11 @@
                         author: "Marion Schröder",
                         text: "Sehr professionell und ordentlich gearbeitet. Umzug 240km Strecke, pünktlich, sehr vertrauenserweckend. Die Entrümpelung perfekt und sauber gemacht. Kann ich nur empfehlen!",
                         url: "https://share.google/oPaNJQHodxh7c4CBv"
+                    },
+                    {
+                        author: "Heinz Kruse",
+                        text: "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte, z.B. allein an Büchern ca. 1,2 Tonnen Gewicht.\n\nHerr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Das 6-köpfige Team hatte wirklich Schwerstarbeit zu verrichten, viele Dinge mussten von den Wänden demontiert werden und selbst Nägel und Dübel wurden aus den Wänden entfernt.\n\nDie Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache. Wir können allen anderen die Dienste sehr empfehlen.",
+                        url: "https://share.google/1REFp0ZOMjpkFY7YO"
                     }
                 ]} />
                 <div class="cta-box">

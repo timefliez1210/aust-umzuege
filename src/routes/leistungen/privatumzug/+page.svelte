@@ -66,6 +66,17 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Jan-Luca Jendrossek" },
+    "reviewBody": "Super Umzugsservice! Das Team von Aust Umzüge war pünktlich, freundlich und sehr sorgfältig mit unseren Möbeln. Der gesamte Umzug lief reibungslos und deutlich stressfreier als erwartet. Vielen Dank für den tollen Service, klare Weiterempfehlung!"
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
     "author": { "@type": "Person", "name": "Fee Leandra" },
     "reviewBody": "Ich bin von dem Service von Aust Umzüge begeistert. Den Umzug meiner Mutter von Niedersachsen nach Nordrhein-Westfalen haben wir in die Hände von Herrn Aust gegeben. Das war die beste Entscheidung, die wir treffen konnten. Das freundliche Team strahlte eine Ruhe aus, die uns den Stress zum größten Teil genommen hat. Bei diesem Umzugsunternehmen fühlt man sich verstanden und gut aufgehoben."
 }} />
@@ -250,6 +261,11 @@
 
             <div class="cta-column">
                 <ServiceReviews reviews={[
+                    {
+                        author: "Jan-Luca Jendrossek",
+                        text: "Super Umzugsservice! Das Team von Aust Umzüge war pünktlich, freundlich und sehr sorgfältig mit unseren Möbeln. Der gesamte Umzug lief reibungslos und deutlich stressfreier als erwartet. Vielen Dank für den tollen Service, klare Weiterempfehlung!",
+                        url: "https://share.google/dnrprN9jk4ujJdKCD"
+                    },
                     {
                         author: "Fee Leandra",
                         text: "Ich bin von dem Service von Aust Umzüge begeistert.\n\nDen Umzug meiner Mutter von Niedersachsen nach Nordrhein-Westfalen haben wir in die Hände von Herrn Aust gegeben. Das war die beste Entscheidung, die wir treffen konnten.\n\nDer erste Besichtigungstermin konnte kurzfristig für den Samstag vereinbart werden. Der Kostenvoranschlag kam recht zügig.\n\nDer Umzugstag begann pünktlich. Nach ungefähr 3 Stunden war alles gesichert in beiden Lkw verstaut und die lange Reise ging los.\n\nDas freundliche Team strahlte eine Ruhe aus, die uns den Stress zum größten Teil genommen hat. Und das vom kompletten fünfköpfigen Team, an einem sehr stressigen Tag für uns.\n\nBei diesem Umzugsunternehmen fühlt man sich verstanden und gut aufgehoben. Vielen Dank nochmal.",

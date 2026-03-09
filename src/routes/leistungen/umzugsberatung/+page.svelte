@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -53,6 +54,17 @@
 
 <StructuredData schema={businessInfo} />
 <StructuredData schema={services.umzugsberatung} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Artur" },
+    "reviewBody": "Ich war mit der Ausführung des Auftrags sehr zufrieden. Herr Aust stellte im Vorfeld Fragen und holte sich wichtige Informationen ein. D.h. es wurde nicht einfach mal losgearbeitet und dann geschaut, wie es gemacht werden könnte. Sehr professionell also! Auch die Erreichbarkeit und Reaktionszeit waren sehr angenehm. Ich bedanke mich bei Herrn Aust und seinen Kolleg*innen für die große Hilfe!"
+}} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
@@ -210,6 +222,13 @@
             </div>
 
             <div class="cta-column">
+                <ServiceReviews reviews={[
+                    {
+                        author: "Artur",
+                        text: "Ich war mit mit der Ausführung des Auftrags sehr zufrieden. Herr Aust stellte im Vorfeld Fragen und holte sich wichtige Informationen ein. D.h. es wurde nicht einfach mal losgearbeitet und dann geschaut, wie es gemacht werden könnte. Sehr professionell also! Auch die Erreichbarkeit und Reatkionszeit waren sehr angenehm. Ich bedanke mich bei Herrn Aust und seinen Kolleg*innen für die große Hilfe!",
+                        url: "https://share.google/9ON7gDwyypUNfAjej"
+                    }
+                ]} />
                 <div class="cta-box">
                     <h3>Termin vereinbaren?</h3>
                     <p>

@@ -62,6 +62,17 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Il Me" },
+    "reviewBody": "Unser Umzug hat Wunderbar geklappt. Ein Anruf und eigl war der Rest kpl selbstverständlich erledigt worden. Alles war Ordentlich Sauber und Schnell. Der Aufbau hat auch wunderbar geklappt. Würde ich nur empfehlen."
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
     "author": { "@type": "Person", "name": "Melitta Roepke" },
     "reviewBody": "Das Umzugsunternehmen Aust ist großartig. Der Chef Alex Aust kommt persönlich vorbei und schaut sich alles an. Am Umzugstag war der Chef Herr Alex Aust auch mit an Bord und 3 weitere Mitarbeiter. Wir waren sehr begeistert von der Pünktlichkeit. Es wurde sehr professionell und ordentlich gearbeitet. Haben mir alles dort hingestellt und gleichzeitig aufgebaut, wo ich es auch hin haben wollte. Mit Abstand TOP. Immer wieder gern."
 }} />
@@ -236,6 +247,11 @@
 
             <div class="cta-column">
                 <ServiceReviews reviews={[
+                    {
+                        author: "Il \"Il90\" Me",
+                        text: "Unser Umzug hat Wunderbar geklappt 👍\n\nEin Anruf und eigl war der Rest kpl selbstverständlich erledigt worden ...\n\nAlles war Ordentlich Sauber und Schnell 😀 der Aufbau hat auch wunderbar geklappt.\n\nWürde ich nur empfehlen 👍",
+                        url: "https://share.google/tczqXhui2gU4qOKt5"
+                    },
                     {
                         author: "Melitta Roepke",
                         text: "Das Umzugsunternehmen Aust ist großartig. Es wird erst ein Termin zur Besichtigung gemacht, der Chef Alex Aust kommt persönlich vorbei und schaut sich alles an und danach wird alles berechnet. War ein sehr nettes Gespräch.\n\nAm Umzugstag selber, war der Chef Herr Alex Aust auch mit am Bord und 3 weitere Mitarbeiter. Wir waren sehr begeistert von der Pünktlichkeit dieses Unternehmens. Es wurde sehr professionell und ordentlich gearbeitet. Haben mir alles dort hingestellt und gleichzeitig aufgebaut, wo ich es auch hin haben wollte. Einfach TOP diese Jungs macht weiter so 👍\n\nIch bin sehr Zufrieden, das ich mir das Umzugsunternehmen Aust ausgesucht habe. Immer wieder gern. Vielen Dank Jungs 😀",

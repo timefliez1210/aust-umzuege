@@ -68,8 +68,8 @@
     "license": "https://www.aust-umzuege.de/impressum",
     "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
     "creditText": "Aust Umzüge Hildesheim",
-    "creator": { "@type": "Organization", "name": "Aust Umzüge & Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
-    "copyrightNotice": "© 2026 Aust Umzüge & Haushaltsauflösungen. Alle Rechte vorbehalten.",
+    "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
+    "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
     "width": 1288,
     "height": 831
 }} />

@@ -58,7 +58,7 @@
     "@type": "Review",
     "itemReviewed": {
         "@type": "LocalBusiness",
-        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "name": "Aust Umzüge und Haushaltsauflösungen",
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
@@ -69,7 +69,7 @@
     "@type": "Review",
     "itemReviewed": {
         "@type": "LocalBusiness",
-        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "name": "Aust Umzüge und Haushaltsauflösungen",
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
@@ -80,7 +80,7 @@
     "@type": "Review",
     "itemReviewed": {
         "@type": "LocalBusiness",
-        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "name": "Aust Umzüge und Haushaltsauflösungen",
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
@@ -102,8 +102,8 @@
     "license": "https://www.aust-umzuege.de/impressum",
     "acquireLicensePage": "https://www.aust-umzuege.de/kontakt",
     "creditText": "Aust Umzüge Hildesheim",
-    "creator": { "@type": "Organization", "name": "Aust Umzüge & Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
-    "copyrightNotice": "© 2026 Aust Umzüge & Haushaltsauflösungen. Alle Rechte vorbehalten.",
+    "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
+    "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
     "width": 1500,
     "height": 845
 }} />

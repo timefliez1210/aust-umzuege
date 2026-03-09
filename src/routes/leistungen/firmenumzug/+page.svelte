@@ -62,6 +62,17 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Günther Otto" },
+    "reviewBody": "Wir hatten einen Firmenumzug mit Maschinen und sperrigen, schweren Mobiliar etc. Einfach super gut gelaufen. Nicht eine Beschädigung an den Transportgütern noch an Gebäuden, Türen etc. Selbst kleine Schrauben, Plastikteile usw. die beim Transport aus den Möbeln kullerten wurden gesammelt und mir übergeben. Der Preis: unschlagbar. Alle Mitarbeiter ohne Ausnahme waren konzentriert und mit Umsicht bei der Sache. Herr Aust war stets präsent, offen für Kundenhinweise, ruhig und sachlich. Mit Abstand das beste Umzugsunternehmen, das ich je bisher beauftragt habe."
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
     "author": { "@type": "Person", "name": "Stephan Sausel" },
     "reviewBody": "Fachkundiges Unternehmen. Nicht nur für Umzüge von Haus zu Haus. Hat das Verpacken und die Sicherung verschiedener Werkzeuge, Möbel, Geräte und Machinen für das Verschiffen in einem Container nach Afrika erfolgreich übernommen. Kann für solche Aufgaben empfohlen werden."
 }} />
@@ -235,6 +246,11 @@
 
             <div class="cta-column">
                 <ServiceReviews reviews={[
+                    {
+                        author: "Günther Otto",
+                        text: "Wir hatten einen Firmenumzug mit Maschinen und sperrigen, schweren Mobiliar etc. Einfach super gut gelaufen. Wichtig: Nicht eine Beschädigung an den Transportgütern noch an Gebäuden, Türen etc.\n\nSelbst kleine Schrauben, Plastikteile usw. die beim Transport aus den Möbeln kullerten wurden gesammelt und mir übergeben. Der Preis: unschlagbar. Selbst wenn dieser höher gewesen wäre, wäre jeder Euro die Arbeit wert: Alle Mitarbeiter ohne Ausnahme waren konzentriert und mit Umsicht bei der Sache. Perfektes Teamwork: 2 Männer mit Tragegurt tragen schweren Drucker durch einen engen Gang, werden dabei von hinten eng umschlungen von zwei weiteren im Rückgrat gestützt im Gänsemarsch unterstützt. Sah zwar lustig aus, zeugt aber von Professionalität, Vertrauen untereinander und Teamwork. Herr Aust war stets präsent, offen für Kundenhinweise, ruhig und sachlich mit Anweisungen, fair zu seinen Mitarbeitern und packte selbst persönlich an.\n\nMit Abstand das beste Umzugsunternehmen, das ich je bisher beauftragt habe. Kann ich wärmstens weiterempfehlen.",
+                        url: "https://share.google/e6uoSp91dO84iF2Iy"
+                    },
                     {
                         author: "Stephan Sausel",
                         text: "Fachkundiges Unternehmen. Nicht nur für Umzüge von Haus zu Haus. Hat das Verpacken und die Sicherung verschiedener Werkzeuge, Möbel, Geräte und Machinen für das Verschiffen in einem Container nach Afrika erfolgreich übernommen. Kann für solche Aufgaben empfohlen werden.",

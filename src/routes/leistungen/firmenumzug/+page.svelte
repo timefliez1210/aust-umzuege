@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -53,6 +54,28 @@
 
 <StructuredData schema={businessInfo} />
 <StructuredData schema={services.firmenumzug} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Stephan Sausel" },
+    "reviewBody": "Fachkundiges Unternehmen. Nicht nur für Umzüge von Haus zu Haus. Hat das Verpacken und die Sicherung verschiedener Werkzeuge, Möbel, Geräte und Machinen für das Verschiffen in einem Container nach Afrika erfolgreich übernommen. Kann für solche Aufgaben empfohlen werden."
+}} />
+<StructuredData schema={{
+    "@type": "Review",
+    "itemReviewed": {
+        "@type": "LocalBusiness",
+        "name": "Aust Umzüge & Haushaltsauflösungen",
+        "url": "https://www.aust-umzuege.de"
+    },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "author": { "@type": "Person", "name": "Werner Ströer" },
+    "reviewBody": "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Mein Fazit: Super Arbeit, immer wieder. Hier gebe ich eine volle Empfehlung."
+}} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
@@ -211,6 +234,18 @@
             </div>
 
             <div class="cta-column">
+                <ServiceReviews reviews={[
+                    {
+                        author: "Stephan Sausel",
+                        text: "Fachkundiges Unternehmen. Nicht nur für Umzüge von Haus zu Haus. Hat das Verpacken und die Sicherung verschiedener Werkzeuge, Möbel, Geräte und Machinen für das Verschiffen in einem Container nach Afrika erfolgreich übernommen. Kann für solche Aufgaben empfohlen werden.",
+                        url: "https://share.google/NgfgSR4Qtab61P0oA"
+                    },
+                    {
+                        author: "Werner Ströer, Hildesheim",
+                        text: "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel (teilweise kompliziert) wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Selbst nach einem sehr anstrengenden Arbeitstag haben die Mitarbeiter mir noch die Freude gemacht und große, schwere Bilder aufgehangen.\n\nMein Fazit: Super Arbeit, immer wieder. Ich bin normalerweise zurückhaltend und vorsichtig. Hier aber gebe ich eine volle Empfehlung.",
+                        url: "https://share.google/hiPith7uQXcwi9c2F"
+                    }
+                ]} />
                 <div class="cta-box">
                     <h3>Projekt anfragen?</h3>
                     <p>

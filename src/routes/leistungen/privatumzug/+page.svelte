@@ -77,8 +77,8 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
-    "author": { "@type": "Person", "name": "Werner Ströer" },
-    "reviewBody": "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Mein Fazit: Super Arbeit, immer wieder. Hier gebe ich eine volle Empfehlung."
+    "author": { "@type": "Person", "name": "Isa Sit" },
+    "reviewBody": "Ich bin vollends begeistert von dem Service von Aust Umzüge. Ich habe diesmal meinen Umzug in andere (professionelle) Hände gegeben und werde mich beim nächsten wieder an Aust wenden. Die Absprachen waren unkompliziert und einfach, die Beratung kompetent und ich konnte mich völlig auf das Unternehmen verlassen. Die Mitarbeiter vor Ort waren freundlich, zugewandt und strahlten eine vollkommene Ruhe aus, die man an einem solch hektischen Tag braucht."
 }} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
@@ -256,9 +256,9 @@
                         url: "https://share.google/wcrSeYVmuCQSYIUN8"
                     },
                     {
-                        author: "Werner Ströer, Hildesheim",
-                        text: "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel (teilweise kompliziert) wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Selbst nach einem sehr anstrengenden Arbeitstag haben die Mitarbeiter mir noch die Freude gemacht und große, schwere Bilder aufgehangen.\n\nMein Fazit: Super Arbeit, immer wieder. Ich bin normalerweise zurückhaltend und vorsichtig. Hier aber gebe ich eine volle Empfehlung.",
-                        url: "https://share.google/hiPith7uQXcwi9c2F"
+                        author: "Isa Sit",
+                        text: "Ich bin vollends begeistert von dem Service von Aust Umzüge.\n\nIch habe diesmal meinen Umzug in andere (professionelle) Hände gegeben und werde mich beim nächsten wieder an Aust wenden.\n\nDie Absprachen waren unkompliziert und einfach, die Beratung kompetent und ich konnte mich völlig auf das Unternehmen verlassen - auch kurzfristige Anfragen wurden noch schnell eingebunden. Die Mitarbeiter vor Ort waren freundlich, zugewandt und strahlten eine vollkommene Ruhe aus, die man an einem solch hektischen Tag braucht. Vielen Dank dafür!",
+                        url: "https://share.google/M03sVYvwkXTlrSvUK"
                     }
                 ]} />
                 <div class="cta-box">

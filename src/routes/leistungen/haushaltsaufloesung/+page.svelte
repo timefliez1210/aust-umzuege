@@ -20,11 +20,11 @@
         },
         {
             question: "Wie läuft eine Haushaltsauflösung nach einem Todesfall ab?",
-            answer: "Wir gehen besonders sensibel vor: Zunächst sichern wir gemeinsam persönliche Erinnerungsstücke und Wertgegenstände. Dann räumen wir die Wohnung zügig und diskret, entsorgen fachgerecht und übergeben besenrein. Wir können den gesamten Ablauf auch mit Ihrem Nachlassverwalter oder Vermieter koordinieren, wenn Sie nicht vor Ort sein können."
+            answer: "Wir gehen besonders sensibel vor: Zunächst sichern wir gemeinsam persönliche Erinnerungsstücke, Dokumente und Wertgegenstände. Dann räumen wir die Wohnung zügig und diskret, entsorgen fachgerecht und übergeben besenrein. Wir können den gesamten Ablauf auch direkt mit Ihrem Nachlassverwalter oder Vermieter koordinieren, wenn Sie nicht vor Ort sein können."
         },
         {
             question: "Wie lange dauert eine Haushaltsauflösung?",
-            answer: "Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1-2 Tagen komplett. Bei größeren Objekten, Häusern oder stark vermüllten Wohnungen kann es länger dauern. Wir nennen Ihnen den genauen Zeitrahmen nach der Besichtigung, damit Sie die Wohnungsübergabe zuverlässig planen können."
+            answer: "Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1–2 Tagen komplett. Bei größeren Objekten oder ganzen Häusern planen wir entsprechend mehr Zeit ein. Wir nennen Ihnen den genauen Zeitrahmen nach der Besichtigung, damit Sie die Wohnungsübergabe zuverlässig planen können."
         },
         {
             question: "Was passiert mit noch brauchbaren Gegenständen?",
@@ -39,16 +39,20 @@
             answer: "Wir übernehmen die komplette Entsorgung nach gesetzlichen Vorschriften: Sperrmüll, Elektrogeräte, Sondermüll und Bauschutt entsorgen wir über zertifizierte Entsorgungsstellen in Hildesheim. Auf Wunsch erhalten Sie Entsorgungsnachweise für Ihre Unterlagen."
         },
         {
-            question: "Können Sie auch Messie-Wohnungen entrümpeln?",
-            answer: "Ja, wir haben umfangreiche Erfahrung mit Messie-Wohnungen und gehen dabei absolut diskret und professionell vor. Unser Team arbeitet zuverlässig, wertungsfrei und kennt die besonderen Anforderungen – von der Schädlingsbekämpfung bis zur Grundreinigung. Sprechen Sie uns vertraulich an."
+            question: "Können Sie auch im Namen von Erben oder Nachlassverwaltern tätig werden?",
+            answer: "Ja, sehr gerne. Wir koordinieren regelmäßig direkt mit Nachlassverwaltern, Notaren und Vermietern – auch wenn die Angehörigen nicht vor Ort sein können. Wir halten Sie oder Ihren Bevollmächtigten über jeden Schritt informiert und arbeiten so diskret und zuverlässig, dass Sie sich keine Sorgen machen müssen."
+        },
+        {
+            question: "Was passiert mit persönlichen Dokumenten und Papieren?",
+            answer: "Persönliche Dokumente – Ausweise, Verträge, Fotos, Briefe – werden immer gesondert gesammelt und Ihnen übergeben, niemals entsorgt. Wir sichern diese Unterlagen bereits vor Beginn der eigentlichen Räumung. Falls Sie nicht vor Ort sein können, werden die Dokumente sicher verpackt und Ihnen auf dem Postweg oder persönlich übergeben."
         }
     ];
 </script>
 
 <MetaTags
-    title="Haushaltsauflösung & Entrümpelung Hildesheim | Aust Umzüge"
-    description="Diskrete Haushaltsauflösungen und Entrümpelungen in Hildesheim. Besenreine Räumung, fachgerechte Entsorgung und Festpreisgarantie. Jetzt Termin vereinbaren."
-    keywords="Haushaltsauflösung Hildesheim, Entrümpelung, Wohnungsräumung, besenreine Übergabe"
+    title="Haushaltsauflösung Hildesheim – Diskret & Festpreis | Aust Umzüge"
+    description="Haushaltsauflösung in Hildesheim – einfühlsam und diskret. Wertgegenstände werden angerechnet, besenreine Übergabe garantiert. Jetzt Termin vereinbaren."
+    keywords="Haushaltsauflösung Hildesheim, Wohnungsauflösung, Nachlassräumung, besenreine Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />
 
@@ -73,8 +77,8 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
-    "author": { "@type": "Person", "name": "Marion Schröder" },
-    "reviewBody": "Sehr professionell und ordentlich gearbeitet. Umzug 240km Strecke, pünktlich, sehr vertrauenserweckend. Die Entrümpelung perfekt und sauber gemacht. Kann ich nur empfehlen!"
+    "author": { "@type": "Person", "name": "Heinz Kruse" },
+    "reviewBody": "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte. Herr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Die Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache."
 }} />
 <StructuredData schema={{
     "@type": "Review",
@@ -84,16 +88,16 @@
         "url": "https://www.aust-umzuege.de"
     },
     "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
-    "author": { "@type": "Person", "name": "Heinz Kruse" },
-    "reviewBody": "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte. Herr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Die Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache."
+    "author": { "@type": "Person", "name": "Mathias M." },
+    "reviewBody": "Junger Unternehmer, der seine Arbeit sehr gewissenhaft, schnell und zuverlässig erledigt. Fairer Preis, zeitnahe Absprache und schnelle Erledigung. Bei mir wurde eine Wohnung aufgelöst, was Herr Aust und sein Team sehr schnell erledigt haben. Danke dafür. Sehr zu empfehlen und weiterhin viel Erfolg."
 }} />
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
     "contentUrl": "https://www.aust-umzuege.de/haushaltsaufloesung-hildesheim-entrumpeln-container.webp",
     "url": "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
-    "name": "Haushaltsauflösung Hildesheim – Aust Umzüge Team beim Entrümpeln",
-    "description": "Drei Mitarbeiter von Aust Umzüge beladen einen Container bei einer Haushaltsauflösung in Hildesheim. Professionelles Entrümpeln und Entsorgen aus einer Hand.",
+    "name": "Haushaltsauflösung Hildesheim – Aust Umzüge Team bei der Arbeit",
+    "description": "Drei Mitarbeiter von Aust Umzüge beladen einen Container bei einer Haushaltsauflösung in Hildesheim. Professionelle Wohnungsauflösung und Nachlassräumung aus einer Hand.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -119,9 +123,9 @@
             <div class="icon-wrapper">
                 <Trash2 size={48} strokeWidth={1.5} />
             </div>
-            <h1 class="service-title">Haushaltsauflösung & Entrümpelung Hildesheim</h1>
+            <h1 class="service-title">Haushaltsauflösung Hildesheim</h1>
             <p class="service-subtitle">
-                Schnell, diskret und besenrein – wir schaffen Platz.
+                Einfühlsam, diskret und zum Festpreis – wir kümmern uns um alles.
             </p>
         </header>
 
@@ -133,7 +137,7 @@
                         /haushaltsaufloesung-hildesheim-entrumpeln-container-800w.webp 800w,
                         /haushaltsaufloesung-hildesheim-entrumpeln-container.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Team entrümpelt Haushalt in Hildesheim – drei Mitarbeiter beim Beladen eines Containers"
+                alt="Aust Umzüge Team bei einer Haushaltsauflösung in Hildesheim – drei Mitarbeiter beim Beladen eines Containers"
                 width="1500"
                 height="845"
                 fetchpriority="high"
@@ -142,26 +146,27 @@
 
         <div class="service-content">
             <div class="text-column">
-                <h2 class="section-title">Kompletträumung vom Fachmann</h2>
+                <h2 class="section-title">Wenn ein Haushalt aufgelöst werden muss</h2>
                 <p>
-                    Ob Wohnungsauflösung nach einem Todesfall, Räumung einer
-                    Messie-Wohnung oder die Entrümpelung von Keller und
-                    Dachboden: Wir erledigen diese schweren Aufgaben seriös und
-                    zuverlässig für Sie.
+                    Eine Haushaltsauflösung ist fast immer mit einer besonderen Lebenssituation verbunden: ein Todesfall in der Familie, der Umzug eines Angehörigen ins Pflegeheim, eine Erbschaft oder die Übergabe einer geerbten Wohnung. Wir wissen, dass diese Momente emotional belastend sind – und gehen entsprechend behutsam vor.
                 </p>
                 <p>
-                    Wir sortieren Verwertbares von Müll, kümmern uns um die
-                    fachgerechte Entsorgung nach gesetzlichen Vorschriften und
-                    übergeben Ihnen das Objekt garantiert besenrein. Auf Wunsch
-                    rechnen wir gut erhaltene Gegenstände auf den Preis an.
+                    Wir sichern zuerst persönliche Erinnerungsstücke, Dokumente und Wertsachen, sortieren verkaufsfähige Möbel transparent aus und rechnen deren Wert gegen unsere Kosten an. Am Ende übergeben wir das Objekt garantiert besenrein – termingerecht und zum vereinbarten Festpreis.
                 </p>
 
                 <h3 class="highlight-title">Unser Service:</h3>
                 <ul class="feature-list">
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Kostenlose Besichtigung und Festpreisangebot</span
-                        >
+                        <span>Kostenlose Besichtigung und verbindliches Festpreisangebot</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Sicherung persönlicher Erinnerungsstücke und Dokumente</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Wertanrechnung für gut erhaltene Möbel und Antiquitäten</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
@@ -169,47 +174,35 @@
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span
-                            >Fachgerechte Entsorgung und Recycling mit Nachweis</span
-                        >
+                        <span>Fachgerechte Entsorgung mit Nachweis</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span
-                            >Wertanrechnung für verkaufsfähige
-                            Möbel/Antiquitäten</span
-                        >
-                    </li>
-                    <li>
-                        <CheckCircle size={20} class="check-icon" />
-                        <span
-                            >Entfernung von Tapeten, Teppichen und Einbauten
-                            (auf Wunsch)</span
-                        >
+                        <span>Koordination mit Nachlassverwalter und Vermieter möglich</span>
                     </li>
                 </ul>
 
-                <h2 class="section-title" style="margin-top: var(--space-16);">So läuft eine Haushaltsauflösung professionell ab</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">So läuft eine Haushaltsauflösung ab</h2>
                 <p>
-                    Eine Haushaltsauflösung ist oft eine Ausnahmesituation – ob nach einem Todesfall, bei einem Umzug ins Pflegeheim oder nach einer Trennung. In solchen Momenten hilft ein klarer, verlässlicher Ablauf.
+                    Jede Haushaltsauflösung ist anders. Was bei uns immer gleich bleibt: ein klarer, verlässlicher Ablauf – damit Sie sich auf das Wesentliche konzentrieren können.
                 </p>
                 <p>
-                    <strong>1. Kostenlose Besichtigung vor Ort:</strong> Wir kommen zu Ihnen, schauen uns die Wohnung oder das Haus an und verschaffen uns einen Überblick. Wie viele Räume? Welche Möbel? Gibt es Wertsachen, die verkauft werden können? Gibt es Sondermüll? Auf Basis dieser Besichtigung erstellen wir Ihnen ein verbindliches Festpreisangebot.
+                    <strong>1. Kostenlose Besichtigung vor Ort:</strong> Wir kommen zu Ihnen, sehen uns die Wohnung oder das Haus an und schaffen uns einen realistischen Überblick. Wie viele Räume? Welche Möbel? Gibt es Wertsachen oder Antiquitäten? Auf Basis dieser Besichtigung erstellen wir Ihnen ein verbindliches Festpreisangebot – ohne versteckte Kosten.
                 </p>
                 <p>
                     <strong>2. Sicherung persönlicher Gegenstände:</strong> Bevor wir mit der Räumung beginnen, sortieren wir gemeinsam alle Erinnerungsstücke, Dokumente, Schmuck und Wertgegenstände aus. Diese werden gesondert verpackt und Ihnen übergeben – oder auf Wunsch sicher gelagert.
                 </p>
                 <p>
-                    <strong>3. Verkauf und Wertanrechnung:</strong> Gut erhaltene Möbel, Antiquitäten oder Sammlungen verkaufen wir an Händler oder spenden sie an soziale Einrichtungen. Den Erlös rechnen wir transparent gegen unsere Kosten auf. So zahlen Sie am Ende oft deutlich weniger.
+                    <strong>3. Wertanrechnung:</strong> Gut erhaltene Möbel, Antiquitäten oder Sammlungen verkaufen wir an Händler oder spenden sie an soziale Einrichtungen in Hildesheim. Den Erlös rechnen wir transparent gegen unsere Kosten auf. So zahlen Sie am Ende oft deutlich weniger.
                 </p>
                 <p>
-                    <strong>4. Fachgerechte Entsorgung:</strong> Alles, was nicht mehr verwertbar ist, entsorgen wir nach gesetzlichen Vorschriften: Sperrmüll, Elektroschrott, Farben, Chemikalien. Wir arbeiten mit zertifizierten Entsorgungsbetrieben zusammen und können Ihnen auf Wunsch Nachweise für Ihre Unterlagen ausstellen.
+                    <strong>4. Fachgerechte Entsorgung:</strong> Alles, was nicht mehr verwertbar ist, entsorgen wir nach gesetzlichen Vorschriften: Sperrmüll, Elektroschrott, Farben, Chemikalien – über zertifizierte Entsorgungsbetriebe. Auf Wunsch erhalten Sie Nachweise für Ihre Unterlagen.
                 </p>
                 <p>
                     <strong>5. Besenreine Übergabe:</strong> Am Ende ist die Wohnung leer, gefegt und bereit für die Schlüsselübergabe. Auf Wunsch entfernen wir auch Tapeten, Teppichböden oder Einbauten – sodass die Wohnung renovierungsbereit ist.
                 </p>
                 <p>
-                    <strong>6. Schnelle Abwicklung:</strong> Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1-2 Tagen komplett. Bei größeren Objekten oder komplexeren Situationen planen wir entsprechend mehr Zeit ein. Sie erhalten von uns einen verbindlichen Termin, auf den Sie sich verlassen können.
+                    <strong>6. Schnelle Abwicklung:</strong> Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1–2 Tagen komplett. Bei größeren Objekten planen wir entsprechend mehr Zeit ein. Sie erhalten einen verbindlichen Termin, auf den Sie sich verlassen können.
                 </p>
 
                 <h2 class="section-title">Haushaltsauflösung in Hildesheim und Umgebung</h2>
@@ -220,23 +213,12 @@
                     Auch im Umland sind wir tätig: Sarstedt, Alfeld, Bad Salzdetfurth, Elze – überall dort, wo Menschen unsere Unterstützung brauchen. Die Nähe zu unseren Kunden ist uns wichtig, denn oft entstehen während der Räumung noch Fragen oder es müssen Entscheidungen getroffen werden. Dann sind wir schnell vor Ort.
                 </p>
                 <p>
-                    Besonders bei Haushaltsauflösungen nach einem Todesfall arbeiten wir diskret und respektvoll. Wir wissen, wie emotional belastend diese Situation ist – und geben Ihnen die Zeit, die Sie brauchen. Unser Team ist geschult im sensiblen Umgang mit Trauernden und geht behutsam mit den Hinterlassenschaften um.
-                </p>
-
-                <h3 class="highlight-title">Herausforderungen bei Haushaltsauflösungen</h3>
-                <p>
-                    Jede Haushaltsauflösung ist anders. Manche Wohnungen sind gut sortiert, andere völlig überfüllt. Wir haben Erfahrung mit allen Situationen – auch mit sogenannten Messie-Wohnungen, die besondere Anforderungen stellen.
-                </p>
-                <p>
-                    Bei stark vermüllten Wohnungen arbeiten wir mit Schutzkleidung, sorgen für fachgerechte Desinfektion und entsorgen alles hygienisch einwandfrei. Schädlingsbefall? Auch kein Problem – wir koordinieren bei Bedarf mit Kammerjägern und Reinigungsfirmen.
-                </p>
-                <p>
-                    Eine weitere Herausforderung: die kurzen Fristen. Oft muss eine Wohnung innerhalb weniger Tage geräumt werden, weil der Mietvertrag ausläuft. Wir richten uns nach Ihrem Zeitplan und organisieren auch kurzfristige Räumungen.
+                    Besonders bei Haushaltsauflösungen nach einem Todesfall arbeiten wir diskret und respektvoll. Wir wissen, wie emotional belastend diese Situation ist – und geben Ihnen die Zeit, die Sie brauchen. Unser Team geht behutsam mit den Hinterlassenschaften um und behandelt jeden Gegenstand mit der Sorgfalt, die er verdient.
                 </p>
 
                 <h3 class="highlight-title">Verwandte Leistungen</h3>
                 <p>
-                    Oft kombinieren Kunden die Haushaltsauflösung mit einem <a href="/leistungen/seniorenumzug">Seniorenumzug</a>, wenn nicht alles entsorgt, sondern ein Teil in ein neues, kleineres Zuhause gebracht werden soll. Falls Sie Möbel vorübergehend lagern möchten, bieten wir Ihnen sichere <a href="/leistungen/lagerung">Lagerräume</a>. Und wenn Sie nur Teile der Wohnung auflösen wollen, ist unser <a href="/leistungen/privatumzug">Privatumzug</a> die richtige Wahl.
+                    Oft kombinieren Kunden die Haushaltsauflösung mit einem <a href="/leistungen/seniorenumzug">Seniorenumzug</a>, wenn nicht alles entsorgt, sondern ein Teil in ein neues, kleineres Zuhause gebracht werden soll. Falls Sie einzelne Räume wie Keller, Dachboden oder Garage räumen möchten, ist unsere <a href="/leistungen/entruempelung">Entrümpelung</a> die richtige Wahl. Möbel, die vorübergehend untergebracht werden müssen, lagern wir sicher in unseren <a href="/leistungen/lagerung">Lagerräumen</a>.
                 </p>
             </div>
 
@@ -248,21 +230,20 @@
                         url: "https://share.google/U5XOIm6w0B25gJllz"
                     },
                     {
-                        author: "Marion Schröder",
-                        text: "Sehr professionell und ordentlich gearbeitet. Umzug 240km Strecke, pünktlich, sehr vertrauenserweckend. Die Entrümpelung perfekt und sauber gemacht. Kann ich nur empfehlen!",
-                        url: "https://share.google/oPaNJQHodxh7c4CBv"
+                        author: "Heinz Kruse",
+                        text: "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte, z.B. allein an Büchern ca. 1,2 Tonnen Gewicht.\n\nHerr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Das 6-köpfige Team hatte wirklich Schwerstarbeit zu verrichten, viele Dinge mussten von den Wänden demontiert werden und selbst Nägel und Dübel wurden aus den Wänden entfernt.\n\nDie Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache.",
+                        url: "https://share.google/1REFp0ZOMjpkFY7YO"
                     },
                     {
-                        author: "Heinz Kruse",
-                        text: "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte, z.B. allein an Büchern ca. 1,2 Tonnen Gewicht.\n\nHerr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Das 6-köpfige Team hatte wirklich Schwerstarbeit zu verrichten, viele Dinge mussten von den Wänden demontiert werden und selbst Nägel und Dübel wurden aus den Wänden entfernt.\n\nDie Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache. Wir können allen anderen die Dienste sehr empfehlen.",
-                        url: "https://share.google/1REFp0ZOMjpkFY7YO"
+                        author: "Mathias M.",
+                        text: "Junger Unternehmer, der seine Arbeit sehr gewissenhaft, schnell und zuverlässig erledigt. Fairer Preis, zeitnahe Absprache und schnelle Erledigung. Bei mir wurde eine Wohnung aufgelöst, was Herr Aust und sein Team sehr schnell erledigt haben. Danke dafür. Sehr zu empfehlen.",
+                        url: "https://maps.app.goo.gl/qNzfcMr4NYGdrMow5"
                     }
                 ]} />
                 <div class="cta-box">
                     <h3>Objekt zu räumen?</h3>
                     <p>
-                        Wir erstellen Ihnen ein faires Angebot für die
-                        Auflösung.
+                        Wir erstellen Ihnen ein faires Angebot für die Auflösung.
                     </p>
                     <div class="cta-button-wrapper">
                         <CTAButton

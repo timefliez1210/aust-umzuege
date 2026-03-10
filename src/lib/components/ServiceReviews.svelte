@@ -154,21 +154,34 @@
 
     .carousel__dots {
         display: flex;
-        gap: var(--space-2);
+        gap: 0;
     }
 
     .carousel__dot {
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-full);
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        position: relative;
+    }
+
+    .carousel__dot::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         width: 8px;
         height: 8px;
         border-radius: var(--radius-full);
         background-color: #e2e8f0;
-        border: none;
-        cursor: pointer;
-        padding: 0;
         transition: background-color var(--transition-fast);
     }
 
-    .carousel__dot--active {
+    .carousel__dot--active::after {
         background-color: var(--color-nav-accent);
     }
 

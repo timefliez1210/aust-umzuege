@@ -101,7 +101,7 @@ export const businessInfo = {
 		width: 150,
 		height: 150
 	},
-	image: "https://www.aust-umzuege.de/LogoName_transparent.webp",
+	image: "https://www.aust-umzuege.de/seniorenumzuege-hildesheim-carousel-6.webp",
 	description:
 		"Professionelle Umzüge, Haushaltsauflösungen und Montagen in Hildesheim und Umgebung",
 	telephone: "+4951217558379",
@@ -159,7 +159,8 @@ export const businessInfo = {
 	sameAs: [
 		"https://www.facebook.com/profile.php?id=61576264141191",
 		"https://www.instagram.com/austumzuege/",
-		"https://www.tiktok.com/@austumzuege"
+		"https://www.tiktok.com/@austumzuege",
+		"https://maps.app.goo.gl/z5e8m7QrGPa5Cssp6"
 	],
 	numberOfEmployees: {
 		"@type": "QuantitativeValue",
@@ -341,14 +342,30 @@ export const services = {
 	haushaltsaufloesung: {
 		"@type": "Service",
 		serviceType: "Haushaltsauflösung",
-		name: "Haushaltsauflösung und Entrümpelung",
+		name: "Haushaltsauflösung in Hildesheim",
 		description:
-			"Diskrete Haushaltsauflösungen und Entrümpelungen in Hildesheim. Besenreine Räumung und fachgerechte Entsorgung.",
+			"Diskrete Haushaltsauflösungen in Hildesheim – einfühlsam nach Todesfall oder Pflegeheim-Umzug. Wertanrechnung, besenreine Übergabe, Festpreisgarantie.",
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
 		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
+		offers: {
+			"@type": "Offer",
+			priceCurrency: "EUR"
+		}
+	},
+	entruempelung: {
+		"@type": "Service",
+		serviceType: "Entrümpelung",
+		name: "Entrümpelung in Hildesheim",
+		description:
+			"Professionelle Entrümpelung in Hildesheim – Keller, Dachboden, Garage und Messie-Wohnungen. Festpreis nach kostenloser Besichtigung, besenreine Übergabe.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/leistungen/entruempelung",
 		offers: {
 			"@type": "Offer",
 			priceCurrency: "EUR"
@@ -481,7 +498,7 @@ export const leistungenOverview = {
 	name: "Umzugsleistungen",
 	description: "Alle Leistungen von Aust Umzüge auf einen Blick",
 	url: "https://www.aust-umzuege.de/leistungen",
-	numberOfItems: 10,
+	numberOfItems: 11,
 	itemListElement: [
 		{
 			"@type": "ListItem",
@@ -542,13 +559,22 @@ export const leistungenOverview = {
 			position: 7,
 			item: {
 				"@type": "Service",
+				name: "Entrümpelung",
+				url: "https://www.aust-umzuege.de/leistungen/entruempelung"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 8,
+			item: {
+				"@type": "Service",
 				name: "Montage & Demontage",
 				url: "https://www.aust-umzuege.de/leistungen/montage"
 			}
 		},
 		{
 			"@type": "ListItem",
-			position: 8,
+			position: 9,
 			item: {
 				"@type": "Service",
 				name: "Umzugsberatung",
@@ -557,7 +583,7 @@ export const leistungenOverview = {
 		},
 		{
 			"@type": "ListItem",
-			position: 9,
+			position: 10,
 			item: {
 				"@type": "Service",
 				name: "Lagerung & Einlagerung",
@@ -566,7 +592,7 @@ export const leistungenOverview = {
 		},
 		{
 			"@type": "ListItem",
-			position: 10,
+			position: 11,
 			item: {
 				"@type": "Service",
 				name: "Halteverbot",

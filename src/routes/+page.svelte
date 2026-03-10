@@ -15,8 +15,8 @@
 </script>
 
 <MetaTags
-  title="Ihr Umzugsunternehmen Hildesheim – Festpreis | Aust Umzüge"
-  description="Ihr Umzugsunternehmen in Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösungen und Montagen. Festpreisgarantie und kostenlose Beratung."
+  title="Umzugsunternehmen Hildesheim, Aust Umzüge & Haushaltsauflösungen"
+  description="Umzugsfirma Hildesheim mit über 71 Fünf-Sterne-Bewertungen. Festpreisgarantie, kostenlose Besichtigung und persönliche Beratung. Jetzt anfragen."
   keywords="Umzugsunternehmen Hildesheim, Umzugsfirma Hildesheim, Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung, Möbelmontage"
   canonical="https://www.aust-umzuege.de/"
   ogType="website"

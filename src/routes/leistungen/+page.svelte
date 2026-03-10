@@ -9,6 +9,7 @@
         MessageSquare,
         Wrench,
         Trash2,
+        Archive,
         Warehouse,
         ArrowRight,
         Mail,
@@ -76,11 +77,18 @@
             link: "/leistungen/montage",
         },
         {
-            title: "Haushaltsauflösungen",
+            title: "Haushaltsauflösung",
             description:
-                "Besenreine Räumung und fachgerechte Entsorgung von Sperrmüll und Altlasten.",
+                "Diskrete und einfühlsame Wohnungsauflösung – nach Todesfall, Pflegeheim-Umzug oder Erbschaft. Festpreis, besenrein.",
             icon: Trash2,
             link: "/leistungen/haushaltsaufloesung",
+        },
+        {
+            title: "Entrümpelung",
+            description:
+                "Keller, Dachboden, Garage oder Messie-Wohnung räumen. Schnell, diskret und zum Festpreis – mit Wertanrechnung.",
+            icon: Archive,
+            link: "/leistungen/entruempelung",
         },
         {
             title: "Lagerung & Einlagerung",
@@ -99,7 +107,7 @@
 
 <MetaTags
     title="Umzugsleistungen Hildesheim – Alle Services | Aust Umzüge"
-    description="Alle Umzugsleistungen in Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug, Montage, Haushaltsauflösung und mehr. Kostenlose Beratung und Festpreisgarantie."
+    description="Alle Umzugsleistungen in Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung, Entrümpelung und mehr. Kostenlose Beratung und Festpreisgarantie."
     keywords="Umzugsleistungen, Umzugsservice, Privatumzug, Firmenumzug, Montage, Entrümpelung Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen"
 />
@@ -113,7 +121,7 @@
             <h1 class="services-page__title">Umzugsleistungen in Hildesheim & Umgebung</h1>
             <p class="services-page__intro">
                 Als Umzugsunternehmen in Hildesheim bieten wir Ihnen alles aus einer Hand: vom klassischen Privatumzug über
-                Firmenumzüge und Seniorenumzüge bis hin zu Haushaltsauflösungen, Möbelmontagen und Einlagerungen. Unser
+                Firmenumzüge und Seniorenumzüge bis hin zu Haushaltsauflösungen, Entrümpelungen, Möbelmontagen und Einlagerungen. Unser
                 erfahrenes Team arbeitet professionell, zuverlässig und zu fairen Festpreisen – ohne versteckte Kosten.
                 Ob innerhalb Hildesheims, in ganz Niedersachsen oder bundesweit: Wir planen Ihren Umzug individuell und
                 übernehmen auf Wunsch die komplette Organisation. Starten Sie mit einer kostenlosen Beratung vor Ort.

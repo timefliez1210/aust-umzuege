@@ -48,8 +48,12 @@
                         href: "/leistungen/montage",
                     },
                     {
-                        label: "Haushaltsauflösungen",
+                        label: "Haushaltsauflösung",
                         href: "/leistungen/haushaltsaufloesung",
+                    },
+                    {
+                        label: "Entrümpelung",
+                        href: "/leistungen/entruempelung",
                     },
                     {
                         label: "Lagerung & Einlagerung",

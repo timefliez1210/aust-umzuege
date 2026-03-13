@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -52,28 +52,22 @@
     canonical="https://www.aust-umzuege.de/leistungen/seniorenumzug"
 />
 
-<StructuredData schema={businessInfo} />
+<StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.seniorenumzug} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Sabine Winkler" },
+    "datePublished": "2025-04-01",
     "reviewBody": "Vielen herzlichen Dank! Auch an Ihr Team! Der Umzug von meinem Vater vom Haus in betreutes Wohnen hat hervorragend geklappt. Pünktlich, schnell und alle waren sehr vorsichtig mit dem Inventar. Kann ich nur weiterempfehlen!"
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Nicole Stein" },
+    "datePublished": "2025-10-03",
     "reviewBody": "Herr Aust und sein Team haben den Umzug meiner Mutter in eine betreute Wohnung wunderbar gemacht. Sehr hilfsbereit, zuverlässig und schnell. Die Kommunikation mit Herrn Aust war auch hervorragend. Kann ich uneingeschränkt weiterempfehlen!"
 }} />
 <StructuredData schema={breadcrumbs} />

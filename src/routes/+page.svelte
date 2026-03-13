@@ -10,7 +10,7 @@
   import { businessInfo, website, createBreadcrumbs } from "$lib/data/structuredData";
 
   const breadcrumbs = createBreadcrumbs([
-    { name: "Home" }
+    { name: "Home", url: "https://www.aust-umzuege.de/" }
   ]);
 </script>
 

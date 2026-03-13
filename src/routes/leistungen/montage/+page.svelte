@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -52,39 +52,30 @@
     canonical="https://www.aust-umzuege.de/leistungen/montage"
 />
 
-<StructuredData schema={businessInfo} />
+<StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.montage} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Il Me" },
+    "datePublished": "2026-03-05",
     "reviewBody": "Unser Umzug hat Wunderbar geklappt. Ein Anruf und eigl war der Rest kpl selbstverständlich erledigt worden. Alles war Ordentlich Sauber und Schnell. Der Aufbau hat auch wunderbar geklappt. Würde ich nur empfehlen."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Melitta Roepke" },
+    "datePublished": "2021-03-01",
     "reviewBody": "Das Umzugsunternehmen Aust ist großartig. Der Chef Alex Aust kommt persönlich vorbei und schaut sich alles an. Am Umzugstag war der Chef Herr Alex Aust auch mit an Bord und 3 weitere Mitarbeiter. Wir waren sehr begeistert von der Pünktlichkeit. Es wurde sehr professionell und ordentlich gearbeitet. Haben mir alles dort hingestellt und gleichzeitig aufgebaut, wo ich es auch hin haben wollte. Mit Abstand TOP. Immer wieder gern."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Bernd Czech" },
+    "datePublished": "2024-03-01",
     "reviewBody": "Sachen wurden super verpackt und gehandelt. Auch alles professionell mit Möbel Fahrstuhl aus dem Fenster befördert. Freundliches und fleißiges Personal - denke Preis ist angemessen."
 }} />
 <StructuredData schema={breadcrumbs} />

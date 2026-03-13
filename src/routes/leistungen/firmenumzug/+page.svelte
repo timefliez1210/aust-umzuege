@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -52,39 +52,30 @@
     canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
 />
 
-<StructuredData schema={businessInfo} />
+<StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.firmenumzug} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Günther Otto" },
+    "datePublished": "2023-03-01",
     "reviewBody": "Wir hatten einen Firmenumzug mit Maschinen und sperrigen, schweren Mobiliar etc. Einfach super gut gelaufen. Nicht eine Beschädigung an den Transportgütern noch an Gebäuden, Türen etc. Selbst kleine Schrauben, Plastikteile usw. die beim Transport aus den Möbeln kullerten wurden gesammelt und mir übergeben. Der Preis: unschlagbar. Alle Mitarbeiter ohne Ausnahme waren konzentriert und mit Umsicht bei der Sache. Herr Aust war stets präsent, offen für Kundenhinweise, ruhig und sachlich. Mit Abstand das beste Umzugsunternehmen, das ich je bisher beauftragt habe."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Stephan Sausel" },
+    "datePublished": "2025-05-01",
     "reviewBody": "Fachkundiges Unternehmen. Nicht nur für Umzüge von Haus zu Haus. Hat das Verpacken und die Sicherung verschiedener Werkzeuge, Möbel, Geräte und Machinen für das Verschiffen in einem Container nach Afrika erfolgreich übernommen. Kann für solche Aufgaben empfohlen werden."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Werner Ströer" },
+    "datePublished": "2025-05-01",
     "reviewBody": "Wir haben in der letzten Woche mit Firma Aust unseren Umzug vollzogen. Es hat alles vorzüglich geklappt. Die Mitarbeiter waren pünktlich vor Ort, haben sofort angepackt. Die Möbel wurden fachmännisch abgebaut, ordentlich verstaut und ohne irgendeinen Schaden wieder aufgebaut. Mein Fazit: Super Arbeit, immer wieder. Hier gebe ich eine volle Empfehlung."
 }} />
 <StructuredData schema={breadcrumbs} />

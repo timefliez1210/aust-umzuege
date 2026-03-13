@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -56,39 +56,30 @@
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />
 
-<StructuredData schema={businessInfo} />
+<StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.haushaltsaufloesung} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Michael Sack" },
+    "datePublished": "2025-11-01",
     "reviewBody": "Die Haushaltsauflösung hat prima geklappt - von der Kontaktaufnahme über die gemeinsame Besichtigung und das Angebot bis zur Durchführung und Abrechnung. Das Team war pünktlich und sehr sorgfältig und freundlich. Kann ich gutenGewissens weiter empfehlen."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Heinz Kruse" },
+    "datePublished": "2022-03-01",
     "reviewBody": "Es musste ein Nachlass aus einer Wohnung im 3.Stock komplett entleert und entsorgt werden, wobei es sich um enorme Mengen handelte. Herr Alex Aust hat alles persönlich gesteuert und kräftig mit angepackt, alles wurde zu unserer vollsten Zufriedenheit erledigt, und das zu einem attraktiven Festpreis. Die Übergabe erfolgte besenrein zum vereinbarten Zeitpunkt. Dank an Herrn Aust und dem Team, eine wirklich saubere Sache."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Mathias M." },
+    "datePublished": "2020-02-19",
     "reviewBody": "Junger Unternehmer, der seine Arbeit sehr gewissenhaft, schnell und zuverlässig erledigt. Fairer Preis, zeitnahe Absprache und schnelle Erledigung. Bei mir wurde eine Wohnung aufgelöst, was Herr Aust und sein Team sehr schnell erledigt haben. Danke dafür. Sehr zu empfehlen und weiterhin viel Erfolg."
 }} />
 <StructuredData schema={breadcrumbs} />

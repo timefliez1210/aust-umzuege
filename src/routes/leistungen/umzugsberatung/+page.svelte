@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -52,17 +52,14 @@
     canonical="https://www.aust-umzuege.de/leistungen/umzugsberatung"
 />
 
-<StructuredData schema={businessInfo} />
+<StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.umzugsberatung} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
-    "author": { "@type": "Person", "name": "Artur" },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
+    "author": { "@type": "Person", "name": "Doris" },
+    "datePublished": "2022-03-01",
     "reviewBody": "Ich war mit der Ausführung des Auftrags sehr zufrieden. Herr Aust stellte im Vorfeld Fragen und holte sich wichtige Informationen ein. D.h. es wurde nicht einfach mal losgearbeitet und dann geschaut, wie es gemacht werden könnte. Sehr professionell also! Auch die Erreichbarkeit und Reaktionszeit waren sehr angenehm. Ich bedanke mich bei Herrn Aust und seinen Kolleg*innen für die große Hilfe!"
 }} />
 <StructuredData schema={breadcrumbs} />
@@ -224,7 +221,7 @@
             <div class="cta-column">
                 <ServiceReviews reviews={[
                     {
-                        author: "Artur",
+                        author: "Doris",
                         text: "Ich war mit mit der Ausführung des Auftrags sehr zufrieden. Herr Aust stellte im Vorfeld Fragen und holte sich wichtige Informationen ein. D.h. es wurde nicht einfach mal losgearbeitet und dann geschaut, wie es gemacht werden könnte. Sehr professionell also! Auch die Erreichbarkeit und Reatkionszeit waren sehr angenehm. Ich bedanke mich bei Herrn Aust und seinen Kolleg*innen für die große Hilfe!",
                         url: "https://share.google/9ON7gDwyypUNfAjej"
                     }

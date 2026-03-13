@@ -15,15 +15,19 @@ LINK_RE = re.compile(
 )
 
 def inline_css_in_html(html_path):
-    """Replace CSS <link> tags with inline <style> blocks."""
+    """Replace CSS <link> tags with inline <style> blocks placed just before </head>.
+
+    Moving the <style> blocks to the end of <head> ensures meta tags, canonical,
+    and OG tags appear before the CSS in the HTML — important for crawlers and
+    tools that truncate large HTML responses.
+    """
     with open(html_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
     html_dir = os.path.dirname(html_path)
-    modified = False
+    style_blocks = []
 
-    def replace_link(match):
-        nonlocal modified
+    def strip_link(match):
         css_href = match.group(1)
         # Resolve absolute paths (starting with /) from BUILD_DIR, relative from html_dir
         if css_href.startswith('/'):
@@ -38,16 +42,21 @@ def inline_css_in_html(html_path):
         with open(css_path, 'r', encoding='utf-8') as f:
             css_content = f.read().strip()
 
-        modified = True
-        return f'<style>{css_content}</style>'
+        style_blocks.append(f'<style>{css_content}</style>')
+        return ''  # Remove <link> from its original position
 
-    new_content = LINK_RE.sub(replace_link, content)
+    new_content = LINK_RE.sub(strip_link, content)
 
-    if modified:
-        with open(html_path, 'w', encoding='utf-8') as f:
-            f.write(new_content)
-        return True
-    return False
+    if not style_blocks:
+        return False
+
+    # Insert all collected <style> blocks just before </head>
+    combined_styles = '\n'.join(style_blocks)
+    new_content = new_content.replace('</head>', f'{combined_styles}\n</head>', 1)
+
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    return True
 
 
 def main():

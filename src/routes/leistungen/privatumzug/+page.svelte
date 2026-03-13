@@ -5,7 +5,7 @@
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
-    import { services, businessInfo, createBreadcrumbs } from "$lib/data/structuredData";
+    import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
         { name: "Home", url: "https://www.aust-umzuege.de/" },
@@ -56,39 +56,30 @@
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />
 
-<StructuredData schema={businessInfo} />
+<StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.privatumzug} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Jan-Luca Jendrossek" },
+    "datePublished": "2026-03-07",
     "reviewBody": "Super Umzugsservice! Das Team von Aust Umzüge war pünktlich, freundlich und sehr sorgfältig mit unseren Möbeln. Der gesamte Umzug lief reibungslos und deutlich stressfreier als erwartet. Vielen Dank für den tollen Service, klare Weiterempfehlung!"
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Fee Leandra" },
+    "datePublished": "2025-03-01",
     "reviewBody": "Ich bin von dem Service von Aust Umzüge begeistert. Den Umzug meiner Mutter von Niedersachsen nach Nordrhein-Westfalen haben wir in die Hände von Herrn Aust gegeben. Das war die beste Entscheidung, die wir treffen konnten. Das freundliche Team strahlte eine Ruhe aus, die uns den Stress zum größten Teil genommen hat. Bei diesem Umzugsunternehmen fühlt man sich verstanden und gut aufgehoben."
 }} />
 <StructuredData schema={{
     "@type": "Review",
-    "itemReviewed": {
-        "@type": "LocalBusiness",
-        "name": "Aust Umzüge und Haushaltsauflösungen",
-        "url": "https://www.aust-umzuege.de"
-    },
-    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5 },
+    "itemReviewed": { "@id": "https://www.aust-umzuege.de/#organization" },
+    "reviewRating": { "@type": "Rating", "ratingValue": 5, "bestRating": 5, "worstRating": 1 },
     "author": { "@type": "Person", "name": "Isa Sit" },
+    "datePublished": "2023-03-01",
     "reviewBody": "Ich bin vollends begeistert von dem Service von Aust Umzüge. Ich habe diesmal meinen Umzug in andere (professionelle) Hände gegeben und werde mich beim nächsten wieder an Aust wenden. Die Absprachen waren unkompliziert und einfach, die Beratung kompetent und ich konnte mich völlig auf das Unternehmen verlassen. Die Mitarbeiter vor Ort waren freundlich, zugewandt und strahlten eine vollkommene Ruhe aus, die man an einem solch hektischen Tag braucht."
 }} />
 <StructuredData schema={breadcrumbs} />

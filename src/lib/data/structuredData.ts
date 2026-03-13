@@ -134,8 +134,8 @@ export const businessInfo = {
 	vatID: "DE330779170",
 	geo: {
 		"@type": "GeoCoordinates",
-		latitude: "52.150002",
-		longitude: "9.951667"
+		latitude: 52.150002,
+		longitude: 9.951667
 	},
 	areaServed: [
 		{
@@ -191,6 +191,12 @@ export const businessInfo = {
 		reviewBody: r.text
 	}))
 };
+
+// Slim organization reference for service pages — no embedded reviews array.
+// The full businessInfo (with reviews) lives on the homepage only.
+// Service pages use this to avoid emitting 6 global reviews that are unrelated to the specific service.
+const { review: _omitted, ...businessInfoSlimBase } = businessInfo;
+export const businessInfoSlim = businessInfoSlimBase;
 
 export const services = {
 	privatumzug: {

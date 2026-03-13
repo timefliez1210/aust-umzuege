@@ -81,13 +81,13 @@ Key architectural decisions:
 
 ### Prerequisites
 
-- Node.js 18+
-- `npm install` completed at the project root
+- bun.js
+- `bun install` completed at the project root
 
 ### Running locally
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Navigate to `http://localhost:5173/admin` in your browser. You will be redirected to the login page if not authenticated.
@@ -107,7 +107,7 @@ VITE_API_BASE=https://api.aufraeumhelden.com
 ### Building
 
 ```bash
-npm run build
+bun run build
 ```
 
 The admin SPA is built as part of the standard SvelteKit static build. The SPA shell is output as `build/admin.html` and referenced by `.htaccess` for client-side routing fallback.

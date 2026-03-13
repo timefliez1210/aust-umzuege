@@ -18,6 +18,8 @@
 	import StatusBadge from "$lib/components/admin/StatusBadge.svelte";
 	import PriceInput from "$lib/components/admin/PriceInput.svelte";
 	import RouteMap from "$lib/components/admin/RouteMap.svelte";
+	import MediaDropzone from "$lib/components/MediaDropzone.svelte";
+	import MediaPreviewGrid from "$lib/components/MediaPreviewGrid.svelte";
 	import { floorLabel, parseFloor } from "$lib/utils/floor";
 	import { sortItems, filterItemsByPhotoIndex } from "$lib/utils/sorting";
 	import { computeTotalVolume } from "$lib/utils/volume";
@@ -36,7 +38,6 @@
 		Upload,
 		Video,
 		Download,
-		ImagePlus,
 		Send,
 	} from "lucide-svelte";
 
@@ -589,16 +590,12 @@
 	// Video upload state
 	let videoUploading = $state(false);
 	let videoProgress = $state("");
-	let videoFileInput = $state<HTMLInputElement | null>(null);
 	let videoQueue = $state<File[]>([]);
-	let videoDragging = $state(false);
 	let downloadingMedia = $state(false);
 
 	let photoUploading = $state(false);
 	let photoProgress = $state("");
-	let photoFileInput = $state<HTMLInputElement | null>(null);
 	let photoQueue = $state<File[]>([]);
-	let photoDragging = $state(false);
 
 	/**
 	 * Downloads all source photos and videos for the inquiry as a single ZIP archive via the browser.
@@ -698,284 +695,7 @@
 		}
 	}
 
-	/**
-	 * Validates and appends image files to the photo upload queue, rejecting non-images or files over 50 MB.
-	 *
-	 * Called by: handlePhotoSelect (after file picker selection), handlePhotoDrop (after drag-and-drop)
-	 * Purpose: Guards the photo queue so only valid image files reach the upload step.
-	 *          Accepts common image MIME types and extensions including HEIC/HEIF from iOS devices.
-	 *
-	 * @param files - FileList or File array from a file input or drag event
-	 * @returns void (side-effect: appends valid files to `photoQueue`, shows error toast for rejected files)
-	 */
-	function addPhotoFiles(files: FileList | File[]) {
-		const imageExtensions = [
-			".jpg",
-			".jpeg",
-			".png",
-			".webp",
-			".heic",
-			".heif",
-		];
-		for (const file of Array.from(files)) {
-			const ext = file.name
-				.toLowerCase()
-				.slice(file.name.lastIndexOf("."));
-			if (
-				!file.type.startsWith("image/") &&
-				!imageExtensions.includes(ext)
-			) {
-				showToast(`${file.name}: Keine Bilddatei`, "error");
-				continue;
-			}
-			if (file.size > 50 * 1024 * 1024) {
-				showToast(`${file.name} zu gross (max. 50 MB)`, "error");
-				continue;
-			}
-			photoQueue = [...photoQueue, file];
-		}
-	}
 
-	/**
-	 * Reads image files from a file-input change event and forwards them to addPhotoFiles.
-	 *
-	 * Called by: Template (onchange on the hidden photo <input type="file"> in the photo-analysis card)
-	 * Purpose: Bridges the native file-input event to the addPhotoFiles validation logic,
-	 *          then resets the input so the same file can be selected again if needed.
-	 *
-	 * @param e - The native change Event from the file input element
-	 * @returns void
-	 */
-	function handlePhotoSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (!input.files?.length) return;
-		addPhotoFiles(input.files);
-		input.value = "";
-	}
-
-	/**
-	 * Handles a drag-and-drop event on the photo drop zone and forwards files to addPhotoFiles.
-	 *
-	 * Called by: Template (ondrop on the photo dropzone in the photo-analysis card)
-	 * Purpose: Allows the admin to drop photos directly onto the upload area without opening a file picker.
-	 *
-	 * @param e - The native DragEvent carrying the dropped files
-	 * @returns void
-	 */
-	function handlePhotoDrop(e: DragEvent) {
-		e.preventDefault();
-		photoDragging = false;
-		if (e.dataTransfer?.files) addPhotoFiles(e.dataTransfer.files);
-	}
-
-	/**
-	 * Prevents the browser default drag behavior and activates the photo drop-zone highlight.
-	 *
-	 * Called by: Template (ondragover on the photo dropzone in the photo-analysis card)
-	 * Purpose: Visual feedback so the admin sees the area is a valid drop target for images.
-	 *
-	 * @param e - The native DragEvent
-	 * @returns void
-	 */
-	function handlePhotoDragOver(e: DragEvent) {
-		e.preventDefault();
-		photoDragging = true;
-	}
-
-	/**
-	 * Clears the photo drop-zone drag-over highlight when the cursor leaves the zone.
-	 *
-	 * Called by: Template (ondragleave on the photo dropzone in the photo-analysis card)
-	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
-	 *
-	 * @returns void
-	 */
-	function handlePhotoDragLeave() {
-		photoDragging = false;
-	}
-
-	/**
-	 * Removes a photo from the staged upload queue before it is submitted.
-	 *
-	 * Called by: Template (onclick on the X button next to each queued photo in the upload list)
-	 * Purpose: Lets the admin deselect a photo that was added by mistake before triggering the upload.
-	 *
-	 * @param idx - Zero-based position of the file to remove from `photoQueue`
-	 * @returns void
-	 */
-	function removePhotoFromQueue(idx: number) {
-		photoQueue = photoQueue.filter((_, i) => i !== idx);
-	}
-
-	/**
-	 * Uploads all queued photos to the depth-sensor estimation endpoint and polls for results.
-	 *
-	 * Called by: Template (onclick on the "Fotos analysieren" button in the photo-analysis card)
-	 * Purpose: Sends the queued images to the AI volume estimation pipeline via
-	 *          POST /api/v1/inquiries/{id}/estimate/depth (multipart FormData with images[]).
-	 *          After upload, polls for estimation completion via pollEstimations if any results are
-	 *          still processing, or falls back to loadInquiry if all are already complete.
-	 *
-	 * @returns void (side-effect: clears `photoQueue`, shows toast, calls pollEstimations or loadInquiry)
-	 */
-	async function uploadPhotos() {
-		if (photoQueue.length === 0 || !data) return;
-
-		photoUploading = true;
-		const count = photoQueue.length;
-		photoProgress = `${count} Foto${count > 1 ? "s" : ""} wird hochgeladen...`;
-
-		try {
-			const formData = new FormData();
-			for (const file of photoQueue) {
-				formData.append("images", file);
-			}
-
-			const results = await apiFetch<{ id: string; status: string }[]>(
-				`/api/v1/inquiries/${data.id}/estimate/depth`,
-				{
-					method: "POST",
-					body: formData,
-				},
-			);
-
-			photoQueue = [];
-			showToast(
-				`${count} Foto${count > 1 ? "s" : ""} hochgeladen — Analyse läuft`,
-				"success",
-			);
-
-			const processingIds = results
-				.filter((r) => r.status === "processing")
-				.map((r) => r.id);
-			if (processingIds.length > 0) {
-				await pollEstimations(processingIds);
-			} else {
-				await loadInquiry();
-			}
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			photoUploading = false;
-			photoProgress = "";
-		}
-	}
-
-	/**
-	 * Validates and appends video files to the video upload queue, rejecting non-video or oversized files.
-	 *
-	 * Called by: handleVideoSelect (after file picker selection), handleVideoDrop (after drag-and-drop)
-	 * Purpose: Guards the video queue so only valid video files under 500 MB reach the upload step.
-	 *          Checks both MIME type and common video file extensions (.mp4, .mov, .webm, .mkv, .avi).
-	 *
-	 * @param files - FileList or File array from a file input or drag event
-	 * @returns void (side-effect: appends valid files to `videoQueue`, shows error toast for rejected files)
-	 */
-	function addVideoFiles(files: FileList | File[]) {
-		const videoExtensions = [".mp4", ".mov", ".webm", ".mkv", ".avi"];
-		for (const file of Array.from(files)) {
-			const ext = file.name
-				.toLowerCase()
-				.slice(file.name.lastIndexOf("."));
-			if (
-				!file.type.startsWith("video/") &&
-				!videoExtensions.includes(ext)
-			) {
-				showToast(`${file.name}: Keine Videodatei`, "error");
-				continue;
-			}
-			if (file.size > 500 * 1024 * 1024) {
-				showToast(`${file.name} zu gross (max. 500 MB)`, "error");
-				continue;
-			}
-			videoQueue = [...videoQueue, file];
-		}
-	}
-
-	/**
-	 * Reads video files from a file-input change event and forwards them to addVideoFiles.
-	 *
-	 * Called by: Template (onchange on the hidden video <input type="file"> in the video-analysis card)
-	 * Purpose: Bridges the native file-input event to the addVideoFiles validation logic,
-	 *          then resets the input so the same file can be selected again.
-	 *
-	 * @param e - The native change Event from the file input element
-	 * @returns void
-	 */
-	function handleVideoSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (!input.files?.length) return;
-		addVideoFiles(input.files);
-		input.value = "";
-	}
-
-	/**
-	 * Handles a drag-and-drop event on the video drop zone and forwards files to addVideoFiles.
-	 *
-	 * Called by: Template (ondrop on the video dropzone in the video-analysis card)
-	 * Purpose: Allows the admin to drop video files directly onto the upload area without a file picker.
-	 *
-	 * @param e - The native DragEvent carrying the dropped files
-	 * @returns void
-	 */
-	function handleVideoDrop(e: DragEvent) {
-		e.preventDefault();
-		videoDragging = false;
-		if (e.dataTransfer?.files) addVideoFiles(e.dataTransfer.files);
-	}
-
-	/**
-	 * Prevents the browser default drag behavior and activates the video drop-zone highlight.
-	 *
-	 * Called by: Template (ondragover on the video dropzone in the video-analysis card)
-	 * Purpose: Visual feedback so the admin sees the area is a valid drop target for videos.
-	 *
-	 * @param e - The native DragEvent
-	 * @returns void
-	 */
-	function handleVideoDragOver(e: DragEvent) {
-		e.preventDefault();
-		videoDragging = true;
-	}
-
-	/**
-	 * Clears the video drop-zone drag-over highlight when the cursor leaves the zone.
-	 *
-	 * Called by: Template (ondragleave on the video dropzone in the video-analysis card)
-	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
-	 *
-	 * @returns void
-	 */
-	function handleVideoDragLeave() {
-		videoDragging = false;
-	}
-
-	/**
-	 * Removes a video file from the staged upload queue before it is submitted.
-	 *
-	 * Called by: Template (onclick on the X button next to each queued video in the upload list)
-	 * Purpose: Lets the admin deselect a video that was added by mistake before triggering the upload.
-	 *
-	 * @param idx - Zero-based position of the file to remove from `videoQueue`
-	 * @returns void
-	 */
-	function removeFromQueue(idx: number) {
-		videoQueue = videoQueue.filter((_, i) => i !== idx);
-	}
-
-	/**
-	 * Formats a byte count as a human-readable KB or MB string.
-	 *
-	 * Called by: Template (to display the size of each file in the upload queue)
-	 * Purpose: Renders file sizes in a compact, readable format for the queue list.
-	 *
-	 * @param bytes - File size in bytes
-	 * @returns A formatted string such as "512 KB" or "1.4 MB"
-	 */
-	function formatFileSize(bytes: number): string {
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	}
 
 	/**
 	 * Uploads all queued videos to the video estimation endpoint and polls for results.
@@ -2513,80 +2233,37 @@
 						<span>{photoProgress}</span>
 					</div>
 				{:else}
-					{#if photoQueue.length > 0}
-						<div class="upload-queue">
-							{#each photoQueue as file, idx}
-								<div class="upload-queue-item">
-									<ImagePlus size={16} />
-									<span class="upload-queue-name"
-										>{file.name}</span
-									>
-									<span class="upload-queue-size"
-										>{formatFileSize(file.size)}</span
-									>
-									<button
-										class="del-btn"
-										onclick={() =>
-											removePhotoFromQueue(idx)}
-										title="Entfernen"
-									>
-										<X size={14} />
-									</button>
-								</div>
-							{/each}
-							<div class="upload-queue-actions">
-								<label
-									for="photo-upload"
-									class="btn btn-sm upload-add-more"
-								>
-									<Plus size={14} />
-									Weiteres Foto
-								</label>
-								<button
-									class="btn btn-primary"
-									onclick={uploadPhotos}
-								>
-									<Upload size={16} />
-									{photoQueue.length} Foto{photoQueue.length >
-									1
-										? "s"
-										: ""} hochladen
-								</button>
-							</div>
+					<MediaDropzone
+						variant="admin"
+						accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp,.tiff,.tif,.avif"
+						mimeFilter="image/"
+						maxSizeMb={50}
+						label="Fotos hierher ziehen oder klicken"
+						hint="JPG, PNG, WebP, HEIC, GIF, BMP, TIFF, AVIF (max. 50 MB pro Bild)"
+						hasFiles={photoQueue.length > 0}
+						id="admin-detail-photos"
+						onfiles={(files) => { photoQueue = [...photoQueue, ...files]; }}
+						onrejected={(_, reason) => showToast(reason, "error")}
+					>
+						<MediaPreviewGrid
+							files={photoQueue}
+							mode="queue"
+							variant="admin"
+							dropzoneId="admin-detail-photos"
+							addMoreLabel="Weiteres Foto"
+							onremove={(i) => { photoQueue = photoQueue.filter((_, idx) => idx !== i); }}
+						/>
+						<div class="upload-queue-actions">
+							<label for="admin-detail-photos" class="btn btn-sm upload-add-more">
+								<Plus size={14} />
+								Weiteres Foto
+							</label>
+							<button class="btn btn-primary" onclick={uploadPhotos}>
+								<Upload size={16} />
+								{photoQueue.length} Foto{photoQueue.length > 1 ? "s" : ""} hochladen
+							</button>
 						</div>
-					{/if}
-					<input
-						type="file"
-						accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
-						multiple
-						onchange={handlePhotoSelect}
-						bind:this={photoFileInput}
-						class="upload-file-input"
-						id="photo-upload"
-					/>
-					{#if photoQueue.length === 0}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="upload-drop-label"
-							class:upload-dragging={photoDragging}
-							ondrop={handlePhotoDrop}
-							ondragover={handlePhotoDragOver}
-							ondragleave={handlePhotoDragLeave}
-							onclick={() => photoFileInput?.click()}
-							role="button"
-							tabindex="0"
-							onkeydown={(e) => {
-								if (e.key === "Enter" || e.key === " ")
-									photoFileInput?.click();
-							}}
-						>
-							<ImagePlus size={24} />
-							<span>Fotos hierher ziehen oder klicken</span>
-							<span class="upload-hint"
-								>JPG, PNG, WebP, HEIC (max. 50 MB pro Bild)</span
-							>
-						</div>
-					{/if}
+					</MediaDropzone>
 				{/if}
 			</div>
 
@@ -2624,79 +2301,37 @@
 						<span>{videoProgress}</span>
 					</div>
 				{:else}
-					{#if videoQueue.length > 0}
-						<div class="upload-queue">
-							{#each videoQueue as file, idx}
-								<div class="upload-queue-item">
-									<Video size={16} />
-									<span class="upload-queue-name"
-										>{file.name}</span
-									>
-									<span class="upload-queue-size"
-										>{formatFileSize(file.size)}</span
-									>
-									<button
-										class="del-btn"
-										onclick={() => removeFromQueue(idx)}
-										title="Entfernen"
-									>
-										<X size={14} />
-									</button>
-								</div>
-							{/each}
-							<div class="upload-queue-actions">
-								<label
-									for="video-upload"
-									class="btn btn-sm upload-add-more"
-								>
-									<Plus size={14} />
-									Weiteres Video
-								</label>
-								<button
-									class="btn btn-primary"
-									onclick={uploadVideos}
-								>
-									<Upload size={16} />
-									{videoQueue.length} Video{videoQueue.length >
-									1
-										? "s"
-										: ""} hochladen
-								</button>
-							</div>
+					<MediaDropzone
+						variant="admin"
+						accept="video/*,.mp4,.mov,.mpeg,.mpg,.avi,.webm,.mkv,.3gp,.m4v"
+						mimeFilter="video/"
+						maxSizeMb={500}
+						label="Videos hierher ziehen oder klicken"
+						hint="MP4, MOV, MPEG, AVI, WebM, MKV, 3GP, M4V (max. 500 MB pro Video)"
+						hasFiles={videoQueue.length > 0}
+						id="admin-detail-videos"
+						onfiles={(files) => { videoQueue = [...videoQueue, ...files]; }}
+						onrejected={(_, reason) => showToast(reason, "error")}
+					>
+						<MediaPreviewGrid
+							files={videoQueue}
+							mode="queue"
+							variant="admin"
+							dropzoneId="admin-detail-videos"
+							addMoreLabel="Weiteres Video"
+							onremove={(i) => { videoQueue = videoQueue.filter((_, idx) => idx !== i); }}
+						/>
+						<div class="upload-queue-actions">
+							<label for="admin-detail-videos" class="btn btn-sm upload-add-more">
+								<Plus size={14} />
+								Weiteres Video
+							</label>
+							<button class="btn btn-primary" onclick={uploadVideos}>
+								<Upload size={16} />
+								{videoQueue.length} Video{videoQueue.length > 1 ? "s" : ""} hochladen
+							</button>
 						</div>
-					{/if}
-					<input
-						type="file"
-						accept="video/*,.mov,.mp4,.webm,.mkv"
-						multiple
-						onchange={handleVideoSelect}
-						bind:this={videoFileInput}
-						class="upload-file-input"
-						id="video-upload"
-					/>
-					{#if videoQueue.length === 0}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="upload-drop-label"
-							class:upload-dragging={videoDragging}
-							ondrop={handleVideoDrop}
-							ondragover={handleVideoDragOver}
-							ondragleave={handleVideoDragLeave}
-							onclick={() => videoFileInput?.click()}
-							role="button"
-							tabindex="0"
-							onkeydown={(e) => {
-								if (e.key === "Enter" || e.key === " ")
-									videoFileInput?.click();
-							}}
-						>
-							<Video size={24} />
-							<span>Videos hierher ziehen oder klicken</span>
-							<span class="upload-hint"
-								>MP4, MOV, WebM (max. 500 MB pro Video)</span
-							>
-						</div>
-					{/if}
+					</MediaDropzone>
 				{/if}
 			</div>
 
@@ -3761,41 +3396,7 @@
 			-3px -3px 8px #ffffff;
 	}
 
-	/* Upload Queue (shared by photo & video) */
-	.upload-queue {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.upload-queue-item {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		background: #e8ecf1;
-		border-radius: 8px;
-		box-shadow:
-			inset 2px 2px 5px #d1d9e6,
-			inset -2px -2px 5px #ffffff;
-	}
-
-	.upload-queue-name {
-		flex: 1;
-		font-size: 0.8125rem;
-		color: #334155;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.upload-queue-size {
-		font-size: 0.75rem;
-		color: #94a3b8;
-		white-space: nowrap;
-	}
-
+	/* Upload Queue actions (page-specific layout for upload button row) */
 	.upload-queue-actions {
 		display: flex;
 		align-items: center;
@@ -3806,37 +3407,6 @@
 
 	.upload-add-more {
 		cursor: pointer;
-	}
-
-	.upload-file-input {
-		display: none;
-	}
-
-	.upload-drop-label {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 1.5rem 2rem;
-		border: 2px dashed #d1d9e6;
-		border-radius: 12px;
-		cursor: pointer;
-		color: #64748b;
-		transition: all 150ms ease;
-		width: 100%;
-		text-align: center;
-	}
-
-	.upload-drop-label:hover,
-	.upload-drop-label.upload-dragging {
-		border-color: #6366f1;
-		color: #6366f1;
-		background: rgba(99, 102, 241, 0.04);
-	}
-
-	.upload-hint {
-		font-size: 0.6875rem;
-		color: #94a3b8;
 	}
 
 	.upload-status {

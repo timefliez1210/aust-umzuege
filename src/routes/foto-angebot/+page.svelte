@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Send, Camera, X, ImagePlus, Video, Calendar, ClipboardList, FileIcon } from "lucide-svelte";
+	import { Send, Camera, Video, Calendar, ClipboardList } from "lucide-svelte";
+	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
+	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
 
 	const PHOTO_API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
 	const VIDEO_API_URL = import.meta.env.VITE_VIDEO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/video";
@@ -67,9 +69,6 @@
 
 	// Unified media — any file, any format, any amount
 	let attachments = $state<File[]>([]);
-	let previews    = $state<string[]>([]); // data-URL for images, "" for others
-	let isDragging  = $state(false);
-	let fileInput   = $state<HTMLInputElement>(null!);
 
 	let isSubmitting  = $state(false);
 	let submitSuccess = $state(false);
@@ -116,30 +115,6 @@
 		} else {
 			formData.selectedServices = [...formData.selectedServices, id];
 		}
-	}
-
-	// ---- Unified media helpers — zero format restrictions ----
-	function addFiles(files: FileList | File[]) {
-		for (const f of Array.from(files)) {
-			const idx = attachments.length;
-			attachments = [...attachments, f];
-			previews = [...previews, ""];
-			if (f.type.startsWith("image/")) {
-				const reader = new FileReader();
-				reader.onload = (ev) => {
-					previews = previews.map((p, i) => i === idx ? (ev.target?.result as string) : p);
-				};
-				reader.readAsDataURL(f);
-			}
-		}
-	}
-	function removeFile(i: number) {
-		attachments = attachments.filter((_, idx) => idx !== i);
-		previews    = previews.filter((_, idx) => idx !== i);
-	}
-	function handleDrop(e: DragEvent) {
-		e.preventDefault(); isDragging = false;
-		if (e.dataTransfer?.files) addFiles(e.dataTransfer.files);
 	}
 
 	// ---- Submit ----
@@ -323,62 +298,23 @@
 						Jedes Format akzeptiert, beliebig viele Dateien.
 					</p>
 
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<div
-						class="ap__dropzone"
-						class:ap__dropzone--dragging={isDragging}
-						ondrop={handleDrop}
-						ondragover={(e) => { e.preventDefault(); isDragging = true; }}
-						ondragleave={() => isDragging = false}
+					<MediaDropzone
+						variant="public"
+						accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp,.tiff,.tif,.avif,.mp4,.mov,.mpeg,.mpg,.avi,.webm,.mkv,.3gp,.m4v"
+						label="Dateien hinzufügen"
+						hint="Klicken oder hierher ziehen — jedes Format, beliebig viele"
+						hasFiles={attachments.length > 0}
+						id="foto-angebot-files"
+						onfiles={(files) => { attachments = [...attachments, ...files]; }}
 					>
-						{#if attachments.length === 0}
-							<button type="button" class="ap__dropzone-empty" onclick={() => fileInput.click()}>
-								{#if activeMode === "video"}
-									<Video size={44} strokeWidth={1.5} />
-								{:else}
-									<Camera size={44} strokeWidth={1.5} />
-								{/if}
-								<span class="ap__dropzone-title">Dateien hinzufügen</span>
-								<span class="ap__dropzone-hint">Klicken oder hierher ziehen — jedes Format, beliebig viele</span>
-							</button>
-						{:else}
-							<div class="ap__media-grid">
-								{#each attachments as f, i}
-									{#if previews[i]}
-										<!-- Image with thumbnail preview -->
-										<div class="ap__thumb">
-											<img src={previews[i]} alt={f.name} />
-											<button type="button" class="ap__thumb-remove" onclick={() => removeFile(i)} aria-label="Entfernen">
-												<X size={13} />
-											</button>
-										</div>
-									{:else}
-										<!-- Non-image: video, doc, etc. -->
-										<div class="ap__file-tile">
-											{#if f.type.startsWith("video/")}
-												<Video size={26} strokeWidth={1.5} class="ap__file-tile-icon" />
-											{:else}
-												<FileIcon size={26} strokeWidth={1.5} class="ap__file-tile-icon" />
-											{/if}
-											<span class="ap__file-name">{f.name}</span>
-											<span class="ap__file-size">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
-											<button type="button" class="ap__thumb-remove ap__thumb-remove--tile" onclick={() => removeFile(i)} aria-label="Entfernen">
-												<X size={13} />
-											</button>
-										</div>
-									{/if}
-								{/each}
-								<button type="button" class="ap__photo-add" onclick={() => fileInput.click()}>
-									<ImagePlus size={22} />
-									<span>Weitere</span>
-								</button>
-							</div>
-						{/if}
-					</div>
-
-					<!-- No accept filter, no restrictions -->
-					<input bind:this={fileInput} type="file" multiple class="hidden"
-						onchange={(e) => { const t = e.target as HTMLInputElement; if (t.files) addFiles(t.files); t.value = ""; }} />
+						<MediaPreviewGrid
+							files={attachments}
+							mode="mixed"
+							variant="public"
+							dropzoneId="foto-angebot-files"
+							onremove={(i) => { attachments = attachments.filter((_, idx) => idx !== i); }}
+						/>
+					</MediaDropzone>
 
 					{#if attachments.length > 0}
 						<p class="ap__count">{attachments.length} {attachments.length === 1 ? "Datei" : "Dateien"} ausgewählt</p>
@@ -644,8 +580,6 @@
 {/snippet}
 
 <style>
-	.hidden { display: none; }
-
 	/* ===== Page ===== */
 	.ap {
 		background-color: #f4f6f8;
@@ -907,109 +841,6 @@
 	}
 	.ap__service-label { color: #4a5568; font-size: var(--text-sm); }
 
-	/* ===== Dropzone ===== */
-	.ap__dropzone {
-		border: 2px dashed #cbd5e0;
-		border-radius: var(--radius-lg);
-		background-color: #f8fafc;
-		transition: all var(--transition-fast);
-	}
-	.ap__dropzone--dragging {
-		border-color: var(--color-nav-accent);
-		background-color: rgba(196, 65, 0, 0.05);
-	}
-	.ap__dropzone-empty {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-10) var(--space-6);
-		width: 100%;
-		cursor: pointer;
-		color: #94a3b8;
-		background: none;
-		border: none;
-	}
-	.ap__dropzone-empty:hover { color: var(--color-nav-accent); }
-	.ap__dropzone-title { font-size: var(--text-lg); font-weight: var(--font-semibold); color: #475569; }
-	.ap__dropzone-hint  { font-size: var(--text-sm); color: #94a3b8; }
-
-	/* ===== Media grid (mixed thumbnails + file tiles) ===== */
-	.ap__media-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-		gap: var(--space-3);
-		padding: var(--space-4);
-	}
-	.ap__thumb {
-		position: relative;
-		aspect-ratio: 1;
-		border-radius: var(--radius-md);
-		overflow: hidden;
-		background-color: #e2e8f0;
-	}
-	.ap__thumb img { width: 100%; height: 100%; object-fit: cover; }
-	.ap__thumb-remove {
-		position: absolute;
-		top: 4px; right: 4px;
-		width: 22px; height: 22px;
-		background-color: rgba(0,0,0,0.6);
-		color: white;
-		border: none;
-		border-radius: var(--radius-full);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: background-color var(--transition-fast);
-	}
-	.ap__thumb-remove:hover { background-color: #dc2626; }
-	/* File tile for non-image files */
-	.ap__file-tile {
-		position: relative;
-		aspect-ratio: 1;
-		border-radius: var(--radius-md);
-		background-color: #eef2ff;
-		border: 1.5px solid #c7d2fe;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-1);
-		padding: var(--space-2);
-		color: #4f46e5;
-		overflow: hidden;
-	}
-	.ap__file-name {
-		font-size: var(--text-xs);
-		color: #1e293b;
-		text-align: center;
-		word-break: break-all;
-		line-height: 1.2;
-		max-height: 2.4em;
-		overflow: hidden;
-	}
-	.ap__file-size { font-size: 10px; color: #64748b; }
-	.ap__thumb-remove--tile {
-		position: absolute;
-		top: 4px; right: 4px;
-	}
-	.ap__photo-add {
-		aspect-ratio: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-1);
-		border: 2px dashed #cbd5e0;
-		border-radius: var(--radius-md);
-		background: none;
-		color: #94a3b8;
-		cursor: pointer;
-		font-size: var(--text-xs);
-		transition: all var(--transition-fast);
-	}
-	.ap__photo-add:hover { border-color: var(--color-nav-accent); color: var(--color-nav-accent); }
 	.ap__count { color: #64748b; font-size: var(--text-sm); margin-top: var(--space-2); }
 
 	/* ===== Submit section ===== */
@@ -1099,9 +930,7 @@
 		.ap__grid { grid-template-columns: 1fr; }
 		.ap__services { grid-template-columns: repeat(2, 1fr); }
 		.ap__section { padding: var(--space-4); }
-		.ap__media-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
 		.ap__field--checks { flex-direction: column; }
-		.ap__dropzone-empty { padding: var(--space-6) var(--space-4); }
 		.ap__check { min-height: 44px; }
 	}
 	@media (max-width: 480px) {

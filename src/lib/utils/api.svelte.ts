@@ -213,3 +213,20 @@ export async function apiDownload(path: string, filename: string): Promise<void>
 }
 
 export { formatEuro, formatDate, formatDateTime } from '$lib/utils/format';
+
+/**
+ * Formats a byte count as a human-readable size string.
+ *
+ * Called by: MediaPreviewGrid.svelte (to display file sizes in queue/tile views),
+ *            admin/inquiries/[id]/+page.svelte (upload queue)
+ * Purpose: Renders file sizes compactly so users can see at a glance whether a file is
+ *          large (video) or small (photo) before uploading.
+ *
+ * @param bytes - File size in bytes
+ * @returns A formatted string such as "512 B", "850 KB", or "2.4 MB"
+ */
+export function formatFileSize(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}

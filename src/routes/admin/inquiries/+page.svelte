@@ -4,7 +4,10 @@
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import VolumeCalculator from '$lib/components/VolumeCalculator.svelte';
-	import { Search, ChevronLeft, ChevronRight, Plus, X, Camera, List, Upload, Trash2, Video } from 'lucide-svelte';
+	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
+	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
+	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import { Search, ChevronLeft, ChevronRight, Plus, X, Camera, List, Upload, Video } from 'lucide-svelte';
 
 	interface InquiryListItem {
 		id: string;
@@ -85,109 +88,9 @@
 
 	// Photo upload
 	let photoFiles = $state<File[]>([]);
-	let photoPreviews = $state<string[]>([]);
-	let draggingOver = $state(false);
-	let photoFileInput = $state<HTMLInputElement>(undefined!);
 
 	// Video upload
 	let videoFiles = $state<File[]>([]);
-	let videoFileInput = $state<HTMLInputElement>(undefined!);
-	let videoDragging = $state(false);
-
-	/**
-	 * Validates and appends video files to the upload queue, rejecting non-video or oversized files.
-	 *
-	 * Called by: handleVideoSelect (after file picker selection), handleVideoDrop (after drag-and-drop)
-	 * Purpose: Guards the video queue so only valid video files under 500 MB reach the upload step.
-	 *
-	 * @param files - FileList or File array from a file input or drag event
-	 * @returns void (side-effect: appends to `videoFiles`, sets `createError` on rejection)
-	 */
-	function addVideoFiles(files: FileList | File[]) {
-		for (const file of Array.from(files)) {
-			if (!file.type.startsWith('video/')) {
-				createError = `${file.name}: Keine Videodatei`;
-				continue;
-			}
-			if (file.size > 500 * 1024 * 1024) {
-				createError = `${file.name} zu gross (max. 500 MB)`;
-				continue;
-			}
-			videoFiles = [...videoFiles, file];
-			createError = '';
-		}
-	}
-
-	/**
-	 * Reads files from a video file-input change event and forwards them to addVideoFiles.
-	 *
-	 * Called by: Template (onchange on the hidden video <input type="file">)
-	 * Purpose: Bridges the native file-input event to the shared addVideoFiles validation logic,
-	 *          then resets the input so the same file can be selected again if needed.
-	 *
-	 * @param e - The native change Event from the file input element
-	 * @returns void
-	 */
-	function handleVideoSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (!input.files?.length) return;
-		addVideoFiles(input.files);
-		input.value = '';
-	}
-
-	/**
-	 * Removes a video file from the staged upload queue by index.
-	 *
-	 * Called by: Template (onclick on the Trash2 button next to each queued video)
-	 * Purpose: Lets the user deselect a video before submitting the create-quote form.
-	 *
-	 * @param index - Zero-based position of the file to remove from `videoFiles`
-	 * @returns void
-	 */
-	function removeVideo(index: number) {
-		videoFiles = videoFiles.filter((_, i) => i !== index);
-	}
-
-	/**
-	 * Handles a drag-and-drop event on the video drop zone and forwards files to addVideoFiles.
-	 *
-	 * Called by: Template (ondrop on the video dropzone element)
-	 * Purpose: Allows the user to drop video files directly onto the upload area instead of using the file picker.
-	 *
-	 * @param e - The native DragEvent carrying the dropped files
-	 * @returns void
-	 */
-	function handleVideoDrop(e: DragEvent) {
-		e.preventDefault();
-		videoDragging = false;
-		if (e.dataTransfer?.files) addVideoFiles(e.dataTransfer.files);
-	}
-
-	/**
-	 * Prevents the browser default drag behavior and activates the video drop-zone highlight.
-	 *
-	 * Called by: Template (ondragover on the video dropzone element)
-	 * Purpose: Visual feedback so the user sees that the area accepts video drops.
-	 *
-	 * @param e - The native DragEvent
-	 * @returns void
-	 */
-	function handleVideoDragOver(e: DragEvent) {
-		e.preventDefault();
-		videoDragging = true;
-	}
-
-	/**
-	 * Clears the video drop-zone drag-over highlight when the cursor leaves the zone.
-	 *
-	 * Called by: Template (ondragleave on the video dropzone element)
-	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
-	 *
-	 * @returns void
-	 */
-	function handleVideoDragLeave() {
-		videoDragging = false;
-	}
 
 	// Services
 	let svcEinpacken = $state(false);
@@ -422,98 +325,6 @@
 		return parts.join(', ');
 	}
 
-	/**
-	 * Validates image files and appends them to the photo queue with blob-URL previews.
-	 *
-	 * Called by: handleDrop (on drag-and-drop), handleFileSelect (on file-picker selection)
-	 * Purpose: Guards the photo queue against non-image files and duplicates (matched by name + size),
-	 *          and generates object URLs so thumbnail previews can be rendered immediately.
-	 *
-	 * @param files - FileList or File array from a file input or drag event
-	 * @returns void (side-effect: appends to `photoFiles` and `photoPreviews`)
-	 */
-	function addPhotos(files: FileList | File[]) {
-		for (const file of files) {
-			if (!file.type.startsWith('image/')) continue;
-			if (photoFiles.some(f => f.name === file.name && f.size === file.size)) continue;
-			photoFiles = [...photoFiles, file];
-			const url = URL.createObjectURL(file);
-			photoPreviews = [...photoPreviews, url];
-		}
-	}
-
-	/**
-	 * Removes a photo from the staged queue and revokes its blob preview URL to free memory.
-	 *
-	 * Called by: Template (onclick on the remove button of each photo thumbnail)
-	 * Purpose: Lets the user deselect a photo before submitting the create-quote form,
-	 *          and cleans up object URLs to prevent memory leaks.
-	 *
-	 * @param index - Zero-based position of the file to remove from `photoFiles` and `photoPreviews`
-	 * @returns void
-	 */
-	function removePhoto(index: number) {
-		URL.revokeObjectURL(photoPreviews[index]);
-		photoFiles = photoFiles.filter((_, i) => i !== index);
-		photoPreviews = photoPreviews.filter((_, i) => i !== index);
-	}
-
-	/**
-	 * Handles a drag-and-drop event on the photo drop zone and forwards files to addPhotos.
-	 *
-	 * Called by: Template (ondrop on the photo dropzone element in 'photos' volume mode)
-	 * Purpose: Allows the user to drop image files onto the upload area without opening a file picker.
-	 *
-	 * @param e - The native DragEvent carrying the dropped files
-	 * @returns void
-	 */
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		draggingOver = false;
-		if (e.dataTransfer?.files) addPhotos(e.dataTransfer.files);
-	}
-
-	/**
-	 * Prevents the browser default drag behavior and activates the photo drop-zone highlight.
-	 *
-	 * Called by: Template (ondragover on the photo dropzone element)
-	 * Purpose: Visual feedback so the user sees that the area accepts image drops.
-	 *
-	 * @param e - The native DragEvent
-	 * @returns void
-	 */
-	function handleDragOver(e: DragEvent) {
-		e.preventDefault();
-		draggingOver = true;
-	}
-
-	/**
-	 * Clears the photo drop-zone drag-over highlight when the cursor leaves the zone.
-	 *
-	 * Called by: Template (ondragleave on the photo dropzone element)
-	 * Purpose: Resets the drop zone to its idle visual state when the drag cursor exits.
-	 *
-	 * @returns void
-	 */
-	function handleDragLeave() {
-		draggingOver = false;
-	}
-
-	/**
-	 * Reads image files from a file-input change event and forwards them to addPhotos.
-	 *
-	 * Called by: Template (onchange on the hidden photo <input type="file">)
-	 * Purpose: Bridges the native file-input event to the addPhotos validation and preview logic,
-	 *          then resets the input so the same files can be re-selected if needed.
-	 *
-	 * @param e - The native change Event from the file input element
-	 * @returns void
-	 */
-	function handleFileSelect(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (input.files) addPhotos(input.files);
-		input.value = '';
-	}
 
 	/**
 	 * Validates the create-quote form, creates the quote via the API, and optionally uploads media.
@@ -792,90 +603,47 @@
 				{#if volumeMode === 'manual'}
 					<VolumeCalculator bind:volumeM3 bind:itemSummary />
 				{:else if volumeMode === 'video'}
-					{#if videoFiles.length > 0}
-						<div class="video-queue">
-							{#each videoFiles as file, i}
-								<div class="video-selected">
-									<Video size={20} />
-									<div class="video-selected__info">
-										<span class="video-selected__name">{file.name}</span>
-										<span class="video-selected__size">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
-									</div>
-									<button class="photo-thumb__remove" onclick={() => removeVideo(i)}>
-										<Trash2 size={12} />
-									</button>
-								</div>
-							{/each}
-							<button class="video-add-more-btn" type="button" onclick={() => videoFileInput.click()}>
-								<Upload size={14} />
-								Weitere Videos
-							</button>
-						</div>
-					{/if}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					{#if videoFiles.length === 0}
-						<div
-							class="photo-dropzone"
-							class:dragging={videoDragging}
-							role="button"
-							tabindex="0"
-							ondrop={handleVideoDrop}
-							ondragover={handleVideoDragOver}
-							ondragleave={handleVideoDragLeave}
-							onclick={() => videoFileInput.click()}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') videoFileInput.click(); }}
-						>
-							<Video size={32} />
-							<p>Videos hierher ziehen oder klicken</p>
-							<span class="photo-dropzone__hint">MP4, MOV, WebM — Raum-Rundgang fuer 3D-Analyse (max. 500 MB)</span>
-						</div>
-					{/if}
-					<input
-						type="file"
-						accept="video/*"
-						multiple
-						class="photo-file-input"
-						bind:this={videoFileInput}
-						onchange={handleVideoSelect}
-					/>
-				{:else}
-					<div
-						class="photo-dropzone"
-						class:dragging={draggingOver}
-						role="button"
-						tabindex="0"
-						ondrop={handleDrop}
-						ondragover={handleDragOver}
-						ondragleave={handleDragLeave}
-						onclick={() => photoFileInput.click()}
-						onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') photoFileInput.click(); }}
+					<MediaDropzone
+						variant="admin"
+						accept="video/*,.mp4,.mov,.mpeg,.mpg,.avi,.webm,.mkv,.3gp,.m4v"
+						mimeFilter="video/"
+						maxSizeMb={500}
+						label="Videos hierher ziehen oder klicken"
+						hint="MP4, MOV, MPEG, AVI, WebM, MKV, 3GP — Raum-Rundgang fuer 3D-Analyse (max. 500 MB)"
+						hasFiles={videoFiles.length > 0}
+						id="admin-list-videos"
+						onfiles={(files) => { videoFiles = [...videoFiles, ...files]; }}
+						onrejected={(file, reason) => { createError = reason; }}
 					>
-						<Upload size={32} />
-						<p>Fotos hierher ziehen oder klicken</p>
-						<span class="photo-dropzone__hint">JPG, PNG — Raumfotos für automatische Volumenberechnung</span>
-					</div>
-					<input
-						type="file"
-						accept="image/*"
-						multiple
-						class="photo-file-input"
-						bind:this={photoFileInput}
-						onchange={handleFileSelect}
-					/>
-
-					{#if photoPreviews.length > 0}
-						<div class="photo-grid">
-							{#each photoPreviews as preview, i}
-								<div class="photo-thumb">
-									<img src={preview} alt="Foto {i + 1}" />
-									<button class="photo-thumb__remove" onclick={() => removePhoto(i)}>
-										<Trash2 size={12} />
-									</button>
-								</div>
-							{/each}
-						</div>
-						<p class="photo-count">{photoFiles.length} {photoFiles.length === 1 ? 'Foto' : 'Fotos'} ausgewählt</p>
-					{/if}
+						<MediaPreviewGrid
+							files={videoFiles}
+							mode="queue"
+							variant="admin"
+							dropzoneId="admin-list-videos"
+							addMoreLabel="Weitere Videos"
+							onremove={(i) => { videoFiles = videoFiles.filter((_, idx) => idx !== i); }}
+						/>
+					</MediaDropzone>
+				{:else}
+					<MediaDropzone
+						variant="admin"
+						accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp,.tiff,.tif,.avif"
+						mimeFilter="image/"
+						label="Fotos hierher ziehen oder klicken"
+						hint="JPG, PNG, WebP, HEIC — Raumfotos für automatische Volumenberechnung"
+						hasFiles={photoFiles.length > 0}
+						id="admin-list-photos"
+						onfiles={(files) => { photoFiles = [...photoFiles, ...files]; }}
+						onrejected={(_, reason) => { createError = reason; }}
+					>
+						<MediaPreviewGrid
+							files={photoFiles}
+							mode="thumbnails"
+							variant="admin"
+							dropzoneId="admin-list-photos"
+							onremove={(i) => { photoFiles = photoFiles.filter((_, idx) => idx !== i); }}
+						/>
+					</MediaDropzone>
 				{/if}
 			</div>
 
@@ -1302,152 +1070,6 @@
 		background: #6366f1;
 		color: #ffffff;
 		box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-	}
-
-	/* Photo upload */
-	.photo-dropzone {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 2.5rem 1.5rem;
-		border: 2px dashed #cbd5e1;
-		border-radius: 12px;
-		background: #f8fafc;
-		color: #94a3b8;
-		cursor: pointer;
-		transition: all 150ms ease;
-	}
-
-	.photo-dropzone:hover {
-		border-color: #6366f1;
-		background: #f5f3ff;
-		color: #6366f1;
-	}
-
-	.photo-dropzone.dragging {
-		border-color: #6366f1;
-		background: #ede9fe;
-		color: #6366f1;
-	}
-
-	.photo-dropzone p {
-		margin: 0;
-		font-size: 0.9375rem;
-		font-weight: 500;
-	}
-
-	.photo-dropzone__hint {
-		font-size: 0.75rem;
-	}
-
-	.photo-file-input {
-		display: none;
-	}
-
-	.photo-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin-top: 0.75rem;
-	}
-
-	.photo-thumb {
-		position: relative;
-		width: 80px;
-		height: 80px;
-		border-radius: 8px;
-		overflow: hidden;
-		box-shadow: 2px 2px 6px #d1d9e6;
-	}
-
-	.photo-thumb img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.photo-thumb__remove {
-		position: absolute;
-		top: 4px;
-		right: 4px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		border: none;
-		background: rgba(0, 0, 0, 0.55);
-		color: #ffffff;
-		cursor: pointer;
-		opacity: 0;
-		transition: opacity 100ms;
-	}
-
-	.photo-thumb:hover .photo-thumb__remove {
-		opacity: 1;
-	}
-
-	.photo-count {
-		margin: 0.5rem 0 0;
-		font-size: 0.8125rem;
-		color: #64748b;
-	}
-
-	.video-selected {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		background: #f0f2f5;
-		border-radius: 10px;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
-	}
-
-	.video-selected__info {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
-	.video-selected__name {
-		font-size: 0.875rem;
-		color: #1a1a2e;
-		font-weight: 500;
-	}
-
-	.video-selected__size {
-		font-size: 0.75rem;
-		color: #94a3b8;
-	}
-
-	.video-queue {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.video-add-more-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		border: 2px dashed #cbd5e1;
-		border-radius: 8px;
-		background: none;
-		color: #64748b;
-		font-size: 0.8125rem;
-		cursor: pointer;
-		transition: all 150ms ease;
-	}
-
-	.video-add-more-btn:hover {
-		border-color: #6366f1;
-		color: #6366f1;
 	}
 
 	/* Services */

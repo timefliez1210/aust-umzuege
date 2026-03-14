@@ -7,6 +7,7 @@
 		UserCheck,
 		Mail,
 		CalendarDays,
+		CalendarCheck,
 		Settings,
 		PanelLeftClose,
 		PanelLeft,
@@ -33,6 +34,7 @@
 		{ href: '/admin/customers', label: 'Kunden', icon: Users },
 		{ href: '/admin/emails', label: 'E-Mails', icon: Mail },
 		{ href: '/admin/calendar', label: 'Kalender', icon: CalendarDays },
+		{ href: '/admin/calendar-items', label: 'Termine', icon: CalendarCheck },
 		{ href: '/admin/settings', label: 'Einstellungen', icon: Settings }
 	];
 

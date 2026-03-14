@@ -5,7 +5,7 @@
 	import { MapPin, Package, Users, ChevronRight } from 'lucide-svelte';
 
 	interface ScheduleJob {
-		inquiry_id: string;
+		inquiry_id: string | null;
 		job_date: string | null;
 		status: string;
 		origin_city: string | null;
@@ -14,6 +14,11 @@
 		customer_name: string | null;
 		planned_hours: number;
 		colleague_names: string[];
+		entry_type: string;
+		calendar_item_id: string | null;
+		title: string | null;
+		location: string | null;
+		category: string | null;
 	}
 
 	let selectedMonth = $state(new Date().toISOString().slice(0, 7));
@@ -107,41 +112,65 @@
 	<div class="job-list">
 		{#each jobs as job}
 			{@const s = statusLabel(job.status)}
-			<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}`)}>
-				<div class="job-top">
-					<span class="job-date">{fmtDate(job.job_date)}</span>
-					<span class="badge {s.cls}">{s.label}</span>
-				</div>
+			{#if job.entry_type === 'item'}
+				<div class="job-card item-card">
+					<div class="job-top">
+						<span class="job-date">{fmtDate(job.job_date)}</span>
+						<span class="badge badge-item">{job.category ?? 'Termin'}</span>
+					</div>
 
-				<div class="job-route">
-					<MapPin size={14} />
-					<span>
-						{#if job.origin_city && job.destination_city}
-							{job.origin_city} → {job.destination_city}
-						{:else}
-							{job.origin_city ?? job.destination_city ?? '—'}
+					<div class="job-route">
+						<span class="item-title">{job.title ?? '—'}</span>
+					</div>
+
+					{#if job.location}
+						<div class="job-route item-location">
+							<MapPin size={14} />
+							<span>{job.location}</span>
+						</div>
+					{/if}
+
+					<div class="job-meta">
+						<span class="meta-pill">{job.planned_hours.toFixed(1)} h</span>
+					</div>
+				</div>
+			{:else}
+				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}`)}>
+					<div class="job-top">
+						<span class="job-date">{fmtDate(job.job_date)}</span>
+						<span class="badge {s.cls}">{s.label}</span>
+					</div>
+
+					<div class="job-route">
+						<MapPin size={14} />
+						<span>
+							{#if job.origin_city && job.destination_city}
+								{job.origin_city} → {job.destination_city}
+							{:else}
+								{job.origin_city ?? job.destination_city ?? '—'}
+							{/if}
+						</span>
+					</div>
+
+					<div class="job-meta">
+						{#if job.estimated_volume_m3}
+							<span class="meta-pill">
+								<Package size={12} />
+								{job.estimated_volume_m3.toFixed(1)} m³
+							</span>
 						{/if}
-					</span>
-				</div>
+						{#if job.colleague_names.length > 0}
+							<span class="meta-pill">
+								<Users size={12} />
+								+{job.colleague_names.length}
+							</span>
+						{/if}
+						<span class="meta-pill">{job.planned_hours.toFixed(1)} h</span>
+					</div>
 
-				<div class="job-meta">
-					{#if job.estimated_volume_m3}
-						<span class="meta-pill">
-							<Package size={12} />
-							{job.estimated_volume_m3.toFixed(1)} m³
-						</span>
-					{/if}
-					{#if job.colleague_names.length > 0}
-						<span class="meta-pill">
-							<Users size={12} />
-							+{job.colleague_names.length}
-						</span>
-					{/if}
-					<span class="meta-pill">{job.planned_hours.toFixed(1)} h</span>
-				</div>
-
-				<ChevronRight size={16} class="chevron" />
-			</button>
+					<ChevronRight size={16} class="chevron" />
+				</button>
+			{/if}
 		{/each}
 	</div>
 {/if}
@@ -245,6 +274,26 @@
 	.badge-indigo { background: #e0e7ff; color: #4338ca; }
 	.badge-green  { background: #dcfce7; color: #16a34a; }
 	.badge-red    { background: #fee2e2; color: #dc2626; }
+	.badge-item   { background: #fef3c7; color: #92400e; }
+
+	.item-card {
+		cursor: default;
+		border-left: 3px solid #f59e0b;
+	}
+
+	.item-card:hover {
+		box-shadow: none;
+	}
+
+	.item-title {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: #1e293b;
+	}
+
+	.item-location {
+		color: #64748b;
+	}
 
 	.chevron {
 		position: absolute;

@@ -4,13 +4,17 @@
 	import { ChevronRight } from 'lucide-svelte';
 
 	interface HoursEntry {
-		inquiry_id: string;
+		inquiry_id: string | null;
 		job_date: string | null;
 		origin_city: string | null;
 		destination_city: string | null;
 		planned_hours: number;
 		actual_hours: number | null;
 		status: string;
+		entry_type: string;
+		calendar_item_id: string | null;
+		title: string | null;
+		location: string | null;
 	}
 
 	interface HoursSummary {
@@ -134,23 +138,36 @@
 		<h2 class="section-title">{summary.assignment_count} Einsätze</h2>
 		<div class="assignment-list">
 			{#each summary.assignments as a}
-				<button class="assignment-row" onclick={() => goto(`/worker/jobs/${a.inquiry_id}`)}>
-					<div class="a-date">{fmtDate(a.job_date)}</div>
-					<div class="a-route">
-						{#if a.origin_city && a.destination_city}
-							{a.origin_city} → {a.destination_city}
-						{:else}
-							{a.origin_city ?? a.destination_city ?? '—'}
-						{/if}
+				{#if a.entry_type === 'item'}
+					<div class="assignment-row item-row">
+						<div class="a-date">{fmtDate(a.job_date)}</div>
+						<div class="a-route">{a.title ?? '—'}</div>
+						<div class="a-hours">
+							<span class="h-planned">{a.planned_hours.toFixed(1)} h</span>
+							{#if a.actual_hours !== null}
+								<span class="h-actual">/ {a.actual_hours.toFixed(1)} h</span>
+							{/if}
+						</div>
 					</div>
-					<div class="a-hours">
-						<span class="h-planned">{a.planned_hours.toFixed(1)} h</span>
-						{#if a.actual_hours !== null}
-							<span class="h-actual">/ {a.actual_hours.toFixed(1)} h</span>
-						{/if}
-					</div>
-					<ChevronRight size={14} class="chevron" />
-				</button>
+				{:else}
+					<button class="assignment-row" onclick={() => goto(`/worker/jobs/${a.inquiry_id}`)}>
+						<div class="a-date">{fmtDate(a.job_date)}</div>
+						<div class="a-route">
+							{#if a.origin_city && a.destination_city}
+								{a.origin_city} → {a.destination_city}
+							{:else}
+								{a.origin_city ?? a.destination_city ?? '—'}
+							{/if}
+						</div>
+						<div class="a-hours">
+							<span class="h-planned">{a.planned_hours.toFixed(1)} h</span>
+							{#if a.actual_hours !== null}
+								<span class="h-actual">/ {a.actual_hours.toFixed(1)} h</span>
+							{/if}
+						</div>
+						<ChevronRight size={14} class="chevron" />
+					</button>
+				{/if}
 			{/each}
 		</div>
 	{:else}
@@ -296,6 +313,13 @@
 
 	.assignment-row:last-child { border-bottom: none; }
 	.assignment-row:hover { background: #f8fafc; }
+
+	.item-row {
+		cursor: default;
+		border-left: 3px solid #f59e0b;
+	}
+
+	.item-row:hover { background: #fff; }
 
 	.a-date {
 		font-size: 0.8125rem;

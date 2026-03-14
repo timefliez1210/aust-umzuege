@@ -8,6 +8,7 @@
 
 const TOKEN_KEY = 'worker_token';
 const EMPLOYEE_KEY = 'worker_employee';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.aufraeumhelden.com';
 
 export interface WorkerEmployee {
 	id: string;
@@ -105,7 +106,7 @@ export async function workerFetch<T = unknown>(
 		headers['Content-Type'] = 'application/json';
 	}
 
-	const res = await fetch(path, { ...options, headers });
+	const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
 	if (res.status === 401) {
 		worker.logout();

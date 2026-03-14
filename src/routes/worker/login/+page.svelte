@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { worker } from '$lib/stores/worker.svelte';
 
+	const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.aufraeumhelden.com';
+
 	let email = $state('');
 	let code = $state('');
 	let step = $state<'email' | 'code'>('email');
@@ -26,7 +28,7 @@
 
 		loading = true;
 		try {
-			const res = await fetch('/api/v1/employee/auth/request', {
+			const res = await fetch(`${API_BASE}/api/v1/employee/auth/request`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email: trimmed }),
@@ -61,7 +63,7 @@
 
 		loading = true;
 		try {
-			const res = await fetch('/api/v1/employee/auth/verify', {
+			const res = await fetch(`${API_BASE}/api/v1/employee/auth/verify`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, code: trimmed }),

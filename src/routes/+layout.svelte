@@ -16,7 +16,7 @@
 <svelte:head>
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  {#if !$page.url.pathname.startsWith('/admin')}
+  {#if !$page.url.pathname.startsWith('/admin') && !$page.url.pathname.startsWith('/worker')}
     <!-- Google Analytics (deferred until after user interaction or idle) -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -45,7 +45,7 @@
   {/if}
 </svelte:head>
 
-{#if $page.url.pathname.startsWith('/admin')}
+{#if $page.url.pathname.startsWith('/admin') || $page.url.pathname.startsWith('/worker')}
   {@render children()}
 {:else}
 

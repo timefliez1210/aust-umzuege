@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPatch, apiPost, formatDate, formatEuro } from '$lib/utils/api.svelte';
 	import { ArrowLeft, Save, Trash2 } from 'lucide-svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 
@@ -113,10 +114,12 @@
 	{:else if data}
 		<div class="page-header">
 			<h1>{data.name || data.email}</h1>
+			{#if auth.user?.role === 'admin'}
 			<button class="btn-delete-entity" onclick={deleteCustomer} title="Kunde loeschen">
 				<Trash2 size={16} />
 				Loeschen
 			</button>
+		{/if}
 		</div>
 
 		{#if message}

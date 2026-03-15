@@ -9,18 +9,56 @@
 		capacity: number;
 	}
 
+	interface ActivityItem {
+		type: string;
+		description: string;
+		created_at: string;
+		id: string | null;
+		status: string | null;
+	}
+
 	interface DashboardData {
 		open_quotes: number;
 		pending_offers: number;
 		todays_bookings: number;
 		total_customers: number;
-		recent_activity: {
-			type: string;
-			description: string;
-			created_at: string;
-			status?: string;
-		}[];
+		recent_activity: ActivityItem[];
 		conflict_dates: ConflictDate[];
+	}
+
+	/**
+	 * Build the navigation href for a recent activity item.
+	 *
+	 * Called by: template ({#each recent_activity})
+	 * Purpose: Map activity type + id to the correct admin page URL so each
+	 *          activity row is a clickable link.
+	 *
+	 * @param type - Activity type string from API (inquiry, offer_*, email, calendar_item)
+	 * @param id - UUID of the target resource, or null
+	 * @returns Absolute path string suitable for <a href>, or null if no link available
+	 */
+	function activityHref(type: string, id: string | null): string | null {
+		if (!id) return null;
+		if (type === 'email') return `/admin/emails/${id}`;
+		if (type === 'calendar_item') return `/admin/calendar-items/${id}`;
+		// inquiry, offer_draft, offer_sent, offer_approved, etc. all link to inquiry
+		return `/admin/inquiries/${id}`;
+	}
+
+	/**
+	 * Translate raw activity type to a short German label for display.
+	 *
+	 * Called by: template ({#each recent_activity})
+	 * Purpose: Make activity type human-readable in German.
+	 *
+	 * @param type - Activity type string from API
+	 * @returns Short German label
+	 */
+	function activityTypeLabel(type: string): string {
+		if (type === 'email') return 'E-Mail';
+		if (type === 'calendar_item') return 'Termin';
+		if (type.startsWith('offer_')) return 'Angebot';
+		return 'Anfrage';
 	}
 
 	let data = $state<DashboardData | null>(null);
@@ -116,15 +154,31 @@
 		<div class="activity-list">
 			{#if data && data.recent_activity.length > 0}
 				{#each data.recent_activity as activity}
-					<div class="activity-item">
-						<div class="activity-info">
-							<span class="activity-desc">{activity.description}</span>
-							<span class="activity-time">{formatDateTime(activity.created_at)}</span>
+					{@const href = activityHref(activity.type, activity.id)}
+					{#if href}
+						<a {href} class="activity-item activity-link">
+							<div class="activity-info">
+								<span class="activity-desc">
+									<span class="activity-type-badge">{activityTypeLabel(activity.type)}</span>
+									{activity.description}
+								</span>
+								<span class="activity-time">{formatDateTime(activity.created_at)}</span>
+							</div>
+							{#if activity.status}
+								<StatusBadge status={activity.status} />
+							{/if}
+						</a>
+					{:else}
+						<div class="activity-item">
+							<div class="activity-info">
+								<span class="activity-desc">{activity.description}</span>
+								<span class="activity-time">{formatDateTime(activity.created_at)}</span>
+							</div>
+							{#if activity.status}
+								<StatusBadge status={activity.status} />
+							{/if}
 						</div>
-						{#if activity.status}
-							<StatusBadge status={activity.status} />
-						{/if}
-					</div>
+					{/if}
 				{/each}
 			{:else}
 				<div class="activity-empty">Keine aktuellen Aktivitaeten</div>
@@ -272,6 +326,28 @@
 		text-align: center;
 		color: #94a3b8;
 		font-size: 0.875rem;
+	}
+
+	.activity-link {
+		text-decoration: none;
+		transition: background 150ms;
+	}
+
+	.activity-link:hover {
+		background: #f8fafc;
+	}
+
+	.activity-type-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		background: #e0e7ff;
+		color: #3730a3;
+		padding: 0.1rem 0.35rem;
+		border-radius: 4px;
+		margin-right: 0.35rem;
+		vertical-align: middle;
 	}
 
 	.conflict-card {

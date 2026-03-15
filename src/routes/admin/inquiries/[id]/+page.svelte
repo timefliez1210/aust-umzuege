@@ -192,6 +192,7 @@
 	let editVolume = $state<number | null>(null);
 	let editDistance = $state(0);
 	let editNotes = $state("");
+	let editDate = $state("");
 
 	// Pricing fields
 	let editPersons = $state(2);
@@ -2104,6 +2105,14 @@
 							type="number"
 							step="0.1"
 							bind:value={editDistance}
+						/>
+					</div>
+					<div class="field">
+						<label for="preferred-date">Wunschdatum</label>
+						<input
+							id="preferred-date"
+							type="date"
+							bind:value={editDate}
 						/>
 					</div>
 					<div class="field full-width">

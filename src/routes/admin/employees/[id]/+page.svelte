@@ -35,6 +35,17 @@
 		status: string;
 	}
 
+	interface CalendarItemAssignment {
+		calendar_item_id: string;
+		title: string;
+		category: string;
+		location: string | null;
+		scheduled_date: string | null;
+		planned_hours: number;
+		actual_hours: number | null;
+		status: string;
+	}
+
 	interface HoursSummary {
 		month: string;
 		target_hours: number;
@@ -42,6 +53,7 @@
 		actual_hours: number;
 		assignment_count: number;
 		assignments: Assignment[];
+		calendar_items: CalendarItemAssignment[];
 	}
 
 	let data = $state<Employee | null>(null);
@@ -481,14 +493,14 @@
 		<div class="card-header">
 			<h2>Einsaetze</h2>
 		</div>
-		{#if hoursSummary && hoursSummary.assignments.length > 0}
+		{#if hoursSummary && (hoursSummary.assignments.length > 0 || hoursSummary.calendar_items?.length > 0)}
 			<div class="table-wrapper">
 				<table class="data-table">
 					<thead>
 						<tr>
 							<th>Datum</th>
-							<th>Kunde</th>
-							<th>Strecke</th>
+							<th>Beschreibung</th>
+							<th>Details</th>
 							<th class="num">Geplant (h)</th>
 							<th class="num">Ist (h)</th>
 							<th>Status</th>
@@ -512,6 +524,22 @@
 								<td class="num">{a.planned_hours.toFixed(1)}</td>
 								<td class="num">{a.actual_hours?.toFixed(1) ?? '—'}</td>
 								<td><StatusBadge status={a.status} /></td>
+							</tr>
+						{/each}
+						{#each (hoursSummary.calendar_items ?? []) as ci}
+							<tr
+								class="clickable-row item-row"
+								onclick={() => goto(`/admin/calendar-items/${ci.calendar_item_id}`)}
+							>
+								<td>{ci.scheduled_date ? formatDate(ci.scheduled_date) : '—'}</td>
+								<td>
+									<span class="item-badge">Termin</span>
+									{ci.title}
+								</td>
+								<td>{ci.location ?? '—'}</td>
+								<td class="num">{ci.planned_hours.toFixed(1)}</td>
+								<td class="num">{ci.actual_hours?.toFixed(1) ?? '—'}</td>
+								<td><StatusBadge status={ci.status} /></td>
 							</tr>
 						{/each}
 					</tbody>
@@ -698,6 +726,27 @@
 
 	.clickable-row:hover {
 		background: #f8fafc;
+	}
+
+	.item-row {
+		background: #fffbeb;
+	}
+
+	.item-row:hover {
+		background: #fef3c7;
+	}
+
+	.item-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		background: #fde68a;
+		color: #92400e;
+		padding: 0.1rem 0.35rem;
+		border-radius: 4px;
+		margin-right: 0.35rem;
+		vertical-align: middle;
 	}
 
 	.loading,

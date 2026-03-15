@@ -15,6 +15,16 @@
 		offer_price_cents: number | null;
 	}
 
+	interface CalendarItem {
+		id: string;
+		title: string;
+		category: string;
+		location: string | null;
+		scheduled_date: string;
+		duration_hours: number;
+		status: string;
+	}
+
 	interface DaySchedule {
 		date: string;
 		available: boolean;
@@ -24,10 +34,19 @@
 		inquiries: InquiryItem[];
 	}
 
+	const CATEGORY_LABELS: Record<string, string> = {
+		internal: 'Intern',
+		maintenance: 'Wartung',
+		training: 'Schulung',
+		other: 'Sonstiges'
+	};
+
 	let currentDate = $state(new Date());
 	let schedule = $state<DaySchedule[]>([]);
+	let calendarItems = $state<CalendarItem[]>([]);
 	let loading = $state(true);
 	let selectedDay = $state<DaySchedule | null>(null);
+	let selectedDayItems = $state<CalendarItem[]>([]);
 	let capacityInput = $state('');
 	let savingCapacity = $state(false);
 
@@ -59,10 +78,16 @@
 			const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
 			const lastDay = new Date(year, month + 1, 0).getDate();
 			const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-			const res = await apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`);
-			schedule = Array.isArray(res) ? res : (res.dates || []);
+			const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+			const [schedRes, itemsRes] = await Promise.all([
+				apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`),
+				apiGet<CalendarItem[]>(`/api/v1/admin/calendar-items?month=${monthStr}`).catch(() => [])
+			]);
+			schedule = Array.isArray(schedRes) ? schedRes : (schedRes.dates || []);
+			calendarItems = Array.isArray(itemsRes) ? itemsRes : [];
 		} catch {
 			schedule = [];
+			calendarItems = [];
 		} finally {
 			loading = false;
 		}
@@ -113,6 +138,7 @@
 		const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
 		selectedDay = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1 };
 		capacityInput = String(selectedDay.capacity);
+		selectedDayItems = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dateStr));
 	}
 
 	/**
@@ -173,6 +199,8 @@
 					{@const capacity = day.schedule?.capacity || 1}
 					{@const full = booked >= capacity}
 					{@const overbooked = booked > capacity}
+					{@const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`}
+					{@const dayItems = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dateStr))}
 					<button
 						class="cal-cell"
 						class:today={day.isToday}
@@ -184,6 +212,9 @@
 						<span class="cal-date">{day.date}</span>
 						{#if booked > 0}
 							<span class="cal-count">{#if overbooked}&#9888;&#xFE0F; {/if}{booked}/{capacity}</span>
+						{/if}
+						{#if dayItems.length > 0}
+							<span class="cal-items-dot" title="{dayItems.length} Termin(e)">{dayItems.length} T</span>
 						{/if}
 					</button>
 				{/if}
@@ -239,6 +270,29 @@
 					<p class="text-muted">Keine Auftraege</p>
 				{/if}
 			</div>
+
+			{#if selectedDayItems.length > 0}
+				<div class="modal-section">
+					<span class="modal-label">Termine ({selectedDayItems.length})</span>
+					{#each selectedDayItems as ci}
+						<div class="booking-item item-entry">
+							<div class="booking-info">
+								<a href="/admin/calendar-items/{ci.id}" class="booking-link">
+									<span class="booking-name">{ci.title}</span>
+									<ExternalLink size={12} />
+								</a>
+								<span class="cat-badge">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
+							</div>
+							{#if ci.location}
+								<span class="booking-route">{ci.location}</span>
+							{/if}
+							<div class="booking-details">
+								<span class="booking-detail">&#x23F1; {ci.duration_hours.toFixed(1)} h</span>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -293,6 +347,10 @@
 	.booking-details { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
 	.booking-detail { font-size: 0.75rem; color: #475569; font-weight: 500; }
 	.text-muted { color: #94a3b8; font-size: 0.875rem; }
+
+	.cal-items-dot { font-size: 0.6rem; font-weight: 700; background: #fde68a; color: #92400e; padding: 0.1rem 0.3rem; border-radius: 4px; }
+	.item-entry { background: #fffbeb; border-radius: 6px; padding: 0.5rem 0.625rem; margin-bottom: 0.375rem; }
+	.cat-badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: #fde68a; color: #92400e; padding: 0.1rem 0.35rem; border-radius: 4px; }
 
 	@media (max-width: 768px) {
 		.page-header { flex-wrap: wrap; }

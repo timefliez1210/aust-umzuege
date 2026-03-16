@@ -196,7 +196,7 @@
                 </div>
                 <h1>Die ultimative Umzugs-Checkliste</h1>
                 <p class="subtitle">Schritt für Schritt ins neue Zuhause</p>
-                <p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge</p>
+                <p class="author-byline">Von Alex Aust, Geschäftsführer bei Aust Umzüge</p>
             </header>
 
             <div class="guide-intro">

@@ -74,7 +74,7 @@ export const aggregateRating = {
 	reviewCount: 71,
 };
 
-export const allReviewsUrl = "https://www.google.com/maps/place/Aust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen/@52.1557877,9.9517408,17z/data=!4m18!1m9!3m8!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!2sAust+Umz%C3%BCge+%26+Haushaltsaufl%C3%B6sungen!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0!3m7!1s0x47baaf2ef7d8bbb1:0x385bbbee5ac8beb0!8m2!3d52.1557877!4d9.9517408!9m1!1b1!16s%2Fg%2F11hzcfn9_0?entry=ttu";
+export const allReviewsUrl = "https://maps.app.goo.gl/z5e8m7QrGPa5Cssp6";
 
 export const website = {
 	"@type": "WebSite",
@@ -91,9 +91,9 @@ export const website = {
 export const businessInfo = {
 	"@type": "MovingCompany",
 	"@id": "https://www.aust-umzuege.de/#organization",
-	name: "Aust Umzüge und Haushaltsauflösungen",
+	name: "Aust Umzüge & Haushaltsauflösungen",
 	alternateName: "Aust Umzüge",
-	legalName: "Aust Umzüge und Haushaltsauflösungen",
+	legalName: "Aust Umzüge & Haushaltsauflösungen",
 	url: "https://www.aust-umzuege.de",
 	logo: {
 		"@type": "ImageObject",
@@ -168,7 +168,7 @@ export const businessInfo = {
 	},
 	founder: {
 		"@type": "Person",
-		name: "Alexander Aust"
+		name: "Alex Aust"
 	},
 	aggregateRating: {
 		"@type": "AggregateRating",
@@ -393,7 +393,7 @@ export const articles = {
 		publisher: {
 			"@type": "Organization",
 			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen",
+			name: "Aust Umzüge & Haushaltsauflösungen",
 			logo: {
 				"@type": "ImageObject",
 				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
@@ -422,7 +422,7 @@ export const articles = {
 		publisher: {
 			"@type": "Organization",
 			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen",
+			name: "Aust Umzüge & Haushaltsauflösungen",
 			logo: {
 				"@type": "ImageObject",
 				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
@@ -451,7 +451,7 @@ export const articles = {
 		publisher: {
 			"@type": "Organization",
 			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen",
+			name: "Aust Umzüge & Haushaltsauflösungen",
 			logo: {
 				"@type": "ImageObject",
 				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
@@ -480,7 +480,7 @@ export const articles = {
 		publisher: {
 			"@type": "Organization",
 			"@id": "https://www.aust-umzuege.de/#organization",
-			name: "Aust Umzüge und Haushaltsauflösungen",
+			name: "Aust Umzüge & Haushaltsauflösungen",
 			logo: {
 				"@type": "ImageObject",
 				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"

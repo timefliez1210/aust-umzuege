@@ -64,38 +64,41 @@
 	 * Purpose: Provides fast thumbnail previews without FileReader by using
 	 *          the browser's native object URL mechanism. URLs are revoked when
 	 *          the effect re-runs or the component is destroyed to prevent memory leaks.
-	 *
-	 * @returns void (side-effect: populates and revokes `objectUrls` map)
 	 */
+	// Internal (untracked) cache — never read by Svelte's dependency tracker
+	let _urlCache = new Map<File, string>();
+	// Reactive snapshot exposed to the template
 	let objectUrls = $state<Map<File, string>>(new Map());
 
 	$effect(() => {
-		// Revoke any URLs for files no longer in the list
+		// Only read `files` — do NOT read `objectUrls` inside this effect
 		const currentFiles = new Set(files);
-		for (const [file, url] of objectUrls) {
+
+		// Revoke URLs for files no longer in the list
+		for (const [file, url] of _urlCache) {
 			if (!currentFiles.has(file)) {
 				if (url) URL.revokeObjectURL(url);
-				objectUrls.delete(file);
+				_urlCache.delete(file);
 			}
 		}
 		// Create URLs for new image files
 		for (const file of files) {
-			if (!objectUrls.has(file)) {
+			if (!_urlCache.has(file)) {
 				if (file.type.startsWith('image/') || isImageByExtension(file.name)) {
-					objectUrls.set(file, URL.createObjectURL(file));
+					_urlCache.set(file, URL.createObjectURL(file));
 				} else {
-					objectUrls.set(file, '');
+					_urlCache.set(file, '');
 				}
 			}
 		}
-		// Trigger reactivity — $state Map mutations need a new assignment
-		objectUrls = new Map(objectUrls);
+		// Publish a new snapshot for the template
+		objectUrls = new Map(_urlCache);
 
 		return () => {
-			// Revoke all URLs on component destroy
-			for (const url of objectUrls.values()) {
+			for (const url of _urlCache.values()) {
 				if (url) URL.revokeObjectURL(url);
 			}
+			_urlCache.clear();
 		};
 	});
 

@@ -43,7 +43,7 @@
 				</div>
 				<h1>Woran erkenne ich eine seriöse Umzugsfirma?</h1>
 				<p class="subtitle">Qualität erkennen, schwarze Schafe vermeiden</p>
-				<p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge</p>
+				<p class="author-byline">Von Alex Aust, Geschäftsführer bei Aust Umzüge</p>
 			</header>
 
 			<div class="guide-intro">

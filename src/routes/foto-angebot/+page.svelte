@@ -85,10 +85,8 @@
 		formData.privacyAccepted,
 	);
 
-	// Termin: base required; addresses required only when files are attached (need API)
-	const isTerminValid = $derived(
-		isBaseValid && (attachments.length === 0 || hasAddresses),
-	);
+	// Termin: base required, addresses optional
+	const isTerminValid = $derived(isBaseValid);
 
 	// Manuell / foto / video: addresses always required
 	const isManuellValid = $derived(isBaseValid && hasAddresses);
@@ -261,7 +259,7 @@
 						type="button"
 						class="ap__mode-btn"
 						class:ap__mode-btn--active={activeMode === m.id}
-						onclick={() => { activeMode = m.id; submitError = ""; }}
+						onclick={() => { activeMode = m.id; submitError = ""; attachments = []; }}
 					>
 						<m.icon size={20} strokeWidth={1.8} />
 						<span class="ap__mode-label">{m.label}</span>
@@ -277,23 +275,21 @@
 			<form class="ap__form" onsubmit={handleSubmit}>
 
 				<!-- ======================================================
-				     MEDIA SECTION — all modes (required for foto/video, optional otherwise)
+				     MEDIA SECTION — foto/video modes only
 				     ====================================================== -->
+				{#if activeMode === "foto" || activeMode === "video"}
 				<section class="ap__section">
 					<h2 class="ap__section-title">
 						<span class="ap__step">1</span>
 						{#if activeMode === "foto"}Fotos &amp; Videos *
-						{:else if activeMode === "video"}Videos &amp; Fotos *
-						{:else}Anhänge <span class="ap__step-optional">(optional)</span>
+						{:else}Videos &amp; Fotos *
 						{/if}
 					</h2>
 					<p class="ap__hint">
 						{#if activeMode === "video"}
 							Videos für präzise 3D-Analyse — langsam gehen, gute Beleuchtung. Fotos willkommen.
-						{:else if activeMode === "foto"}
-							Jeden Raum aus einer Ecke fotografieren. Videos sind ebenfalls willkommen.
 						{:else}
-							Fotos, Videos oder beliebige Dateien beifügen — hilft uns, ein genaues Angebot zu erstellen.
+							Jeden Raum aus einer Ecke fotografieren. Videos sind ebenfalls willkommen.
 						{/if}
 						Jedes Format akzeptiert, beliebig viele Dateien.
 					</p>
@@ -319,10 +315,8 @@
 					{#if attachments.length > 0}
 						<p class="ap__count">{attachments.length} {attachments.length === 1 ? "Datei" : "Dateien"} ausgewählt</p>
 					{/if}
-					{#if activeMode === "termin" && attachments.length > 0 && !hasAddresses}
-						<p class="ap__warn">Bitte Adressen ausfüllen, damit Ihre Dateien hochgeladen werden können.</p>
-					{/if}
 				</section>
+				{/if}
 
 				<!-- ======================================================
 				     TERMIN — appointment details

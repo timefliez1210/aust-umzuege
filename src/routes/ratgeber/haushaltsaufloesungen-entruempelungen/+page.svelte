@@ -43,7 +43,7 @@
 				</div>
 				<h1>Haushaltsauflösungen und Entrümpelungen</h1>
 				<p class="subtitle">Praktischer Ratgeber für die komplette Wohnungsräumung</p>
-				<p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge</p>
+				<p class="author-byline">Von Alex Aust, Geschäftsführer bei Aust Umzüge</p>
 			</header>
 
 			<div class="guide-intro">

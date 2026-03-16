@@ -39,7 +39,7 @@
                 </div>
                 <h1>Verpackungstipps vom Profi</h1>
                 <p class="subtitle">Sicher verpackt ist halb umgezogen</p>
-                <p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge</p>
+                <p class="author-byline">Von Alex Aust, Geschäftsführer bei Aust Umzüge</p>
             </header>
 
             <div class="guide-intro">

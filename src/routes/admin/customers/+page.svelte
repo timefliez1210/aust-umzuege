@@ -8,6 +8,7 @@
 		id: string;
 		email: string;
 		name: string | null;
+		salutation: string | null;
 		phone: string | null;
 		created_at: string;
 	}
@@ -217,7 +218,9 @@
 	>
 		{#snippet row(item, _i)}
 			{@const c = item as Customer}
-			<td class="cell-name">{c.name || '—'}</td>
+			<td class="cell-name">
+			{#if c.salutation}<span class="sal-badge">{c.salutation === 'D' ? 'Div.' : c.salutation}</span>{/if}{c.name || '—'}
+		</td>
 			<td>{c.email}</td>
 			<td class="text-muted">{c.phone || '—'}</td>
 			<td class="text-muted">{formatDate(c.created_at)}</td>
@@ -369,6 +372,18 @@
 
 	.search-box input::placeholder {
 		color: #94a3b8;
+	}
+
+	.sal-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		color: #4338ca;
+		background: #e0e7ff;
+		padding: 0.05rem 0.3rem;
+		border-radius: 4px;
+		margin-right: 0.3rem;
+		vertical-align: middle;
 	}
 
 	.cell-name {

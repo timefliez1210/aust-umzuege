@@ -13,6 +13,7 @@
 		id: string;
 		customer_name: string | null;
 		customer_email: string;
+		salutation: string | null;
 		origin_city: string | null;
 		destination_city: string | null;
 		volume_m3: number | null;
@@ -729,7 +730,9 @@
 			{@const q = item as InquiryListItem}
 			<td>{formatDate(q.created_at)}</td>
 			<td>
-				<div class="cell-name">{q.customer_name || q.customer_email}</div>
+				<div class="cell-name">
+					{#if q.salutation}<span class="sal-badge">{q.salutation === 'D' ? 'Div.' : q.salutation}</span>{/if}{q.customer_name || q.customer_email}
+				</div>
 				{#if q.customer_name}<div class="cell-email">{q.customer_email}</div>{/if}
 			</td>
 			<td>
@@ -1220,6 +1223,18 @@
 
 	.search-box input::placeholder {
 		color: #94a3b8;
+	}
+
+	.sal-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		color: #4338ca;
+		background: #e0e7ff;
+		padding: 0.05rem 0.3rem;
+		border-radius: 4px;
+		margin-right: 0.3rem;
+		vertical-align: middle;
 	}
 
 	.cell-name {

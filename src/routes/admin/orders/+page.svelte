@@ -17,6 +17,8 @@
 		offer_price_brutto: number | null;
 		booking_date: string | null;
 		created_at: string;
+		employees_assigned: number;
+		employees_quoted: number | null;
 	}
 
 	interface OrdersResponse {
@@ -48,6 +50,7 @@
 		{ key: 'route', label: 'Von / Nach' },
 		{ key: 'volume_m3', label: 'Volumen', width: '90px' },
 		{ key: 'offer_price_brutto', label: 'Preis', width: '100px' },
+		{ key: 'employees', label: 'Helfer', width: '80px' },
 		{ key: 'status', label: 'Status', width: '120px' }
 	];
 
@@ -175,6 +178,17 @@
 					<span class="text-muted">--</span>
 				{/if}
 			</td>
+			<td>
+				{#if o.employees_quoted != null}
+					<span class="emp-cell" class:emp-ok={o.employees_assigned >= o.employees_quoted} class:emp-partial={o.employees_assigned > 0 && o.employees_assigned < o.employees_quoted} class:emp-none={o.employees_assigned === 0}>
+						{o.employees_assigned}/{o.employees_quoted}
+					</span>
+				{:else if o.employees_assigned > 0}
+					<span class="emp-cell">{o.employees_assigned}</span>
+				{:else}
+					<span class="text-muted">--</span>
+				{/if}
+			</td>
 			<td><StatusBadge status={o.status} /></td>
 		{/snippet}
 	</DataTable>
@@ -298,6 +312,19 @@
 	.text-muted {
 		color: #cbd5e1;
 	}
+
+	.emp-cell {
+		display: inline-block;
+		font-size: 0.8125rem;
+		font-weight: 700;
+		padding: 0.1rem 0.4rem;
+		border-radius: 5px;
+		background: #f1f5f9;
+		color: #64748b;
+	}
+	.emp-ok { background: #dcfce7; color: #15803d; }
+	.emp-partial { background: #fef9c3; color: #92400e; }
+	.emp-none { background: #fee2e2; color: #b91c1c; }
 
 	.pagination {
 		display: flex;

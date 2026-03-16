@@ -72,7 +72,7 @@
 		try {
 			await apiFetch('/api/v1/auth/reset-password/request', {
 				method: 'POST',
-				body: JSON.stringify({ email: resetEmail.trim() }),
+				body: { email: resetEmail.trim() },
 			});
 			view = 'verify';
 		} catch (err) {
@@ -102,7 +102,7 @@
 		try {
 			await apiFetch('/api/v1/auth/reset-password/verify', {
 				method: 'POST',
-				body: JSON.stringify({ email: resetEmail.trim(), otp: resetOtp.trim(), new_password: resetNewPassword }),
+				body: { email: resetEmail.trim(), otp: resetOtp.trim(), new_password: resetNewPassword },
 			});
 			resetSuccess = 'Passwort erfolgreich geändert. Sie werden weitergeleitet...';
 			setTimeout(() => { view = 'login'; email = resetEmail; }, 2000);

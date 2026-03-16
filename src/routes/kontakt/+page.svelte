@@ -20,7 +20,8 @@
     let submitError = $state("");
 
     const isFormValid = $derived(
-        (formData.last_name !== "" || formData.name !== "") &&
+        formData.salutation !== "" &&
+            (formData.last_name !== "" || formData.name !== "") &&
             formData.email !== "" &&
             formData.message !== "" &&
             formData.privacyAccepted,

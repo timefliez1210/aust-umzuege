@@ -76,6 +76,8 @@
 		bbox: number[] | null;
 		bbox_image_index: number | null;
 		seen_in_images: number[] | null;
+		is_moveable?: boolean;
+		packs_into_boxes?: boolean;
 	}
 
 	interface EstimationSnapshot {
@@ -178,6 +180,8 @@
 		seen_in_images: number[] | null;
 		category: string | null;
 		dimensions: unknown | null;
+		is_moveable: boolean;
+		packs_into_boxes: boolean;
 	}
 
 	let data = $state<InquiryResponse | null>(null);
@@ -249,13 +253,19 @@
 		}
 	}
 
+	// Derived item slices by transport category
+	let mainItems = $derived(editItems.filter((i) => i.is_moveable && !i.packs_into_boxes));
+	let boxItems = $derived(editItems.filter((i) => i.is_moveable && i.packs_into_boxes));
+	let nonMoveableItems = $derived(editItems.filter((i) => !i.is_moveable));
+	let showNonMoveable = $state(false);
+
 	let sortedItems = $derived(() => {
-		const filtered = filterItemsByPhotoIndex(editItems, filterPhotoIndex);
+		const filtered = filterItemsByPhotoIndex(mainItems, filterPhotoIndex);
 		return sortItems(filtered, sortKey, sortAsc);
 	});
 
-	// Live-computed total volume from editable items
-	let computedTotal = $derived(computeTotalVolume(editItems));
+	// Live-computed total volume from main (moveable, non-box) items only
+	let computedTotal = $derived(computeTotalVolume(mainItems));
 
 	// Editable line items
 	const ROW_OPTIONS: { row: number; label: string; defaultCents: number; defaultRemark: string }[] =
@@ -907,6 +917,8 @@
 			seen_in_images: item.seen_in_images ?? null,
 			category: item.category ?? null,
 			dimensions: item.dimensions ?? null,
+			is_moveable: item.is_moveable ?? true,
+			packs_into_boxes: item.packs_into_boxes ?? false,
 		}));
 		itemsDirty = false;
 	}
@@ -1115,6 +1127,8 @@
 					seen_in_images: item.seen_in_images,
 					category: item.category,
 					dimensions: item.dimensions,
+					is_moveable: item.is_moveable,
+					packs_into_boxes: item.packs_into_boxes,
 				})),
 			});
 			editVolume = computedTotal;
@@ -1160,11 +1174,12 @@
 				crop_url: null,
 				source_image_url: null,
 				bbox: null,
-				crop_s3_key: null,
 				bbox_image_index: null,
 				seen_in_images: null,
 				category: null,
 				dimensions: null,
+				is_moveable: true,
+				packs_into_boxes: false,
 			},
 		];
 		itemsDirty = true;
@@ -1218,15 +1233,23 @@
 	 *
 	 * Called by: Template (onclick on the "Neu berechnen" button in the page header)
 	 * Purpose: Used after address corrections to recompute distance-based pricing and regenerate the offer.
+	 *          Falls back to generateOffer() when no offer exists yet.
 	 *          First persists any unsaved items and inquiry metadata so the backend reads fresh data,
-	 *          then calls POST /api/v1/inquiries/{id}/generate-offer with re_estimate flag
-	 *          plus the admin's current pricing inputs (persons, hours, rate, price, line_items).
+	 *          then calls POST /api/v1/inquiries/{id}/generate-offer with the admin's current pricing
+	 *          inputs (persons, hours, rate, price, line_items).
+	 *          Crucially, Fahrkostenpauschale is excluded from the line_items override so that the
+	 *          backend always re-computes it from ORS (the purpose of "Neu Berechnen"). All other
+	 *          custom line items the admin has added are preserved as overrides.
 	 *          Prompts for confirmation before proceeding.
 	 *
 	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
 	 */
 	async function reEstimateOffer() {
-		if (!latestOffer) return;
+		if (!latestOffer) {
+			// No offer yet — delegate to generateOffer() which handles the first-time case
+			await generateOffer();
+			return;
+		}
 		if (!confirm("Entfernung neu berechnen und Angebot neu erstellen?"))
 			return;
 		try {
@@ -1236,9 +1259,10 @@
 			}
 			// Persist inquiry metadata (volume, distance, notes) so the backend reads fresh data
 			await persistInquiry();
-			// Include admin-edited pricing so the regenerated offer reflects manual overrides
+			// Include admin-edited pricing so the regenerated offer reflects manual overrides.
+			// Exclude Fahrkostenpauschale from the line_items override so the backend always
+			// re-computes it fresh from ORS — that is the whole point of "Neu Berechnen".
 			const payload: Record<string, unknown> = {
-				re_estimate: true,
 				persons: editPersons,
 				hours: editHours,
 				rate: editRateCents / 100,
@@ -1246,8 +1270,11 @@
 			if (priceDirty) {
 				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
 			}
-			if (editLineItems.length > 0) {
-				payload.line_items = editLineItems.map((li) => ({
+			const nonFahrtItems = editLineItems.filter(
+				(li) => li.label !== "Fahrkostenpauschale",
+			);
+			if (nonFahrtItems.length > 0) {
+				payload.line_items = nonFahrtItems.map((li) => ({
 					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unitPriceCents / 100,
@@ -2346,19 +2373,18 @@
 				{/if}
 			</div>
 
-			<!-- Estimation Items (Editable) -->
+			<!-- Section A: Main moveable items -->
 			<div class="card full-width">
 				<div class="card-header">
 					<h3>
 						{#if filterPhotoIndex !== null}
-							Gegenstaende aus Foto {filterPhotoIndex + 1} ({sortedItems()
-								.length})
+							Gegenstaende aus Foto {filterPhotoIndex + 1} ({sortedItems().length})
 						{:else}
-							Erfasste Gegenstaende ({editItems.length})
+							Moebel &amp; Gegenstaende ({mainItems.length})
 						{/if}
 					</h3>
 				</div>
-				{#if editItems.length > 0}
+				{#if mainItems.length > 0}
 					<div class="items-table-wrap">
 						<table class="items-table">
 							<thead>
@@ -2399,7 +2425,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each sortedItems() as item, idx}
+								{#each sortedItems() as item}
 									<tr>
 										<td class="crop-cell">
 											{#if item.crop_url}
@@ -2464,13 +2490,8 @@
 								<tr class="total-row">
 									<td></td>
 									<td>Gesamt</td>
-									<td
-										>{editItems.reduce(
-											(s, i) => s + i.quantity,
-											0,
-										)}</td
-									>
-									<td>{computedTotal.toFixed(2)}</td>
+									<td>{mainItems.reduce((s, i) => s + i.quantity, 0)}</td>
+									<td>{computedTotal.toFixed(2)} m&#x00B3;</td>
 									<td></td>
 									<td></td>
 								</tr>
@@ -2496,6 +2517,189 @@
 					</button>
 				</div>
 			</div>
+
+			<!-- Section B: Box-packable items -->
+			{#if boxItems.length > 0}
+				<div class="card full-width items-section-box">
+					<div class="card-header">
+						<h3>Kartons &amp; Kleinteile ({boxItems.length})</h3>
+						<span class="section-badge badge-box">In Kartons verpackt</span>
+					</div>
+					<div class="items-table-wrap">
+						<table class="items-table">
+							<thead>
+								<tr>
+									<th class="th-foto">Foto</th>
+									<th>Gegenstand</th>
+									<th class="th-num">Anzahl</th>
+									<th class="th-num">Volumen (m3)</th>
+									<th class="th-num">Konfidenz</th>
+									<th class="th-del"></th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each boxItems as item}
+									<tr class="box-item-row">
+										<td class="crop-cell">
+											{#if item.crop_url}
+												<button
+													class="crop-btn"
+													onclick={() => openReview(item)}
+												>
+													<img
+														src={API_BASE + item.crop_url}
+														alt={item.name}
+														class="crop-thumb"
+													/>
+												</button>
+											{:else}
+												<span class="no-crop">—</span>
+											{/if}
+										</td>
+										<td>
+											<input
+												type="text"
+												class="edit-input edit-name"
+												bind:value={item.name}
+												oninput={markDirty}
+											/>
+										</td>
+										<td>
+											<input
+												type="number"
+												class="edit-input edit-num"
+												min="1"
+												step="1"
+												bind:value={item.quantity}
+												oninput={markDirty}
+											/>
+										</td>
+										<td>
+											<input
+												type="number"
+												class="edit-input edit-num"
+												min="0"
+												step="0.01"
+												bind:value={item.volume_m3}
+												oninput={markDirty}
+											/>
+										</td>
+										<td class="confidence-cell">
+											{Math.round(item.confidence * 100)}%
+										</td>
+										<td class="del-cell">
+											<button
+												class="del-btn"
+												onclick={() => deleteItem(item)}
+												title="Entfernen"
+											>
+												<X size={14} />
+											</button>
+										</td>
+									</tr>
+								{/each}
+								<tr class="total-row">
+									<td></td>
+									<td>Rohvolumen</td>
+									<td>{boxItems.reduce((s, i) => s + i.quantity, 0)}</td>
+									<td>{boxItems.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m&#x00B3;</td>
+									<td></td>
+									<td></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<p class="section-note">
+						Das Rohvolumen dieser Kleinteile wird automatisch in Umzugskartons umgerechnet und im Gesamtvolumen ber&#x00FC;cksichtigt.
+					</p>
+				</div>
+			{/if}
+
+			<!-- Section C: Non-moveable items (excluded from total, shown for review) -->
+			{#if nonMoveableItems.length > 0}
+				<div class="card full-width items-section-nonmoveable">
+					<div class="card-header">
+						<button
+							class="section-toggle"
+							onclick={() => (showNonMoveable = !showNonMoveable)}
+						>
+							<h3>Nicht transportiert ({nonMoveableItems.length})</h3>
+							<span class="section-badge badge-nonmoveable">Vom Volumen ausgeschlossen</span>
+							<span class="toggle-arrow">{showNonMoveable ? "\u25B2" : "\u25BC"}</span>
+						</button>
+					</div>
+					{#if showNonMoveable}
+						<div class="items-table-wrap">
+							<table class="items-table">
+								<thead>
+									<tr>
+										<th class="th-foto">Foto</th>
+										<th>Gegenstand</th>
+										<th class="th-num">Anzahl</th>
+										<th class="th-num">Konfidenz</th>
+										<th class="th-del"></th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each nonMoveableItems as item}
+										<tr class="nonmoveable-row">
+											<td class="crop-cell">
+												{#if item.crop_url}
+													<button
+														class="crop-btn"
+														onclick={() => openReview(item)}
+													>
+														<img
+															src={API_BASE + item.crop_url}
+															alt={item.name}
+															class="crop-thumb"
+														/>
+													</button>
+												{:else}
+													<span class="no-crop">—</span>
+												{/if}
+											</td>
+											<td>
+												<input
+													type="text"
+													class="edit-input edit-name"
+													bind:value={item.name}
+													oninput={markDirty}
+												/>
+											</td>
+											<td>
+												<input
+													type="number"
+													class="edit-input edit-num"
+													min="1"
+													step="1"
+													bind:value={item.quantity}
+													oninput={markDirty}
+												/>
+											</td>
+											<td class="confidence-cell">
+												{Math.round(item.confidence * 100)}%
+											</td>
+											<td class="del-cell">
+												<button
+													class="del-btn"
+													onclick={() => deleteItem(item)}
+													title="Entfernen"
+												>
+													<X size={14} />
+												</button>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+						<p class="section-note">
+							Diese Gegenst&#x00E4;nde wurden als nicht transportierbar eingestuft (z.&nbsp;B. Heizk&#x00F6;rper, Einbauten) und flie&#x00DF;en nicht ins Umzugsvolumen ein. Bitte bei Bedarf korrigieren.
+						</p>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- Pricing Editor -->
 			<div class="card">
@@ -3597,6 +3801,76 @@
 		font-size: 0.875rem;
 		text-align: center;
 		padding: 1.5rem 0;
+	}
+
+	/* Section B — box items */
+	.items-section-box .card-header {
+		border-left: 3px solid #f59e0b;
+		padding-left: 0.75rem;
+	}
+
+	.badge-box {
+		background: #fef3c7;
+		color: #92400e;
+	}
+
+	.box-item-row td {
+		background: #fffbeb;
+	}
+
+	/* Section C — non-moveable items */
+	.items-section-nonmoveable .card-header {
+		border-left: 3px solid #94a3b8;
+		padding-left: 0.75rem;
+	}
+
+	.badge-nonmoveable {
+		background: #f1f5f9;
+		color: #475569;
+	}
+
+	.nonmoveable-row td {
+		opacity: 0.7;
+	}
+
+	.section-badge {
+		display: inline-block;
+		font-size: 0.7rem;
+		font-weight: 600;
+		padding: 0.15rem 0.5rem;
+		border-radius: 999px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.section-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		text-align: left;
+		width: 100%;
+	}
+
+	.section-toggle h3 {
+		margin: 0;
+	}
+
+	.toggle-arrow {
+		margin-left: auto;
+		font-size: 0.75rem;
+		color: #94a3b8;
+	}
+
+	.section-note {
+		font-size: 0.78rem;
+		color: #64748b;
+		padding: 0.5rem 1rem 0.75rem;
+		margin: 0;
+		font-style: italic;
 	}
 
 	.th-sortable {

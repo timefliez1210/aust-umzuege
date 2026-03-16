@@ -78,6 +78,8 @@
 	let isSubmitting  = $state(false);
 	let submitSuccess = $state(false);
 	let submitError   = $state("");
+	/** Dynamic progress label shown inside the submit button during compression + upload. */
+	let submitStatus  = $state("");
 
 	const hasAddresses = $derived(
 		formData.startStrasse !== "" && formData.startOrt !== "" &&
@@ -139,6 +141,7 @@
 			}
 			submitSuccess = true;
 		} catch (err: unknown) {
+			submitStatus = "";
 			submitError = err instanceof Error ? err.message : "Unbekannter Fehler. Bitte erneut versuchen.";
 		} finally {
 			isSubmitting = false;
@@ -206,11 +209,73 @@
 		return fd;
 	}
 
+	/**
+	 * Compresses a single image file using a canvas resize + JPEG re-encode.
+	 *
+	 * Purpose: Reduces iPhone/HEIC photos (3–8 MB each) to ≤ 200 KB before upload so that
+	 *          batches of 50+ images stay well within the server's 250 MB body limit and
+	 *          don't exhaust mobile browser memory when assembling the FormData.
+	 *          On iOS, HEIC files are decoded transparently by the browser when set as
+	 *          an img src, so canvas compression works for both HEIC and JPEG sources.
+	 *          Non-image files (video, etc.) are returned unchanged.
+	 *
+	 * Math: scale = min(MAX_DIM / width, MAX_DIM / height)  — only downscales, never upscales
+	 *
+	 * @param file   - The original File object from the file picker
+	 * @param maxDim - Maximum pixel dimension on either axis (default 1920)
+	 * @param quality - JPEG quality 0–1 (default 0.82)
+	 * @returns A compressed JPEG File, or the original file if compression fails / not applicable
+	 */
+	async function compressImage(file: File, maxDim = 1920, quality = 0.82): Promise<File> {
+		const isImg = file.type.startsWith('image/') ||
+			['.jpg','.jpeg','.png','.webp','.heic','.heif','.gif','.bmp','.tiff','.tif','.avif']
+				.includes(file.name.toLowerCase().slice(file.name.lastIndexOf('.')));
+		if (!isImg) return file;
+
+		return new Promise((resolve) => {
+			const img = new Image();
+			const url = URL.createObjectURL(file);
+			img.onload = () => {
+				URL.revokeObjectURL(url);
+				let { width, height } = img;
+				// Only downscale — never enlarge small images
+				if (width <= maxDim && height <= maxDim) {
+					resolve(file);
+					return;
+				}
+				const scale = Math.min(maxDim / width, maxDim / height);
+				width  = Math.round(width  * scale);
+				height = Math.round(height * scale);
+				const canvas = document.createElement('canvas');
+				canvas.width  = width;
+				canvas.height = height;
+				canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+				canvas.toBlob((blob) => {
+					if (!blob) { resolve(file); return; }
+					const outName = file.name.replace(/\.[^.]+$/, '.jpg');
+					resolve(new File([blob], outName, { type: 'image/jpeg' }));
+				}, 'image/jpeg', quality);
+			};
+			img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+			img.src = url;
+		});
+	}
+
 	// Photo/manuell/termin API — all attachments go as images[] (backend accepts any MIME)
 	async function submitApi(url: string) {
+		// Compress images one-by-one before assembling FormData so mobile browsers
+		// don't OOM when handling 50+ full-res iPhone photos in memory simultaneously.
+		submitStatus = "Bilder werden vorbereitet…";
+		const compressed: File[] = [];
+		for (let i = 0; i < attachments.length; i++) {
+			submitStatus = `Bild ${i + 1} von ${attachments.length} wird vorbereitet…`;
+			compressed.push(await compressImage(attachments[i]));
+		}
+		submitStatus = "Wird gesendet…";
 		const fd = buildCommonFd();
-		for (const f of attachments) fd.append("images", f);
+		for (const f of compressed) fd.append("images", f);
 		const res = await fetch(url, { method: "POST", body: fd });
+		submitStatus = "";
 		if (!res.ok && res.status !== 202) {
 			const data = await res.json().catch(() => null);
 			throw new Error(data?.message || data?.detail || `Fehler (${res.status})`);
@@ -482,7 +547,7 @@
 					<button type="submit" class="ap__btn" disabled={!isFormValid || isSubmitting}>
 						{#if isSubmitting}
 							<span class="ap__spinner"></span>
-							<span>Wird gesendet...</span>
+							<span>{submitStatus || "Wird gesendet…"}</span>
 						{:else}
 							<Send size={20} />
 							<span>

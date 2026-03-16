@@ -15,7 +15,15 @@
 		duration_hours: number;
 		status: string;
 		created_at: string;
+		customer_id: string | null;
+		customer_name: string | null;
 		employees: EmployeeAssignment[];
+	}
+
+	interface CustomerOption {
+		id: string;
+		name: string | null;
+		email: string;
 	}
 
 	interface EmployeeAssignment {
@@ -51,6 +59,16 @@
 	let addEmployeeId = $state('');
 	let addPlannedHours = $state('0');
 	let addingEmployee = $state(false);
+
+	// Customer assignment
+	let customerSearch = $state('');
+	let customerResults = $state<CustomerOption[]>([]);
+	let customerSearching = $state(false);
+	let customerMode = $state<'view' | 'search' | 'create'>('view');
+	let newCustEmail = $state('');
+	let newCustName = $state('');
+	let newCustPhone = $state('');
+	let savingCustomer = $state(false);
 
 	// Inline edit state per assigned employee
 	let editingEmp = $state<Record<string, { planned: string; actual: string; notes: string }>>({});
@@ -247,6 +265,84 @@
 			removingEmp = { ...removingEmp, [empId]: false };
 		}
 	}
+
+	/**
+	 * Searches customers by name or email for the customer assignment input.
+	 *
+	 * Called by: Template (oninput on customer search field)
+	 * Purpose: Lets Alex find an existing customer to link to this Termin.
+	 *
+	 * @param q - Search query string
+	 */
+	async function searchCustomers(q: string) {
+		if (q.trim().length < 2) { customerResults = []; return; }
+		customerSearching = true;
+		try {
+			const res = await apiGet<{ customers: CustomerOption[] }>(`/api/v1/admin/customers?search=${encodeURIComponent(q)}&limit=8`);
+			customerResults = res.customers;
+		} catch { customerResults = []; }
+		finally { customerSearching = false; }
+	}
+
+	/**
+	 * Assigns a customer (or creates a new one) to this calendar item via PATCH.
+	 *
+	 * Called by: Template (select from search results or create form submit)
+	 * Purpose: Links a customer to the Termin so Alex knows which client this appointment is for.
+	 *
+	 * @param customerId - UUID of the existing or newly created customer
+	 */
+	async function assignCustomer(customerId: string) {
+		if (!data) return;
+		savingCustomer = true;
+		try {
+			const updated = await apiPatch<CalendarItemDetail>(`/api/v1/admin/calendar-items/${data.id}`, { customer_id: customerId });
+			data = { ...data, customer_id: updated.customer_id, customer_name: updated.customer_name };
+			customerMode = 'view';
+			customerSearch = '';
+			customerResults = [];
+			newCustEmail = ''; newCustName = ''; newCustPhone = '';
+			showToast('Kunde zugewiesen', 'success');
+		} catch (e) { showToast((e as Error).message, 'error'); }
+		finally { savingCustomer = false; }
+	}
+
+	/**
+	 * Creates a new customer then immediately assigns them to this calendar item.
+	 *
+	 * Called by: Template (create form submit in customer section)
+	 * Purpose: Allows Alex to register a new customer directly from the Termin detail page.
+	 */
+	async function createAndAssignCustomer() {
+		if (!newCustEmail.trim()) { showToast('E-Mail ist erforderlich', 'error'); return; }
+		savingCustomer = true;
+		try {
+			const c = await apiPost<{ id: string }>('/api/v1/admin/customers', {
+				email: newCustEmail.trim(),
+				name: newCustName.trim() || null,
+				phone: newCustPhone.trim() || null,
+			});
+			await assignCustomer(c.id);
+		} catch (e) { showToast((e as Error).message, 'error'); }
+		finally { savingCustomer = false; }
+	}
+
+	/**
+	 * Removes the customer assignment from this calendar item.
+	 *
+	 * Called by: Template (× button on the current customer badge)
+	 * Purpose: Clears the customer link when a Termin is no longer associated with a specific customer.
+	 */
+	async function removeCustomer() {
+		if (!data) return;
+		savingCustomer = true;
+		try {
+			const updated = await apiPatch<CalendarItemDetail>(`/api/v1/admin/calendar-items/${data.id}`, { remove_customer: true });
+			data = { ...data, customer_id: updated.customer_id, customer_name: updated.customer_name };
+			showToast('Kunde entfernt', 'success');
+		} catch (e) { showToast((e as Error).message, 'error'); }
+		finally { savingCustomer = false; }
+	}
 </script>
 
 <svelte:head>
@@ -319,6 +415,74 @@
 				</div>
 			</div>
 			<div class="meta">Erstellt: {formatDate(data.created_at)}</div>
+		</div>
+
+		<!-- Customer assignment -->
+		<div class="card">
+			<div class="card-header"><h2>Kunde</h2></div>
+
+			{#if data.customer_id}
+				<div class="customer-assigned">
+					<a href="/admin/customers/{data.customer_id}" class="customer-link">
+						{data.customer_name ?? data.customer_id}
+					</a>
+					<button class="btn-icon btn-remove" onclick={removeCustomer} disabled={savingCustomer} title="Kunde entfernen">
+						<X size={14} />
+					</button>
+				</div>
+				<button class="btn-text" onclick={() => customerMode = customerMode === 'search' ? 'view' : 'search'}>
+					Anderen Kunden zuweisen
+				</button>
+			{:else}
+				<p class="muted">Kein Kunde zugewiesen.</p>
+			{/if}
+
+			{#if !data.customer_id || customerMode === 'search'}
+				<div class="customer-mode-tabs">
+					<button class="tab-btn" class:active={customerMode !== 'create'} onclick={() => { customerMode = 'search'; }}>Suchen</button>
+					<button class="tab-btn" class:active={customerMode === 'create'} onclick={() => { customerMode = 'create'; }}>Neu anlegen</button>
+				</div>
+
+				{#if customerMode !== 'create'}
+					<div class="customer-search">
+						<input
+							type="text"
+							placeholder="Name oder E-Mail..."
+							bind:value={customerSearch}
+							oninput={(e) => searchCustomers((e.target as HTMLInputElement).value)}
+						/>
+						{#if customerSearching}<span class="muted" style="font-size:0.75rem">Suche...</span>{/if}
+						{#if customerResults.length > 0}
+							<div class="customer-results">
+								{#each customerResults as c}
+									<button class="customer-result-item" onclick={() => assignCustomer(c.id)} disabled={savingCustomer}>
+										<span class="cr-name">{c.name ?? c.email}</span>
+										{#if c.name}<span class="cr-email">{c.email}</span>{/if}
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="customer-create">
+						<div class="field">
+							<label for="nc-email">E-Mail *</label>
+							<input id="nc-email" type="email" bind:value={newCustEmail} placeholder="kunde@example.com" />
+						</div>
+						<div class="field">
+							<label for="nc-name">Name</label>
+							<input id="nc-name" type="text" bind:value={newCustName} placeholder="Max Mustermann" />
+						</div>
+						<div class="field">
+							<label for="nc-phone">Telefon</label>
+							<input id="nc-phone" type="tel" bind:value={newCustPhone} placeholder="+49 ..." />
+						</div>
+						<button class="btn btn-primary" onclick={createAndAssignCustomer} disabled={savingCustomer}>
+							{savingCustomer ? 'Wird erstellt...' : 'Kunde anlegen & zuweisen'}
+						</button>
+					</div>
+				{/if}
+			{/if}
 		</div>
 
 		<!-- Employee assignment -->
@@ -449,6 +613,25 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 1.5rem;
 	}
+	.layout > .card:first-child { grid-column: span 2; }
+
+	/* Customer assignment */
+	.customer-assigned { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+	.customer-link { font-size: 0.875rem; font-weight: 600; color: #4338ca; text-decoration: none; }
+	.customer-link:hover { text-decoration: underline; }
+	.customer-mode-tabs { display: flex; gap: 0.25rem; margin: 0.75rem 0 0.5rem; border-bottom: 1px solid #e2e8f0; }
+	.tab-btn { padding: 0.375rem 0.75rem; font-size: 0.8125rem; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+	.tab-btn.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+	.customer-search { display: flex; flex-direction: column; gap: 0.375rem; }
+	.customer-search input { padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; font-size: 0.875rem; }
+	.customer-results { border: 1px solid #e2e8f0; border-radius: 0.375rem; overflow: hidden; }
+	.customer-result-item { display: flex; flex-direction: column; width: 100%; padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #f1f5f9; transition: background 120ms; }
+	.customer-result-item:last-child { border-bottom: none; }
+	.customer-result-item:hover { background: #f8fafc; }
+	.cr-name { font-size: 0.875rem; font-weight: 500; color: #1e293b; }
+	.cr-email { font-size: 0.75rem; color: #64748b; }
+	.customer-create { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+	.btn-text { font-size: 0.8125rem; color: #6366f1; padding: 0; text-decoration: underline; cursor: pointer; background: none; border: none; }
 
 	.card {
 		background: #fff;

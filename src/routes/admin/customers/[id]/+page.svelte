@@ -15,6 +15,7 @@
 		created_at: string;
 		quotes: { id: string; status: string; estimated_volume_m3: number | null; preferred_date: string | null; created_at: string }[];
 		offers: { id: string; quote_id: string; price_cents: number; status: string; created_at: string; sent_at: string | null }[];
+		termine: { id: string; title: string; category: string; scheduled_date: string | null; status: string }[];
 	}
 
 	let data = $state<CustomerDetail | null>(null);
@@ -188,6 +189,25 @@
 									<span class="text-muted">{formatDate(o.created_at)}</span>
 								</div>
 								<StatusBadge status={o.status} />
+							</a>
+						{/each}
+					{/if}
+				</div>
+			</div>
+
+			<div class="card">
+				<div class="card-header"><h2>Termine ({data.termine.length})</h2></div>
+				<div class="card-body list">
+					{#if data.termine.length === 0}
+						<div class="empty">Keine Termine</div>
+					{:else}
+						{#each data.termine as t}
+							<a href="/admin/calendar-items/{t.id}" class="list-item">
+								<div class="list-info">
+									<span>{t.title}</span>
+									<span class="text-muted">{t.scheduled_date ? formatDate(t.scheduled_date) : '–'} · {t.category}</span>
+								</div>
+								<StatusBadge status={t.status} />
 							</a>
 						{/each}
 					{/if}

@@ -1003,6 +1003,7 @@
 			editVolume = data.volume_m3;
 			editDistance = data.distance_km ?? 0;
 			editNotes = data.notes || "";
+			editDate = data.preferred_date || "";
 			if (data.items?.length) {
 				initEditItems(data.items);
 			}
@@ -1061,6 +1062,7 @@
 			estimated_volume_m3: editVolume,
 			distance_km: editDistance,
 			notes: editNotes || null,
+			preferred_date: editDate || null,
 		});
 	}
 

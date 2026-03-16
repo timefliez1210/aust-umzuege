@@ -117,6 +117,8 @@
 	let draggingType = $state<'inquiry' | 'termin' | null>(null);
 	let draggingFromDate = $state<string | null>(null);
 	let dragOverDate = $state<string | null>(null);
+	let navDragOver = $state<'prev' | 'next' | null>(null);
+	let navDragTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Context menu
 	let contextMenu = $state<{ x: number; y: number; dateStr: string } | null>(null);
@@ -323,6 +325,40 @@
 	 */
 	function onCellDragLeave() {
 		dragOverDate = null;
+	}
+
+	/**
+	 * Highlights a nav arrow and schedules a month change after 700 ms when dragging over it.
+	 *
+	 * Called by: Template (ondragover on prev/next month buttons while dragging)
+	 * Purpose: Allows Alex to drag an entry past the month boundary by hovering over
+	 *          the navigation arrows — the calendar auto-advances so the item can be
+	 *          dropped in the new month without cancelling the drag.
+	 *
+	 * @param e - The DragEvent (preventDefault keeps the drag alive)
+	 * @param direction - 'prev' or 'next'
+	 */
+	function onNavDragOver(e: DragEvent, direction: 'prev' | 'next') {
+		if (!draggingId) return;
+		e.preventDefault();
+		navDragOver = direction;
+		if (navDragTimer) return;
+		navDragTimer = setTimeout(() => {
+			navDragTimer = null;
+			if (direction === 'prev') prevMonth();
+			else nextMonth();
+		}, 700);
+	}
+
+	/**
+	 * Cancels the pending month-change timer when the dragged item leaves a nav arrow.
+	 *
+	 * Called by: Template (ondragleave on prev/next month buttons)
+	 * Purpose: Prevents an accidental month flip when the cursor briefly passes over an arrow.
+	 */
+	function onNavDragLeave() {
+		navDragOver = null;
+		if (navDragTimer) { clearTimeout(navDragTimer); navDragTimer = null; }
 	}
 
 	/**
@@ -549,9 +585,19 @@
 	</div>
 
 	<div class="cal-nav">
-		<button onclick={prevMonth}><ChevronLeft size={20} /></button>
+		<button
+			onclick={prevMonth}
+			ondragover={(e) => onNavDragOver(e, 'prev')}
+			ondragleave={onNavDragLeave}
+			class:nav-drag-active={navDragOver === 'prev'}
+		><ChevronLeft size={20} /></button>
 		<span class="month-label">{monthName}</span>
-		<button onclick={nextMonth}><ChevronRight size={20} /></button>
+		<button
+			onclick={nextMonth}
+			ondragover={(e) => onNavDragOver(e, 'next')}
+			ondragleave={onNavDragLeave}
+			class:nav-drag-active={navDragOver === 'next'}
+		><ChevronRight size={20} /></button>
 	</div>
 
 	<div class="calendar-scroll">
@@ -907,8 +953,9 @@
 	.page-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; }
 
 	.cal-nav { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; }
-	.cal-nav button { display: flex; align-items: center; color: #64748b; padding: 0.375rem; border-radius: 8px; transition: color 150ms; }
+	.cal-nav button { display: flex; align-items: center; color: #64748b; padding: 0.375rem; border-radius: 8px; transition: color 150ms, background 150ms, transform 150ms; }
 	.cal-nav button:hover { color: #1a1a2e; }
+	.cal-nav button.nav-drag-active { color: #4f46e5; background: #e0e7ff; transform: scale(1.2); }
 	.month-label { font-size: 1.125rem; font-weight: 600; color: #1a1a2e; min-width: 200px; text-align: center; text-transform: capitalize; }
 
 	.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff; }

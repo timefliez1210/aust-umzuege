@@ -2,6 +2,7 @@
 	import { Send, Camera, Video, Calendar, ClipboardList } from "lucide-svelte";
 	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
+	import VolumeCalculator from '$lib/components/VolumeCalculator.svelte';
 
 	const PHOTO_API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
 	const VIDEO_API_URL = import.meta.env.VITE_VIDEO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/video";
@@ -66,6 +67,10 @@
 		message: "",
 		privacyAccepted: false,
 	});
+
+	// Volume calculator bindings (manuell mode)
+	let volumeM3 = $state(0);
+	let itemSummary = $state("");
 
 	// Unified media — any file, any format, any amount
 	let attachments = $state<File[]>([]);
@@ -166,6 +171,8 @@
 			if (formData.selectedServices.length > 0) {
 				fd.append("zusatzleistungen", formData.selectedServices.join(", "));
 			}
+			if (volumeM3 > 0) fd.append("umzugsvolumen-m3", volumeM3.toFixed(2));
+			if (itemSummary)   fd.append("gegenstaende-liste", itemSummary);
 		} else if (formName === "via-termin") {
 			if (formData.startStrasse && formData.startOrt) fd.append("auszugsadresse", buildAddressStr().dep);
 			if (formData.endStrasse   && formData.endOrt)   fd.append("einzugsadresse", buildAddressStr().arr);
@@ -359,6 +366,14 @@
 					<section class="ap__section">
 						<h2 class="ap__section-title">
 							<span class="ap__step">2</span>
+							Volumenberechnung für Ihren Umzug
+						</h2>
+						<VolumeCalculator bind:volumeM3 bind:itemSummary />
+					</section>
+
+					<section class="ap__section">
+						<h2 class="ap__section-title">
+							<span class="ap__step">3</span>
 							Umzugsdetails
 						</h2>
 						{@render addressBlock()}
@@ -366,7 +381,7 @@
 
 					<section class="ap__section">
 						<h2 class="ap__section-title">
-							<span class="ap__step">3</span>
+							<span class="ap__step">4</span>
 							Zusatzleistungen (optional)
 						</h2>
 						{@render servicesBlock()}

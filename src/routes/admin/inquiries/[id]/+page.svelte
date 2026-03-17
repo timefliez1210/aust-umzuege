@@ -72,6 +72,7 @@
 		category: string | null;
 		dimensions: unknown | null;
 		crop_url: string | null;
+		crop_s3_key?: string | null;
 		source_image_url: string | null;
 		bbox: number[] | null;
 		bbox_image_index: number | null;
@@ -174,6 +175,7 @@
 		quantity: number;
 		confidence: number;
 		crop_url: string | null;
+		crop_s3_key: string | null;
 		source_image_url: string | null;
 		bbox: number[] | null;
 		bbox_image_index: number | null;
@@ -258,6 +260,16 @@
 	let boxItems = $derived(editItems.filter((i) => i.is_moveable && i.packs_into_boxes));
 	let nonMoveableItems = $derived(editItems.filter((i) => !i.is_moveable));
 	let showNonMoveable = $state(false);
+
+	// Filtered item slices for sections B and C when photo filter is active
+	let filteredBoxItems = $derived(
+		filterPhotoIndex !== null ? filterItemsByPhotoIndex(boxItems, filterPhotoIndex) : boxItems,
+	);
+	let filteredNonMoveableItems = $derived(
+		filterPhotoIndex !== null
+			? filterItemsByPhotoIndex(nonMoveableItems, filterPhotoIndex)
+			: nonMoveableItems,
+	);
 
 	let sortedItems = $derived(() => {
 		const filtered = filterItemsByPhotoIndex(mainItems, filterPhotoIndex);
@@ -561,6 +573,17 @@
 				reviewNext();
 				e.preventDefault();
 			}
+		} else if (photoDetailIndex !== null) {
+			if (e.key === "Escape") {
+				closePhotoDetail();
+				e.preventDefault();
+			} else if (e.key === "ArrowLeft") {
+				photoDetailPrev();
+				e.preventDefault();
+			} else if (e.key === "ArrowRight") {
+				photoDetailNext();
+				e.preventDefault();
+			}
 		} else if (filterPhotoIndex !== null) {
 			if (e.key === "Escape") {
 				filterPhotoIndex = null;
@@ -821,6 +844,121 @@
 	// Photo filter: click a photo to filter items table
 	let filterPhotoIndex = $state<number | null>(null);
 
+	// Photo detail popup state
+	let photoDetailIndex = $state<number | null>(null);
+	let photoDetailZoomItem = $state<number | null>(null);
+
+	/**
+	 * Opens the photo detail popup for a specific gallery image index.
+	 *
+	 * Called by: Template (oncontextmenu on gallery photo thumbnails)
+	 * Purpose: Shows the full-size source photo alongside detected item thumbnails
+	 *          for side-by-side review and editing of items in that photo.
+	 *
+	 * @param idx - Zero-based index of the gallery image to show
+	 * @returns void
+	 */
+	function openPhotoDetail(idx: number) {
+		photoDetailIndex = idx;
+		photoDetailZoomItem = null;
+	}
+
+	/**
+	 * Closes the photo detail popup.
+	 *
+	 * Called by: Template (close button, backdrop click, Escape key)
+	 * Purpose: Returns to the normal inquiry view.
+	 *
+	 * @returns void
+	 */
+	function closePhotoDetail() {
+		photoDetailIndex = null;
+		photoDetailZoomItem = null;
+	}
+
+	/**
+	 * Navigates the photo detail popup to the previous gallery image.
+	 *
+	 * Called by: Template (prev button in photo detail popup)
+	 * Purpose: Allows sequential review of all photos without closing the popup.
+	 *
+	 * @returns void
+	 */
+	function photoDetailPrev() {
+		if (photoDetailIndex !== null && photoDetailIndex > 0) {
+			photoDetailIndex--;
+			photoDetailZoomItem = null;
+		}
+	}
+
+	/**
+	 * Navigates the photo detail popup to the next gallery image.
+	 *
+	 * Called by: Template (next button in photo detail popup)
+	 * Purpose: Allows sequential review of all photos without closing the popup.
+	 *
+	 * @returns void
+	 */
+	function photoDetailNext() {
+		if (photoDetailIndex !== null && photoDetailIndex < galleryImages.length - 1) {
+			photoDetailIndex++;
+			photoDetailZoomItem = null;
+		}
+	}
+
+	/**
+	 * Returns all editable items associated with the currently shown gallery photo.
+	 *
+	 * Called by: Template (photo detail popup item panel)
+	 * Purpose: Filters editItems to only those seen in or primarily belonging to the
+	 *          current photo, so the admin can review and edit items per photo.
+	 *
+	 * @returns EditableItem[] matching items for the current photo
+	 */
+	function photoDetailItems(): EditableItem[] {
+		if (photoDetailIndex === null) return [];
+		const idx = photoDetailIndex;
+		return editItems.filter(
+			(item) =>
+				item.bbox_image_index === idx ||
+				(item.seen_in_images?.includes(idx) ?? false),
+		);
+	}
+
+	/**
+	 * Adds a new blank item linked to the currently shown photo in the detail popup.
+	 *
+	 * Called by: Template (Hinzufügen button in photo detail popup)
+	 * Purpose: Lets the admin add an item that was missed by the AI for a specific photo,
+	 *          pre-linking the new item to that photo's index.
+	 *
+	 * @returns void
+	 */
+	function addItemToPhoto() {
+		if (photoDetailIndex === null) return;
+		const idx = photoDetailIndex;
+		editItems = [
+			...editItems,
+			{
+				name: "",
+				volume_m3: 0,
+				quantity: 1,
+				confidence: 1.0,
+				crop_url: null,
+				crop_s3_key: null,
+				source_image_url: null,
+				bbox: null,
+				bbox_image_index: idx,
+				seen_in_images: [idx],
+				category: null,
+				dimensions: null,
+				is_moveable: true,
+				packs_into_boxes: false,
+			},
+		];
+		itemsDirty = true;
+	}
+
 	// Normalize estimation snapshot into an array for gallery/upload UI compatibility
 	interface EstimationEntry {
 		id: string;
@@ -911,6 +1049,7 @@
 			quantity: item.quantity,
 			confidence: item.confidence,
 			crop_url: item.crop_url ?? null,
+			crop_s3_key: item.crop_s3_key ?? null,
 			source_image_url: item.source_image_url ?? null,
 			bbox: item.bbox ?? null,
 			bbox_image_index: item.bbox_image_index ?? null,
@@ -1122,6 +1261,7 @@
 					volume_m3: item.volume_m3,
 					quantity: item.quantity,
 					confidence: item.confidence,
+					crop_s3_key: item.crop_s3_key,
 					bbox: item.bbox,
 					bbox_image_index: item.bbox_image_index,
 					seen_in_images: item.seen_in_images,
@@ -1172,6 +1312,7 @@
 				quantity: 1,
 				confidence: 1.0,
 				crop_url: null,
+				crop_s3_key: null,
 				source_image_url: null,
 				bbox: null,
 				bbox_image_index: null,
@@ -2237,6 +2378,8 @@
 									class:photo-active={filterPhotoIndex ===
 										idx}
 									onclick={() => togglePhotoFilter(idx)}
+									oncontextmenu={(e) => { e.preventDefault(); openPhotoDetail(idx); }}
+									title="Linksklick: Filter | Rechtsklick: Details"
 								>
 									<img
 										src={url}
@@ -2519,10 +2662,10 @@
 			</div>
 
 			<!-- Section B: Box-packable items -->
-			{#if boxItems.length > 0}
+			{#if filteredBoxItems.length > 0}
 				<div class="card full-width items-section-box">
 					<div class="card-header">
-						<h3>Kartons &amp; Kleinteile ({boxItems.length})</h3>
+						<h3>Kartons &amp; Kleinteile ({filteredBoxItems.length})</h3>
 						<span class="section-badge badge-box">In Kartons verpackt</span>
 					</div>
 					<div class="items-table-wrap">
@@ -2538,7 +2681,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each boxItems as item}
+								{#each filteredBoxItems as item}
 									<tr class="box-item-row">
 										<td class="crop-cell">
 											{#if item.crop_url}
@@ -2601,8 +2744,8 @@
 								<tr class="total-row">
 									<td></td>
 									<td>Rohvolumen</td>
-									<td>{boxItems.reduce((s, i) => s + i.quantity, 0)}</td>
-									<td>{boxItems.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m&#x00B3;</td>
+									<td>{filteredBoxItems.reduce((s, i) => s + i.quantity, 0)}</td>
+									<td>{filteredBoxItems.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m&#x00B3;</td>
 									<td></td>
 									<td></td>
 								</tr>
@@ -2616,14 +2759,14 @@
 			{/if}
 
 			<!-- Section C: Non-moveable items (excluded from total, shown for review) -->
-			{#if nonMoveableItems.length > 0}
+			{#if filteredNonMoveableItems.length > 0}
 				<div class="card full-width items-section-nonmoveable">
 					<div class="card-header">
 						<button
 							class="section-toggle"
 							onclick={() => (showNonMoveable = !showNonMoveable)}
 						>
-							<h3>Nicht transportiert ({nonMoveableItems.length})</h3>
+							<h3>Nicht transportiert ({filteredNonMoveableItems.length})</h3>
 							<span class="section-badge badge-nonmoveable">Vom Volumen ausgeschlossen</span>
 							<span class="toggle-arrow">{showNonMoveable ? "\u25B2" : "\u25BC"}</span>
 						</button>
@@ -2641,7 +2784,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{#each nonMoveableItems as item}
+									{#each filteredNonMoveableItems as item}
 										<tr class="nonmoveable-row">
 											<td class="crop-cell">
 												{#if item.crop_url}
@@ -3251,6 +3394,168 @@
 {/if}
 
 <svelte:window onkeydown={handleKeydown} />
+
+{#if photoDetailIndex !== null}
+	{@const pdItems = photoDetailItems()}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class="photo-detail-backdrop"
+		role="presentation"
+		onclick={(e) => {
+			if (e.target === e.currentTarget) closePhotoDetail();
+		}}
+	>
+		<div class="photo-detail-modal">
+			<!-- Header -->
+			<div class="photo-detail-header">
+				<button
+					class="btn btn-sm"
+					onclick={photoDetailPrev}
+					disabled={photoDetailIndex === 0}
+					aria-label="Vorheriges Foto"
+				>
+					<ChevronLeft size={16} />
+				</button>
+				<h3>Foto {photoDetailIndex + 1} / {galleryImages.length}</h3>
+				<button
+					class="btn btn-sm"
+					onclick={photoDetailNext}
+					disabled={photoDetailIndex === galleryImages.length - 1}
+					aria-label="Naechstes Foto"
+				>
+					<ChevronRight size={16} />
+				</button>
+				<button
+					class="review-close"
+					onclick={closePhotoDetail}
+					aria-label="Schliessen"
+				>
+					<X size={20} />
+				</button>
+			</div>
+
+			<!-- Body: large image + items panel -->
+			<div class="photo-detail-body">
+				<!-- Main area: full photo or zoomed crop -->
+				<div class="photo-detail-main">
+					{#if photoDetailZoomItem !== null && pdItems[photoDetailZoomItem]?.crop_url}
+						<div class="photo-detail-zoom-back">
+							<button
+								class="btn btn-sm"
+								onclick={() => (photoDetailZoomItem = null)}
+							>
+								<ChevronLeft size={14} /> Foto
+							</button>
+						</div>
+						<img
+							src={API_BASE + pdItems[photoDetailZoomItem].crop_url}
+							alt={pdItems[photoDetailZoomItem].name}
+							class="photo-detail-main-img"
+						/>
+					{:else}
+						<img
+							src={galleryImages[photoDetailIndex]}
+							alt="Foto {photoDetailIndex + 1}"
+							class="photo-detail-main-img"
+						/>
+					{/if}
+				</div>
+
+				<!-- Items side panel -->
+				<div class="photo-detail-side">
+					<div class="photo-detail-side-header">
+						<h4>{pdItems.length} Gegenst&auml;nde</h4>
+						<button class="btn btn-sm" onclick={addItemToPhoto}>
+							<Plus size={14} /> Hinzuf&uuml;gen
+						</button>
+					</div>
+					<div class="photo-detail-items-list">
+						{#each pdItems as item, i}
+							<div
+								class="photo-detail-item"
+								class:pdi-zoomed={photoDetailZoomItem === i}
+							>
+								<!-- Crop thumbnail (click to enlarge) -->
+								<button
+									class="pdi-thumb-btn"
+									onclick={() =>
+										(photoDetailZoomItem =
+											photoDetailZoomItem === i ? null : i)}
+									title={item.crop_url ? "Vergr&ouml;&szlig;ern" : "Kein Foto"}
+								>
+									{#if item.crop_url}
+										<img
+											src={API_BASE + item.crop_url}
+											alt={item.name}
+											class="pdi-thumb"
+										/>
+									{:else}
+										<div class="pdi-no-thumb">&mdash;</div>
+									{/if}
+								</button>
+								<!-- Edit fields -->
+								<div class="pdi-fields">
+									<input
+										type="text"
+										class="edit-input edit-name"
+										bind:value={item.name}
+										oninput={markDirty}
+										placeholder="Bezeichnung"
+									/>
+									<div class="pdi-row">
+										<input
+											type="number"
+											class="edit-input edit-num"
+											min="0"
+											step="0.01"
+											bind:value={item.volume_m3}
+											oninput={markDirty}
+										/>
+										<span class="pdi-unit">m&sup3;</span>
+										<label class="pdi-check">
+											<input
+												type="checkbox"
+												bind:checked={item.is_moveable}
+												onchange={markDirty}
+											/>
+											<span>Mobil</span>
+										</label>
+									</div>
+								</div>
+								<!-- Delete -->
+								<button
+									class="del-btn"
+									onclick={() => deleteItem(item)}
+									title="Entfernen"
+								>
+									<X size={14} />
+								</button>
+							</div>
+						{/each}
+						{#if pdItems.length === 0}
+							<p class="empty-items">
+								Keine Gegenst&auml;nde f&uuml;r dieses Foto erkannt.
+							</p>
+						{/if}
+					</div>
+					{#if itemsDirty}
+						<div class="photo-detail-save">
+							<button
+								class="btn btn-primary"
+								onclick={saveItems}
+								disabled={savingItems}
+							>
+								<Save size={14} />
+								{savingItems ? "Speichern..." : "Speichern"}
+							</button>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
 
 {#if reviewIndex !== null}
 	{@const items = sortedItems()}
@@ -4988,4 +5293,232 @@
 			gap: 0.375rem;
 		}
 	}
+
+	/* ── Photo Detail Popup ─────────────────────────────────────────── */
+	.photo-detail-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 300;
+		background: rgba(0, 0, 0, 0.82);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+	}
+
+	.photo-detail-modal {
+		background: #f0f4f8;
+		border-radius: 16px;
+		width: 90vw;
+		max-width: 1280px;
+		max-height: 90vh;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+	}
+
+	.photo-detail-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.625rem 1rem;
+		border-bottom: 1px solid #e2e8f0;
+		background: #ffffff;
+		flex-shrink: 0;
+	}
+
+	.photo-detail-header h3 {
+		flex: 1;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: #1a1a2e;
+		text-align: center;
+		margin: 0;
+	}
+
+	.photo-detail-body {
+		display: grid;
+		grid-template-columns: 1fr 300px;
+		flex: 1;
+		overflow: hidden;
+		min-height: 0;
+	}
+
+	.photo-detail-main {
+		background: #1a1a2e;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		position: relative;
+		min-height: 400px;
+	}
+
+	.photo-detail-zoom-back {
+		position: absolute;
+		top: 0.75rem;
+		left: 0.75rem;
+		z-index: 1;
+	}
+
+	.photo-detail-main-img {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+		display: block;
+	}
+
+	.photo-detail-side {
+		background: #ffffff;
+		border-left: 1px solid #e2e8f0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.photo-detail-side-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.625rem 0.875rem;
+		border-bottom: 1px solid #e2e8f0;
+		flex-shrink: 0;
+	}
+
+	.photo-detail-side-header h4 {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #1a1a2e;
+		margin: 0;
+	}
+
+	.photo-detail-items-list {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0.375rem;
+	}
+
+	.photo-detail-item {
+		display: grid;
+		grid-template-columns: 52px 1fr 28px;
+		gap: 0.375rem;
+		padding: 0.375rem;
+		border-radius: 8px;
+		border: 1px solid transparent;
+		margin-bottom: 0.25rem;
+		align-items: start;
+		transition:
+			background 150ms,
+			border-color 150ms;
+	}
+
+	.photo-detail-item:hover {
+		background: #f8fafc;
+	}
+
+	.photo-detail-item.pdi-zoomed {
+		background: #eef2ff;
+		border-color: #818cf8;
+	}
+
+	.pdi-thumb-btn {
+		border: none;
+		background: #f1f5f9;
+		padding: 0;
+		cursor: pointer;
+		border-radius: 6px;
+		overflow: hidden;
+		width: 52px;
+		height: 52px;
+		box-shadow: inset 2px 2px 5px #d1d9e6;
+		transition: box-shadow 150ms;
+	}
+
+	.pdi-thumb-btn:hover {
+		box-shadow:
+			inset 1px 1px 3px #d1d9e6,
+			0 0 0 2px #818cf8;
+	}
+
+	.pdi-thumb {
+		width: 52px;
+		height: 52px;
+		object-fit: cover;
+		display: block;
+	}
+
+	.pdi-no-thumb {
+		width: 52px;
+		height: 52px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #94a3b8;
+		font-size: 1rem;
+	}
+
+	.pdi-fields {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
+	.pdi-row {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.pdi-unit {
+		font-size: 0.75rem;
+		color: #64748b;
+		white-space: nowrap;
+	}
+
+	.pdi-check {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		color: #64748b;
+		cursor: pointer;
+		margin-left: auto;
+		white-space: nowrap;
+	}
+
+	.pdi-check input[type="checkbox"] {
+		cursor: pointer;
+	}
+
+	.photo-detail-save {
+		padding: 0.625rem 0.875rem;
+		border-top: 1px solid #e2e8f0;
+		flex-shrink: 0;
+	}
+
+	.photo-detail-save .btn-primary {
+		width: 100%;
+	}
+
+	@media (max-width: 768px) {
+		.photo-detail-modal {
+			width: 100vw;
+			max-width: 100vw;
+			height: 100vh;
+			max-height: 100vh;
+			border-radius: 0;
+		}
+		.photo-detail-body {
+			grid-template-columns: 1fr;
+			grid-template-rows: 50vh 1fr;
+		}
+		.photo-detail-side {
+			border-left: none;
+			border-top: 1px solid #e2e8f0;
+		}
+	}
+
 </style>

@@ -40,7 +40,9 @@
 	const tabs = [
 		{ value: '', label: 'Alle' },
 		{ value: 'accepted', label: 'Akzeptiert' },
-		{ value: 'done', label: 'Erledigt' },
+		{ value: 'scheduled', label: 'Geplant' },
+		{ value: 'completed', label: 'Erledigt' },
+		{ value: 'invoiced', label: 'Fakturiert' },
 		{ value: 'paid', label: 'Bezahlt' }
 	];
 

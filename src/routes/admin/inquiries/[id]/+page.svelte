@@ -211,6 +211,9 @@
 	let rateText = $state("30.00");
 	let rateEditing = $state(false);
 
+	let editingCustomer = $state(false);
+	let editCustomer = $state({ first_name: "", last_name: "", email: "", phone: "" });
+
 	let editingOrigin = $state(false);
 	let editingDest = $state(false);
 	let editOrigin = $state({
@@ -1378,9 +1381,9 @@
 	 *          First persists any unsaved items and inquiry metadata so the backend reads fresh data,
 	 *          then calls POST /api/v1/inquiries/{id}/generate-offer with the admin's current pricing
 	 *          inputs (persons, hours, rate, price, line_items).
-	 *          Crucially, Fahrkostenpauschale is excluded from the line_items override so that the
-	 *          backend always re-computes it from ORS (the purpose of "Neu Berechnen"). All other
-	 *          custom line items the admin has added are preserved as overrides.
+	 *          Fahrkostenpauschale is excluded from line_items so the backend uses the stored admin
+	 *          override (if one was previously set via generateOffer) or recalculates from ORS.
+	 *          To force an ORS recalculation and clear the stored override, send fahrt_reset: true.
 	 *          Prompts for confirmation before proceeding.
 	 *
 	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
@@ -1401,8 +1404,8 @@
 			// Persist inquiry metadata (volume, distance, notes) so the backend reads fresh data
 			await persistInquiry();
 			// Include admin-edited pricing so the regenerated offer reflects manual overrides.
-			// Exclude Fahrkostenpauschale from the line_items override so the backend always
-			// re-computes it fresh from ORS — that is the whole point of "Neu Berechnen".
+			// Exclude Fahrkostenpauschale from line_items: backend uses stored admin override if set,
+			// otherwise recalculates from ORS.
 			const payload: Record<string, unknown> = {
 				persons: editPersons,
 				hours: editHours,
@@ -1557,6 +1560,49 @@
 	/**
 	 * Copies the origin address fields into the inline edit form and activates origin edit mode.
 	 *
+	 * Called by: Template (onclick on the "Bearbeiten" button in the Kunde card)
+	 * Purpose: Seeds the inline customer editor with the current values.
+	 *
+	 * @returns void (side-effect: populates `editCustomer`, sets `editingCustomer = true`)
+	 */
+	function startEditCustomer() {
+		if (!data?.customer) return;
+		const c = data.customer;
+		editCustomer = {
+			first_name: c.first_name ?? "",
+			last_name: c.last_name ?? c.name ?? "",
+			email: c.email,
+			phone: c.phone ?? "",
+		};
+		editingCustomer = true;
+	}
+
+	/**
+	 * Saves the edited customer fields to the API and exits edit mode.
+	 *
+	 * Called by: Template (onclick on the "Speichern" button in the Kunde card)
+	 * Purpose: Persists name, email and phone corrections via PATCH /api/v1/admin/customers/{id}.
+	 *
+	 * @returns void (side-effect: shows toast, sets editingCustomer = false, reloads inquiry)
+	 */
+	async function saveCustomer() {
+		if (!data?.customer) return;
+		try {
+			await apiPatch(`/api/v1/admin/customers/${data.customer.id}`, {
+				first_name: editCustomer.first_name || null,
+				last_name: editCustomer.last_name || null,
+				email: editCustomer.email || null,
+				phone: editCustomer.phone || null,
+			});
+			showToast("Kunde gespeichert", "success");
+			editingCustomer = false;
+			await loadInquiry();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		}
+	}
+
+	/**
 	 * Called by: Template (onclick on the "Bearbeiten" button in the origin address card)
 	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
 	 *          existing data rather than an empty form.
@@ -1686,6 +1732,301 @@
 	let showEmployeeCard = $derived(
 		data != null && employeeStatuses.includes(data.status)
 	);
+
+	// ── Rechnungen ────────────────────────────────────────────────────────
+
+	interface InvoiceExtraService {
+		description: string;
+		price_cents: number;
+	}
+
+	interface Invoice {
+		id: string;
+		inquiry_id: string;
+		invoice_number: string;
+		invoice_type: string;
+		partial_group_id: string | null;
+		partial_percent: number | null;
+		status: string;
+		extra_services: InvoiceExtraService[];
+		total_netto_cents: number;
+		total_brutto_cents: number;
+		pdf_s3_key: string | null;
+		sent_at: string | null;
+		paid_at: string | null;
+		created_at: string;
+	}
+
+	const invoiceStatuses = ['accepted', 'scheduled', 'completed', 'invoiced', 'paid'];
+	let showInvoiceCard = $derived(data != null && invoiceStatuses.includes(data.status));
+
+	let invoices = $state<Invoice[]>([]);
+	let invoicesLoading = $state(false);
+	let invoiceCreating = $state(false);
+	let showPartialForm = $state(false);
+	let partialPercent = $state(30);
+
+	// Extra services editor state — keyed by invoice id
+	let editingExtras = $state<Record<string, boolean>>({});
+	let extrasDraft = $state<Record<string, InvoiceExtraService[]>>({});
+
+	/**
+	 * Load all invoices for the current inquiry.
+	 *
+	 * Called by: $effect (on mount when showInvoiceCard becomes true)
+	 * Purpose: Populates the Rechnungen card with existing invoices.
+	 */
+	async function loadInvoices() {
+		if (!data) return;
+		invoicesLoading = true;
+		try {
+			const result = await apiGet(`/api/v1/inquiries/${data.id}/invoices`);
+			invoices = (result ?? []) as Invoice[];
+		} catch {
+			showToast('Rechnungen konnten nicht geladen werden', 'error');
+		} finally {
+			invoicesLoading = false;
+		}
+	}
+
+	/**
+	 * Create a single full invoice for the inquiry.
+	 *
+	 * Called by: Template ("Rechnung Erstellen" button)
+	 * Purpose: Triggers XLSX + PDF generation for the full job amount.
+	 */
+	async function createFullInvoice() {
+		if (!data) return;
+		invoiceCreating = true;
+		try {
+			const result = await apiPost(`/api/v1/inquiries/${data.id}/invoices`, { invoice_type: 'full' });
+			invoices = (result ?? []) as Invoice[];
+			showToast('Rechnung erstellt', 'success');
+		} catch {
+			showToast('Rechnung konnte nicht erstellt werden', 'error');
+		} finally {
+			invoiceCreating = false;
+		}
+	}
+
+	/**
+	 * Create a partial invoice pair (Anzahlung + Restbetrag).
+	 *
+	 * Called by: Template (Partielle Rechnung form submit)
+	 * Purpose: Creates two linked invoices — partial_first sendable immediately,
+	 *          partial_final sendable after inquiry is completed.
+	 *
+	 * @param e - Submit event (prevented by caller)
+	 */
+	async function createPartialInvoice(e: Event) {
+		e.preventDefault();
+		if (!data) return;
+		if (partialPercent < 1 || partialPercent > 99) {
+			showToast('Prozentsatz muss zwischen 1 und 99 liegen', 'error');
+			return;
+		}
+		invoiceCreating = true;
+		try {
+			const result = await apiPost(`/api/v1/inquiries/${data.id}/invoices`, {
+				invoice_type: 'partial',
+				partial_percent: partialPercent,
+			});
+			invoices = (result ?? []) as Invoice[];
+			showPartialForm = false;
+			showToast('Teilrechnungen erstellt', 'success');
+		} catch {
+			showToast('Teilrechnungen konnten nicht erstellt werden', 'error');
+		} finally {
+			invoiceCreating = false;
+		}
+	}
+
+	/**
+	 * Send a specific invoice by email to the customer.
+	 *
+	 * Called by: Template ("Senden" button per invoice)
+	 * Purpose: Attaches the invoice PDF and sends via SMTP.
+	 *          Gated by sendability rules (partial_final requires completed status).
+	 *
+	 * @param invId - UUID of the invoice to send
+	 */
+	async function sendInvoice(invId: string) {
+		if (!data) return;
+		try {
+			const updated = await apiPost(`/api/v1/inquiries/${data.id}/invoices/${invId}/send`);
+			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
+			showToast('Rechnung gesendet', 'success');
+			// Reload inquiry to pick up status transition (→ invoiced)
+			await reloadInquiry();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Rechnung konnte nicht gesendet werden';
+			showToast(msg, 'error');
+		}
+	}
+
+	/**
+	 * Mark a specific invoice as paid.
+	 *
+	 * Called by: Template ("Als bezahlt markieren" button)
+	 * Purpose: Sets paid_at and updates status to 'paid'.
+	 *          Auto-transitions inquiry to 'paid' when all invoices are paid.
+	 *
+	 * @param invId - UUID of the invoice to mark as paid
+	 */
+	async function markInvoicePaid(invId: string) {
+		if (!data) return;
+		try {
+			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/invoices/${invId}`, { status: 'paid' });
+			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
+			showToast('Rechnung als bezahlt markiert', 'success');
+			await reloadInquiry();
+		} catch {
+			showToast('Konnte nicht als bezahlt markiert werden', 'error');
+		}
+	}
+
+	/**
+	 * Begin editing extra services for a specific invoice.
+	 *
+	 * Called by: Template ("Zusatzleistungen bearbeiten" toggle)
+	 * Purpose: Copies current extra_services into draft state for inline editing.
+	 *
+	 * @param inv - Invoice object whose extras are being edited
+	 */
+	function startEditExtras(inv: Invoice) {
+		extrasDraft[inv.id] = inv.extra_services.map((e) => ({ ...e }));
+		editingExtras[inv.id] = true;
+	}
+
+	/**
+	 * Add an empty row to the extras draft for a given invoice.
+	 *
+	 * Called by: Template ("+ Zusatzleistung" button)
+	 * Purpose: Lets admin add a new on-site extra service line.
+	 *
+	 * @param invId - Invoice ID
+	 */
+	function addExtraRow(invId: string) {
+		if (!extrasDraft[invId]) extrasDraft[invId] = [];
+		extrasDraft[invId] = [...extrasDraft[invId], { description: '', price_cents: 0 }];
+	}
+
+	/**
+	 * Remove an extra service row from the draft.
+	 *
+	 * Called by: Template (× button per row)
+	 * Purpose: Removes a single extra service from the pending edit.
+	 *
+	 * @param invId - Invoice ID
+	 * @param idx - Row index to remove
+	 */
+	function removeExtraRow(invId: string, idx: number) {
+		extrasDraft[invId] = extrasDraft[invId].filter((_, i) => i !== idx);
+	}
+
+	/**
+	 * Save the edited extra services for an invoice and regenerate the PDF.
+	 *
+	 * Called by: Template ("Speichern" button in extras editor)
+	 * Purpose: Persists the updated extras list and triggers server-side PDF regeneration.
+	 *
+	 * @param invId - Invoice ID
+	 */
+	async function saveExtras(invId: string) {
+		if (!data) return;
+		try {
+			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/invoices/${invId}`, {
+				extra_services: extrasDraft[invId] ?? [],
+			});
+			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
+			editingExtras[invId] = false;
+			showToast('Zusatzleistungen gespeichert', 'success');
+		} catch {
+			showToast('Zusatzleistungen konnten nicht gespeichert werden', 'error');
+		}
+	}
+
+	$effect(() => {
+		if (showInvoiceCard) loadInvoices();
+	});
+
+	/**
+	 * Returns a human-readable German label for an invoice status.
+	 *
+	 * Called by: Template (status badge rendering)
+	 * Purpose: Maps internal status strings to display labels.
+	 *
+	 * @param status - Invoice status string
+	 * @returns German label
+	 */
+	function invoiceStatusLabel(status: string): string {
+		return { draft: 'Entwurf', ready: 'Offen', sent: 'Gesendet', paid: 'Bezahlt' }[status] ?? status;
+	}
+
+	/**
+	 * Returns a CSS class suffix for an invoice status badge.
+	 *
+	 * Called by: Template (class binding on status badge)
+	 * Purpose: Colours the badge: grey=draft, orange=ready, blue=sent, green=paid.
+	 *
+	 * @param status - Invoice status string
+	 * @returns CSS class suffix
+	 */
+	function invoiceStatusClass(status: string): string {
+		return { draft: 'grey', ready: 'orange', sent: 'blue', paid: 'green' }[status] ?? 'grey';
+	}
+
+	/**
+	 * Returns true if a given invoice can be sent right now.
+	 * partial_first: always sendable; full / partial_final: require completed status.
+	 *
+	 * Called by: Template (Senden button disabled state)
+	 * Purpose: Enforces business rule that final invoices are only sent after job completion.
+	 *
+	 * @param inv - Invoice object
+	 * @returns Whether sending is currently allowed
+	 */
+	function canSendInvoice(inv: Invoice): boolean {
+		if (inv.invoice_type === 'partial_first') return true;
+		return data?.status === 'completed';
+	}
+
+	/**
+	 * Compute a preview of Anzahlung / Restbetrag amounts for the partial form.
+	 * Uses the active offer's brutto price.
+	 *
+	 * Called by: Template (partial invoice preview)
+	 * Purpose: Shows Alex what the split will look like before confirming.
+	 *
+	 * @returns { first, remaining } in cents, or null if no offer
+	 *
+	 * Math: first = round(offer_brutto * percent / 100)
+	 *       remaining = offer_brutto - first
+	 */
+	function partialPreview(): { first: number; remaining: number } | null {
+		const offerNetto = data?.offer?.total_netto_cents;
+		if (!offerNetto) return null;
+		// offer total_netto_cents is netto; brutto = netto * 1.19
+		const brutto = Math.round(offerNetto * 1.19);
+		const first = Math.round(brutto * partialPercent / 100);
+		return { first, remaining: brutto - first };
+	}
+
+	/**
+	 * Opens the browser PDF download for a specific invoice.
+	 *
+	 * Called by: Template ("PDF" button per invoice)
+	 * Purpose: Triggers authenticated download of the invoice PDF.
+	 *
+	 * @param inv - Invoice whose PDF should be downloaded
+	 */
+	async function downloadInvoicePdf(inv: Invoice) {
+		if (!data) return;
+		await apiDownload(
+			`/inquiries/${data.id}/invoices/${inv.id}/pdf`,
+			`Rechnung_${inv.invoice_number}.pdf`
+		);
+	}
 
 	/**
 	 * Opens the assign modal and loads available employees.
@@ -2005,32 +2346,63 @@
 		<div class="detail-grid">
 			<!-- Customer -->
 			<div class="card">
-				<h3>Kunde</h3>
-				<div class="info-grid">
-					<div class="info-item">
-						<span class="info-label">Name</span>
-						<span class="info-value name-with-salutation">
-							{#if data.customer?.salutation}
-								<span class="salutation-badge">{data.customer.salutation === "D" ? "Divers" : data.customer.salutation}</span>
-							{/if}
-							{data.customer?.first_name && data.customer?.last_name
-								? `${data.customer.first_name} ${data.customer.last_name}`
-								: (data.customer?.last_name ?? data.customer?.name ?? "—")}
-						</span>
-					</div>
-					<div class="info-item">
-						<span class="info-label">E-Mail</span>
-						<span class="info-value">{data.customer?.email}</span>
-					</div>
-					{#if data.customer?.phone}
-						<div class="info-item">
-							<span class="info-label">Telefon</span>
-							<span class="info-value"
-								>{data.customer?.phone}</span
-							>
-						</div>
+				<div class="card-header">
+					<h3>Kunde</h3>
+					{#if !editingCustomer}
+						<button class="btn btn-sm" onclick={startEditCustomer}>
+							<Pencil size={14} />
+							Bearbeiten
+						</button>
 					{/if}
 				</div>
+				{#if editingCustomer}
+					<div class="form-grid">
+						<div class="field">
+							<label for="cust-first-name">Vorname</label>
+							<input id="cust-first-name" type="text" bind:value={editCustomer.first_name} />
+						</div>
+						<div class="field">
+							<label for="cust-last-name">Nachname</label>
+							<input id="cust-last-name" type="text" bind:value={editCustomer.last_name} />
+						</div>
+						<div class="field full-width">
+							<label for="cust-email">E-Mail</label>
+							<input id="cust-email" type="email" bind:value={editCustomer.email} />
+						</div>
+						<div class="field full-width">
+							<label for="cust-phone">Telefon</label>
+							<input id="cust-phone" type="tel" bind:value={editCustomer.phone} />
+						</div>
+						<div class="field-actions full-width">
+							<button class="btn btn-primary btn-sm" onclick={saveCustomer}>Speichern</button>
+							<button class="btn btn-sm" onclick={() => (editingCustomer = false)}>Abbrechen</button>
+						</div>
+					</div>
+				{:else}
+					<div class="info-grid">
+						<div class="info-item">
+							<span class="info-label">Name</span>
+							<span class="info-value name-with-salutation">
+								{#if data.customer?.salutation}
+									<span class="salutation-badge">{data.customer.salutation === "D" ? "Divers" : data.customer.salutation}</span>
+								{/if}
+								{data.customer?.first_name && data.customer?.last_name
+									? `${data.customer.first_name} ${data.customer.last_name}`
+									: (data.customer?.last_name ?? data.customer?.name ?? "—")}
+							</span>
+						</div>
+						<div class="info-item">
+							<span class="info-label">E-Mail</span>
+							<span class="info-value">{data.customer?.email}</span>
+						</div>
+						{#if data.customer?.phone}
+							<div class="info-item">
+								<span class="info-label">Telefon</span>
+								<span class="info-value">{data.customer?.phone}</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Addresses -->
@@ -2915,13 +3287,6 @@
 				<div class="card-header">
 					<h3>Positionen</h3>
 					<div class="header-actions">
-						<button
-							class="btn btn-sm"
-							onclick={computeLineItemsFromNotes}
-							title="Aus Notizen neu berechnen"
-						>
-							Neu berechnen
-						</button>
 						<button class="btn btn-sm" onclick={addLineItem}>
 							<Plus size={14} />
 							Position
@@ -3213,6 +3578,187 @@
 			</div>
 		</div>
 	{/if}
+{/if}
+
+<!-- Rechnungen Card (visible for accepted+ statuses) -->
+{#if showInvoiceCard && data}
+	<div class="invoices-section">
+		<div class="card">
+			<div class="card-header">
+				<h3>Rechnungen</h3>
+				{#if invoices.length === 0}
+					<div class="invoice-create-btns">
+						<button
+							class="btn btn-sm btn-primary"
+							disabled={invoiceCreating}
+							onclick={createFullInvoice}
+						>
+							<Plus size={14} />
+							Rechnung Erstellen
+						</button>
+						<button
+							class="btn btn-sm"
+							onclick={() => (showPartialForm = !showPartialForm)}
+						>
+							<Plus size={14} />
+							Partielle Rechnung
+						</button>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Partial invoice form -->
+			{#if showPartialForm && invoices.length === 0}
+				<form class="partial-form" onsubmit={createPartialInvoice}>
+					<div class="partial-form-row">
+						<label for="partial-pct">Anzahlungsprozentsatz (%)</label>
+						<input
+							id="partial-pct"
+							type="number"
+							min="1"
+							max="99"
+							class="inline-input"
+							bind:value={partialPercent}
+						/>
+					</div>
+					{#if partialPreview()}
+						{@const preview = partialPreview()!}
+						<div class="partial-preview">
+							<span>Anzahlung: <strong>{formatEuro(preview.first)}</strong></span>
+							<span>Restbetrag: <strong>{formatEuro(preview.remaining)}</strong></span>
+						</div>
+					{/if}
+					<div class="partial-form-actions">
+						<button type="button" class="btn btn-sm" onclick={() => (showPartialForm = false)}>Abbrechen</button>
+						<button type="submit" class="btn btn-sm btn-primary" disabled={invoiceCreating}>
+							{invoiceCreating ? 'Erstelle...' : 'Erstellen'}
+						</button>
+					</div>
+				</form>
+			{/if}
+
+			{#if invoicesLoading}
+				<p class="empty-hint">Rechnungen werden geladen...</p>
+			{:else if invoices.length === 0}
+				<p class="empty-hint">Noch keine Rechnung erstellt.</p>
+			{:else}
+				<div class="invoices-list">
+					{#each invoices as inv}
+						<div class="invoice-row">
+							<div class="invoice-row-header">
+								<div class="invoice-row-meta">
+									<span class="invoice-number">Nr. {inv.invoice_number}</span>
+									<span class="invoice-type-label">
+										{#if inv.invoice_type === 'full'}Vollrechnung
+										{:else if inv.invoice_type === 'partial_first'}Anzahlung ({inv.partial_percent}%)
+										{:else}Restbetrag
+										{/if}
+									</span>
+									<span class="invoice-amount">{formatEuro(inv.total_brutto_cents)}</span>
+								</div>
+								<div class="invoice-row-actions">
+									<span class="inv-status inv-status--{invoiceStatusClass(inv.status)}">
+										{invoiceStatusLabel(inv.status)}
+									</span>
+									<button
+										class="btn btn-sm"
+										title="PDF herunterladen"
+										onclick={() => downloadInvoicePdf(inv)}
+									>
+										<Download size={13} />
+										PDF
+									</button>
+									{#if inv.status !== 'sent' && inv.status !== 'paid'}
+										<button
+											class="btn btn-sm btn-primary"
+											disabled={!canSendInvoice(inv)}
+											title={!canSendInvoice(inv) ? 'Erst nach Auftragsabschluss sendbar' : 'Rechnung senden'}
+											onclick={() => sendInvoice(inv.id)}
+										>
+											<Send size={13} />
+											Senden
+										</button>
+									{/if}
+									{#if inv.status === 'sent'}
+										<button
+											class="btn btn-sm"
+											onclick={() => markInvoicePaid(inv.id)}
+										>
+											Als bezahlt markieren
+										</button>
+									{/if}
+								</div>
+							</div>
+
+							<!-- Extra services (only on full / partial_final) -->
+							{#if inv.invoice_type !== 'partial_first'}
+								<div class="extras-section">
+									{#if !editingExtras[inv.id]}
+										<div class="extras-header">
+											<span class="extras-label">Zusatzleistungen</span>
+											<button
+												class="btn-link"
+												onclick={() => startEditExtras(inv)}
+											>Bearbeiten</button>
+										</div>
+										{#if inv.extra_services.length > 0}
+											<ul class="extras-list">
+												{#each inv.extra_services as extra}
+													<li>
+														<span>{extra.description}</span>
+														<span class="extras-price">{formatEuro(extra.price_cents)}</span>
+													</li>
+												{/each}
+											</ul>
+										{:else}
+											<p class="empty-hint extras-empty">Keine Zusatzleistungen</p>
+										{/if}
+									{:else}
+										<div class="extras-editor">
+											{#each extrasDraft[inv.id] ?? [] as extra, idx}
+												<div class="extras-editor-row">
+													<input
+														type="text"
+														placeholder="Beschreibung"
+														class="extras-input"
+														bind:value={extrasDraft[inv.id][idx].description}
+													/>
+													<input
+														type="number"
+														placeholder="Preis (Netto €)"
+														class="extras-input extras-input--price"
+														value={(extrasDraft[inv.id][idx].price_cents / 100).toFixed(2)}
+														onchange={(e) => {
+															extrasDraft[inv.id][idx].price_cents = Math.round(
+																parseFloat((e.target as HTMLInputElement).value) * 100
+															);
+														}}
+													/>
+													<button
+														class="btn-icon danger"
+														onclick={() => removeExtraRow(inv.id, idx)}
+													><X size={13} /></button>
+												</div>
+											{/each}
+											<div class="extras-editor-footer">
+												<button class="btn-link" onclick={() => addExtraRow(inv.id)}>
+													<Plus size={12} /> Hinzufügen
+												</button>
+												<div class="extras-editor-actions">
+													<button class="btn btn-sm" onclick={() => { editingExtras[inv.id] = false; }}>Abbrechen</button>
+													<button class="btn btn-sm btn-primary" onclick={() => saveExtras(inv.id)}>Speichern</button>
+												</div>
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	</div>
 {/if}
 
 <!-- Email Thread Section (below the main grid) -->
@@ -5069,6 +5615,209 @@
 		text-align: center;
 		padding: 1rem 0;
 		margin: 0;
+	}
+
+	/* ── Rechnungen Section ─────────────────────────────────────────── */
+
+	.invoices-section {
+		margin-bottom: 1.5rem;
+	}
+
+	.invoice-create-btns {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.partial-form {
+		padding: 1rem;
+		background: #f8fafc;
+		border-radius: 8px;
+		margin-bottom: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.partial-form-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.partial-form-row label {
+		font-size: 0.875rem;
+		color: #475569;
+		white-space: nowrap;
+	}
+
+	.partial-preview {
+		display: flex;
+		gap: 2rem;
+		font-size: 0.875rem;
+		color: #475569;
+	}
+
+	.partial-form-actions {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: flex-end;
+	}
+
+	.invoices-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.invoice-row {
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
+		padding: 0.875rem 1rem;
+	}
+
+	.invoice-row-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.invoice-row-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.invoice-number {
+		font-weight: 600;
+		color: #1e293b;
+	}
+
+	.invoice-type-label {
+		font-size: 0.8125rem;
+		color: #64748b;
+	}
+
+	.invoice-amount {
+		font-weight: 600;
+		color: #334155;
+	}
+
+	.invoice-row-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.inv-status {
+		display: inline-block;
+		padding: 0.2rem 0.6rem;
+		border-radius: 999px;
+		font-size: 0.75rem;
+		font-weight: 600;
+	}
+
+	.inv-status--grey   { background: #f1f5f9; color: #64748b; }
+	.inv-status--orange { background: #fff7ed; color: #c2410c; }
+	.inv-status--blue   { background: #eff6ff; color: #1d4ed8; }
+	.inv-status--green  { background: #f0fdf4; color: #15803d; }
+
+	.extras-section {
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid #f1f5f9;
+	}
+
+	.extras-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.4rem;
+	}
+
+	.extras-label {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #64748b;
+	}
+
+	.extras-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.extras-list li {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.875rem;
+		color: #334155;
+	}
+
+	.extras-price {
+		font-weight: 500;
+	}
+
+	.extras-empty {
+		margin: 0.25rem 0 0;
+	}
+
+	.extras-editor {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.extras-editor-row {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.extras-input {
+		flex: 1;
+		padding: 0.3rem 0.5rem;
+		border: 1px solid #cbd5e1;
+		border-radius: 6px;
+		font-size: 0.875rem;
+	}
+
+	.extras-input--price {
+		flex: 0 0 9rem;
+	}
+
+	.extras-editor-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 0.25rem;
+	}
+
+	.extras-editor-actions {
+		display: flex;
+		gap: 0.4rem;
+	}
+
+	.btn-link {
+		background: none;
+		border: none;
+		color: #6366f1;
+		cursor: pointer;
+		font-size: 0.8125rem;
+		padding: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.btn-link:hover {
+		text-decoration: underline;
 	}
 
 	/* ── Email Thread Section ───────────────────────────────────────── */

@@ -1414,6 +1414,12 @@
 			if (priceDirty) {
 				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
 			}
+			// If the admin has a Fahrkostenpauschale in editLineItems, that value is law —
+			// always send it as fahrt_flat_total so backend never recalculates via ORS.
+			const fahrtItemRe = editLineItems.find((li) => li.label === "Fahrkostenpauschale");
+			if (fahrtItemRe) {
+				payload.fahrt_flat_total = fahrtItemRe.unitPriceCents / 100;
+			}
 			const nonFahrtItems = editLineItems.filter(
 				(li) => li.label !== "Fahrkostenpauschale",
 			);
@@ -1466,8 +1472,14 @@
 			if (priceDirty) {
 				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
 			}
-			if (editLineItems.length > 0) {
-				payload.line_items = editLineItems.map((li) => ({
+			// Extract Fahrkostenpauschale as fahrt_flat_total — admin-set value is law.
+			const fahrtItemGen = editLineItems.find((li) => li.label === "Fahrkostenpauschale");
+			if (fahrtItemGen) {
+				payload.fahrt_flat_total = fahrtItemGen.unitPriceCents / 100;
+			}
+			const nonFahrtGen = editLineItems.filter((li) => li.label !== "Fahrkostenpauschale");
+			if (nonFahrtGen.length > 0) {
+				payload.line_items = nonFahrtGen.map((li) => ({
 					description: li.label,
 					quantity: li.quantity,
 					unit_price: li.unitPriceCents / 100,

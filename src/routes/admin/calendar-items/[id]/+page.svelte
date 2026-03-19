@@ -12,6 +12,8 @@
 		category: string;
 		location: string | null;
 		scheduled_date: string | null;
+		start_time: string;
+		end_time: string | null;
 		duration_hours: number;
 		status: string;
 		created_at: string;
@@ -52,6 +54,8 @@
 	let editDuration = $state('0');
 	let editLocation = $state('');
 	let editDescription = $state('');
+	let editStartTime = $state('09:00');
+	let editEndTime = $state('');
 	let editStatus = $state('scheduled');
 
 	// Employee assignment
@@ -148,6 +152,8 @@
 				title: editTitle,
 				category: editCategory,
 				scheduled_date: editDate || null,
+				start_time: editStartTime ? (editStartTime.length === 5 ? editStartTime + ':00' : editStartTime) : undefined,
+				end_time: editEndTime ? (editEndTime.length === 5 ? editEndTime + ':00' : editEndTime) : null,
 				duration_hours: parseFloat(editDuration) || 0,
 				location: editLocation || null,
 				description: editDescription || null,
@@ -400,6 +406,14 @@
 				<div class="field">
 					<label for="e-date">Datum</label>
 					<input id="e-date" type="date" bind:value={editDate} />
+				</div>
+				<div class="field">
+					<label for="e-start">Startzeit *</label>
+					<input id="e-start" type="time" bind:value={editStartTime} />
+				</div>
+				<div class="field">
+					<label for="e-end">Endzeit</label>
+					<input id="e-end" type="time" bind:value={editEndTime} />
 				</div>
 				<div class="field">
 					<label for="e-dur">Dauer (h)</label>

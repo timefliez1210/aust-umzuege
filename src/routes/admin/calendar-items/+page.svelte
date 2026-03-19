@@ -11,6 +11,8 @@
 		category: string;
 		location: string | null;
 		scheduled_date: string | null;
+		start_time: string;
+		end_time: string | null;
 		duration_hours: number;
 		status: string;
 		created_at: string;
@@ -35,6 +37,8 @@
 	let createDuration = $state('0');
 	let createLocation = $state('');
 	let createDescription = $state('');
+	let createStartTime = $state('09:00');
+	let createEndTime = $state('');
 	let createLoading = $state(false);
 	let createError = $state('');
 
@@ -71,12 +75,18 @@
 			createError = 'Titel ist ein Pflichtfeld.';
 			return;
 		}
+		if (!createStartTime) {
+			createError = 'Startzeit ist ein Pflichtfeld.';
+			return;
+		}
 		createLoading = true;
 		try {
 			await apiPost('/api/v1/admin/calendar-items', {
 				title: createTitle.trim(),
 				category: createCategory,
 				scheduled_date: createDate || null,
+				start_time: createStartTime.length === 5 ? createStartTime + ':00' : createStartTime,
+				end_time: createEndTime ? (createEndTime.length === 5 ? createEndTime + ':00' : createEndTime) : null,
 				duration_hours: parseFloat(createDuration) || 0,
 				location: createLocation.trim() || null,
 				description: createDescription.trim() || null
@@ -89,6 +99,8 @@
 			createDuration = '0';
 			createLocation = '';
 			createDescription = '';
+			createStartTime = '09:00';
+			createEndTime = '';
 			loadItems(selectedMonth);
 		} catch (e: unknown) {
 			createError = e instanceof Error ? e.message : 'Fehler beim Erstellen';
@@ -187,6 +199,14 @@
 						<input id="c-date" type="date" bind:value={createDate} />
 					</div>
 					<div class="field">
+						<label for="c-start">Startzeit *</label>
+						<input id="c-start" type="time" bind:value={createStartTime} required />
+					</div>
+					<div class="field">
+						<label for="c-end">Endzeit</label>
+						<input id="c-end" type="time" bind:value={createEndTime} />
+					</div>
+					<div class="field">
 						<label for="c-dur">Dauer (h)</label>
 						<input id="c-dur" type="number" step="0.5" min="0" bind:value={createDuration} />
 					</div>
@@ -223,6 +243,7 @@
 			<thead>
 				<tr>
 					<th>Datum</th>
+					<th>Zeit</th>
 					<th>Titel</th>
 					<th>Kategorie</th>
 					<th>Ort</th>
@@ -234,6 +255,7 @@
 				{#each items as item}
 					<tr class="clickable-row" onclick={() => goto(`/admin/calendar-items/${item.id}`)}>
 						<td>{item.scheduled_date ? formatDate(item.scheduled_date) : '—'}</td>
+						<td>{item.start_time ? item.start_time.slice(0, 5) : '—'}{item.end_time ? ' – ' + item.end_time.slice(0, 5) : ''}</td>
 						<td class="title-cell">{item.title}</td>
 						<td><span class="badge badge-gray">{CATEGORY_LABELS[item.category] ?? item.category}</span></td>
 						<td>{item.location ?? '—'}</td>

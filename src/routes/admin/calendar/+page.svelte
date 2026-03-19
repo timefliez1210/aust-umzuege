@@ -13,6 +13,8 @@
 		volume_m3: number | null;
 		status: string;
 		offer_price_cents: number | null;
+		start_time: string;
+		end_time: string;
 	}
 
 	interface CalendarItem {
@@ -21,6 +23,8 @@
 		category: string;
 		location: string | null;
 		scheduled_date: string;
+		start_time: string;
+		end_time: string | null;
 		duration_hours: number;
 		status: string;
 	}
@@ -103,6 +107,47 @@
 		return s.length > max ? s.slice(0, max - 1) + '…' : s;
 	}
 
+	/**
+	 * Formats a time string (HH:MM:SS or HH:MM) to HH:MM display format.
+	 *
+	 * Called by: Template (day modal item time display, calendar cell entry)
+	 * Purpose: Strips seconds from the raw TIME value returned by the API for cleaner display.
+	 *
+	 * @param t - Time string from the API, e.g. "09:00:00" or "09:00"
+	 * @returns Formatted string e.g. "09:00"
+	 */
+	function formatTime(t: string): string {
+		return t ? t.slice(0, 5) : '';
+	}
+
+	type DayEntry =
+		| { kind: 'inquiry'; item: InquiryItem }
+		| { kind: 'termin'; item: CalendarItem };
+
+	/**
+	 * Merges inquiries and termine for a day into a single list sorted by start_time ascending.
+	 *
+	 * Called by: Template (day detail modal combined item list)
+	 * Purpose: Shows all events for the day in chronological order regardless of type,
+	 *          so Alex can see the full day timeline at a glance.
+	 *
+	 * @param inquiries - Inquiry items for the day from schedule API
+	 * @param termine - Calendar items for the day
+	 * @returns Sorted array of DayEntry (inquiry or termin), ascending by start_time
+	 */
+	function buildDayEntries(inquiries: InquiryItem[], termine: CalendarItem[]): DayEntry[] {
+		const all: DayEntry[] = [
+			...inquiries.map((item) => ({ kind: 'inquiry' as const, item })),
+			...termine.map((item) => ({ kind: 'termin' as const, item }))
+		];
+		all.sort((a, b) => {
+			const ta = a.item.start_time ?? '00:00:00';
+			const tb = b.item.start_time ?? '00:00:00';
+			return ta < tb ? -1 : ta > tb ? 1 : 0;
+		});
+		return all;
+	}
+
 	let currentDate = $state(new Date());
 	let schedule = $state<DaySchedule[]>([]);
 	let calendarItems = $state<CalendarItem[]>([]);
@@ -161,6 +206,8 @@
 	let qtNewCustEmail = $state('');
 	let qtNewCustName = $state('');
 	let qtNewCustPhone = $state('');
+	let qtStartTime = $state('09:00');
+	let qtEndTime = $state('');
 
 	let year = $derived(currentDate.getFullYear());
 	let month = $derived(currentDate.getMonth());
@@ -169,6 +216,9 @@
 	);
 
 	let calendarDays = $derived(buildCalendar(year, month, schedule));
+	let dayEntries = $derived(
+		selectedDay ? buildDayEntries(selectedDay.inquiries, selectedDayItems) : []
+	);
 
 	$effect(() => {
 		loadSchedule();
@@ -441,6 +491,7 @@
 		qiDestStreet = ''; qiDestCity = ''; qiDestPostal = '';
 		qiNotes = '';
 		qtTitle = ''; qtCategory = 'internal'; qtLocation = ''; qtDuration = 8;
+		qtStartTime = '09:00'; qtEndTime = '';
 		qtCustomerMode = 'none'; qtCustomerSearch = ''; qtCustomerResults = []; qtCustomerId = null; qtCustomerLabel = '';
 		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = '';
 	}
@@ -545,6 +596,7 @@
 	 */
 	async function submitQuickTermin() {
 		if (!qtTitle.trim()) { quickCreateError = 'Titel ist erforderlich'; return; }
+		if (!qtStartTime) { quickCreateError = 'Startzeit ist erforderlich'; return; }
 		quickCreateError = '';
 		quickCreateLoading = true;
 		try {
@@ -563,6 +615,8 @@
 				category: qtCategory,
 				location: qtLocation.trim() || null,
 				scheduled_date: quickCreateDate,
+				start_time: qtStartTime.length === 5 ? qtStartTime + ':00' : qtStartTime,
+				end_time: qtEndTime ? (qtEndTime.length === 5 ? qtEndTime + ':00' : qtEndTime) : null,
 				duration_hours: qtDuration,
 				customer_id: customerId,
 			});
@@ -684,60 +738,56 @@
 			</div>
 
 			<div class="modal-section">
-				<span class="modal-label">Auftraege ({selectedDay.inquiries.length})</span>
+				<span class="modal-label">Tagesplan ({dayEntries.length})</span>
 
-				{#if selectedDay.inquiries.length > 0}
-					{#each selectedDay.inquiries as inq}
-						<div class="booking-item">
-							<div class="booking-info">
-								<a href="/admin/inquiries/{inq.inquiry_id}" class="booking-link">
-									<span class="booking-name">{inq.customer_name || 'Unbekannt'}</span>
-									<ExternalLink size={12} />
-								</a>
-								<StatusBadge status={inq.status} />
-							</div>
-							{#if inq.departure_address || inq.arrival_address}
-								<span class="booking-route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
-							{/if}
-							{#if inq.volume_m3 || inq.offer_price_cents}
-								<div class="booking-details">
-									{#if inq.volume_m3}
-										<span class="booking-detail">📦 {inq.volume_m3.toFixed(1)} m³</span>
-									{/if}
-									{#if inq.offer_price_cents}
-										<span class="booking-detail">💰 {(inq.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
-									{/if}
+				{#if dayEntries.length > 0}
+					{#each dayEntries as entry}
+						{#if entry.kind === 'inquiry'}
+							{@const inq = entry.item}
+							<div class="booking-item">
+								<div class="booking-info">
+									<a href="/admin/inquiries/{inq.inquiry_id}" class="booking-link">
+										<span class="booking-name">{inq.customer_name || 'Unbekannt'}</span>
+										<ExternalLink size={12} />
+									</a>
+									<StatusBadge status={inq.status} />
+									<span class="time-badge">{formatTime(inq.start_time)} – {formatTime(inq.end_time)}</span>
 								</div>
-							{/if}
-						</div>
+								{#if inq.departure_address || inq.arrival_address}
+									<span class="booking-route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
+								{/if}
+								{#if inq.volume_m3 || inq.offer_price_cents}
+									<div class="booking-details">
+										{#if inq.volume_m3}
+											<span class="booking-detail">📦 {inq.volume_m3.toFixed(1)} m³</span>
+										{/if}
+										{#if inq.offer_price_cents}
+											<span class="booking-detail">💰 {(inq.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{:else}
+							{@const ci = entry.item}
+							<div class="booking-item item-entry">
+								<div class="booking-info">
+									<a href="/admin/calendar-items/{ci.id}" class="booking-link">
+										<span class="booking-name">{ci.title}</span>
+										<ExternalLink size={12} />
+									</a>
+									<span class="cat-badge">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
+									<span class="time-badge">{formatTime(ci.start_time)}{ci.end_time ? ' – ' + formatTime(ci.end_time) : ''}</span>
+								</div>
+								{#if ci.location}
+									<span class="booking-route">{ci.location}</span>
+								{/if}
+							</div>
+						{/if}
 					{/each}
 				{:else}
-					<p class="text-muted">Keine Auftraege</p>
+					<p class="text-muted">Keine Einträge</p>
 				{/if}
 			</div>
-
-			{#if selectedDayItems.length > 0}
-				<div class="modal-section">
-					<span class="modal-label">Termine ({selectedDayItems.length})</span>
-					{#each selectedDayItems as ci}
-						<div class="booking-item item-entry">
-							<div class="booking-info">
-								<a href="/admin/calendar-items/{ci.id}" class="booking-link">
-									<span class="booking-name">{ci.title}</span>
-									<ExternalLink size={12} />
-								</a>
-								<span class="cat-badge">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
-							</div>
-							{#if ci.location}
-								<span class="booking-route">{ci.location}</span>
-							{/if}
-							<div class="booking-details">
-								<span class="booking-detail">&#x23F1; {ci.duration_hours.toFixed(1)} h</span>
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
 		</div>
 	</div>
 {/if}
@@ -880,6 +930,16 @@
 				<div class="qc-field">
 					<label for="qt-dur">Dauer (h)</label>
 					<input id="qt-dur" type="number" min="0.5" step="0.5" bind:value={qtDuration} style="width:80px" />
+				</div>
+			</div>
+			<div class="qc-row">
+				<div class="qc-field">
+					<label for="qt-start">Startzeit *</label>
+					<input id="qt-start" type="time" bind:value={qtStartTime} required />
+				</div>
+				<div class="qc-field">
+					<label for="qt-end">Endzeit</label>
+					<input id="qt-end" type="time" bind:value={qtEndTime} />
 				</div>
 			</div>
 			<div class="qc-row">
@@ -1051,6 +1111,7 @@
 	.text-muted { color: #94a3b8; font-size: 0.875rem; }
 	.item-entry { background: #fffbeb; border-radius: 6px; padding: 0.5rem 0.625rem; margin-bottom: 0.375rem; }
 	.cat-badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: #fde68a; color: #92400e; padding: 0.1rem 0.35rem; border-radius: 4px; }
+	.time-badge { font-size: 0.7rem; font-weight: 600; color: #475569; margin-left: auto; white-space: nowrap; }
 
 	/* Quick-create: transparent backdrop so calendar stays visible */
 	.modal-backdrop-clear { background: transparent; backdrop-filter: none; align-items: flex-start; justify-content: flex-end; padding: 1rem; pointer-events: none; }

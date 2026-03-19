@@ -2023,7 +2023,7 @@
 	async function downloadInvoicePdf(inv: Invoice) {
 		if (!data) return;
 		await apiDownload(
-			`/inquiries/${data.id}/invoices/${inv.id}/pdf`,
+			`/api/v1/inquiries/${data.id}/invoices/${inv.id}/pdf`,
 			`Rechnung_${inv.invoice_number}.pdf`
 		);
 	}

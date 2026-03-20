@@ -1,20 +1,28 @@
 <script lang="ts">
-	import { apiGet, apiPut, apiPatch, apiPost } from '$lib/utils/api.svelte';
+	import { apiGet, apiPut, apiPatch, apiPost, apiDelete, formatEuro } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { buildCalendar } from '$lib/utils/calendar';
-	import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, X, Save, Trash2, Plus, Check, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+
+	// ─── Interfaces ──────────────────────────────────────────────────────────────
 
 	interface InquiryItem {
 		inquiry_id: string;
 		customer_name: string | null;
+		customer_email?: string | null;
 		departure_address: string | null;
 		arrival_address: string | null;
 		volume_m3: number | null;
 		status: string;
+		notes: string | null;
 		offer_price_cents: number | null;
 		start_time: string;
 		end_time: string;
+		employees_assigned: number;
+		employee_names: string | null;
+		preferred_date?: string | null;
+		scheduled_date?: string | null;
 	}
 
 	interface CalendarItem {
@@ -22,11 +30,20 @@
 		title: string;
 		category: string;
 		location: string | null;
+		description?: string | null;
 		scheduled_date: string;
 		start_time: string;
 		end_time: string | null;
 		duration_hours: number;
 		status: string;
+		customer_id?: string | null;
+		customer_name?: string | null;
+	}
+
+	interface HolidayEntry {
+		startDate: string;
+		endDate: string;
+		name: Array<{ language: string; text: string }>;
 	}
 
 	interface DaySchedule {
@@ -38,6 +55,44 @@
 		inquiries: InquiryItem[];
 	}
 
+	interface EmployeeAssignment {
+		employee_id: string;
+		first_name: string;
+		last_name: string;
+		planned_hours: number;
+		actual_hours: number | null;
+		notes: string | null;
+	}
+
+	interface EmployeeOption {
+		id: string;
+		first_name: string;
+		last_name: string;
+	}
+
+	// Side panel selection types
+	type PanelKind = 'day' | 'inquiry' | 'termin';
+
+	interface PanelDay {
+		kind: 'day';
+		date: string;
+		schedule: DaySchedule;
+	}
+
+	interface PanelInquiry {
+		kind: 'inquiry';
+		item: InquiryItem;
+	}
+
+	interface PanelTermin {
+		kind: 'termin';
+		item: CalendarItem;
+	}
+
+	type PanelSelection = PanelDay | PanelInquiry | PanelTermin | null;
+
+	// ─── Constants ───────────────────────────────────────────────────────────────
+
 	const CATEGORY_LABELS: Record<string, string> = {
 		internal: 'Intern',
 		maintenance: 'Wartung',
@@ -45,7 +100,23 @@
 		other: 'Sonstiges'
 	};
 
+	const INQUIRY_STATUSES = [
+		'pending', 'info_requested', 'estimating', 'estimated',
+		'offer_ready', 'offer_sent', 'accepted', 'rejected', 'expired',
+		'cancelled', 'scheduled', 'completed', 'invoiced', 'paid'
+	];
+
+	const INQUIRY_STATUS_LABELS: Record<string, string> = {
+		pending: 'Ausstehend', info_requested: 'Info angefragt', estimating: 'Wird geschätzt',
+		estimated: 'Geschätzt', offer_ready: 'Angebot bereit', offer_sent: 'Angebot gesendet',
+		accepted: 'Angenommen', rejected: 'Abgelehnt', expired: 'Abgelaufen',
+		cancelled: 'Abgesagt', scheduled: 'Geplant', completed: 'Abgeschlossen',
+		invoiced: 'Fakturiert', paid: 'Bezahlt'
+	};
+
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
+
+	// ─── Helper functions ────────────────────────────────────────────────────────
 
 	/**
 	 * Returns the CSS class for an inquiry calendar entry based on its status.
@@ -110,52 +181,92 @@
 	/**
 	 * Formats a time string (HH:MM:SS or HH:MM) to HH:MM display format.
 	 *
-	 * Called by: Template (day modal item time display, calendar cell entry)
+	 * Called by: Template (time display in calendar cells and side panel)
 	 * Purpose: Strips seconds from the raw TIME value returned by the API for cleaner display.
 	 *
 	 * @param t - Time string from the API, e.g. "09:00:00" or "09:00"
 	 * @returns Formatted string e.g. "09:00"
 	 */
-	function formatTime(t: string): string {
+	function formatTime(t: string | null | undefined): string {
 		return t ? t.slice(0, 5) : '';
 	}
 
-	type DayEntry =
-		| { kind: 'inquiry'; item: InquiryItem }
-		| { kind: 'termin'; item: CalendarItem };
-
 	/**
-	 * Merges inquiries and termine for a day into a single list sorted by start_time ascending.
+	 * Formats a YYYY-MM-DD date string to German locale display.
 	 *
-	 * Called by: Template (day detail modal combined item list)
-	 * Purpose: Shows all events for the day in chronological order regardless of type,
-	 *          so Alex can see the full day timeline at a glance.
+	 * Called by: Template (side panel date display)
+	 * Purpose: Shows dates in German format (Montag, 19. März 2026)
 	 *
-	 * @param inquiries - Inquiry items for the day from schedule API
-	 * @param termine - Calendar items for the day
-	 * @returns Sorted array of DayEntry (inquiry or termin), ascending by start_time
+	 * @param d - ISO date string YYYY-MM-DD
+	 * @returns German formatted date string
 	 */
-	function buildDayEntries(inquiries: InquiryItem[], termine: CalendarItem[]): DayEntry[] {
-		const all: DayEntry[] = [
-			...inquiries.map((item) => ({ kind: 'inquiry' as const, item })),
-			...termine.map((item) => ({ kind: 'termin' as const, item }))
-		];
-		all.sort((a, b) => {
-			const ta = a.item.start_time ?? '00:00:00';
-			const tb = b.item.start_time ?? '00:00:00';
-			return ta < tb ? -1 : ta > tb ? 1 : 0;
+	function formatDateDE(d: string): string {
+		if (!d) return '';
+		const [y, m, day] = d.split('-').map(Number);
+		return new Date(y, m - 1, day).toLocaleDateString('de-DE', {
+			weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 		});
-		return all;
 	}
+
+	// ─── Core calendar state ─────────────────────────────────────────────────────
 
 	let currentDate = $state(new Date());
 	let schedule = $state<DaySchedule[]>([]);
 	let calendarItems = $state<CalendarItem[]>([]);
 	let loading = $state(true);
-	let selectedDay = $state<DaySchedule | null>(null);
-	let selectedDayItems = $state<CalendarItem[]>([]);
+
+	// Side panel
+	let panelSelection = $state<PanelSelection>(null);
+	let panelLoading = $state(false);
+
+	// Day-panel capacity
 	let capacityInput = $state('');
 	let savingCapacity = $state(false);
+
+	// Inquiry panel edit state
+	let inqEditStatus = $state('');
+	let inqEditNotes = $state('');
+	let inqEditPreferredDate = $state('');
+	let inqEditStartTime = $state('');
+	let inqEditEndTime = $state('');
+	let savingInquiry = $state(false);
+	let deletingInquiry = $state(false);
+
+	// Inquiry employee state
+	let inqEmployees = $state<EmployeeAssignment[]>([]);
+	let inqEmpLoading = $state(false);
+	let inqEditingEmp = $state<Record<string, { planned: string; actual: string; notes: string }>>({});
+	let inqSavingEmp = $state<Record<string, boolean>>({});
+	let inqRemovingEmp = $state<Record<string, boolean>>({});
+	let inqAddEmpId = $state('');
+	let inqAddPlannedHours = $state('0');
+	let inqAddingEmp = $state(false);
+
+	// Termin panel edit state
+	let termEditTitle = $state('');
+	let termEditCategory = $state('internal');
+	let termEditStatus = $state('scheduled');
+	let termEditDate = $state('');
+	let termEditStartTime = $state('09:00');
+	let termEditEndTime = $state('');
+	let termEditDuration = $state('0');
+	let termEditLocation = $state('');
+	let termEditDescription = $state('');
+	let savingTermin = $state(false);
+	let deletingTermin = $state(false);
+
+	// Termin employee state
+	let termEmployees = $state<EmployeeAssignment[]>([]);
+	let termEmpLoading = $state(false);
+	let termEditingEmp = $state<Record<string, { planned: string; actual: string; notes: string }>>({});
+	let termSavingEmp = $state<Record<string, boolean>>({});
+	let termRemovingEmp = $state<Record<string, boolean>>({});
+	let termAddEmpId = $state('');
+	let termAddPlannedHours = $state('0');
+	let termAddingEmp = $state(false);
+
+	// Shared: all active employees
+	let allEmployees = $state<EmployeeOption[]>([]);
 
 	// Drag-and-drop state
 	let draggingId = $state<string | null>(null);
@@ -168,7 +279,12 @@
 	// Context menu
 	let contextMenu = $state<{ x: number; y: number; dateStr: string } | null>(null);
 
-	// Quick-create mode: 'inquiry' | 'termin' | null
+	// Holidays (DE-NI / Niedersachsen)
+	let publicHolidays = $state<HolidayEntry[]>([]);
+	let schoolHolidays = $state<HolidayEntry[]>([]);
+	let loadedHolidayYear = $state(0);
+
+	// Quick-create mode
 	let quickCreateMode = $state<'inquiry' | 'termin' | null>(null);
 	let quickCreateDate = $state('');
 	let quickCreateLoading = $state(false);
@@ -209,6 +325,8 @@
 	let qtStartTime = $state('09:00');
 	let qtEndTime = $state('');
 
+	// ─── Derived ─────────────────────────────────────────────────────────────────
+
 	let year = $derived(currentDate.getFullYear());
 	let month = $derived(currentDate.getMonth());
 	let monthName = $derived(
@@ -216,13 +334,172 @@
 	);
 
 	let calendarDays = $derived(buildCalendar(year, month, schedule));
-	let dayEntries = $derived(
-		selectedDay ? buildDayEntries(selectedDay.inquiries, selectedDayItems) : []
-	);
+
+	let panelOpen = $derived(panelSelection !== null);
+
+	/** Maps each public holiday date → German name. */
+	let publicHolidayMap = $derived.by(() => {
+		const map = new Map<string, string>();
+		for (const h of publicHolidays) {
+			const name = h.name.find(n => n.language === 'DE')?.text ?? '';
+			map.set(h.startDate, name);
+		}
+		return map;
+	});
+
+	/** Maps each date within a school holiday range → holiday name. */
+	let schoolHolidayMap = $derived.by(() => {
+		const map = new Map<string, string>();
+		for (const h of schoolHolidays) {
+			const name = h.name.find(n => n.language === 'DE')?.text ?? '';
+			const start = new Date(h.startDate + 'T00:00:00');
+			const end = new Date(h.endDate + 'T00:00:00');
+			for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+				map.set(d.toISOString().slice(0, 10), name);
+			}
+		}
+		return map;
+	});
+
+	// ─── View mode ────────────────────────────────────────────────────────────────
+
+	let viewMode = $state<'month' | 'week'>('month');
+
+	/** ISO date string for today, e.g. "2026-03-19". Used for isToday checks in week view. */
+	let todayStr = $derived.by(() => {
+		const now = new Date();
+		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+	});
+
+	/**
+	 * The Monday of the week containing currentDate.
+	 *
+	 * Called by: weekDays, weekLabel deriveds
+	 * Purpose: Anchor for computing the 7-day window shown in week view.
+	 */
+	let weekStart = $derived.by(() => {
+		const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+		const dow = d.getDay(); // 0=Sun, 1=Mon … 6=Sat
+		const diff = dow === 0 ? -6 : 1 - dow;
+		d.setDate(d.getDate() + diff);
+		return d;
+	});
+
+	/**
+	 * Array of 7 ISO date strings (Mon–Sun) for the current week.
+	 *
+	 * Called by: loadSchedule, week grid template
+	 * Purpose: Provides the date strings needed to fetch and render each day column.
+	 */
+	let weekDays = $derived.by(() => {
+		return Array.from({ length: 7 }, (_, i) => {
+			const d = new Date(weekStart);
+			d.setDate(d.getDate() + i);
+			const y = d.getFullYear();
+			const m = String(d.getMonth() + 1).padStart(2, '0');
+			const day = String(d.getDate()).padStart(2, '0');
+			return `${y}-${m}-${day}`;
+		});
+	});
+
+	/**
+	 * Human-readable label for the current week, e.g. "18. März – 24. März 2026".
+	 *
+	 * Called by: Template (nav label when viewMode === 'week')
+	 * Purpose: Replaces the month name in the nav bar during week view.
+	 */
+	let weekLabel = $derived.by(() => {
+		if (weekDays.length === 0) return '';
+		const fmt = (ds: string) => {
+			const [y, m, d] = ds.split('-').map(Number);
+			return new Date(y, m - 1, d).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+		};
+		const endYear = weekDays[6].split('-')[0];
+		return `${fmt(weekDays[0])} – ${fmt(weekDays[6])} ${endYear}`;
+	});
+
+	/**
+	 * Returns employees not yet assigned to the currently selected inquiry.
+	 *
+	 * Called by: Template (inquiry panel add-employee dropdown)
+	 * Purpose: Prevents duplicate employee assignments on an inquiry.
+	 *
+	 * @returns Array of unassigned EmployeeOption
+	 */
+	function inqUnassignedEmployees(): EmployeeOption[] {
+		const assigned = new Set(inqEmployees.map(e => e.employee_id));
+		return allEmployees.filter(e => !assigned.has(e.id));
+	}
+
+	/**
+	 * Returns employees not yet assigned to the currently selected termin.
+	 *
+	 * Called by: Template (termin panel add-employee dropdown)
+	 * Purpose: Prevents duplicate employee assignments on a termin.
+	 *
+	 * @returns Array of unassigned EmployeeOption
+	 */
+	function termUnassignedEmployees(): EmployeeOption[] {
+		const assigned = new Set(termEmployees.map(e => e.employee_id));
+		return allEmployees.filter(e => !assigned.has(e.id));
+	}
+
+	/**
+	 * Merges and sorts all entries (inquiries + termine) for a given date by start_time ascending.
+	 *
+	 * Called by: Month grid template (for sorted chips), week grid template (for full sorted list)
+	 * Purpose: Ensures the first appointment of the day appears at the top in both view modes.
+	 *
+	 * @param dateStr - ISO date string YYYY-MM-DD
+	 * @returns Sorted array of discriminated-union entries
+	 */
+	function buildDayEntries(dateStr: string): Array<{ type: 'inquiry'; item: InquiryItem } | { type: 'termin'; item: CalendarItem }> {
+		const sched = schedule.find(s => s.date === dateStr || s.date.startsWith(dateStr));
+		const inqEntries = (sched?.inquiries ?? []).map(i => ({ type: 'inquiry' as const, item: i }));
+		const termEntries = calendarItems
+			.filter(ci => ci.scheduled_date?.startsWith(dateStr))
+			.map(ci => ({ type: 'termin' as const, item: ci }));
+		return [...inqEntries, ...termEntries].sort((a, b) =>
+			(a.item.start_time || '').localeCompare(b.item.start_time || '')
+		);
+	}
+
+	// ─── Schedule loading ────────────────────────────────────────────────────────
 
 	$effect(() => {
 		loadSchedule();
 	});
+
+	// ─── Holiday loading (DE-NI / Niedersachsen) ──────────────────────────────────
+
+	$effect(() => {
+		const y = year;
+		if (y !== loadedHolidayYear) loadHolidays(y);
+	});
+
+	/**
+	 * Fetches public holidays and school holidays for Niedersachsen (DE-NI) from
+	 * the OpenHolidays API for the given year.
+	 *
+	 * Called by: $effect (on mount and whenever the displayed year changes)
+	 * Purpose: Populates publicHolidays / schoolHolidays so the calendar can show
+	 *          Feiertage and Schulferien overlays without a backend round-trip.
+	 */
+	async function loadHolidays(y: number) {
+		loadedHolidayYear = y;
+		const base = 'https://openholidaysapi.org';
+		const params = `countryIsoCode=DE&languageIsoCode=DE&validFrom=${y}-01-01&validTo=${y}-12-31&subdivisionCode=DE-NI`;
+		try {
+			const [pub, school] = await Promise.all([
+				fetch(`${base}/PublicHolidays?${params}`).then(r => r.json()),
+				fetch(`${base}/SchoolHolidays?${params}`).then(r => r.json()),
+			]);
+			publicHolidays = pub;
+			schoolHolidays = school;
+		} catch {
+			// informational only — silently ignore network errors
+		}
+	}
 
 	/**
 	 * Fetches the inquiry schedule for the currently displayed calendar month.
@@ -230,23 +507,31 @@
 	 * Called by: $effect (on mount and whenever currentDate changes), prevMonth, nextMonth, saveCapacity
 	 * Purpose: Requests the full month's day schedules from
 	 *          GET /api/v1/calendar/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD and stores them
-	 *          so the calendar grid and day-detail modal stay consistent with server state.
-	 *
-	 * @returns void
+	 *          so the calendar grid stays consistent with server state.
 	 */
 	async function loadSchedule() {
 		loading = true;
 		try {
-			const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-			const lastDay = new Date(year, month + 1, 0).getDate();
-			const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-			const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-			const [schedRes, itemsRes] = await Promise.all([
-				apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`),
-				apiGet<CalendarItem[]>(`/api/v1/admin/calendar-items?month=${monthStr}`).catch(() => [])
-			]);
-			schedule = Array.isArray(schedRes) ? schedRes : (schedRes.dates || []);
-			calendarItems = Array.isArray(itemsRes) ? itemsRes : [];
+			let from: string, to: string;
+			let itemMonths: string[];
+			if (viewMode === 'week') {
+				from = weekDays[0];
+				to = weekDays[6];
+				const m0 = weekDays[0].slice(0, 7);
+				const m6 = weekDays[6].slice(0, 7);
+				itemMonths = m0 === m6 ? [m0] : [m0, m6];
+			} else {
+				from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+				const lastDay = new Date(year, month + 1, 0).getDate();
+				to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+				itemMonths = [`${year}-${String(month + 1).padStart(2, '0')}`];
+			}
+			const schedRes = await apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`);
+			schedule = Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? []);
+			const itemResults = await Promise.all(
+				itemMonths.map(m => apiGet<CalendarItem[]>(`/api/v1/admin/calendar-items?month=${m}`).catch(() => [] as CalendarItem[]))
+			);
+			calendarItems = itemResults.flat();
 		} catch {
 			schedule = [];
 			calendarItems = [];
@@ -256,13 +541,26 @@
 	}
 
 	/**
+	 * Loads all active employees for assignment dropdowns.
+	 *
+	 * Called by: openInquiryPanel, openTerminPanel (on first load)
+	 * Purpose: Populates the "Mitarbeiter hinzufügen" dropdown in both panel modes.
+	 */
+	async function ensureEmployeesLoaded() {
+		if (allEmployees.length > 0) return;
+		try {
+			const res = await apiGet<{ employees: EmployeeOption[] }>('/api/v1/admin/employees?active=true&limit=100');
+			allEmployees = res.employees;
+		} catch {
+			allEmployees = [];
+		}
+	}
+
+	/**
 	 * Navigates the calendar view to the previous month and reloads its schedule.
 	 *
 	 * Called by: Template (left chevron navigation button click)
-	 * Purpose: Moves currentDate back by one month, which reactively updates the derived
-	 *          year, month, and monthName values and triggers a fresh schedule load.
-	 *
-	 * @returns void
+	 * Purpose: Moves currentDate back by one month.
 	 */
 	function prevMonth() {
 		currentDate = new Date(year, month - 1, 1);
@@ -273,10 +571,7 @@
 	 * Navigates the calendar view to the next month and reloads its schedule.
 	 *
 	 * Called by: Template (right chevron navigation button click)
-	 * Purpose: Moves currentDate forward by one month, which reactively updates the derived
-	 *          year, month, and monthName values and triggers a fresh schedule load.
-	 *
-	 * @returns void
+	 * Purpose: Moves currentDate forward by one month.
 	 */
 	function nextMonth() {
 		currentDate = new Date(year, month + 1, 1);
@@ -284,48 +579,179 @@
 	}
 
 	/**
-	 * Opens the day-detail modal for a calendar cell, synthesising a default schedule if none exists.
+	 * Navigates the calendar to the previous week.
 	 *
-	 * Called by: Template (calendar cell button click)
-	 * Purpose: Sets selectedDay to the existing DaySchedule for the clicked date or to a
-	 *          default object with capacity 1 and zero inquiries when the API returned no data
-	 *          for that day. Also seeds capacityInput.
-	 *
-	 * @param day - The DaySchedule from the API for this date, or null if no data exists
-	 * @param dateNum - The day-of-month number (1–31), or null for a padding cell
-	 * @returns void
+	 * Called by: Template (left chevron when viewMode === 'week')
+	 * Purpose: Moves currentDate back 7 days so weekStart shifts to the prior week.
 	 */
-	function selectDay(day: DaySchedule | null, dateNum: number | null) {
-		if (!dateNum) return;
-		const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
-		selectedDay = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1 };
-		capacityInput = String(selectedDay.capacity);
-		selectedDayItems = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dateStr));
+	function prevWeek() {
+		const d = new Date(currentDate);
+		d.setDate(d.getDate() - 7);
+		currentDate = d;
+		loadSchedule();
 	}
 
 	/**
-	 * Persists the capacity override for the currently selected day to the API.
+	 * Navigates the calendar to the next week.
 	 *
-	 * Called by: Template ("Speichern" button click in the capacity section of the day modal)
-	 * Purpose: PUTs the new integer capacity value to PUT /api/v1/calendar/capacity/{date},
-	 *          then reloads the schedule and updates selectedDay so the capacity badge in
-	 *          the calendar cell and modal reflect the change immediately.
+	 * Called by: Template (right chevron when viewMode === 'week')
+	 * Purpose: Moves currentDate forward 7 days so weekStart shifts to the next week.
+	 */
+	function nextWeek() {
+		const d = new Date(currentDate);
+		d.setDate(d.getDate() + 7);
+		currentDate = d;
+		loadSchedule();
+	}
+
+	// ─── Side panel openers ───────────────────────────────────────────────────────
+
+	/**
+	 * Opens the side panel in "day" mode showing date, capacity, and entry list.
 	 *
-	 * @returns void
+	 * Called by: Template (left-click on calendar cell background)
+	 * Purpose: Shows the day's capacity override input and a summary of all events
+	 *          without forcing a full-page navigation.
+	 *
+	 * @param day - The DaySchedule from the API for this date, or null if no data
+	 * @param dateNum - The day-of-month number (1–31), or null for a padding cell
+	 */
+	function openDayPanel(day: DaySchedule | null, dateNum: number | null, dateStrOverride?: string) {
+		const dateStr = dateStrOverride ?? (dateNum
+			? `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
+			: null);
+		if (!dateStr) return;
+		const schedule = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1 };
+		panelSelection = { kind: 'day', date: dateStr, schedule };
+		capacityInput = String(schedule.capacity);
+	}
+
+	/**
+	 * Opens the side panel in "inquiry" mode with full editable detail for the clicked inquiry.
+	 *
+	 * Called by: Template (left-click on inquiry chip)
+	 * Purpose: Lets Alex view and edit inquiry status, dates, and employee assignments
+	 *          without leaving the calendar page.
+	 *
+	 * @param e - The click event (stopped from bubbling to day cell handler)
+	 * @param inq - The InquiryItem from the calendar schedule
+	 */
+	async function openInquiryPanel(e: MouseEvent, inq: InquiryItem) {
+		e.stopPropagation();
+		inqEditStatus = inq.status;
+		inqEditNotes = inq.notes ?? '';
+		inqEditPreferredDate = inq.preferred_date ?? '';
+		inqEditStartTime = formatTime(inq.start_time);
+		inqEditEndTime = formatTime(inq.end_time);
+		panelSelection = { kind: 'inquiry', item: inq };
+		// Load employees
+		inqEmpLoading = true;
+		inqEmployees = [];
+		inqEditingEmp = {};
+		inqAddEmpId = '';
+		inqAddPlannedHours = '0';
+		try {
+			await ensureEmployeesLoaded();
+			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inq.inquiry_id}/employees`);
+			inqEmployees = res.assignments ?? [];
+			const empState: typeof inqEditingEmp = {};
+			for (const emp of inqEmployees) {
+				empState[emp.employee_id] = {
+					planned: String(emp.planned_hours),
+					actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+					notes: emp.notes ?? ''
+				};
+			}
+			inqEditingEmp = empState;
+		} catch {
+			inqEmployees = [];
+		} finally {
+			inqEmpLoading = false;
+		}
+	}
+
+	/**
+	 * Opens the side panel in "termin" mode with full editable detail for the clicked CalendarItem.
+	 *
+	 * Called by: Template (left-click on termin chip)
+	 * Purpose: Lets Alex view and edit termin fields and employee assignments
+	 *          without leaving the calendar page.
+	 *
+	 * @param e - The click event (stopped from bubbling to day cell handler)
+	 * @param ci - The CalendarItem from the calendar items list
+	 */
+	async function openTerminPanel(e: MouseEvent, ci: CalendarItem) {
+		e.stopPropagation();
+		termEditTitle = ci.title;
+		termEditCategory = ci.category;
+		termEditStatus = ci.status;
+		termEditDate = ci.scheduled_date ?? '';
+		termEditStartTime = formatTime(ci.start_time);
+		termEditEndTime = formatTime(ci.end_time);
+		termEditDuration = String(ci.duration_hours);
+		termEditLocation = ci.location ?? '';
+		termEditDescription = ci.description ?? '';
+		panelSelection = { kind: 'termin', item: ci };
+		// Load detail with employees
+		termEmpLoading = true;
+		termEmployees = [];
+		termEditingEmp = {};
+		termAddEmpId = '';
+		termAddPlannedHours = '0';
+		try {
+			await ensureEmployeesLoaded();
+			const detail = await apiGet<CalendarItem & { employees: EmployeeAssignment[] }>(`/api/v1/admin/calendar-items/${ci.id}`);
+			termEmployees = detail.employees ?? [];
+			const empState: typeof termEditingEmp = {};
+			for (const emp of termEmployees) {
+				empState[emp.employee_id] = {
+					planned: String(emp.planned_hours),
+					actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+					notes: emp.notes ?? ''
+				};
+			}
+			termEditingEmp = empState;
+		} catch {
+			termEmployees = [];
+		} finally {
+			termEmpLoading = false;
+		}
+	}
+
+	/**
+	 * Closes the side panel.
+	 *
+	 * Called by: Template (× button, Escape key)
+	 * Purpose: Hides the panel and resets panel state.
+	 */
+	function closePanel() {
+		panelSelection = null;
+	}
+
+	// ─── Day panel: capacity ─────────────────────────────────────────────────────
+
+	/**
+	 * Persists the capacity override for the selected day to the API.
+	 *
+	 * Called by: Template ("Speichern" button in day panel capacity section)
+	 * Purpose: PUTs the new integer capacity to PUT /api/v1/calendar/capacity/{date},
+	 *          then reloads the schedule so the calendar cell reflects the change.
 	 */
 	async function saveCapacity() {
-		if (!selectedDay) return;
+		if (!panelSelection || panelSelection.kind !== 'day') return;
 		savingCapacity = true;
 		try {
-			const dateStr = selectedDay.date.split('T')[0];
+			const dateStr = panelSelection.date;
 			await apiPut(`/api/v1/calendar/capacity/${dateStr}`, {
 				capacity: parseInt(capacityInput) || 1
 			});
-			showToast('Kapazitaet gespeichert', 'success');
+			showToast('Kapazität gespeichert', 'success');
 			await loadSchedule();
-			// Update selectedDay from refreshed schedule
 			const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-			if (updated) selectedDay = updated;
+			if (updated) {
+				panelSelection = { kind: 'day', date: dateStr, schedule: updated };
+				capacityInput = String(updated.capacity);
+			}
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
@@ -333,16 +759,322 @@
 		}
 	}
 
+	// ─── Inquiry panel: save ─────────────────────────────────────────────────────
+
 	/**
-	 * Initiates a drag operation for an inquiry entry.
+	 * Saves editable inquiry fields (status, dates, times) via PATCH.
 	 *
-	 * Called by: Template (ondragstart on inquiry cal-entry span)
-	 * Purpose: Records which inquiry is being dragged and from which date so the drop
+	 * Called by: Template (Save button in inquiry panel)
+	 * Purpose: PATCHes PATCH /api/v1/inquiries/{id} with updated status and dates,
+	 *          then reloads the calendar schedule to keep chips in sync.
+	 */
+	async function saveInquiry() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		const inq = panelSelection.item;
+		savingInquiry = true;
+		try {
+			await apiPatch(`/api/v1/inquiries/${inq.inquiry_id}`, {
+				status: inqEditStatus || undefined,
+				notes: inqEditNotes || null,
+				preferred_date: inqEditPreferredDate || null,
+				start_time: inqEditStartTime ? (inqEditStartTime.length === 5 ? inqEditStartTime + ':00' : inqEditStartTime) : undefined,
+				end_time: inqEditEndTime ? (inqEditEndTime.length === 5 ? inqEditEndTime + ':00' : inqEditEndTime) : null,
+			});
+			showToast('Anfrage gespeichert', 'success');
+			await loadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Speichern', 'error');
+		} finally {
+			savingInquiry = false;
+		}
+	}
+
+	/**
+	 * Permanently deletes the currently selected inquiry after confirmation.
+	 *
+	 * Called by: Template (Delete button in inquiry panel)
+	 * Purpose: DELETEs DELETE /api/v1/inquiries/{id}, then closes the panel
+	 *          and reloads the calendar.
+	 */
+	async function deleteInquiry() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		const inq = panelSelection.item;
+		if (!confirm(`Anfrage von "${inq.customer_name}" löschen?`)) return;
+		deletingInquiry = true;
+		try {
+			await apiDelete(`/api/v1/inquiries/${inq.inquiry_id}`);
+			showToast('Anfrage gelöscht', 'success');
+			closePanel();
+			await loadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			deletingInquiry = false;
+		}
+	}
+
+	// ─── Inquiry panel: employees ────────────────────────────────────────────────
+
+	/**
+	 * Saves inline hour/notes edits for an assigned inquiry employee.
+	 *
+	 * Called by: Template (check icon per inquiry employee row)
+	 * Purpose: PATCHes PATCH /api/v1/inquiries/{id}/employees/{emp_id} with updated hours.
+	 *
+	 * @param empId - The employee UUID to update
+	 */
+	async function inqSaveEmp(empId: string) {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		const inqId = panelSelection.item.inquiry_id;
+		inqSavingEmp = { ...inqSavingEmp, [empId]: true };
+		const s = inqEditingEmp[empId];
+		try {
+			await apiPatch(`/api/v1/inquiries/${inqId}/employees/${empId}`, {
+				planned_hours: parseFloat(s.planned) || 0,
+				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
+				notes: s.notes || null
+			});
+			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inqId}/employees`);
+			inqEmployees = res.assignments ?? [];
+			showToast('Gespeichert', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			inqSavingEmp = { ...inqSavingEmp, [empId]: false };
+		}
+	}
+
+	/**
+	 * Removes an employee assignment from the currently selected inquiry.
+	 *
+	 * Called by: Template (× icon per inquiry employee row)
+	 * Purpose: DELETEs DELETE /api/v1/inquiries/{id}/employees/{emp_id} after confirmation.
+	 *
+	 * @param empId - The employee UUID to remove
+	 * @param name - Employee display name for the confirm dialog
+	 */
+	async function inqRemoveEmp(empId: string, name: string) {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		if (!confirm(`${name} aus dieser Anfrage entfernen?`)) return;
+		const inqId = panelSelection.item.inquiry_id;
+		inqRemovingEmp = { ...inqRemovingEmp, [empId]: true };
+		try {
+			await apiDelete(`/api/v1/inquiries/${inqId}/employees/${empId}`);
+			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inqId}/employees`);
+			inqEmployees = res.assignments ?? [];
+			showToast('Mitarbeiter entfernt', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			inqRemovingEmp = { ...inqRemovingEmp, [empId]: false };
+		}
+	}
+
+	/**
+	 * Assigns a new employee to the currently selected inquiry.
+	 *
+	 * Called by: Template (Hinzufügen button in inquiry employee section)
+	 * Purpose: POSTs POST /api/v1/inquiries/{id}/employees with employee_id and planned_hours.
+	 */
+	async function inqAddEmployee() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry' || !inqAddEmpId) return;
+		const inqId = panelSelection.item.inquiry_id;
+		inqAddingEmp = true;
+		try {
+			await apiPost(`/api/v1/inquiries/${inqId}/employees`, {
+				employee_id: inqAddEmpId,
+				planned_hours: parseFloat(inqAddPlannedHours) || 0
+			});
+			inqAddEmpId = '';
+			inqAddPlannedHours = '0';
+			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inqId}/employees`);
+			inqEmployees = res.assignments ?? [];
+			// Seed edit state for the new employee
+			const empState: typeof inqEditingEmp = { ...inqEditingEmp };
+			for (const emp of inqEmployees) {
+				if (!empState[emp.employee_id]) {
+					empState[emp.employee_id] = {
+						planned: String(emp.planned_hours),
+						actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+						notes: emp.notes ?? ''
+					};
+				}
+			}
+			inqEditingEmp = empState;
+			showToast('Mitarbeiter hinzugefügt', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			inqAddingEmp = false;
+		}
+	}
+
+	// ─── Termin panel: save / delete ─────────────────────────────────────────────
+
+	/**
+	 * Saves editable termin fields via PATCH.
+	 *
+	 * Called by: Template (Save button in termin panel)
+	 * Purpose: PATCHes PATCH /api/v1/admin/calendar-items/{id} with updated fields,
+	 *          then reloads the calendar schedule.
+	 */
+	async function saveTermin() {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		const ci = panelSelection.item;
+		savingTermin = true;
+		try {
+			await apiPatch(`/api/v1/admin/calendar-items/${ci.id}`, {
+				title: termEditTitle,
+				category: termEditCategory,
+				status: termEditStatus,
+				scheduled_date: termEditDate || null,
+				start_time: termEditStartTime ? (termEditStartTime.length === 5 ? termEditStartTime + ':00' : termEditStartTime) : undefined,
+				end_time: termEditEndTime ? (termEditEndTime.length === 5 ? termEditEndTime + ':00' : termEditEndTime) : null,
+				duration_hours: parseFloat(termEditDuration) || 0,
+				location: termEditLocation || null,
+				description: termEditDescription || null,
+			});
+			showToast('Termin gespeichert', 'success');
+			await loadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Speichern', 'error');
+		} finally {
+			savingTermin = false;
+		}
+	}
+
+	/**
+	 * Deletes the currently selected termin after confirmation.
+	 *
+	 * Called by: Template (Delete button in termin panel)
+	 * Purpose: DELETEs DELETE /api/v1/admin/calendar-items/{id}, then closes the panel
+	 *          and reloads the calendar.
+	 */
+	async function deleteTermin() {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		const ci = panelSelection.item;
+		if (!confirm(`Termin "${ci.title}" löschen?`)) return;
+		deletingTermin = true;
+		try {
+			await apiDelete(`/api/v1/admin/calendar-items/${ci.id}`);
+			showToast('Termin gelöscht', 'success');
+			closePanel();
+			await loadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			deletingTermin = false;
+		}
+	}
+
+	// ─── Termin panel: employees ─────────────────────────────────────────────────
+
+	/**
+	 * Saves inline hour/notes edits for an assigned termin employee.
+	 *
+	 * Called by: Template (check icon per termin employee row)
+	 * Purpose: PATCHes PATCH /api/v1/admin/calendar-items/{id}/employees/{emp_id}.
+	 *
+	 * @param empId - The employee UUID to update
+	 */
+	async function termSaveEmp(empId: string) {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		const ciId = panelSelection.item.id;
+		termSavingEmp = { ...termSavingEmp, [empId]: true };
+		const s = termEditingEmp[empId];
+		try {
+			await apiPatch(`/api/v1/admin/calendar-items/${ciId}/employees/${empId}`, {
+				planned_hours: parseFloat(s.planned) || 0,
+				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
+				notes: s.notes || null
+			});
+			const detail = await apiGet<{ employees: EmployeeAssignment[] }>(`/api/v1/admin/calendar-items/${ciId}`);
+			termEmployees = detail.employees ?? [];
+			showToast('Gespeichert', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			termSavingEmp = { ...termSavingEmp, [empId]: false };
+		}
+	}
+
+	/**
+	 * Removes an employee assignment from the currently selected termin.
+	 *
+	 * Called by: Template (× icon per termin employee row)
+	 * Purpose: DELETEs DELETE /api/v1/admin/calendar-items/{id}/employees/{emp_id}.
+	 *
+	 * @param empId - The employee UUID to remove
+	 * @param name - Display name for confirm dialog
+	 */
+	async function termRemoveEmp(empId: string, name: string) {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		if (!confirm(`${name} aus diesem Termin entfernen?`)) return;
+		const ciId = panelSelection.item.id;
+		termRemovingEmp = { ...termRemovingEmp, [empId]: true };
+		try {
+			await apiDelete(`/api/v1/admin/calendar-items/${ciId}/employees/${empId}`);
+			const detail = await apiGet<{ employees: EmployeeAssignment[] }>(`/api/v1/admin/calendar-items/${ciId}`);
+			termEmployees = detail.employees ?? [];
+			showToast('Mitarbeiter entfernt', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			termRemovingEmp = { ...termRemovingEmp, [empId]: false };
+		}
+	}
+
+	/**
+	 * Assigns a new employee to the currently selected termin.
+	 *
+	 * Called by: Template (Hinzufügen button in termin employee section)
+	 * Purpose: POSTs POST /api/v1/admin/calendar-items/{id}/employees.
+	 */
+	async function termAddEmployee() {
+		if (!panelSelection || panelSelection.kind !== 'termin' || !termAddEmpId) return;
+		const ciId = panelSelection.item.id;
+		termAddingEmp = true;
+		try {
+			await apiPost(`/api/v1/admin/calendar-items/${ciId}/employees`, {
+				employee_id: termAddEmpId,
+				planned_hours: parseFloat(termAddPlannedHours) || 0
+			});
+			termAddEmpId = '';
+			termAddPlannedHours = '0';
+			const detail = await apiGet<{ employees: EmployeeAssignment[] }>(`/api/v1/admin/calendar-items/${ciId}`);
+			termEmployees = detail.employees ?? [];
+			const empState: typeof termEditingEmp = { ...termEditingEmp };
+			for (const emp of termEmployees) {
+				if (!empState[emp.employee_id]) {
+					empState[emp.employee_id] = {
+						planned: String(emp.planned_hours),
+						actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+						notes: emp.notes ?? ''
+					};
+				}
+			}
+			termEditingEmp = empState;
+			showToast('Mitarbeiter hinzugefügt', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			termAddingEmp = false;
+		}
+	}
+
+	// ─── Drag and drop ────────────────────────────────────────────────────────────
+
+	/**
+	 * Initiates a drag operation for a calendar entry.
+	 *
+	 * Called by: Template (ondragstart on cal-entry span)
+	 * Purpose: Records which item is being dragged and from which date so the drop
 	 *          handler knows what to reschedule and can skip no-op drops.
 	 *
 	 * @param e - The DragEvent
-	 * @param inquiryId - UUID of the inquiry being dragged
-	 * @param fromDate - ISO date string (YYYY-MM-DD) of the source cell
+	 * @param id - UUID of the item being dragged
+	 * @param type - 'inquiry' or 'termin'
+	 * @param fromDate - ISO date string of the source cell
 	 */
 	function onEntryDragStart(e: DragEvent, id: string, type: 'inquiry' | 'termin', fromDate: string) {
 		draggingId = id;
@@ -355,7 +1087,7 @@
 	 * Allows a calendar cell to accept a drop and highlights it.
 	 *
 	 * Called by: Template (ondragover on cal-cell)
-	 * Purpose: Prevents the default browser behaviour (which disallows drops) and sets
+	 * Purpose: Prevents default browser behavior (which disallows drops) and sets
 	 *          dragOverDate so the hovered cell gets a visual highlight class.
 	 *
 	 * @param e - The DragEvent
@@ -371,7 +1103,7 @@
 	 * Clears the drag-over highlight when the dragged item leaves a cell.
 	 *
 	 * Called by: Template (ondragleave on cal-cell)
-	 * Purpose: Removes the visual drop-target highlight when the cursor exits a cell.
+	 * Purpose: Removes the visual drop-target highlight when cursor exits a cell.
 	 */
 	function onCellDragLeave() {
 		dragOverDate = null;
@@ -382,10 +1114,9 @@
 	 *
 	 * Called by: Template (ondragover on prev/next month buttons while dragging)
 	 * Purpose: Allows Alex to drag an entry past the month boundary by hovering over
-	 *          the navigation arrows — the calendar auto-advances so the item can be
-	 *          dropped in the new month without cancelling the drag.
+	 *          the navigation arrows.
 	 *
-	 * @param e - The DragEvent (preventDefault keeps the drag alive)
+	 * @param e - The DragEvent
 	 * @param direction - 'prev' or 'next'
 	 */
 	function onNavDragOver(e: DragEvent, direction: 'prev' | 'next') {
@@ -404,7 +1135,7 @@
 	 * Cancels the pending month-change timer when the dragged item leaves a nav arrow.
 	 *
 	 * Called by: Template (ondragleave on prev/next month buttons)
-	 * Purpose: Prevents an accidental month flip when the cursor briefly passes over an arrow.
+	 * Purpose: Prevents accidental month flip when cursor briefly passes over an arrow.
 	 */
 	function onNavDragLeave() {
 		navDragOver = null;
@@ -412,15 +1143,13 @@
 	}
 
 	/**
-	 * Handles dropping an inquiry onto a target date cell and persists the new date.
+	 * Handles dropping an inquiry or termin onto a target date cell and persists the new date.
 	 *
 	 * Called by: Template (ondrop on cal-cell)
-	 * Purpose: PATCHes the inquiry's preferred_date to the drop target date via
-	 *          PATCH /api/v1/inquiries/{id}, then reloads the schedule so the calendar
-	 *          reflects the move immediately. No-ops if dropped on the same date.
+	 * Purpose: PATCHes the item's date to the drop target date, then reloads the schedule.
 	 *
 	 * @param e - The DragEvent
-	 * @param dateStr - ISO date string (YYYY-MM-DD) of the target cell
+	 * @param dateStr - ISO date string of the target cell
 	 */
 	async function onCellDrop(e: DragEvent, dateStr: string) {
 		e.preventDefault();
@@ -445,12 +1174,13 @@
 		}
 	}
 
+	// ─── Context menu ─────────────────────────────────────────────────────────────
+
 	/**
 	 * Opens the right-click context menu anchored to the cursor position.
 	 *
 	 * Called by: Template (oncontextmenu on cal-cell)
-	 * Purpose: Shows a mini popup with "Anfrage erstellen" / "Termin erstellen" options
-	 *          pre-seeded with the clicked date so the forms open with the date pre-filled.
+	 * Purpose: Shows a mini popup with "Anfrage erstellen" / "Termin erstellen" options.
 	 *
 	 * @param e - The MouseEvent from right-click
 	 * @param dateStr - ISO date string of the clicked cell
@@ -474,8 +1204,7 @@
 	 * Opens a quick-create form for the given type, pre-seeded with the context menu date.
 	 *
 	 * Called by: Template (context menu option click)
-	 * Purpose: Transitions from the context menu to the appropriate creation form,
-	 *          carrying the target date across so Alex doesn't have to re-enter it.
+	 * Purpose: Transitions from the context menu to the appropriate creation form.
 	 *
 	 * @param mode - 'inquiry' or 'termin'
 	 */
@@ -484,7 +1213,6 @@
 		contextMenu = null;
 		quickCreateMode = mode;
 		quickCreateError = '';
-		// Reset fields
 		qiCustomerMode = 'existing'; qiCustomerSearch = ''; qiCustomerResults = []; qiCustomerId = null; qiCustomerLabel = '';
 		qiEmail = ''; qiName = ''; qiPhone = '';
 		qiOriginStreet = ''; qiOriginCity = ''; qiOriginPostal = '';
@@ -518,11 +1246,7 @@
 	 * Creates a customer (if new mode selected) then an inquiry via the API, and reloads the calendar.
 	 *
 	 * Called by: Template (form submit in quick-inquiry modal)
-	 * Purpose: Allows Alex to quickly schedule a new inquiry directly from the calendar
-	 *          without navigating to the inquiry list. Volume is intentionally omitted —
-	 *          it is added later on the inquiry detail page.
-	 *
-	 * @returns void
+	 * Purpose: Allows Alex to quickly schedule a new inquiry directly from the calendar.
 	 */
 	async function submitQuickInquiry() {
 		if (!qiOriginStreet.trim() || !qiOriginCity.trim()) { quickCreateError = 'Auszugsadresse (Straße, Stadt) erforderlich'; return; }
@@ -586,13 +1310,9 @@
 
 	/**
 	 * Creates a calendar item (Termin) via the API and reloads the calendar.
-	 * Creates a new customer first if qtCustomerMode === 'new'.
 	 *
 	 * Called by: Template (form submit in quick-termin modal)
-	 * Purpose: Allows Alex to schedule internal events directly from the calendar grid,
-	 *          optionally linking to an existing or new customer.
-	 *
-	 * @returns void
+	 * Purpose: Allows Alex to schedule internal events directly from the calendar grid.
 	 */
 	async function submitQuickTermin() {
 		if (!qtTitle.trim()) { quickCreateError = 'Titel ist erforderlich'; return; }
@@ -630,168 +1350,618 @@
 		}
 	}
 
-		const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+	const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 </script>
+
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape') { closePanel(); closeContextMenu(); quickCreateMode = null; } }} />
 
 <div class="page">
 	<div class="page-header">
 		<h1>Kalender</h1>
 	</div>
 
-	<div class="cal-nav">
-		<button
-			onclick={prevMonth}
-			ondragover={(e) => onNavDragOver(e, 'prev')}
-			ondragleave={onNavDragLeave}
-			class:nav-drag-active={navDragOver === 'prev'}
-		><ChevronLeft size={20} /></button>
-		<span class="month-label">{monthName}</span>
-		<button
-			onclick={nextMonth}
-			ondragover={(e) => onNavDragOver(e, 'next')}
-			ondragleave={onNavDragLeave}
-			class:nav-drag-active={navDragOver === 'next'}
-		><ChevronRight size={20} /></button>
-	</div>
+	<!-- Main layout: calendar + side panel -->
+	<div class="main-layout" class:panel-open={panelOpen}>
+		<!-- Calendar column -->
+		<div class="calendar-col">
+			<div class="cal-nav">
+				<div class="view-toggle">
+					<button class="view-btn" class:view-btn-active={viewMode === 'month'} onclick={() => { viewMode = 'month'; loadSchedule(); }}>Monat</button>
+					<button class="view-btn" class:view-btn-active={viewMode === 'week'} onclick={() => { viewMode = 'week'; loadSchedule(); }}>Woche</button>
+				</div>
+				<button
+					onclick={viewMode === 'month' ? prevMonth : prevWeek}
+					ondragover={(e) => onNavDragOver(e, 'prev')}
+					ondragleave={onNavDragLeave}
+					class:nav-drag-active={navDragOver === 'prev'}
+				><ChevronLeft size={20} /></button>
+				<span class="month-label">{viewMode === 'month' ? monthName : weekLabel}</span>
+				<button
+					onclick={viewMode === 'month' ? nextMonth : nextWeek}
+					ondragover={(e) => onNavDragOver(e, 'next')}
+					ondragleave={onNavDragLeave}
+					class:nav-drag-active={navDragOver === 'next'}
+				><ChevronRight size={20} /></button>
+			</div>
 
-	<div class="calendar-scroll">
-		<div class="calendar-grid">
-			{#each weekdays as day}
-				<div class="cal-header">{day}</div>
-			{/each}
+			<div class="calendar-scroll">
+				{#if viewMode === 'month'}
+				<div class="calendar-grid">
+					{#each weekdays as day}
+						<div class="cal-header">{day}</div>
+					{/each}
 
-			{#each calendarDays as day}
-				{#if day.date === null}
-					<div class="cal-cell empty"></div>
+					{#each calendarDays as day}
+						{#if day.date === null}
+							<div class="cal-cell empty"></div>
+						{:else}
+							{@const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`}
+							{@const allEntries = buildDayEntries(dateStr)}
+							{@const booked = day.schedule?.booked || 0}
+							{@const capacity = day.schedule?.capacity || 1}
+							{@const overbooked = booked > capacity}
+							{@const publicHol = publicHolidayMap.get(dateStr)}
+							{@const schoolHol = schoolHolidayMap.get(dateStr)}
+							<button
+								class="cal-cell"
+								class:today={day.isToday}
+								class:overbooked
+								class:school-holiday={!!schoolHol}
+								class:drag-over={dragOverDate === dateStr}
+								onclick={() => openDayPanel(day.schedule, day.date)}
+								ondragover={(e) => onCellDragOver(e, dateStr)}
+								ondragleave={onCellDragLeave}
+								ondrop={(e) => onCellDrop(e, dateStr)}
+								oncontextmenu={(e) => onCellContextMenu(e, dateStr)}
+							>
+								<div class="cal-cell-header">
+									<span class="cal-date" class:cal-date-today={day.isToday}>{day.date}</span>
+									{#if overbooked}<span class="cal-overbooked-icon" title="Überbucht">⚠</span>{/if}
+									{#if publicHol}<span class="holiday-badge">🎉 {publicHol}</span>{/if}
+								</div>
+								{#if schoolHol}<div class="school-holiday-label">{schoolHol}</div>{/if}
+								<div class="cal-entries">
+									{#each allEntries.slice(0, 4) as entry}
+										{#if entry.type === 'inquiry'}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<span
+												class="cal-entry {inquiryEntryClass(entry.item.status)}"
+												title="{entry.item.customer_name ?? ''} · {entry.item.inquiry_id}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
+												onclick={(e) => openInquiryPanel(e, entry.item)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
+											>
+												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 12)}
+											</span>
+										{:else}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<span
+												class="cal-entry {termineEntryClass(entry.item.category)}"
+												title="{entry.item.title}{entry.item.location ? ' @ ' + entry.item.location : ''}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.id, 'termin', dateStr)}
+												onclick={(e) => openTerminPanel(e, entry.item)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, entry.item)}
+											>
+												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.title, 14)}
+											</span>
+										{/if}
+									{/each}
+									{#if allEntries.length > 4}
+										<span class="cal-more">+{allEntries.length - 4} mehr</span>
+									{/if}
+								</div>
+							</button>
+						{/if}
+					{/each}
+				</div>
 				{:else}
-					{@const dayInquiries = day.schedule?.inquiries || []}
-					{@const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`}
-					{@const dayTermine = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dateStr))}
-					{@const totalCount = dayInquiries.length + dayTermine.length}
-					{@const booked = day.schedule?.booked || 0}
-					{@const capacity = day.schedule?.capacity || 1}
-					{@const overbooked = booked > capacity}
-					<button
-						class="cal-cell"
-						class:today={day.isToday}
-						class:overbooked
-						class:drag-over={dragOverDate === dateStr}
-						onclick={() => selectDay(day.schedule, day.date)}
-						ondragover={(e) => onCellDragOver(e, dateStr)}
-						ondragleave={onCellDragLeave}
-						ondrop={(e) => onCellDrop(e, dateStr)}
-						oncontextmenu={(e) => onCellContextMenu(e, dateStr)}
-					>
-						<div class="cal-cell-header">
-							<span class="cal-date" class:cal-date-today={day.isToday}>{day.date}</span>
-							{#if overbooked}<span class="cal-overbooked-icon" title="Überbucht">⚠</span>{/if}
+				<!-- ─── Week view ─────────────────────────────────────────────── -->
+				<div class="week-grid">
+					{#each weekDays as dateStr}
+						{@const sched = schedule.find(s => s.date === dateStr || s.date.startsWith(dateStr))}
+						{@const allEntries = buildDayEntries(dateStr)}
+						{@const booked = sched?.booked ?? 0}
+						{@const capacity = sched?.capacity ?? 1}
+						{@const overbooked = booked > capacity}
+						{@const isToday = dateStr === todayStr}
+						{@const [wy, wm, wd] = dateStr.split('-').map(Number)}
+						{@const weekDayLabel = new Date(wy, wm - 1, wd).toLocaleDateString('de-DE', { weekday: 'short' })}
+						{@const wPublicHol = publicHolidayMap.get(dateStr)}
+						{@const wSchoolHol = schoolHolidayMap.get(dateStr)}
+						<button
+							class="week-cell"
+							class:today={isToday}
+							class:overbooked
+							class:school-holiday={!!wSchoolHol}
+							class:drag-over={dragOverDate === dateStr}
+							onclick={() => openDayPanel(sched ?? null, null, dateStr)}
+							ondragover={(e) => onCellDragOver(e, dateStr)}
+							ondragleave={onCellDragLeave}
+							ondrop={(e) => onCellDrop(e, dateStr)}
+							oncontextmenu={(e) => onCellContextMenu(e, dateStr)}
+						>
+							<div class="week-cell-header">
+								<span class="week-day-name">{weekDayLabel}</span>
+								<span class="week-day-num" class:week-day-today={isToday}>{wd}.</span>
+								{#if booked > 0}
+									<span class="week-cap-badge" class:week-cap-over={overbooked}>{booked}/{capacity}</span>
+								{/if}
+								{#if overbooked}<span class="cal-overbooked-icon">⚠</span>{/if}
+								{#if wPublicHol}<span class="holiday-badge">🎉 {wPublicHol}</span>{/if}
+								{#if wSchoolHol}<span class="school-holiday-label">{wSchoolHol}</span>{/if}
+							</div>
+															<div class="week-entries">
+									{#each allEntries as entry}
+										{#if entry.type === 'inquiry'}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<div
+												class="week-card {inquiryEntryClass(entry.item.status)}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
+												onclick={(e) => openInquiryPanel(e, entry.item)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
+											>
+												<div class="wc-header">
+													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+													<StatusBadge status={entry.item.status} />
+												</div>
+												<div class="wc-name">{entry.item.customer_name ?? '—'}</div>
+												{#if entry.item.departure_address || entry.item.arrival_address}
+													<div class="wc-route">{entry.item.departure_address || '?'} → {entry.item.arrival_address || '?'}</div>
+												{/if}
+												{#if entry.item.offer_price_cents || entry.item.volume_m3}
+													<div class="wc-meta">
+														{#if entry.item.offer_price_cents}<span class="wc-price">{Math.round(entry.item.offer_price_cents * 1.19 / 100)} €</span>{/if}
+														{#if entry.item.volume_m3}<span class="wc-vol">{entry.item.volume_m3.toFixed(1)} m³</span>{/if}
+													</div>
+												{/if}
+												{#if entry.item.employee_names}
+													<div class="wc-employees">👥 {entry.item.employee_names}</div>
+												{/if}
+												{#if entry.item.notes}
+													<div class="wc-notes">{truncate(entry.item.notes, 70)}</div>
+												{/if}
+											</div>
+										{:else}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<div
+												class="week-card {termineEntryClass(entry.item.category)}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.id, 'termin', dateStr)}
+												onclick={(e) => openTerminPanel(e, entry.item)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, entry.item)}
+											>
+												<div class="wc-header">
+													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+													<span class="cat-badge">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
+												</div>
+												<div class="wc-name">{entry.item.title}</div>
+												{#if entry.item.location}
+													<div class="wc-route">📍 {entry.item.location}</div>
+												{/if}
+												{#if entry.item.duration_hours > 0}
+													<div class="wc-meta"><span class="wc-vol">⏱ {entry.item.duration_hours} h</span></div>
+												{/if}
+												{#if entry.item.description}
+													<div class="wc-notes">{truncate(entry.item.description, 70)}</div>
+												{/if}
+											</div>
+										{/if}
+									{/each}
+									{#if allEntries.length === 0}
+										<span class="week-no-entries">—</span>
+									{/if}
+								</div>
+						</button>
+					{/each}
+				</div>
+				{/if}
+
+			<!-- Holiday legend -->
+			{#if publicHolidays.length > 0 || schoolHolidays.length > 0}
+				<div class="holiday-legend">
+					<span class="legend-item"><span class="legend-dot legend-public"></span> Feiertag</span>
+					<span class="legend-item"><span class="legend-dot legend-school"></span> Schulferien (NI)</span>
+				</div>
+			{/if}
+			</div>
+		</div>
+
+		<!-- Side panel -->
+		<aside class="side-panel" class:panel-visible={panelOpen} aria-label="Details">
+			{#if !panelSelection}
+				<div class="panel-placeholder">
+					<span class="placeholder-icon">📋</span>
+					<p>Klicke auf einen Eintrag</p>
+				</div>
+			{:else}
+				<div class="panel-header">
+					{#if panelSelection.kind === 'day'}
+						<h2 class="panel-title">{formatDateDE(panelSelection.date)}</h2>
+					{:else if panelSelection.kind === 'inquiry'}
+						<h2 class="panel-title">{panelSelection.item.customer_name ?? 'Anfrage'}</h2>
+					{:else}
+						<h2 class="panel-title">{panelSelection.item.title}</h2>
+					{/if}
+					<button class="panel-close" onclick={closePanel} title="Schließen"><X size={16} /></button>
+				</div>
+
+				<div class="panel-body">
+
+					<!-- ─── DAY PANEL ──────────────────────────────────────────── -->
+					{#if panelSelection.kind === 'day'}
+						{@const ds = panelSelection.schedule}
+						{@const dayPanelDate = panelSelection.date}
+						{@const dayTermine = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dayPanelDate))}
+
+						<div class="panel-section">
+							<div class="panel-kv">
+								<span class="kv-label">Gebucht</span>
+								<span class="kv-value">{ds.booked} / {ds.capacity}</span>
+							</div>
+							<div class="panel-kv">
+								<span class="kv-label">Verbleibend</span>
+								<span class="kv-value">{ds.remaining}</span>
+							</div>
 						</div>
-						<div class="cal-entries">
-							{#each dayInquiries.slice(0, 4) as inq}
-								<span
-									class="cal-entry {inquiryEntryClass(inq.status)}"
-									title="{inq.customer_name ?? ''} · {inq.inquiry_id}"
-									draggable="true"
-									ondragstart={(e) => onEntryDragStart(e, inq.inquiry_id, 'inquiry', dateStr)}
-									role="button"
-									tabindex="0"
-								>
-									{truncate(inq.customer_name, 14)} <span class="entry-id">{shortId(inq.inquiry_id)}</span>
-								</span>
-							{/each}
-							{#each dayTermine.slice(0, Math.max(0, 4 - dayInquiries.length)) as ci}
-								<span
-									class="cal-entry {termineEntryClass(ci.category)}"
-									title="{ci.title}{ci.location ? ' @ ' + ci.location : ''}"
-									draggable="true"
-									ondragstart={(e) => onEntryDragStart(e, ci.id, 'termin', dateStr)}
-									role="button"
-									tabindex="0"
-								>
-									{truncate(ci.title, 16)}
-								</span>
-							{/each}
-							{#if totalCount > 4}
-								<span class="cal-more">+{totalCount - 4} mehr</span>
+
+						<div class="panel-section">
+							<div class="section-title">Kapazität überschreiben</div>
+							<div class="capacity-row">
+								<input
+									type="number"
+									min="0"
+									max="10"
+									class="neu-input capacity-input"
+									bind:value={capacityInput}
+								/>
+								<button class="btn btn-primary btn-sm" onclick={saveCapacity} disabled={savingCapacity}>
+									{savingCapacity ? '...' : 'Speichern'}
+								</button>
+							</div>
+						</div>
+
+						{#if ds.inquiries.length > 0 || dayTermine.length > 0}
+							<div class="panel-section">
+								<div class="section-title">Tagesplan ({ds.inquiries.length + dayTermine.length})</div>
+								{#each ds.inquiries as inq}
+									<div class="day-entry">
+										<div class="day-entry-top">
+											<button class="entry-link-btn" onclick={(e) => openInquiryPanel(e, inq)}>
+												{inq.customer_name || 'Unbekannt'}
+											</button>
+											<StatusBadge status={inq.status} />
+											<span class="time-badge">{formatTime(inq.start_time)} – {formatTime(inq.end_time)}</span>
+										</div>
+										{#if inq.departure_address || inq.arrival_address}
+											<span class="entry-route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
+										{/if}
+										<a href="/admin/inquiries/{inq.inquiry_id}" class="entry-detail-link">
+											<ExternalLink size={11} /> Detail öffnen
+										</a>
+									</div>
+								{/each}
+								{#each dayTermine as ci}
+									<div class="day-entry day-entry-termin">
+										<div class="day-entry-top">
+											<button class="entry-link-btn" onclick={(e) => openTerminPanel(e, ci)}>
+												{ci.title}
+											</button>
+											<span class="cat-badge">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
+											<span class="time-badge">{formatTime(ci.start_time)}{ci.end_time ? ' – ' + formatTime(ci.end_time) : ''}</span>
+										</div>
+										{#if ci.location}
+											<span class="entry-route">{ci.location}</span>
+										{/if}
+										<a href="/admin/calendar-items/{ci.id}" class="entry-detail-link">
+											<ExternalLink size={11} /> Detail öffnen
+										</a>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="panel-empty">Keine Einträge</p>
+						{/if}
+
+					<!-- ─── INQUIRY PANEL ───────────────────────────────────────── -->
+					{:else if panelSelection.kind === 'inquiry'}
+						{@const inq = panelSelection.item}
+
+						<div class="panel-section">
+							<div class="panel-kv">
+								<span class="kv-label">E-Mail</span>
+								<span class="kv-value kv-muted">{inq.customer_email ?? '—'}</span>
+							</div>
+							{#if inq.departure_address || inq.arrival_address}
+								<div class="panel-kv">
+									<span class="kv-label">Route</span>
+									<span class="kv-value kv-muted">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
+								</div>
+							{/if}
+							{#if inq.volume_m3}
+								<div class="panel-kv">
+									<span class="kv-label">Volumen</span>
+									<span class="kv-value">{inq.volume_m3.toFixed(1)} m³</span>
+								</div>
+							{/if}
+							{#if inq.offer_price_cents}
+								<div class="panel-kv">
+									<span class="kv-label">Angebotspreis</span>
+									<span class="kv-value">{(inq.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
+								</div>
 							{/if}
 						</div>
-					</button>
-				{/if}
-			{/each}
-		</div>
+
+						<div class="panel-section">
+							<div class="section-title">Bearbeiten</div>
+							<div class="field">
+								<label for="inq-status">Status</label>
+								<select id="inq-status" class="neu-input" bind:value={inqEditStatus}>
+									{#each INQUIRY_STATUSES as s}
+										<option value={s}>{INQUIRY_STATUS_LABELS[s] ?? s}</option>
+									{/each}
+								</select>
+							</div>
+							<div class="field">
+								<label for="inq-pref-date">Wunschdatum</label>
+								<input id="inq-pref-date" type="date" class="neu-input" bind:value={inqEditPreferredDate} />
+							</div>
+							<div class="field-row">
+								<div class="field">
+									<label for="inq-start">Startzeit</label>
+									<input id="inq-start" type="time" class="neu-input" bind:value={inqEditStartTime} />
+								</div>
+								<div class="field">
+									<label for="inq-end">Endzeit</label>
+									<input id="inq-end" type="time" class="neu-input" bind:value={inqEditEndTime} />
+								</div>
+							</div>
+						<div class="field">
+							<label for="inq-notes">Notizen</label>
+							<textarea id="inq-notes" rows={3} class="neu-input" bind:value={inqEditNotes}></textarea>
+						</div>
+							<div class="panel-actions">
+								<button class="btn btn-primary btn-sm" onclick={saveInquiry} disabled={savingInquiry}>
+									<Save size={13} />
+									{savingInquiry ? 'Speichern...' : 'Speichern'}
+								</button>
+								<a href="/admin/inquiries/{inq.inquiry_id}" class="btn btn-ghost btn-sm">
+									<ExternalLink size={13} /> Detail
+								</a>
+								<button class="btn btn-danger btn-sm" onclick={deleteInquiry} disabled={deletingInquiry}>
+									{deletingInquiry ? '...' : 'Löschen'}
+								</button>
+							</div>
+						</div>
+
+						<!-- Employee assignments -->
+						<div class="panel-section">
+							<div class="section-title">Mitarbeiter ({inqEmployees.length})</div>
+
+							{#if inqEmpLoading}
+								<p class="panel-loading">Laden...</p>
+							{:else}
+								{#if inqEmployees.length > 0}
+									<div class="emp-list">
+										{#each inqEmployees as emp}
+											{@const s = inqEditingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '' }}
+											<div class="emp-row">
+												<div class="emp-name">{emp.first_name} {emp.last_name}</div>
+												<div class="emp-hours">
+													<input
+														class="hour-input neu-input"
+														type="number"
+														step="0.5"
+														min="0"
+														title="Geplant (h)"
+														placeholder="Geplant"
+														value={s.planned}
+														oninput={(e) => {
+															inqEditingEmp = { ...inqEditingEmp, [emp.employee_id]: { ...s, planned: (e.target as HTMLInputElement).value } };
+														}}
+													/>
+													<input
+														class="hour-input neu-input"
+														type="number"
+														step="0.5"
+														min="0"
+														title="Ist (h)"
+														placeholder="Ist"
+														value={s.actual}
+														oninput={(e) => {
+															inqEditingEmp = { ...inqEditingEmp, [emp.employee_id]: { ...s, actual: (e.target as HTMLInputElement).value } };
+														}}
+													/>
+												</div>
+												<div class="emp-actions">
+													<button class="btn-icon btn-save" onclick={() => inqSaveEmp(emp.employee_id)} disabled={inqSavingEmp[emp.employee_id]} title="Speichern"><Check size={12} /></button>
+													<button class="btn-icon btn-remove" onclick={() => inqRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)} disabled={inqRemovingEmp[emp.employee_id]} title="Entfernen"><X size={12} /></button>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<p class="panel-empty">Keine Mitarbeiter zugewiesen.</p>
+								{/if}
+
+								{#if inqUnassignedEmployees().length > 0}
+									<div class="add-emp">
+										<select class="neu-input" bind:value={inqAddEmpId}>
+											<option value="">— Mitarbeiter wählen —</option>
+											{#each inqUnassignedEmployees() as e}
+												<option value={e.id}>{e.first_name} {e.last_name}</option>
+											{/each}
+										</select>
+										<input class="hour-input neu-input" type="number" step="0.5" min="0" placeholder="h" bind:value={inqAddPlannedHours} />
+										<button class="btn btn-primary btn-sm" onclick={inqAddEmployee} disabled={!inqAddEmpId || inqAddingEmp}>
+											<Plus size={13} />{inqAddingEmp ? '...' : ''}
+										</button>
+									</div>
+								{/if}
+							{/if}
+						</div>
+
+					<!-- ─── TERMIN PANEL ────────────────────────────────────────── -->
+					{:else if panelSelection.kind === 'termin'}
+						{@const ci = panelSelection.item}
+
+						<div class="panel-section">
+							<div class="section-title">Bearbeiten</div>
+							<div class="field">
+								<label for="term-title">Titel</label>
+								<input id="term-title" type="text" class="neu-input" bind:value={termEditTitle} />
+							</div>
+							<div class="field-row">
+								<div class="field">
+									<label for="term-cat">Kategorie</label>
+									<select id="term-cat" class="neu-input" bind:value={termEditCategory}>
+										<option value="internal">Intern</option>
+										<option value="maintenance">Wartung</option>
+										<option value="training">Schulung</option>
+										<option value="other">Sonstiges</option>
+									</select>
+								</div>
+								<div class="field">
+									<label for="term-status">Status</label>
+									<select id="term-status" class="neu-input" bind:value={termEditStatus}>
+										<option value="scheduled">Geplant</option>
+										<option value="completed">Abgeschlossen</option>
+										<option value="cancelled">Abgesagt</option>
+									</select>
+								</div>
+							</div>
+							<div class="field">
+								<label for="term-date">Datum</label>
+								<input id="term-date" type="date" class="neu-input" bind:value={termEditDate} />
+							</div>
+							<div class="field-row">
+								<div class="field">
+									<label for="term-start">Startzeit</label>
+									<input id="term-start" type="time" class="neu-input" bind:value={termEditStartTime} />
+								</div>
+								<div class="field">
+									<label for="term-end">Endzeit</label>
+									<input id="term-end" type="time" class="neu-input" bind:value={termEditEndTime} />
+								</div>
+							</div>
+							<div class="field">
+								<label for="term-dur">Dauer (h)</label>
+								<input id="term-dur" type="number" step="0.5" min="0" class="neu-input" bind:value={termEditDuration} />
+							</div>
+							<div class="field">
+								<label for="term-loc">Ort</label>
+								<input id="term-loc" type="text" class="neu-input" bind:value={termEditLocation} />
+							</div>
+							<div class="field">
+								<label for="term-desc">Beschreibung</label>
+								<textarea id="term-desc" rows={3} class="neu-input" bind:value={termEditDescription}></textarea>
+							</div>
+							{#if ci.customer_name}
+								<div class="panel-kv">
+									<span class="kv-label">Kunde</span>
+									<span class="kv-value">{ci.customer_name}</span>
+								</div>
+							{/if}
+							<div class="panel-actions">
+								<button class="btn btn-primary btn-sm" onclick={saveTermin} disabled={savingTermin}>
+									<Save size={13} />
+									{savingTermin ? 'Speichern...' : 'Speichern'}
+								</button>
+								<a href="/admin/calendar-items/{ci.id}" class="btn btn-ghost btn-sm">
+									<ExternalLink size={13} /> Detail
+								</a>
+								<button class="btn btn-danger btn-sm" onclick={deleteTermin} disabled={deletingTermin}>
+									<Trash2 size={13} />
+									{deletingTermin ? '...' : 'Löschen'}
+								</button>
+							</div>
+						</div>
+
+						<!-- Employee assignments -->
+						<div class="panel-section">
+							<div class="section-title">Mitarbeiter ({termEmployees.length})</div>
+
+							{#if termEmpLoading}
+								<p class="panel-loading">Laden...</p>
+							{:else}
+								{#if termEmployees.length > 0}
+									<div class="emp-list">
+										{#each termEmployees as emp}
+											{@const s = termEditingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '' }}
+											<div class="emp-row">
+												<div class="emp-name">{emp.first_name} {emp.last_name}</div>
+												<div class="emp-hours">
+													<input
+														class="hour-input neu-input"
+														type="number"
+														step="0.5"
+														min="0"
+														title="Geplant (h)"
+														placeholder="Geplant"
+														value={s.planned}
+														oninput={(e) => {
+															termEditingEmp = { ...termEditingEmp, [emp.employee_id]: { ...s, planned: (e.target as HTMLInputElement).value } };
+														}}
+													/>
+													<input
+														class="hour-input neu-input"
+														type="number"
+														step="0.5"
+														min="0"
+														title="Ist (h)"
+														placeholder="Ist"
+														value={s.actual}
+														oninput={(e) => {
+															termEditingEmp = { ...termEditingEmp, [emp.employee_id]: { ...s, actual: (e.target as HTMLInputElement).value } };
+														}}
+													/>
+												</div>
+												<div class="emp-actions">
+													<button class="btn-icon btn-save" onclick={() => termSaveEmp(emp.employee_id)} disabled={termSavingEmp[emp.employee_id]} title="Speichern"><Check size={12} /></button>
+													<button class="btn-icon btn-remove" onclick={() => termRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)} disabled={termRemovingEmp[emp.employee_id]} title="Entfernen"><X size={12} /></button>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<p class="panel-empty">Keine Mitarbeiter zugewiesen.</p>
+								{/if}
+
+								{#if termUnassignedEmployees().length > 0}
+									<div class="add-emp">
+										<select class="neu-input" bind:value={termAddEmpId}>
+											<option value="">— Mitarbeiter wählen —</option>
+											{#each termUnassignedEmployees() as e}
+												<option value={e.id}>{e.first_name} {e.last_name}</option>
+											{/each}
+										</select>
+										<input class="hour-input neu-input" type="number" step="0.5" min="0" placeholder="h" bind:value={termAddPlannedHours} />
+										<button class="btn btn-primary btn-sm" onclick={termAddEmployee} disabled={!termAddEmpId || termAddingEmp}>
+											<Plus size={13} />{termAddingEmp ? '...' : ''}
+										</button>
+									</div>
+								{/if}
+							{/if}
+						</div>
+					{/if}
+
+				</div>
+			{/if}
+		</aside>
 	</div>
 </div>
 
-{#if selectedDay}
-	<div class="modal-backdrop" onclick={(e) => { if (e.target === e.currentTarget) selectedDay = null; }} onkeydown={(e) => { if (e.key === 'Escape') selectedDay = null; }} role="dialog" tabindex="-1">
-		<div class="modal">
-			<h3>{new Date(selectedDay.date).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h3>
-
-			<div class="modal-section">
-				<label for="capacity-input">Kapazitaet</label>
-				<div class="capacity-row">
-					<input id="capacity-input" type="number" min="0" max="10" bind:value={capacityInput} />
-					<button class="btn btn-primary" onclick={saveCapacity} disabled={savingCapacity}>
-						{savingCapacity ? 'Speichern...' : 'Speichern'}
-					</button>
-				</div>
-			</div>
-
-			<div class="modal-section">
-				<span class="modal-label">Tagesplan ({dayEntries.length})</span>
-
-				{#if dayEntries.length > 0}
-					{#each dayEntries as entry}
-						{#if entry.kind === 'inquiry'}
-							{@const inq = entry.item}
-							<div class="booking-item">
-								<div class="booking-info">
-									<a href="/admin/inquiries/{inq.inquiry_id}" class="booking-link">
-										<span class="booking-name">{inq.customer_name || 'Unbekannt'}</span>
-										<ExternalLink size={12} />
-									</a>
-									<StatusBadge status={inq.status} />
-									<span class="time-badge">{formatTime(inq.start_time)} – {formatTime(inq.end_time)}</span>
-								</div>
-								{#if inq.departure_address || inq.arrival_address}
-									<span class="booking-route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
-								{/if}
-								{#if inq.volume_m3 || inq.offer_price_cents}
-									<div class="booking-details">
-										{#if inq.volume_m3}
-											<span class="booking-detail">📦 {inq.volume_m3.toFixed(1)} m³</span>
-										{/if}
-										{#if inq.offer_price_cents}
-											<span class="booking-detail">💰 {(inq.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
-										{/if}
-									</div>
-								{/if}
-							</div>
-						{:else}
-							{@const ci = entry.item}
-							<div class="booking-item item-entry">
-								<div class="booking-info">
-									<a href="/admin/calendar-items/{ci.id}" class="booking-link">
-										<span class="booking-name">{ci.title}</span>
-										<ExternalLink size={12} />
-									</a>
-									<span class="cat-badge">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
-									<span class="time-badge">{formatTime(ci.start_time)}{ci.end_time ? ' – ' + formatTime(ci.end_time) : ''}</span>
-								</div>
-								{#if ci.location}
-									<span class="booking-route">{ci.location}</span>
-								{/if}
-							</div>
-						{/if}
-					{/each}
-				{:else}
-					<p class="text-muted">Keine Einträge</p>
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
-
+<!-- Context menu -->
 {#if contextMenu}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="ctx-backdrop" onclick={closeContextMenu} onkeydown={(e) => e.key === 'Escape' && closeContextMenu()}></div>
@@ -805,6 +1975,7 @@
 	</div>
 {/if}
 
+<!-- Quick-create: inquiry -->
 {#if quickCreateMode === 'inquiry'}
 	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
 		<div class="modal modal-wide">
@@ -906,6 +2077,7 @@
 	</div>
 {/if}
 
+<!-- Quick-create: termin -->
 {#if quickCreateMode === 'termin'}
 	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
 		<div class="modal">
@@ -1008,20 +2180,69 @@
 {/if}
 
 <style>
-	.page { max-width: 1100px; }
+	/* ─── Page wrapper ─────────────────────────────────────────────────────────── */
+	.page { max-width: 1400px; }
 	.page-header { margin-bottom: 1.5rem; }
 	.page-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; }
 
-	.cal-nav { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; }
-	.cal-nav button { display: flex; align-items: center; color: #64748b; padding: 0.375rem; border-radius: 8px; transition: color 150ms, background 150ms, transform 150ms; }
-	.cal-nav button:hover { color: #1a1a2e; }
-	.cal-nav button.nav-drag-active { color: #4f46e5; background: #e0e7ff; transform: scale(1.2); }
-	.month-label { font-size: 1.125rem; font-weight: 600; color: #1a1a2e; min-width: 200px; text-align: center; text-transform: capitalize; }
+	/* ─── Main layout: calendar + panel ───────────────────────────────────────── */
+	.main-layout {
+		display: flex;
+		align-items: flex-start;
+		gap: 1.25rem;
+	}
 
-	.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff; }
+	.calendar-col {
+		flex: 1;
+		min-width: 0;
+		transition: flex 300ms ease;
+	}
+
+	/* ─── Nav + view toggle ────────────────────────────────────────────────────── */
+	.cal-nav { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+	.cal-nav > button { display: flex; align-items: center; color: #64748b; padding: 0.375rem; border-radius: 8px; transition: color 150ms, background 150ms, transform 150ms; }
+	.cal-nav > button:hover { color: #1a1a2e; }
+	.cal-nav > button.nav-drag-active { color: #4f46e5; background: #e0e7ff; transform: scale(1.2); }
+	.month-label { font-size: 1.125rem; font-weight: 600; color: #1a1a2e; min-width: 220px; text-align: center; text-transform: capitalize; }
+
+	.view-toggle {
+		display: flex;
+		gap: 0.2rem;
+		background: #dde3ea;
+		border-radius: 9px;
+		padding: 0.2rem;
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+	}
+	.view-btn {
+		padding: 0.3rem 0.75rem;
+		border-radius: 7px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: #64748b;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		transition: all 150ms;
+	}
+	.view-btn-active {
+		background: #ffffff;
+		color: #4f46e5;
+		font-weight: 600;
+		box-shadow: 2px 2px 5px #d1d9e6, -2px -2px 5px #ffffff;
+	}
+
+	/* ─── Calendar grid ────────────────────────────────────────────────────────── */
+	.calendar-grid {
+		display: grid;
+		grid-template-columns: repeat(7, 1fr);
+		gap: 1px;
+		background: #e2e8f0;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+	}
 	.cal-header { padding: 0.5rem; text-align: center; font-size: 0.75rem; font-weight: 600; color: #64748b; background: #f8fafc; text-transform: uppercase; }
 
-	/* Cell base */
 	.cal-cell {
 		padding: 0.375rem 0.25rem 0.375rem 0.375rem;
 		min-height: 80px;
@@ -1045,13 +2266,11 @@
 	.cal-entry[draggable="true"] { cursor: grab; }
 	.cal-entry[draggable="true"]:active { cursor: grabbing; opacity: 0.6; }
 
-	/* Date number row */
 	.cal-cell-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.125rem; }
 	.cal-date { font-size: 0.8125rem; font-weight: 600; color: #64748b; line-height: 1; }
 	.cal-date-today { color: #4f46e5; }
 	.cal-overbooked-icon { font-size: 0.65rem; color: #ea580c; line-height: 1; }
 
-	/* Entry rows */
 	.cal-entries { display: flex; flex-direction: column; gap: 2px; width: 100%; }
 
 	.cal-entry {
@@ -1065,67 +2284,504 @@
 		white-space: nowrap;
 		width: 100%;
 		line-height: 1.4;
+		cursor: pointer;
+		transition: opacity 100ms;
 	}
+	.cal-entry:hover { opacity: 0.8; }
 
-	/* Inquiry: pre-accepted — yellow */
+	/* Entry colour classes */
 	.entry-yellow { background: #fef9c3; color: #713f12; }
-	/* Inquiry: accepted and beyond — green */
-	.entry-green { background: #dcfce7; color: #14532d; }
-	/* Termine: internal — indigo */
+	.entry-green  { background: #dcfce7; color: #14532d; }
 	.entry-violet { background: #e0e7ff; color: #3730a3; }
-	/* Termine: maintenance — orange */
 	.entry-orange { background: #ffedd5; color: #9a3412; }
-	/* Termine: training — blue */
-	.entry-blue { background: #dbeafe; color: #1e40af; }
-	/* Termine: other — pink */
-	.entry-pink { background: #fce7f3; color: #9d174d; }
+	.entry-blue   { background: #dbeafe; color: #1e40af; }
+	.entry-pink   { background: #fce7f3; color: #9d174d; }
 
 	.entry-id { font-weight: 400; opacity: 0.7; font-size: 0.55rem; }
-
 	.cal-more { font-size: 0.6rem; color: #94a3b8; font-weight: 500; padding: 1px 3px; }
 
-	/* Modal */
-	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 500; }
-	.modal { background: #ffffff; border: none; border-radius: 16px; box-shadow: 10px 10px 30px #d1d9e6, -10px -10px 30px #ffffff; padding: 1.5rem; width: 90%; max-width: 440px; max-height: 80vh; overflow-y: auto; }
-	.modal h3 { font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 1rem; text-transform: capitalize; }
-	.modal-section { margin-bottom: 1rem; }
-	.modal-section label, .modal-label { display: block; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.375rem; text-transform: uppercase; }
-	.capacity-row { display: flex; gap: 0.5rem; align-items: center; }
-	.capacity-row input { width: 80px; padding: 0.5rem 0.75rem; background: #e8ecf1; border: none; border-radius: 8px; box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff; color: #1a1a2e; font-size: 0.875rem; outline: none; }
-	.capacity-row input:focus { box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px #6366f1; }
+	/* ─── Week view grid ───────────────────────────────────────────────────────── */
+	.week-grid {
+		display: grid;
+		grid-template-columns: repeat(7, 1fr);
+		gap: 1px;
+		background: #e2e8f0;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+	}
 
-	.btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; transition: all 150ms; }
-	.btn-primary { background: #6366f1; color: #fff; }
-	.btn-primary:hover:not(:disabled) { background: #4f46e5; }
-	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+	.week-cell {
+		background: #ffffff;
+		display: flex;
+		flex-direction: column;
+		padding: 0.375rem 0.3rem 0.5rem;
+		min-height: 160px;
+		cursor: pointer;
+		text-align: left;
+		width: 100%;
+		transition: background 150ms;
+		gap: 0.25rem;
+	}
+	.week-cell:hover { background: #f8fafc; }
+	.week-cell.today { background: #eef2ff; }
+	.week-cell.today:hover { background: #e0e7ff; }
+	.week-cell.overbooked { background: #fff7ed; }
+	.week-cell.overbooked:hover { background: #ffedd5; }
+	.week-cell.drag-over { background: #e0e7ff; outline: 2px dashed #6366f1; outline-offset: -2px; }
 
-	.booking-item { padding: 0.625rem 0; border-bottom: 1px solid #f1f5f9; }
-	.booking-item:last-child { border-bottom: none; }
-	.booking-info { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
-	.booking-name { font-size: 0.875rem; color: #334155; font-weight: 500; }
-	.booking-link { display: inline-flex; align-items: center; gap: 0.25rem; color: #4338ca; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
-	.booking-link:hover { color: #3730a3; text-decoration: underline; }
-	.booking-route { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.125rem; }
-	.booking-details { display: flex; gap: 0.75rem; margin-bottom: 0.25rem; }
-	.booking-detail { font-size: 0.75rem; color: #475569; font-weight: 500; }
-	.text-muted { color: #94a3b8; font-size: 0.875rem; }
-	.item-entry { background: #fffbeb; border-radius: 6px; padding: 0.5rem 0.625rem; margin-bottom: 0.375rem; }
-	.cat-badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: #fde68a; color: #92400e; padding: 0.1rem 0.35rem; border-radius: 4px; }
+	.week-cell-header {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding-bottom: 0.25rem;
+		border-bottom: 1px solid #e2e8f0;
+		margin-bottom: 0.125rem;
+	}
+	.week-day-name {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: #94a3b8;
+		letter-spacing: 0.04em;
+	}
+	.week-day-num {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #475569;
+		line-height: 1;
+	}
+	.week-day-today { color: #4f46e5; }
+	.week-cap-badge {
+		margin-left: auto;
+		font-size: 0.6rem;
+		font-weight: 700;
+		color: #64748b;
+		background: #f1f5f9;
+		padding: 0.1rem 0.3rem;
+		border-radius: 4px;
+	}
+	.week-cap-over { background: #fee2e2; color: #dc2626; }
+
+	.week-entries {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		flex: 1;
+	}
+
+	.week-entry {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-size: 0.6875rem !important;
+		padding: 3px 5px !important;
+	}
+
+	.entry-time {
+		font-size: 0.6rem;
+		font-weight: 700;
+		opacity: 0.75;
+		margin-right: 3px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.week-no-entries {
+		font-size: 0.75rem;
+		color: #cbd5e1;
+		padding: 0.25rem 0;
+	}
+
+	.week-card {
+		border-radius: 8px;
+		padding: 7px 9px;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		transition: box-shadow 0.15s;
+	}
+	.week-card:hover {
+		box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+	}
+
+	.wc-header {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+
+	.wc-time {
+		font-size: 0.65rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		opacity: 0.8;
+		white-space: nowrap;
+	}
+
+	.wc-name {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: inherit;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.wc-route {
+		font-size: 0.65rem;
+		opacity: 0.75;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.wc-meta {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+		align-items: center;
+	}
+
+	.wc-price {
+		font-size: 0.65rem;
+		font-weight: 700;
+		background: rgba(0,0,0,0.1);
+		border-radius: 4px;
+		padding: 1px 5px;
+		white-space: nowrap;
+	}
+
+	.wc-vol {
+		font-size: 0.65rem;
+		opacity: 0.75;
+		white-space: nowrap;
+	}
+
+	.wc-employees {
+		font-size: 0.65rem;
+		opacity: 0.8;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.wc-notes {
+		font-size: 0.65rem;
+		opacity: 0.7;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-style: italic;
+	}
+
+	/* ─── Side panel ───────────────────────────────────────────────────────────── */
+	.side-panel {
+		width: 0;
+		overflow: hidden;
+		flex-shrink: 0;
+		background: #e8ecf1;
+		border-radius: 16px;
+		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+		transition: width 280ms ease, opacity 280ms ease;
+		opacity: 0;
+		display: flex;
+		flex-direction: column;
+		max-height: calc(100vh - 140px);
+		position: sticky;
+		top: 1rem;
+	}
+
+	.side-panel.panel-visible {
+		width: 380px;
+		opacity: 1;
+	}
+
+	.panel-placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 200px;
+		color: #94a3b8;
+		gap: 0.5rem;
+	}
+	.placeholder-icon { font-size: 2rem; }
+	.panel-placeholder p { font-size: 0.875rem; }
+
+	.panel-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 1rem 1rem 0.75rem;
+		border-bottom: 1px solid #d5dbe4;
+		flex-shrink: 0;
+	}
+	.panel-title {
+		font-size: 0.9375rem;
+		font-weight: 700;
+		color: #1a1a2e;
+		margin: 0;
+		line-height: 1.3;
+		word-break: break-word;
+	}
+	.panel-close {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 8px;
+		color: #64748b;
+		background: #dde3ea;
+		box-shadow: 2px 2px 5px #d1d9e6, -2px -2px 5px #ffffff;
+		transition: background 150ms, color 150ms;
+	}
+	.panel-close:hover { background: #d0d6de; color: #1a1a2e; }
+
+	.panel-body {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0.75rem 1rem 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+	}
+
+	/* Panel sections */
+	.panel-section {
+		padding: 0.75rem 0;
+		border-bottom: 1px solid #d5dbe4;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.panel-section:last-child { border-bottom: none; }
+
+	.section-title {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: #6366f1;
+		margin-bottom: 0.125rem;
+	}
+
+	.panel-kv { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+	.kv-label { font-size: 0.75rem; font-weight: 600; color: #64748b; flex-shrink: 0; }
+	.kv-value { font-size: 0.8125rem; color: #1a1a2e; font-weight: 500; text-align: right; }
+	.kv-muted { color: #64748b; font-weight: 400; }
+
+	.panel-empty { font-size: 0.8125rem; color: #94a3b8; margin: 0; }
+	.panel-loading { font-size: 0.8125rem; color: #94a3b8; margin: 0; }
+
+	/* Day panel entries */
+	.day-entry {
+		background: #ffffff;
+		border-radius: 8px;
+		padding: 0.5rem 0.625rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		box-shadow: 2px 2px 6px #d1d9e6, -1px -1px 4px #ffffff;
+	}
+	.day-entry-termin { background: #fffbeb; }
+	.day-entry-top { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+	.entry-link-btn {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #4338ca;
+		text-align: left;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+	}
+	.entry-link-btn:hover { text-decoration: underline; }
+	.entry-route { font-size: 0.7rem; color: #64748b; }
+	.entry-detail-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		font-size: 0.7rem;
+		color: #6366f1;
+		text-decoration: none;
+		align-self: flex-start;
+	}
+	.entry-detail-link:hover { text-decoration: underline; }
+	.cat-badge { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; background: #fde68a; color: #92400e; padding: 0.1rem 0.3rem; border-radius: 3px; }
 	.time-badge { font-size: 0.7rem; font-weight: 600; color: #475569; margin-left: auto; white-space: nowrap; }
 
-	/* Quick-create: transparent backdrop so calendar stays visible */
-	.modal-backdrop-clear { background: transparent; backdrop-filter: none; align-items: flex-start; justify-content: flex-end; padding: 1rem; pointer-events: none; }
-	.modal-backdrop-clear .modal { pointer-events: all; margin-top: 3rem; box-shadow: 8px 8px 24px rgba(0,0,0,0.18), -4px -4px 12px #ffffff; }
+	/* Neumorphic input */
+	.neu-input {
+		padding: 0.4rem 0.6rem;
+		background: #e8ecf1;
+		border: none;
+		border-radius: 8px;
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		color: #1a1a2e;
+		font-size: 0.8125rem;
+		outline: none;
+		width: 100%;
+		font-family: inherit;
+		resize: vertical;
+	}
+	.neu-input:focus {
+		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff, 0 0 0 2px #6366f1;
+	}
+	select.neu-input { appearance: auto; }
 
-	/* Context menu */
+	/* Capacity row in day panel */
+	.capacity-row { display: flex; gap: 0.5rem; align-items: center; }
+	.capacity-input { width: 80px; flex-shrink: 0; }
+
+	/* Form fields in panel */
+	.field { display: flex; flex-direction: column; gap: 0.2rem; }
+	.field label { font-size: 0.6875rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
+	.field-row { display: flex; gap: 0.5rem; }
+	.field-row .field { flex: 1; }
+
+	/* Panel action buttons row */
+	.panel-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+	/* Buttons */
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.5rem 1rem;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 150ms;
+		white-space: nowrap;
+	}
+	.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; border-radius: 7px; }
+	.btn-primary { background: #6366f1; color: #fff; border: none; box-shadow: 2px 2px 6px #d1d9e6, -1px -1px 4px #ffffff; }
+	.btn-primary:hover:not(:disabled) { background: #4f46e5; }
+	.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+	.btn-ghost {
+		background: #e8ecf1;
+		color: #475569;
+		border: none;
+		box-shadow: 2px 2px 5px #d1d9e6, -2px -2px 5px #ffffff;
+		text-decoration: none;
+	}
+	.btn-ghost:hover { background: #dde3ea; color: #1a1a2e; }
+	.btn-danger { background: #fff0f0; color: #dc2626; border: 1px solid #fecaca; }
+	.btn-danger:hover:not(:disabled) { background: #fee2e2; }
+	.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+	/* ── Holidays ──────────────────────────────────────────────────────────────── */
+	.cal-cell.school-holiday,
+	.week-cell.school-holiday { background: linear-gradient(135deg, #fef9e7, #fef3c7); }
+	.holiday-badge {
+		display: inline-block;
+		font-size: 0.6rem;
+		font-weight: 600;
+		color: #b45309;
+		background: #fef3c7;
+		border: 1px solid #fde68a;
+		border-radius: 3px;
+		padding: 0 4px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 100%;
+	}
+	.school-holiday-label {
+		font-size: 0.6rem;
+		color: #92400e;
+		opacity: 0.85;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		padding: 0 2px 2px;
+	}
+	.holiday-legend {
+		display: flex;
+		gap: 16px;
+		padding: 6px 4px 2px;
+		font-size: 0.7rem;
+		color: #6b7280;
+	}
+	.legend-item { display: flex; align-items: center; gap: 5px; }
+	.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+	.legend-public { background: #fef3c7; border: 1px solid #fde68a; }
+	.legend-school { background: #fef9e7; border: 1px solid #fde68a; }
+	.btn-secondary { background: #e8ecf1; color: #475569; box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff; border: none; }
+	.btn-secondary:hover { background: #dde3ea; }
+
+	/* Employee list in panel */
+	.emp-list { display: flex; flex-direction: column; gap: 0.375rem; }
+	.emp-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0.5rem;
+		background: #f0f3f7;
+		border-radius: 7px;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff;
+	}
+	.emp-name {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #1e293b;
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.emp-hours { display: flex; gap: 0.25rem; flex-shrink: 0; }
+	.hour-input {
+		width: 52px !important;
+		padding: 0.25rem 0.35rem !important;
+		font-size: 0.75rem !important;
+		border-radius: 5px !important;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff !important;
+	}
+	.emp-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+	.btn-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		border: 1px solid #e2e8f0;
+		border-radius: 5px;
+		background: #fff;
+		cursor: pointer;
+		transition: all 120ms;
+		padding: 0;
+	}
+	.btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+	.btn-save:hover:not(:disabled) { background: #dcfce7; border-color: #86efac; color: #16a34a; }
+	.btn-remove:hover:not(:disabled) { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+	.add-emp { display: flex; gap: 0.375rem; align-items: center; margin-top: 0.25rem; }
+	.add-emp .neu-input { flex: 1; }
+
+	/* ─── Context menu ─────────────────────────────────────────────────────────── */
 	.ctx-backdrop { position: fixed; inset: 0; z-index: 600; }
 	.ctx-menu { position: fixed; z-index: 601; background: #fff; border-radius: 10px; box-shadow: 4px 4px 16px #d1d9e6, -2px -2px 8px #ffffff; padding: 0.25rem; min-width: 200px; }
 	.ctx-item { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.5rem 0.75rem; border-radius: 7px; font-size: 0.875rem; color: #334155; text-align: left; transition: background 120ms; }
 	.ctx-item:hover { background: #f1f5f9; }
 	.ctx-icon { font-size: 1rem; }
 
-	/* Quick-create forms */
+	/* ─── Quick-create modals ──────────────────────────────────────────────────── */
+	.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 500; }
+	.modal { background: #e8ecf1; border: none; border-radius: 16px; box-shadow: 10px 10px 30px #d1d9e6, -10px -10px 30px #ffffff; padding: 1.5rem; width: 90%; max-width: 440px; max-height: 88vh; overflow-y: auto; }
+	.modal h3 { font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 1rem; }
+
+	.modal-backdrop-clear { background: transparent; backdrop-filter: none; align-items: flex-start; justify-content: flex-end; padding: 1rem; pointer-events: none; }
+	.modal-backdrop-clear .modal { pointer-events: all; margin-top: 3rem; box-shadow: 8px 8px 24px rgba(0,0,0,0.18), -4px -4px 12px #ffffff; }
 	.modal-wide { max-width: 560px; }
+
 	.qc-section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #6366f1; margin: 0.75rem 0 0.25rem; letter-spacing: 0.05em; }
 	.qc-section-label:first-of-type { margin-top: 0; }
 	.qc-row { display: flex; gap: 0.5rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
@@ -1143,8 +2799,6 @@
 	.qc-field textarea { resize: vertical; }
 	.qc-error { font-size: 0.8rem; color: #dc2626; margin: 0.5rem 0 0; }
 	.qc-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
-	.btn-secondary { background: #e8ecf1; color: #475569; box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff; }
-	.btn-secondary:hover { background: #dde3ea; }
 
 	.qc-customer-tabs { display: flex; gap: 0.25rem; margin-bottom: 0.375rem; }
 	.tab-sm { padding: 0.25rem 0.6rem; font-size: 0.75rem; border-radius: 6px; color: #64748b; background: #f1f5f9; }
@@ -1157,10 +2811,19 @@
 	.qt-customer-remove { font-size: 1rem; color: #6366f1; padding: 0 0.125rem; line-height: 1; }
 	.cr-name { font-size: 0.8125rem; font-weight: 500; color: #1e293b; }
 	.cr-email { font-size: 0.7rem; color: #64748b; }
-	.qc-row input[type="text"]:not(.qc-field input) { width: 100%; padding: 0.4rem 0.6rem; background: #e8ecf1; border: none; border-radius: 7px; box-shadow: inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff; font-size: 0.8125rem; outline: none; }
+	.qc-row input[type="text"]:not(.qc-field input) {
+		width: 100%; padding: 0.4rem 0.6rem; background: #e8ecf1; border: none; border-radius: 7px;
+		box-shadow: inset 2px 2px 4px #d1d9e6, inset -2px -2px 4px #ffffff; font-size: 0.8125rem; outline: none;
+	}
+
+	/* ─── Responsive ───────────────────────────────────────────────────────────── */
+	@media (max-width: 900px) {
+		.main-layout { flex-direction: column; }
+		.side-panel { width: 100% !important; max-height: none; position: static; opacity: 1; transition: none; }
+		.side-panel:not(.panel-visible) { display: none; }
+	}
 
 	@media (max-width: 768px) {
-		.page-header { flex-wrap: wrap; }
 		.cal-nav button { min-height: 44px; min-width: 44px; justify-content: center; }
 		.calendar-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 		.calendar-grid { min-width: 560px; }

@@ -531,10 +531,10 @@
 			const res = await apiGet<InquiryDay[]>(`/api/v1/inquiries/${inqId}/days`);
 			const days = Array.isArray(res) ? res : [];
 			if (days.length === 0 && panelSelection?.kind === 'inquiry') {
-				// Pre-seed Day 1 with the inquiry's own scheduled/preferred date
-				const d1 = panelSelection.item.scheduled_date?.slice(0, 10)
-					?? panelSelection.item.preferred_date?.slice(0, 10)
-					?? '';
+				// Pre-seed Day 1 with the date this inquiry appears on in the calendar
+				const d1 = schedule.find(d =>
+					d.inquiries.some(i => i.inquiry_id === panelSelection!.item.inquiry_id)
+				)?.date ?? '';
 				inqDays = [{ day_date: d1, day_number: 1, notes: null }];
 			} else {
 				inqDays = days;
@@ -854,11 +854,13 @@
 			// Pre-fill add-form hours from first existing assignment
 			if (inqEmployees.length > 0) inqAddPlannedHours = String(inqEmployees[0].planned_hours);
 			const empState: typeof inqEditingEmp = {};
+			const defaultClockIn = formatTime(inq.start_time);
+			const defaultClockOut = formatTime(inq.end_time ?? '');
 			for (const emp of inqEmployees) {
 				empState[emp.employee_id] = {
 					planned: String(emp.planned_hours),
-					clock_in: isoToLocalTime(emp.clock_in),
-					clock_out: isoToLocalTime(emp.clock_out),
+					clock_in: isoToLocalTime(emp.clock_in) || defaultClockIn,
+					clock_out: isoToLocalTime(emp.clock_out) || defaultClockOut,
 					notes: emp.notes ?? ''
 				};
 			}
@@ -3109,8 +3111,9 @@
 	.emp-list { display: flex; flex-direction: column; gap: 0.375rem; }
 	.emp-row {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.25rem 0.4rem;
 		padding: 0.4rem 0.5rem;
 		background: #f0f3f7;
 		border-radius: 7px;
@@ -3120,11 +3123,7 @@
 		font-size: 0.75rem;
 		font-weight: 600;
 		color: #1e293b;
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		width: 100%;
 	}
 	.emp-hours { display: flex; gap: 0.25rem; flex-shrink: 0; }
 	.hour-input {

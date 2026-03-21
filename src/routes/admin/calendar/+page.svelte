@@ -615,7 +615,6 @@
 		const d = new Date(dayViewDate + 'T00:00:00');
 		d.setDate(d.getDate() - 1);
 		dayViewDate = d.toISOString().slice(0, 10);
-		loadSchedule();
 	}
 
 	/**
@@ -628,7 +627,6 @@
 		const d = new Date(dayViewDate + 'T00:00:00');
 		d.setDate(d.getDate() + 1);
 		dayViewDate = d.toISOString().slice(0, 10);
-		loadSchedule();
 	}
 
 	/**
@@ -767,7 +765,6 @@
 	 */
 	function prevMonth() {
 		currentDate = new Date(year, month - 1, 1);
-		loadSchedule();
 	}
 
 	/**
@@ -778,7 +775,6 @@
 	 */
 	function nextMonth() {
 		currentDate = new Date(year, month + 1, 1);
-		loadSchedule();
 	}
 
 	/**
@@ -791,7 +787,6 @@
 		const d = new Date(currentDate);
 		d.setDate(d.getDate() - 7);
 		currentDate = d;
-		loadSchedule();
 	}
 
 	/**
@@ -804,7 +799,6 @@
 		const d = new Date(currentDate);
 		d.setDate(d.getDate() + 7);
 		currentDate = d;
-		loadSchedule();
 	}
 
 	// ─── Side panel openers ───────────────────────────────────────────────────────
@@ -1617,9 +1611,9 @@
 		<div class="calendar-col">
 			<div class="cal-nav">
 				<div class="view-toggle">
-					<button class="view-btn" class:view-btn-active={viewMode === 'month'} onclick={() => { viewMode = 'month'; loadSchedule(); }}>Monat</button>
-					<button class="view-btn" class:view-btn-active={viewMode === 'week'} onclick={() => { viewMode = 'week'; loadSchedule(); }}>Woche</button>
-				<button class="view-btn" class:view-btn-active={viewMode === 'day'} onclick={() => { viewMode = 'day'; loadSchedule(); }}>Tag</button>
+					<button class="view-btn" class:view-btn-active={viewMode === 'month'} onclick={() => { viewMode = 'month'; }}>Monat</button>
+					<button class="view-btn" class:view-btn-active={viewMode === 'week'} onclick={() => { viewMode = 'week'; }}>Woche</button>
+				<button class="view-btn" class:view-btn-active={viewMode === 'day'} onclick={() => { viewMode = 'day'; }}>Tag</button>
 				</div>
 				<button
 					onclick={viewMode === 'month' ? prevMonth : viewMode === 'week' ? prevWeek : prevDay}

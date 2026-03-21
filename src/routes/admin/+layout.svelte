@@ -105,14 +105,14 @@
 	@import '../../styles/admin.css';
 
 	:global(body) {
-		background: var(--admin-bg, #e8ecf1);
+		background: var(--dt-surface, #f7f9fb);
 	}
 
 	.admin-shell {
 		display: flex;
 		min-height: 100vh;
-		background: #e8ecf1;
-		color: #1a1a2e;
+		background: var(--dt-surface, #f7f9fb);
+		color: var(--dt-on-surface, #191c1e);
 	}
 
 	.admin-main {
@@ -134,12 +134,13 @@
 		justify-content: space-between;
 		height: 56px;
 		padding: 0 1.5rem;
-		background: #ffffff;
-		border-bottom: 1px solid #e2e8f0;
+		background: var(--dt-glass-bg, rgba(30, 58, 95, 0.85));
+		backdrop-filter: var(--dt-glass-blur, blur(20px));
+		-webkit-backdrop-filter: var(--dt-glass-blur, blur(20px));
+		border-bottom: var(--dt-glass-border, 1px solid rgba(255, 255, 255, 0.08));
 		position: sticky;
 		top: 0;
 		z-index: 100;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 	}
 
 	.topbar-left {
@@ -157,7 +158,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		color: #64748b;
+		color: rgba(255, 255, 255, 0.6);
 		font-size: 0.875rem;
 	}
 
@@ -165,16 +166,16 @@
 		display: flex;
 		align-items: center;
 		gap: 0.375rem;
-		color: #94a3b8;
+		color: rgba(255, 255, 255, 0.5);
 		font-size: 0.8125rem;
 		padding: 0.375rem 0.625rem;
-		border-radius: 0.5rem;
-		transition: all 150ms ease;
+		border-radius: var(--dt-radius-md, 12px);
+		transition: all var(--dt-transition, 150ms ease-out);
 	}
 
 	.topbar-logout:hover {
-		color: #ef4444;
-		background: #fee2e2;
+		color: var(--dt-on-primary, #ffffff);
+		background: rgba(168, 57, 0, 0.25);
 	}
 
 	.admin-content {
@@ -187,22 +188,25 @@
 		display: none;
 		align-items: center;
 		justify-content: center;
-		color: #64748b;
+		color: rgba(255, 255, 255, 0.6);
 		padding: 0.375rem;
-		border-radius: 0.375rem;
-		transition: color 150ms ease, background 150ms ease;
+		border-radius: var(--dt-radius-md, 12px);
+		transition: color var(--dt-transition, 150ms ease-out),
+		            background var(--dt-transition, 150ms ease-out);
 	}
 
 	.hamburger-btn:hover {
-		color: #1a1a2e;
-		background: #f1f5f9;
+		color: var(--dt-on-primary, #ffffff);
+		background: rgba(255, 255, 255, 0.08);
 	}
 
 	/* Mobile backdrop overlay */
 	.mobile-backdrop {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
+		background: rgba(2, 36, 72, 0.4);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
 		z-index: 999;
 	}
 

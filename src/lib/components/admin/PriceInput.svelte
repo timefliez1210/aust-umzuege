@@ -127,8 +127,8 @@
 
 	.price-label {
 		font-size: 0.75rem;
-		font-weight: 600;
-		color: #64748b;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -142,22 +142,23 @@
 	.input-wrapper {
 		display: flex;
 		align-items: center;
-		background: #e8ecf1;
-		border-radius: 10px;
+		background: var(--dt-surface-container-high);
+		border-radius: var(--dt-radius-md);
 		padding: 0 0.75rem;
 		flex: 1;
-		transition: box-shadow 150ms ease;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
+		transition: background var(--dt-transition), border-bottom-color var(--dt-transition);
+		border-bottom: 2px solid transparent;
 	}
 
 	.input-wrapper:focus-within {
-		box-shadow: inset 2px 2px 5px #c5cdd8, inset -2px -2px 5px #ffffff, 0 0 0 2px rgba(99, 102, 241, 0.2);
+		background: var(--dt-surface-container-lowest);
+		border-bottom-color: var(--dt-primary);
 	}
 
 	input {
 		background: transparent;
 		border: none;
-		color: #1a1a2e;
+		color: var(--dt-on-surface);
 		padding: 0.5rem 0;
 		width: 100%;
 		font-size: 0.9375rem;
@@ -175,7 +176,7 @@
 	}
 
 	.currency {
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 		font-size: 0.8125rem;
 		font-weight: 500;
 		margin-left: 0.5rem;
@@ -183,28 +184,27 @@
 
 	.mode-toggle {
 		display: flex;
-		border-radius: 8px;
+		border-radius: var(--dt-radius-md);
 		overflow: hidden;
-		box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff;
+		border: var(--dt-ghost-border);
 	}
 
 	.mode-toggle button {
 		padding: 0.5rem 0.625rem;
 		font-size: 0.75rem;
 		font-weight: 500;
-		color: #94a3b8;
-		background: #e8ecf1;
-		transition: all 150ms ease;
+		color: var(--dt-on-surface-variant);
+		background: var(--dt-surface-container-lowest);
+		transition: background var(--dt-transition), color var(--dt-transition);
 	}
 
 	.mode-toggle button.active {
-		background: #6366f1;
-		color: #ffffff;
-		box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);
+		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
+		color: var(--dt-on-primary);
 	}
 
 	.price-hint {
 		font-size: 0.75rem;
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 	}
 </style>

@@ -42,11 +42,13 @@
 	.badge {
 		display: inline-flex;
 		align-items: center;
-		padding: 0.25rem 0.625rem;
-		border-radius: 9999px;
-		font-size: 0.75rem;
-		font-weight: 600;
+		padding: 4px 8px;
+		border-radius: var(--dt-radius-sm);
+		font-size: 11px;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 		white-space: nowrap;
-		line-height: 1.25;
+		line-height: 1.2;
 	}
 </style>

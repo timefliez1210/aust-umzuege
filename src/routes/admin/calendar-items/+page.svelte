@@ -285,13 +285,13 @@
 	h1 {
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #1e293b;
+		color: var(--dt-on-surface);
 		margin: 0;
 	}
 
 	.count-badge {
-		background: #e0e7ff;
-		color: #4338ca;
+		background: var(--dt-primary-container);
+		color: var(--dt-on-primary);
 		font-size: 0.75rem;
 		font-weight: 600;
 		padding: 0.125rem 0.5rem;
@@ -310,18 +310,33 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.875rem;
-		color: #64748b;
+		color: var(--dt-on-surface-variant);
 		font-weight: 500;
 	}
 
 	.month-picker input {
-		padding: 0.375rem 0.5rem;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.375rem;
+		padding: 0.375rem 0.625rem;
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-radius: var(--dt-radius-sm);
 		font-size: 0.875rem;
+		color: var(--dt-on-surface);
+		font-family: inherit;
+		outline: none;
+		transition: var(--dt-transition);
 	}
 
-	.table-wrapper { overflow-x: auto; }
+	.month-picker input:focus {
+		background: var(--dt-surface-container-lowest);
+		border-bottom: 2px solid var(--dt-primary);
+	}
+
+	.table-wrapper {
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
+		box-shadow: var(--dt-shadow-ambient);
+		overflow: hidden;
+	}
 
 	.data-table {
 		width: 100%;
@@ -331,24 +346,29 @@
 
 	.data-table th {
 		text-align: left;
-		padding: 0.75rem;
-		border-bottom: 2px solid #e2e8f0;
-		color: #64748b;
+		padding: 0.75rem 1rem;
+		background: var(--dt-surface-container);
+		color: var(--dt-on-surface-variant);
 		font-weight: 600;
 		white-space: nowrap;
 	}
 
 	.data-table td {
-		padding: 0.75rem;
-		border-bottom: 1px solid #f1f5f9;
+		padding: 0.75rem 1rem;
+		background: var(--dt-surface-container-lowest);
+		color: var(--dt-on-surface);
+	}
+
+	.data-table tbody tr + tr td {
+		border-top: 1px solid var(--dt-surface-container);
 	}
 
 	.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
-	.title-cell { font-weight: 500; color: #1e293b; }
+	.title-cell { font-weight: 500; color: var(--dt-on-surface); }
 
-	.clickable-row { cursor: pointer; transition: background 150ms; }
-	.clickable-row:hover { background: #f8fafc; }
+	.clickable-row { cursor: pointer; transition: background var(--dt-transition); }
+	.clickable-row:hover td { background: var(--dt-surface-container-low); }
 
 	.badge {
 		font-size: 0.6875rem;
@@ -357,22 +377,23 @@
 		border-radius: 999px;
 	}
 
-	.badge-gray   { background: #f1f5f9; color: #64748b; }
-	.badge-indigo { background: #e0e7ff; color: #4338ca; }
-	.badge-green  { background: #dcfce7; color: #16a34a; }
-	.badge-red    { background: #fee2e2; color: #dc2626; }
+	.badge-gray   { background: var(--dt-surface-container); color: var(--dt-on-surface-variant); }
+	.badge-indigo { background: var(--dt-primary-container); color: var(--dt-on-primary); }
+	.badge-green  { background: #dcfce7; color: #14532d; }
+	.badge-red    { background: #fee2e2; color: #991b1b; }
 
 	.empty-state {
 		text-align: center;
 		padding: 3rem;
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 		font-size: 0.875rem;
 	}
 
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0,0,0,0.4);
+		background: rgba(2, 36, 72, 0.4);
+		backdrop-filter: blur(4px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -380,15 +401,29 @@
 	}
 
 	.modal {
-		background: #fff;
-		border-radius: 0.75rem;
-		padding: 1.5rem;
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
+		padding: 0;
 		width: 90%;
 		max-width: 540px;
-		box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+		box-shadow: var(--dt-shadow-ambient);
+		overflow: hidden;
 	}
 
-	.modal h2 { margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; }
+	.modal h2 {
+		margin: 0;
+		font-size: 1.0625rem;
+		font-weight: 600;
+		color: var(--dt-on-primary);
+		padding: 1rem 1.25rem;
+		background: var(--dt-glass-bg);
+		backdrop-filter: var(--dt-glass-blur);
+		border-bottom: var(--dt-glass-border);
+	}
+
+	.modal form {
+		padding: 1.25rem;
+	}
 
 	.form-grid {
 		display: grid;
@@ -402,18 +437,29 @@
 	.field label {
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: #64748b;
+		color: var(--dt-on-surface-variant);
 	}
 
 	.field input,
 	.field select,
 	.field textarea {
-		padding: 0.5rem;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.375rem;
+		padding: 0.5rem 0.625rem;
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-radius: var(--dt-radius-sm);
 		font-size: 0.875rem;
 		font-family: inherit;
+		color: var(--dt-on-surface);
 		resize: vertical;
+		outline: none;
+		transition: var(--dt-transition);
+	}
+
+	.field input:focus,
+	.field select:focus,
+	.field textarea:focus {
+		background: var(--dt-surface-container-lowest);
+		border-bottom: 2px solid var(--dt-primary);
 	}
 
 	.modal-actions {
@@ -427,7 +473,7 @@
 		background: #fee2e2;
 		color: #991b1b;
 		padding: 0.5rem 0.75rem;
-		border-radius: 0.375rem;
+		border-radius: var(--dt-radius-sm);
 		font-size: 0.875rem;
 		margin-bottom: 0.75rem;
 	}
@@ -437,23 +483,26 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 1rem;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.5rem;
-		background: #fff;
+		border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-md);
+		background: var(--dt-surface-container-lowest);
+		color: var(--dt-on-surface);
 		font-size: 0.875rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 150ms;
+		transition: background var(--dt-transition);
 	}
 
-	.btn:hover { background: #f8fafc; }
+	.btn:hover { background: var(--dt-surface-container-low); }
 	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 	.btn-primary {
-		background: #4f46e5;
-		color: #fff;
-		border-color: #4f46e5;
+		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
+		color: var(--dt-on-primary);
+		border: none;
 	}
 
-	.btn-primary:hover:not(:disabled) { background: #4338ca; }
+	.btn-primary:hover:not(:disabled) {
+		background: linear-gradient(135deg, var(--dt-primary-container), var(--dt-primary));
+	}
 </style>

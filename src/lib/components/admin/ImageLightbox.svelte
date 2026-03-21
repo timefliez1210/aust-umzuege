@@ -166,8 +166,8 @@
 		position: fixed;
 		inset: 0;
 		z-index: 9999;
-		background: rgba(0, 0, 0, 0.8);
-		backdrop-filter: blur(8px);
+		background: rgba(2, 36, 72, 0.4);
+		backdrop-filter: blur(4px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -179,21 +179,21 @@
 		top: 1rem;
 		right: 1rem;
 		z-index: 10000;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--dt-on-primary);
 		padding: 0.5rem;
-		border-radius: 10px;
+		border-radius: var(--dt-radius-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(255, 255, 255, 0.1);
-		border: none;
+		background: var(--dt-glass-bg);
+		backdrop-filter: var(--dt-glass-blur);
+		border: var(--dt-glass-border);
 		cursor: pointer;
-		transition: all 150ms ease;
+		transition: background var(--dt-transition);
 	}
 
 	.close-btn:hover {
-		color: #ffffff;
-		background: rgba(255, 255, 255, 0.2);
+		background: rgba(30, 58, 95, 0.95);
 	}
 
 	.nav-btn {
@@ -201,21 +201,21 @@
 		top: 50%;
 		transform: translateY(-50%);
 		z-index: 10000;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--dt-on-primary);
 		padding: 0.75rem;
-		border-radius: 12px;
+		border-radius: var(--dt-radius-md);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(255, 255, 255, 0.1);
-		border: none;
+		background: var(--dt-glass-bg);
+		backdrop-filter: var(--dt-glass-blur);
+		border: var(--dt-glass-border);
 		cursor: pointer;
-		transition: all 150ms ease;
+		transition: background var(--dt-transition);
 	}
 
 	.nav-btn:hover {
-		color: #ffffff;
-		background: rgba(255, 255, 255, 0.2);
+		background: rgba(30, 58, 95, 0.95);
 	}
 
 	.nav-prev {
@@ -233,6 +233,10 @@
 		gap: 0.75rem;
 		max-width: 90vw;
 		max-height: 92vh;
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
+		box-shadow: var(--dt-shadow-ambient);
+		overflow: hidden;
 	}
 
 	.image-container {
@@ -247,17 +251,16 @@
 		max-width: 90vw;
 		max-height: 85vh;
 		object-fit: contain;
-		border-radius: 12px;
+		border-radius: var(--dt-radius-md);
 		display: block;
-		box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
 	}
 
 	.bbox-overlay {
 		position: absolute;
-		border: 2px solid #6366f1;
+		border: 2px solid var(--dt-secondary-container);
 		border-radius: 4px;
 		pointer-events: none;
-		box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3);
+		box-shadow: 0 0 0 1px rgba(252, 96, 24, 0.3);
 	}
 
 	.caption {
@@ -265,11 +268,13 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
-		background: rgba(255, 255, 255, 0.1);
-		backdrop-filter: blur(12px);
-		border-radius: 10px;
-		color: #ffffff;
+		background: var(--dt-glass-bg);
+		backdrop-filter: var(--dt-glass-blur);
+		border-top: var(--dt-glass-border);
+		color: var(--dt-on-primary);
 		font-size: 0.875rem;
+		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.item-name {
@@ -277,11 +282,11 @@
 	}
 
 	.volume {
-		color: rgba(255, 255, 255, 0.6);
+		color: rgba(255, 255, 255, 0.7);
 	}
 
 	.counter {
-		color: rgba(255, 255, 255, 0.5);
+		color: rgba(255, 255, 255, 0.55);
 		font-size: 0.8125rem;
 		font-variant-numeric: tabular-nums;
 	}

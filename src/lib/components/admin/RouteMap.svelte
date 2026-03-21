@@ -99,11 +99,9 @@
 
 <style>
 	.route-map-card {
-		background: #ffffff;
-		border: none;
-		border-radius: 12px;
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
 		padding: 1.25rem;
-		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
 		grid-column: 1 / -1;
 	}
 
@@ -117,24 +115,25 @@
 	.card-header h3 {
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: #64748b;
+		color: var(--dt-on-surface-variant);
 		margin: 0;
 	}
 
 	.distance-badge {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: #6366f1;
-		background: rgba(99, 102, 241, 0.08);
-		padding: 0.25rem 0.625rem;
-		border-radius: 20px;
+		font-size: 11px;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--dt-on-primary);
+		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
+		padding: 4px 8px;
+		border-radius: var(--dt-radius-sm);
 	}
 
 	.map-wrapper {
 		width: 100%;
 		height: 300px;
-		border-radius: 10px;
+		border-radius: var(--dt-radius-md);
 		overflow: hidden;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
 	}
 </style>

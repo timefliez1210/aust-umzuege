@@ -458,15 +458,15 @@
 	}
 
 	.page-header h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #1a1a2e;
+		font-size: 1.25rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--dt-on-surface);
 	}
 
 	.card {
-		background: #ffffff;
-		border-radius: 16px;
-		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
 		padding: 1.5rem;
 	}
 
@@ -475,7 +475,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		margin-bottom: 1.25rem;
-		color: #1a1a2e;
+		color: var(--dt-on-surface);
 	}
 
 	.card-header h2 {
@@ -504,39 +504,36 @@
 
 	.field label {
 		font-size: 0.75rem;
-		font-weight: 600;
-		color: #64748b;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
 	}
 
 	.field input {
 		padding: 0.625rem 0.75rem;
-		background: #e8ecf1;
+		background: var(--dt-surface-container-high);
 		border: none;
-		border-radius: 10px;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
-		color: #1a1a2e;
+		border-bottom: 2px solid transparent;
+		border-radius: var(--dt-radius-md);
+		color: var(--dt-on-surface);
 		font-size: 0.9375rem;
 		outline: none;
-		transition: box-shadow 150ms ease;
+		transition: background var(--dt-transition), border-color var(--dt-transition);
 	}
 
 	.field input:focus {
-		box-shadow: inset 2px 2px 5px #c5cdd8, inset -2px -2px 5px #ffffff,
-			0 0 0 2px rgba(99, 102, 241, 0.2);
+		background: var(--dt-surface-container-lowest);
+		border-bottom-color: var(--dt-primary);
 	}
 
 	.field input::placeholder {
-		color: #94a3b8;
+		color: var(--dt-outline-variant);
 	}
 
 	.role-toggle {
 		display: flex;
-		border-radius: 10px;
+		border-radius: var(--dt-radius-md);
 		overflow: hidden;
-		box-shadow: inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff;
-		background: #e8ecf1;
+		background: var(--dt-surface-container-high);
 	}
 
 	.role-toggle button {
@@ -548,17 +545,16 @@
 		padding: 0.625rem 0.75rem;
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		transition: all 150ms ease;
+		transition: all var(--dt-transition);
 	}
 
 	.role-toggle button.active {
-		background: #6366f1;
-		color: #ffffff;
-		box-shadow: 2px 2px 6px rgba(99, 102, 241, 0.3);
+		background: var(--dt-primary-container);
+		color: var(--dt-on-primary);
 	}
 
 	.btn-create {
@@ -566,21 +562,20 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
-		background: #6366f1;
-		color: #ffffff;
+		padding: 0.75rem var(--dt-space-6);
+		background: linear-gradient(135deg, #022448, #1e3a5f);
+		color: var(--dt-on-primary);
 		font-weight: 600;
 		font-size: 0.9375rem;
 		border: none;
-		border-radius: 10px;
-		box-shadow: 3px 3px 10px rgba(99, 102, 241, 0.3);
+		border-radius: var(--dt-radius-md);
 		cursor: pointer;
-		transition: background 150ms ease;
+		transition: opacity var(--dt-transition);
 		align-self: flex-start;
 	}
 
 	.btn-create:hover:not(:disabled) {
-		background: #4f46e5;
+		opacity: 0.9;
 	}
 
 	.btn-create:disabled {
@@ -591,7 +586,7 @@
 	/* Users list */
 	.loading,
 	.empty {
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 		font-size: 0.875rem;
 		padding: 1rem 0;
 	}
@@ -606,11 +601,13 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.875rem 0;
-		border-bottom: 1px solid #f1f5f9;
 	}
 
-	.user-row:last-child {
-		border-bottom: none;
+	.user-row:nth-child(even) {
+		background: var(--dt-surface-container-low);
+		margin: 0 -1.5rem;
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
 	}
 
 	.user-info {
@@ -622,15 +619,14 @@
 	.user-avatar {
 		width: 36px;
 		height: 36px;
-		border-radius: 10px;
-		background: #e8ecf1;
-		box-shadow: 2px 2px 6px #d1d9e6, -2px -2px 6px #ffffff;
+		border-radius: var(--dt-radius-sm);
+		background: var(--dt-surface-container);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-weight: 700;
 		font-size: 0.875rem;
-		color: #6366f1;
+		color: var(--dt-primary);
 	}
 
 	.user-details {
@@ -641,12 +637,12 @@
 	.user-name {
 		font-weight: 600;
 		font-size: 0.9375rem;
-		color: #1a1a2e;
+		color: var(--dt-on-surface);
 	}
 
 	.user-email {
 		font-size: 0.8125rem;
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 	}
 
 	.user-meta {
@@ -658,16 +654,18 @@
 	.role-badge {
 		display: inline-flex;
 		align-items: center;
-		padding: 0.25rem 0.625rem;
-		border-radius: 9999px;
+		padding: 0.125rem 0.5rem;
+		border-radius: var(--dt-radius-sm);
 		font-size: 0.75rem;
 		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 		white-space: nowrap;
 	}
 
 	.user-date {
 		font-size: 0.75rem;
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 		white-space: nowrap;
 	}
 
@@ -675,17 +673,17 @@
 		display: flex;
 		align-items: center;
 		padding: 0.375rem;
-		border-radius: 8px;
-		color: #94a3b8;
+		border-radius: var(--dt-radius-sm);
+		color: var(--dt-on-surface-variant);
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		transition: all 150ms ease;
+		transition: all var(--dt-transition);
 	}
 
 	.btn-delete:hover {
-		color: #ef4444;
-		background: #fee2e2;
+		color: var(--dt-secondary);
+		background: rgba(168, 57, 0, 0.08);
 	}
 
 	/* Confirm Modal */
@@ -693,7 +691,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 9999;
-		background: rgba(0, 0, 0, 0.4);
+		background: rgba(2, 36, 72, 0.4);
 		backdrop-filter: blur(4px);
 		display: flex;
 		align-items: center;
@@ -702,9 +700,9 @@
 	}
 
 	.modal {
-		background: #ffffff;
-		border-radius: 16px;
-		box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
+		box-shadow: var(--dt-shadow-ambient);
 		padding: 2rem;
 		max-width: 420px;
 		width: 90vw;
@@ -716,19 +714,19 @@
 		position: absolute;
 		top: 0.75rem;
 		right: 0.75rem;
-		color: #94a3b8;
+		color: var(--dt-on-surface-variant);
 		padding: 0.25rem;
-		border-radius: 8px;
+		border-radius: var(--dt-radius-sm);
 		display: flex;
 		background: transparent;
-		border: none;
+		border: var(--dt-ghost-border);
 		cursor: pointer;
-		transition: all 150ms ease;
+		transition: all var(--dt-transition);
 	}
 
 	.modal-close:hover {
-		color: #1a1a2e;
-		background: #f1f5f9;
+		color: var(--dt-on-surface);
+		background: var(--dt-surface-container);
 	}
 
 	.modal-icon {
@@ -737,22 +735,22 @@
 		justify-content: center;
 		width: 48px;
 		height: 48px;
-		border-radius: 12px;
-		background: #fef2f2;
-		color: #dc2626;
+		border-radius: var(--dt-radius-md);
+		background: rgba(168, 57, 0, 0.08);
+		color: var(--dt-secondary);
 		margin-bottom: 1rem;
 	}
 
 	.modal-title {
 		font-size: 1.125rem;
 		font-weight: 700;
-		color: #1a1a2e;
+		color: var(--dt-on-surface);
 		margin-bottom: 0.5rem;
 	}
 
 	.modal-message {
 		font-size: 0.875rem;
-		color: #64748b;
+		color: var(--dt-on-surface-variant);
 		line-height: 1.5;
 		margin-bottom: 1.5rem;
 	}
@@ -765,34 +763,34 @@
 
 	.btn-cancel {
 		padding: 0.625rem 1.25rem;
-		background: #e8ecf1;
-		color: #475569;
+		background: var(--dt-surface-container-lowest);
+		color: var(--dt-on-surface);
 		font-weight: 600;
 		font-size: 0.875rem;
-		border: none;
-		border-radius: 10px;
+		border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-md);
 		cursor: pointer;
-		transition: background 150ms ease;
+		transition: background var(--dt-transition);
 	}
 
 	.btn-cancel:hover {
-		background: #dde3ea;
+		background: var(--dt-surface-container);
 	}
 
 	.btn-confirm-danger {
 		padding: 0.625rem 1.25rem;
-		background: #dc2626;
+		background: linear-gradient(135deg, #a83900, #8a2e00);
 		color: #ffffff;
 		font-weight: 600;
 		font-size: 0.875rem;
 		border: none;
-		border-radius: 10px;
+		border-radius: var(--dt-radius-md);
 		cursor: pointer;
-		transition: background 150ms ease;
+		transition: opacity var(--dt-transition);
 	}
 
 	.btn-confirm-danger:hover:not(:disabled) {
-		background: #b91c1c;
+		opacity: 0.9;
 	}
 
 	.btn-confirm-danger:disabled {

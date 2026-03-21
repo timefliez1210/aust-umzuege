@@ -21,6 +21,9 @@
 		end_time: string;
 		employees_assigned: number;
 		employee_names: string | null;
+		day_number?: number | null;
+		total_days?: number | null;
+		day_notes?: string | null;
 		preferred_date?: string | null;
 		scheduled_date?: string | null;
 	}
@@ -60,6 +63,8 @@
 		first_name: string;
 		last_name: string;
 		planned_hours: number;
+		clock_in: string | null;
+		clock_out: string | null;
 		actual_hours: number | null;
 		notes: string | null;
 	}
@@ -192,6 +197,40 @@
 	}
 
 	/**
+	 * Converts a UTC ISO 8601 timestamp to a local HH:MM string for time inputs.
+	 *
+	 * Called by: Employee state seeding (openInquiryPanel, openTerminPanel, inqSaveEmp)
+	 * Purpose: Display stored UTC clock times in the browser's local timezone for editing.
+	 *
+	 * @param iso - ISO 8601 timestamp or null
+	 * @returns "HH:MM" in local time, or empty string
+	 */
+	function isoToLocalTime(iso: string | null): string {
+		if (!iso) return '';
+		const d = new Date(iso);
+		return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+	}
+
+	/**
+	 * Formats decimal hours as "Xh Ym" for display.
+	 *
+	 * Called by: Template (actual hours display in employee rows)
+	 * Purpose: Show human-readable duration computed from clock_in/clock_out.
+	 *
+	 * Math: totalMinutes = hours * 60; h = floor(totalMinutes / 60); m = totalMinutes % 60
+	 *
+	 * @param hours - Decimal hours or null
+	 * @returns Formatted string like "3h 45m" or "—"
+	 */
+	function fmtActualHours(hours: number | null): string {
+		if (hours == null) return '—';
+		const totalMin = Math.round(hours * 60);
+		const h = Math.floor(totalMin / 60);
+		const m = totalMin % 60;
+		return m > 0 ? `${h}h ${m}m` : `${h}h`;
+	}
+
+	/**
 	 * Formats a YYYY-MM-DD date string to German locale display.
 	 *
 	 * Called by: Template (side panel date display)
@@ -235,12 +274,23 @@
 	// Inquiry employee state
 	let inqEmployees = $state<EmployeeAssignment[]>([]);
 	let inqEmpLoading = $state(false);
-	let inqEditingEmp = $state<Record<string, { planned: string; actual: string; notes: string }>>({});
+	let inqEditingEmp = $state<Record<string, { planned: string; clock_in: string; clock_out: string; notes: string }>>({}); 
 	let inqSavingEmp = $state<Record<string, boolean>>({});
 	let inqRemovingEmp = $state<Record<string, boolean>>({});
 	let inqAddEmpId = $state('');
 	let inqAddPlannedHours = $state('0');
 	let inqAddingEmp = $state(false);
+
+	// Inquiry days (multi-day editor)
+	interface InquiryDay {
+		day_date: string;
+		day_number: number;
+		notes: string | null;
+	}
+	let inqDays = $state<InquiryDay[]>([]);
+	let inqDaysLoading = $state(false);
+	let inqDaysSaving = $state(false);
+	let inqDaysDirty = $state(false);
 
 	// Termin panel edit state
 	let termEditTitle = $state('');
@@ -258,7 +308,7 @@
 	// Termin employee state
 	let termEmployees = $state<EmployeeAssignment[]>([]);
 	let termEmpLoading = $state(false);
-	let termEditingEmp = $state<Record<string, { planned: string; actual: string; notes: string }>>({});
+	let termEditingEmp = $state<Record<string, { planned: string; clock_in: string; clock_out: string; notes: string }>>({}); 
 	let termSavingEmp = $state<Record<string, boolean>>({});
 	let termRemovingEmp = $state<Record<string, boolean>>({});
 	let termAddEmpId = $state('');
@@ -267,6 +317,21 @@
 
 	// Shared: all active employees
 	let allEmployees = $state<EmployeeOption[]>([]);
+
+	// Mobile detection
+	let isMobile = $state(false);
+	let fabOpen = $state(false);
+	$effect(() => {
+		const mq = window.matchMedia('(max-width: 768px)');
+		isMobile = mq.matches;
+		const handler = (ev: MediaQueryListEvent) => { isMobile = ev.matches; };
+		mq.addEventListener('change', handler);
+		return () => mq.removeEventListener('change', handler);
+	});
+
+	// Touch swipe state
+	let touchStartX = 0;
+	let touchStartY = 0;
 
 	// Drag-and-drop state
 	let draggingId = $state<string | null>(null);
@@ -363,7 +428,7 @@
 
 	// ─── View mode ────────────────────────────────────────────────────────────────
 
-	let viewMode = $state<'month' | 'week'>('month');
+	let viewMode = $state<'month' | 'week' | 'day'>('month');
 
 	/** ISO date string for today, e.g. "2026-03-19". Used for isToday checks in week view. */
 	let todayStr = $derived.by(() => {
@@ -418,6 +483,13 @@
 		return `${fmt(weekDays[0])} – ${fmt(weekDays[6])} ${endYear}`;
 	});
 
+	/** ISO date string currently shown in day view. Defaults to today. */
+	const _now = new Date();
+	let dayViewDate = $state(`${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`);
+
+	/** The most relevant date for the current view — used by FAB to pre-fill the create form. */
+	let currentContextDate = $derived(viewMode === 'day' ? dayViewDate : todayStr);
+
 	/**
 	 * Returns employees not yet assigned to the currently selected inquiry.
 	 *
@@ -442,6 +514,133 @@
 	function termUnassignedEmployees(): EmployeeOption[] {
 		const assigned = new Set(termEmployees.map(e => e.employee_id));
 		return allEmployees.filter(e => !assigned.has(e.id));
+	}
+
+	/**
+	 * Loads scheduled days for the currently selected inquiry.
+	 *
+	 * Called by: openInquiryPanel (when inquiry has multi-day data)
+	 * Purpose: Populates the InquiryDaysEditor so Alex can view and edit the day list.
+	 *
+	 * @param inqId - UUID of the inquiry
+	 */
+	async function loadInquiryDays(inqId: string) {
+		inqDaysLoading = true;
+		inqDaysDirty = false;
+		try {
+			const res = await apiGet<InquiryDay[]>(`/api/v1/inquiries/${inqId}/days`);
+			const days = Array.isArray(res) ? res : [];
+			if (days.length === 0 && panelSelection?.kind === 'inquiry') {
+				// Pre-seed Day 1 with the inquiry's own scheduled/preferred date
+				const d1 = panelSelection.item.scheduled_date?.slice(0, 10)
+					?? panelSelection.item.preferred_date?.slice(0, 10)
+					?? '';
+				inqDays = [{ day_date: d1, day_number: 1, notes: null }];
+			} else {
+				inqDays = days;
+			}
+		} catch {
+			inqDays = [];
+		} finally {
+			inqDaysLoading = false;
+		}
+	}
+
+	/**
+	 * Persists the current inquiry day list via PUT /api/v1/inquiries/{id}/days.
+	 *
+	 * Called by: Template (Tage speichern button in inquiry panel days section)
+	 * Purpose: Full-replace semantics — sends the complete day list to the API.
+	 */
+	async function saveInquiryDays() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		const inqId = panelSelection.item.inquiry_id;
+		inqDaysSaving = true;
+		try {
+			await apiPut(`/api/v1/inquiries/${inqId}/days`, { days: inqDays });
+			inqDaysDirty = false;
+			showToast('Tage gespeichert', 'success');
+			await loadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			inqDaysSaving = false;
+		}
+	}
+
+	/**
+	 * Adds a new day row to the local inquiry days editor state.
+	 *
+	 * Called by: Template (+ button in InquiryDaysEditor)
+	 * Purpose: Prepopulates the next available day_number and suggests the next calendar date.
+	 */
+	function addInquiryDay() {
+		const nextNum = inqDays.length > 0 ? Math.max(...inqDays.map(d => d.day_number)) + 1 : 1;
+		// suggest the day after the last one
+		let nextDate = '';
+		if (inqDays.length > 0) {
+			const lastDate = inqDays[inqDays.length - 1].day_date;
+			const d = new Date(lastDate + 'T00:00:00');
+			d.setDate(d.getDate() + 1);
+			nextDate = d.toISOString().slice(0, 10);
+		} else if (panelSelection && panelSelection.kind === 'inquiry') {
+			nextDate = panelSelection.item.scheduled_date?.slice(0, 10)
+				?? panelSelection.item.preferred_date?.slice(0, 10)
+				?? '';
+		}
+		inqDays = [...inqDays, { day_date: nextDate, day_number: nextNum, notes: null }];
+		inqDaysDirty = true;
+	}
+
+	/**
+	 * Removes a day row from the local inquiry days editor state by index.
+	 *
+	 * Called by: Template (× button per day row)
+	 * Purpose: Removes the day and re-numbers remaining entries sequentially.
+	 *
+	 * @param idx - Zero-based index of the day to remove
+	 */
+	function removeInquiryDay(idx: number) {
+		inqDays = inqDays.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day_number: i + 1 }));
+		inqDaysDirty = true;
+	}
+
+	/**
+	 * Navigates the day view to the previous day.
+	 *
+	 * Called by: Template (left chevron when viewMode === 'day')
+	 * Purpose: Moves dayViewDate back by one calendar day.
+	 */
+	function prevDay() {
+		const d = new Date(dayViewDate + 'T00:00:00');
+		d.setDate(d.getDate() - 1);
+		dayViewDate = d.toISOString().slice(0, 10);
+		loadSchedule();
+	}
+
+	/**
+	 * Navigates the day view to the next day.
+	 *
+	 * Called by: Template (right chevron when viewMode === 'day')
+	 * Purpose: Moves dayViewDate forward by one calendar day.
+	 */
+	function nextDay() {
+		const d = new Date(dayViewDate + 'T00:00:00');
+		d.setDate(d.getDate() + 1);
+		dayViewDate = d.toISOString().slice(0, 10);
+		loadSchedule();
+	}
+
+	/**
+	 * Returns the German label for the day view date header.
+	 *
+	 * Called by: Template (nav label when viewMode === 'day')
+	 * Purpose: Shows "Montag, 21. März 2026" in the navigation bar.
+	 *
+	 * @returns Localized German date string
+	 */
+	function dayViewLabel(): string {
+		return formatDateDE(dayViewDate);
 	}
 
 	/**
@@ -520,6 +719,10 @@
 				const m0 = weekDays[0].slice(0, 7);
 				const m6 = weekDays[6].slice(0, 7);
 				itemMonths = m0 === m6 ? [m0] : [m0, m6];
+			} else if (viewMode === 'day') {
+				from = dayViewDate;
+				to = dayViewDate;
+				itemMonths = [dayViewDate.slice(0, 7)];
 			} else {
 				from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
 				const lastDay = new Date(year, month + 1, 0).getDate();
@@ -649,20 +852,25 @@
 		inqEmployees = [];
 		inqEditingEmp = {};
 		inqAddEmpId = '';
-		inqAddPlannedHours = '0';
+		inqAddPlannedHours = '8';
 		try {
 			await ensureEmployeesLoaded();
 			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inq.inquiry_id}/employees`);
 			inqEmployees = res.assignments ?? [];
+			// Pre-fill add-form hours from first existing assignment
+			if (inqEmployees.length > 0) inqAddPlannedHours = String(inqEmployees[0].planned_hours);
 			const empState: typeof inqEditingEmp = {};
 			for (const emp of inqEmployees) {
 				empState[emp.employee_id] = {
 					planned: String(emp.planned_hours),
-					actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+					clock_in: isoToLocalTime(emp.clock_in),
+					clock_out: isoToLocalTime(emp.clock_out),
 					notes: emp.notes ?? ''
 				};
 			}
 			inqEditingEmp = empState;
+			// Load inquiry days for multi-day editor
+			await loadInquiryDays(inq.inquiry_id);
 		} catch {
 			inqEmployees = [];
 		} finally {
@@ -706,7 +914,8 @@
 			for (const emp of termEmployees) {
 				empState[emp.employee_id] = {
 					planned: String(emp.planned_hours),
-					actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+					clock_in: isoToLocalTime(emp.clock_in),
+					clock_out: isoToLocalTime(emp.clock_out),
 					notes: emp.notes ?? ''
 				};
 			}
@@ -828,10 +1037,14 @@
 		const inqId = panelSelection.item.inquiry_id;
 		inqSavingEmp = { ...inqSavingEmp, [empId]: true };
 		const s = inqEditingEmp[empId];
+		const date = panelSelection.item.scheduled_date?.slice(0, 10)
+			?? panelSelection.item.preferred_date?.slice(0, 10)
+			?? new Date().toISOString().slice(0, 10);
 		try {
 			await apiPatch(`/api/v1/inquiries/${inqId}/employees/${empId}`, {
 				planned_hours: parseFloat(s.planned) || 0,
-				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
+				clock_in: s.clock_in ? new Date(`${date}T${s.clock_in}:00`).toISOString() : undefined,
+				clock_out: s.clock_out ? new Date(`${date}T${s.clock_out}:00`).toISOString() : undefined,
 				notes: s.notes || null
 			});
 			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inqId}/employees`);
@@ -886,16 +1099,18 @@
 				planned_hours: parseFloat(inqAddPlannedHours) || 0
 			});
 			inqAddEmpId = '';
-			inqAddPlannedHours = '0';
 			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inqId}/employees`);
 			inqEmployees = res.assignments ?? [];
+			// Keep hours pre-filled from first assignment for the next employee
+			inqAddPlannedHours = inqEmployees.length > 0 ? String(inqEmployees[0].planned_hours) : '8';
 			// Seed edit state for the new employee
 			const empState: typeof inqEditingEmp = { ...inqEditingEmp };
 			for (const emp of inqEmployees) {
 				if (!empState[emp.employee_id]) {
 					empState[emp.employee_id] = {
 						planned: String(emp.planned_hours),
-						actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+						clock_in: isoToLocalTime(emp.clock_in),
+						clock_out: isoToLocalTime(emp.clock_out),
 						notes: emp.notes ?? ''
 					};
 				}
@@ -982,10 +1197,12 @@
 		const ciId = panelSelection.item.id;
 		termSavingEmp = { ...termSavingEmp, [empId]: true };
 		const s = termEditingEmp[empId];
+		const date = panelSelection.item.scheduled_date.slice(0, 10);
 		try {
 			await apiPatch(`/api/v1/admin/calendar-items/${ciId}/employees/${empId}`, {
 				planned_hours: parseFloat(s.planned) || 0,
-				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
+				clock_in: s.clock_in ? new Date(`${date}T${s.clock_in}:00`).toISOString() : undefined,
+				clock_out: s.clock_out ? new Date(`${date}T${s.clock_out}:00`).toISOString() : undefined,
 				notes: s.notes || null
 			});
 			const detail = await apiGet<{ employees: EmployeeAssignment[] }>(`/api/v1/admin/calendar-items/${ciId}`);
@@ -1048,7 +1265,8 @@
 				if (!empState[emp.employee_id]) {
 					empState[emp.employee_id] = {
 						planned: String(emp.planned_hours),
-						actual: emp.actual_hours != null ? String(emp.actual_hours) : '',
+						clock_in: isoToLocalTime(emp.clock_in),
+						clock_out: isoToLocalTime(emp.clock_out),
 						notes: emp.notes ?? ''
 					};
 				}
@@ -1208,8 +1426,8 @@
 	 *
 	 * @param mode - 'inquiry' or 'termin'
 	 */
-	function openQuickCreate(mode: 'inquiry' | 'termin') {
-		quickCreateDate = contextMenu!.dateStr;
+	function openQuickCreate(mode: 'inquiry' | 'termin', dateOverride?: string) {
+		quickCreateDate = dateOverride ?? contextMenu!.dateStr;
 		contextMenu = null;
 		quickCreateMode = mode;
 		quickCreateError = '';
@@ -1350,6 +1568,39 @@
 		}
 	}
 
+	/**
+	 * Records the touch start position for swipe detection.
+	 *
+	 * Called by: Template (ontouchstart on calendar-scroll)
+	 * Purpose: Captures X/Y so onTouchEnd can compute swipe direction.
+	 */
+	function onTouchStart(e: TouchEvent) {
+		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
+	}
+
+	/**
+	 * Detects horizontal swipe and navigates the calendar accordingly.
+	 *
+	 * Called by: Template (ontouchend on calendar-scroll)
+	 * Purpose: Left swipe → next period, right swipe → previous period.
+	 * Ignores vertical scrolls and swipes shorter than 50px.
+	 */
+	function onTouchEnd(e: TouchEvent) {
+		const dx = e.changedTouches[0].clientX - touchStartX;
+		const dy = e.changedTouches[0].clientY - touchStartY;
+		if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 1.5) return;
+		if (dx < 0) {
+			if (viewMode === 'month') nextMonth();
+			else if (viewMode === 'week') nextWeek();
+			else nextDay();
+		} else {
+			if (viewMode === 'month') prevMonth();
+			else if (viewMode === 'week') prevWeek();
+			else prevDay();
+		}
+	}
+
 	const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 </script>
 
@@ -1368,23 +1619,24 @@
 				<div class="view-toggle">
 					<button class="view-btn" class:view-btn-active={viewMode === 'month'} onclick={() => { viewMode = 'month'; loadSchedule(); }}>Monat</button>
 					<button class="view-btn" class:view-btn-active={viewMode === 'week'} onclick={() => { viewMode = 'week'; loadSchedule(); }}>Woche</button>
+				<button class="view-btn" class:view-btn-active={viewMode === 'day'} onclick={() => { viewMode = 'day'; loadSchedule(); }}>Tag</button>
 				</div>
 				<button
-					onclick={viewMode === 'month' ? prevMonth : prevWeek}
+					onclick={viewMode === 'month' ? prevMonth : viewMode === 'week' ? prevWeek : prevDay}
 					ondragover={(e) => onNavDragOver(e, 'prev')}
 					ondragleave={onNavDragLeave}
 					class:nav-drag-active={navDragOver === 'prev'}
 				><ChevronLeft size={20} /></button>
-				<span class="month-label">{viewMode === 'month' ? monthName : weekLabel}</span>
+				<span class="month-label">{viewMode === 'month' ? monthName : viewMode === 'week' ? weekLabel : dayViewLabel()}</span>
 				<button
-					onclick={viewMode === 'month' ? nextMonth : nextWeek}
+					onclick={viewMode === 'month' ? nextMonth : viewMode === 'week' ? nextWeek : nextDay}
 					ondragover={(e) => onNavDragOver(e, 'next')}
 					ondragleave={onNavDragLeave}
 					class:nav-drag-active={navDragOver === 'next'}
 				><ChevronRight size={20} /></button>
 			</div>
 
-			<div class="calendar-scroll">
+			<div class="calendar-scroll" ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
 				{#if viewMode === 'month'}
 				<div class="calendar-grid">
 					{#each weekdays as day}
@@ -1434,7 +1686,7 @@
 												tabindex="0"
 												onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
 											>
-												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 12)}
+												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 10)}{#if entry.item.day_number && entry.item.total_days && entry.item.total_days > 1}<span class="multiday-badge"> T{entry.item.day_number}/{entry.item.total_days}</span>{/if}
 											</span>
 										{:else}
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1460,7 +1712,7 @@
 						{/if}
 					{/each}
 				</div>
-				{:else}
+				{:else if viewMode === 'week'}
 				<!-- ─── Week view ─────────────────────────────────────────────── -->
 				<div class="week-grid">
 					{#each weekDays as dateStr}
@@ -1509,6 +1761,13 @@
 												tabindex="0"
 												onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
 											>
+												{#if entry.item.total_days && entry.item.total_days > 1}
+													<div class="wc-multiday-bar">
+														{#if entry.item.day_number && entry.item.day_number > 1}<span class="wc-md-arrow wc-md-left">←</span>{/if}
+														<span class="wc-md-label">Tag {entry.item.day_number ?? 1}/{entry.item.total_days}</span>
+														{#if entry.item.day_number && entry.item.day_number < entry.item.total_days}<span class="wc-md-arrow wc-md-right">→</span>{/if}
+													</div>
+												{/if}
 												<div class="wc-header">
 													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
 													<StatusBadge status={entry.item.status} />
@@ -1565,6 +1824,60 @@
 						</button>
 					{/each}
 				</div>
+				{:else}
+				<!-- ─── Day timeline view ──────────────────────────────────────────── -->
+				{@const daySched = schedule.find(s => s.date === dayViewDate || s.date.startsWith(dayViewDate))}
+				{@const dayAllEntries = buildDayEntries(dayViewDate)}
+				{@const dayTermineList = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dayViewDate))}
+				<div class="day-timeline">
+					<div class="day-tl-header">
+						<div class="day-tl-meta">
+							{#if daySched}
+								<span class="day-tl-cap">Kapazität: {daySched.booked}/{daySched.capacity}</span>
+							{/if}
+							{#if publicHolidayMap.get(dayViewDate)}
+								<span class="holiday-badge">🎉 {publicHolidayMap.get(dayViewDate)}</span>
+							{/if}
+							{#if schoolHolidayMap.get(dayViewDate)}
+								<span class="school-holiday-label">{schoolHolidayMap.get(dayViewDate)}</span>
+							{/if}
+						</div>
+						<button
+							class="btn btn-sm btn-ghost"
+							onclick={() => onCellContextMenu({ clientX: 0, clientY: 60, preventDefault: () => {} } as MouseEvent, dayViewDate)}
+						>+ Eintrag</button>
+					</div>
+
+					<div class="day-tl-grid">
+						{#each Array.from({ length: 14 }, (_, i) => i + 6) as hour}
+							<div class="tl-row">
+								<div class="tl-time">{String(hour).padStart(2, '0')}:00</div>
+								<div class="tl-lane">
+									{#each dayAllEntries as entry}
+										{@const startH = parseInt((entry.item.start_time || '06:00').slice(0, 2))}
+										{@const endH = parseInt((entry.item.end_time || (String(startH + 1).padStart(2, '0') + ':00')).slice(0, 2))}
+										{#if startH === hour}
+											<button
+												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'termin' ? entry.item.category : 'other')}"
+												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.item)}
+												style="height:{Math.max(1, endH - startH) * 48}px"
+											>
+												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>
+												<span class="tl-block-name">{entry.type === 'inquiry' ? (entry.item.customer_name ?? '—') : entry.item.title}</span>
+												{#if entry.type === 'inquiry' && entry.item.employee_names}
+													<span class="tl-block-emp">👥 {entry.item.employee_names}</span>
+												{/if}
+											</button>
+										{/if}
+									{/each}
+								</div>
+							</div>
+						{/each}
+						{#if dayAllEntries.length === 0}
+							<div class="day-tl-empty">Keine Einträge für diesen Tag</div>
+						{/if}
+					</div>
+				</div>
 				{/if}
 
 			<!-- Holiday legend -->
@@ -1577,8 +1890,18 @@
 			</div>
 		</div>
 
-		<!-- Side panel -->
+		<!-- Mobile panel backdrop -->
+		{#if isMobile && panelOpen}
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="sheet-backdrop" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
+		{/if}
+
+		<!-- Side panel (desktop) / bottom sheet (mobile) -->
 		<aside class="side-panel" class:panel-visible={panelOpen} aria-label="Details">
+			<!-- Drag handle (mobile only) -->
+			<div class="sheet-handle-bar" onclick={closePanel} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && closePanel()}>
+				<span class="sheet-handle"></span>
+			</div>
 			{#if !panelSelection}
 				<div class="panel-placeholder">
 					<span class="placeholder-icon">📋</span>
@@ -1754,7 +2077,7 @@
 								{#if inqEmployees.length > 0}
 									<div class="emp-list">
 										{#each inqEmployees as emp}
-											{@const s = inqEditingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '' }}
+											{@const s = inqEditingEmp[emp.employee_id] ?? { planned: '0', clock_in: '', clock_out: '', notes: '' }}
 											<div class="emp-row">
 												<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 												<div class="emp-hours">
@@ -1771,17 +2094,24 @@
 														}}
 													/>
 													<input
-														class="hour-input neu-input"
-														type="number"
-														step="0.5"
-														min="0"
-														title="Ist (h)"
-														placeholder="Ist"
-														value={s.actual}
+														class="time-input neu-input"
+														type="time"
+														title="Arbeitsbeginn"
+														value={s.clock_in}
 														oninput={(e) => {
-															inqEditingEmp = { ...inqEditingEmp, [emp.employee_id]: { ...s, actual: (e.target as HTMLInputElement).value } };
+															inqEditingEmp = { ...inqEditingEmp, [emp.employee_id]: { ...s, clock_in: (e.target as HTMLInputElement).value } };
 														}}
 													/>
+													<input
+														class="time-input neu-input"
+														type="time"
+														title="Arbeitsende"
+														value={s.clock_out}
+														oninput={(e) => {
+															inqEditingEmp = { ...inqEditingEmp, [emp.employee_id]: { ...s, clock_out: (e.target as HTMLInputElement).value } };
+														}}
+													/>
+													<span class="emp-actual" title="Ist">{fmtActualHours(emp.actual_hours)}</span>
 												</div>
 												<div class="emp-actions">
 													<button class="btn-icon btn-save" onclick={() => inqSaveEmp(emp.employee_id)} disabled={inqSavingEmp[emp.employee_id]} title="Speichern"><Check size={12} /></button>
@@ -1807,6 +2137,45 @@
 											<Plus size={13} />{inqAddingEmp ? '...' : ''}
 										</button>
 									</div>
+								{/if}
+							{/if}
+						</div>
+
+						<!-- Multi-day scheduling section -->
+						<div class="panel-section">
+							<div class="section-title">Mehrtägiger Termin</div>
+							{#if inqDaysLoading}
+								<p class="panel-loading">Laden...</p>
+							{:else}
+								{#if inqDays.length > 0}
+									<div class="days-list">
+										{#each inqDays as day, idx}
+											<div class="day-row">
+												<span class="day-num">Tag {day.day_number}</span>
+												<input
+													type="date"
+													class="neu-input day-date-input"
+													value={day.day_date}
+													oninput={(e) => {
+														inqDays = inqDays.map((d, i) => i === idx ? { ...d, day_date: (e.target as HTMLInputElement).value } : d);
+														inqDaysDirty = true;
+													}}
+												/>
+												<button class="btn-icon btn-remove" onclick={() => removeInquiryDay(idx)} title="Entfernen"><X size={11} /></button>
+											</div>
+										{/each}
+									</div>
+								{/if}
+								<div class="days-actions">
+									<button class="btn btn-ghost btn-sm" onclick={addInquiryDay}><Plus size={12} /> Tag hinzufügen</button>
+									{#if inqDays.length > 0 || inqDaysDirty}
+										<button class="btn btn-primary btn-sm" onclick={saveInquiryDays} disabled={inqDaysSaving}>
+											{inqDaysSaving ? '...' : 'Tage speichern'}
+										</button>
+									{/if}
+								</div>
+								{#if inqDays.length === 0}
+									<p class="panel-empty">Eintägig — Tag hinzufügen für Mehrtagesumzug.</p>
 								{/if}
 							{/if}
 						</div>
@@ -1897,7 +2266,7 @@
 								{#if termEmployees.length > 0}
 									<div class="emp-list">
 										{#each termEmployees as emp}
-											{@const s = termEditingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '' }}
+											{@const s = termEditingEmp[emp.employee_id] ?? { planned: '0', clock_in: '', clock_out: '', notes: '' }}
 											<div class="emp-row">
 												<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 												<div class="emp-hours">
@@ -1914,17 +2283,24 @@
 														}}
 													/>
 													<input
-														class="hour-input neu-input"
-														type="number"
-														step="0.5"
-														min="0"
-														title="Ist (h)"
-														placeholder="Ist"
-														value={s.actual}
+														class="time-input neu-input"
+														type="time"
+														title="Arbeitsbeginn"
+														value={s.clock_in}
 														oninput={(e) => {
-															termEditingEmp = { ...termEditingEmp, [emp.employee_id]: { ...s, actual: (e.target as HTMLInputElement).value } };
+															termEditingEmp = { ...termEditingEmp, [emp.employee_id]: { ...s, clock_in: (e.target as HTMLInputElement).value } };
 														}}
 													/>
+													<input
+														class="time-input neu-input"
+														type="time"
+														title="Arbeitsende"
+														value={s.clock_out}
+														oninput={(e) => {
+															termEditingEmp = { ...termEditingEmp, [emp.employee_id]: { ...s, clock_out: (e.target as HTMLInputElement).value } };
+														}}
+													/>
+													<span class="emp-actual" title="Ist">{fmtActualHours(emp.actual_hours)}</span>
 												</div>
 												<div class="emp-actions">
 													<button class="btn-icon btn-save" onclick={() => termSaveEmp(emp.employee_id)} disabled={termSavingEmp[emp.employee_id]} title="Speichern"><Check size={12} /></button>
@@ -1960,6 +2336,25 @@
 		</aside>
 	</div>
 </div>
+
+<!-- FAB: mobile quick-create -->
+{#if isMobile && !quickCreateMode}
+	{#if fabOpen}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="fab-backdrop" onclick={() => fabOpen = false} onkeydown={(e) => e.key === 'Escape' && (fabOpen = false)}></div>
+		<div class="fab-menu">
+			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('inquiry', currentContextDate); }}>
+				<span class="fab-item-icon">📋</span> Anfrage erstellen
+			</button>
+			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('termin', currentContextDate); }}>
+				<span class="fab-item-icon">📅</span> Termin erstellen
+			</button>
+		</div>
+	{/if}
+	<button class="fab" class:fab-active={fabOpen} onclick={() => fabOpen = !fabOpen} aria-label="Eintrag erstellen">
+		<Plus size={22} />
+	</button>
+{/if}
 
 <!-- Context menu -->
 {#if contextMenu}
@@ -2745,6 +3140,21 @@
 		border-radius: 5px !important;
 		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff !important;
 	}
+	.time-input {
+		width: 72px !important;
+		padding: 0.25rem 0.3rem !important;
+		font-size: 0.75rem !important;
+		border-radius: 5px !important;
+		box-shadow: inset 1px 1px 3px #d1d9e6, inset -1px -1px 3px #ffffff !important;
+	}
+	.emp-actual {
+		font-size: 0.7rem;
+		color: #5c6bc0;
+		font-weight: 600;
+		min-width: 36px;
+		text-align: right;
+		align-self: center;
+	}
 	.emp-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
 	.btn-icon {
 		display: flex;
@@ -2817,17 +3227,307 @@
 	}
 
 	/* ─── Responsive ───────────────────────────────────────────────────────────── */
-	@media (max-width: 900px) {
+
+	/* Tablet: stack panel below calendar */
+	@media (min-width: 769px) and (max-width: 900px) {
 		.main-layout { flex-direction: column; }
 		.side-panel { width: 100% !important; max-height: none; position: static; opacity: 1; transition: none; }
 		.side-panel:not(.panel-visible) { display: none; }
+		.sheet-handle-bar { display: none; }
 	}
 
+	/* Mobile: bottom sheet layout */
 	@media (max-width: 768px) {
-		.cal-nav button { min-height: 44px; min-width: 44px; justify-content: center; }
-		.calendar-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-		.calendar-grid { min-width: 560px; }
-		.cal-cell { min-height: 64px; }
-		.cal-header { padding: 0.375rem 0.25rem; }
+		/* Calendar nav */
+		.cal-nav { gap: 0.75rem; }
+		.cal-nav > button { min-height: 44px; min-width: 44px; justify-content: center; }
+		.month-label { font-size: 0.9375rem; min-width: 160px; }
+
+		/* Month grid: fit screen, no forced width */
+		.calendar-grid { min-width: unset; }
+		.cal-cell { min-height: 52px; padding: 0.25rem 0.2rem; }
+		.cal-header { font-size: 0.6875rem; padding: 0.3rem 0.1rem; }
+		/* Show entries as colored dots */
+		.cal-entry {
+			width: 8px !important;
+			height: 8px !important;
+			border-radius: 50% !important;
+			padding: 0 !important;
+			font-size: 0 !important;
+			flex-shrink: 0;
+			min-width: 0 !important;
+		}
+		.cal-entries { flex-direction: row !important; flex-wrap: wrap; gap: 2px; align-items: center; }
+		.entry-time { display: none; }
+		.cal-more { font-size: 0; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; padding: 0; }
+
+		/* Week view: one day per row */
+		.week-grid { grid-template-columns: 1fr; }
+		.week-cell {
+			min-height: auto;
+			flex-direction: row;
+			align-items: flex-start;
+			padding: 0.625rem 0.75rem;
+		}
+		.week-cell-header {
+			flex-direction: column;
+			border-bottom: none;
+			border-right: 1px solid #e2e8f0;
+			padding-bottom: 0;
+			padding-right: 0.75rem;
+			margin-bottom: 0;
+			margin-right: 0.5rem;
+			min-width: 52px;
+			width: 52px;
+			flex-shrink: 0;
+			align-items: flex-start;
+			gap: 0.15rem;
+		}
+		.week-day-name { font-size: 0.6rem; }
+		.week-day-num { font-size: 1.1rem; }
+		.week-cap-badge { margin-left: 0; }
+		.week-entries { flex: 1; }
+		.week-card { border-radius: 6px; }
+
+		/* Day timeline */
+		.day-tl-grid { max-height: calc(100vh - 180px); }
+
+		/* Bottom sheet panel */
+		.main-layout { display: block; }
+		.side-panel {
+			position: fixed !important;
+			bottom: 0 !important;
+			left: 0 !important;
+			right: 0 !important;
+			width: 100% !important;
+			max-height: 85vh !important;
+			border-radius: 20px 20px 0 0 !important;
+			top: auto !important;
+			transform: translateY(105%) !important;
+			opacity: 1 !important;
+			transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+			z-index: 510;
+			overflow-y: auto;
+		}
+		.side-panel.panel-visible {
+			transform: translateY(0) !important;
+			width: 100% !important;
+		}
+
+		/* Page padding at bottom so FAB doesn't obscure content */
+		.page { padding-bottom: 80px; }
+
+		/* Modal full-screen on mobile */
+		.modal, .modal-wide { max-width: 100%; width: 100%; border-radius: 16px 16px 0 0; margin: 0; max-height: 90vh; }
+		.modal-backdrop { align-items: flex-end; padding: 0; }
+		.modal-backdrop-clear { align-items: flex-end; padding: 0; }
 	}
+	/* ─── Multi-day badge ────────────────────────────────────────────────────────────────────────────── */
+	.multiday-badge {
+		font-size: 0.55rem;
+		font-weight: 700;
+		background: rgba(0,0,0,0.15);
+		border-radius: 2px;
+		padding: 0 2px;
+		margin-left: 2px;
+	}
+
+	/* ─── InquiryDaysEditor ──────────────────────────────────────────────────────────────────────────── */
+	.days-list { display: flex; flex-direction: column; gap: 0.3rem; }
+	.day-row { display: flex; align-items: center; gap: 0.375rem; }
+	.day-num { font-size: 0.7rem; font-weight: 700; color: #6366f1; min-width: 36px; flex-shrink: 0; }
+	.day-date-input { width: auto !important; flex: 1; padding: 0.25rem 0.4rem !important; font-size: 0.75rem !important; }
+	.days-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+	/* ─── Day timeline view ──────────────────────────────────────────────────────────────────────────── */
+	.day-timeline {
+		background: #ffffff;
+		border-radius: 12px;
+		box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+		overflow: hidden;
+	}
+	.day-tl-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid #e2e8f0;
+		background: #f8fafc;
+	}
+	.day-tl-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+	.day-tl-cap { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+	.day-tl-empty { padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.875rem; grid-column: 1 / -1; }
+
+	.day-tl-grid {
+		display: flex;
+		flex-direction: column;
+		overflow-y: auto;
+		max-height: calc(100vh - 280px);
+	}
+	.tl-row {
+		display: flex;
+		min-height: 48px;
+		border-bottom: 1px solid #f1f5f9;
+	}
+	.tl-row:last-child { border-bottom: none; }
+	.tl-time {
+		width: 52px;
+		flex-shrink: 0;
+		font-size: 0.65rem;
+		font-weight: 600;
+		color: #94a3b8;
+		padding: 0.25rem 0.5rem 0;
+		font-variant-numeric: tabular-nums;
+		border-right: 1px solid #f1f5f9;
+	}
+	.tl-lane {
+		flex: 1;
+		position: relative;
+		padding: 2px 4px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.tl-block {
+		border-radius: 6px;
+		padding: 4px 7px;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		text-align: left;
+		overflow: hidden;
+		transition: box-shadow 0.15s;
+		border: none;
+	}
+	.tl-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+	.tl-block-time { font-size: 0.6rem; font-weight: 700; opacity: 0.8; font-variant-numeric: tabular-nums; }
+	.tl-block-name { font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tl-block-emp { font-size: 0.6rem; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+	/* ─── Mobile: responsive month grid ─────────────────────────────────────────────────────────── */
+	@media (max-width: 600px) {
+		.calendar-grid { min-width: unset; }
+		.cal-cell { min-height: 52px; padding: 0.25rem; }
+		.cal-header { font-size: 0.6rem; padding: 0.25rem 0.1rem; }
+		.cal-entry { display: none; }
+		.cal-entries::after {
+			content: '';
+		}
+		.cal-cell:has(.cal-entry) .cal-entries {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: wrap;
+			gap: 2px;
+			padding-top: 2px;
+		}
+		.cal-cell:has(.cal-entry) .cal-entries .cal-entry:first-child {
+			display: block;
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			padding: 0;
+			font-size: 0;
+			flex-shrink: 0;
+		}
+	}
+
+	/* ─── Multi-day spanning band (week view) ─────────────────────────────────── */
+	.wc-multiday-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.6rem;
+		font-weight: 700;
+		background: rgba(0,0,0,0.12);
+		border-radius: 3px;
+		padding: 1px 5px;
+		margin-bottom: 3px;
+	}
+	.wc-md-label { flex: 1; text-align: center; opacity: 0.9; }
+	.wc-md-arrow { opacity: 0.7; font-size: 0.65rem; }
+	.wc-md-left { margin-right: auto; }
+	.wc-md-right { margin-left: auto; }
+
+	/* ─── Bottom sheet handle ──────────────────────────────────────────────────── */
+	.sheet-handle-bar {
+		display: none; /* visible only on mobile via media query below */
+		justify-content: center;
+		padding: 10px 0 6px;
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+	.sheet-handle {
+		width: 40px;
+		height: 4px;
+		border-radius: 2px;
+		background: #cbd5e1;
+	}
+	@media (max-width: 768px) {
+		.sheet-handle-bar { display: flex; }
+	}
+
+	/* ─── Mobile panel backdrop ────────────────────────────────────────────────── */
+	.sheet-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.45);
+		z-index: 509;
+		backdrop-filter: blur(2px);
+	}
+
+	/* ─── FAB ──────────────────────────────────────────────────────────────────── */
+	.fab {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background: #6366f1;
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+		z-index: 520;
+		border: none;
+		cursor: pointer;
+		transition: transform 200ms, background 150ms;
+	}
+	.fab:hover { background: #4f46e5; }
+	.fab.fab-active { transform: rotate(45deg); background: #dc2626; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4); }
+
+	.fab-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 518;
+	}
+	.fab-menu {
+		position: fixed;
+		bottom: 86px;
+		right: 16px;
+		z-index: 519;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		align-items: flex-end;
+	}
+	.fab-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: #fff;
+		border: none;
+		border-radius: 24px;
+		padding: 0.6rem 1rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #1e293b;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.fab-item:hover { background: #f8fafc; }
+	.fab-item-icon { font-size: 1.1rem; }
 </style>

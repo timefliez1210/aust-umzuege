@@ -291,6 +291,7 @@
 	let inqDaysLoading = $state(false);
 	let inqDaysSaving = $state(false);
 	let inqDaysDirty = $state(false);
+	let inqUntilDate = $state('');
 
 	// Termin panel edit state
 	let termEditTitle = $state('');
@@ -530,15 +531,9 @@
 		try {
 			const res = await apiGet<InquiryDay[]>(`/api/v1/inquiries/${inqId}/days`);
 			const days = Array.isArray(res) ? res : [];
-			if (days.length === 0 && panelSelection?.kind === 'inquiry') {
-				// Pre-seed Day 1 with the date this inquiry appears on in the calendar
-				const d1 = schedule.find(d =>
-					d.inquiries.some(i => i.inquiry_id === panelSelection!.item.inquiry_id)
-				)?.date ?? '';
-				inqDays = [{ day_date: d1, day_number: 1, notes: null }];
-			} else {
-				inqDays = days;
-			}
+			inqDays = days;
+			// Initialise until date: last existing day if multi-day, else blank
+			inqUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
 		} catch {
 			inqDays = [];
 		} finally {
@@ -554,6 +549,10 @@
 	 */
 	async function saveInquiryDays() {
 		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		if (!applyInquiryDateRange()) {
+			showToast('Ungültiger Zeitraum', 'error');
+			return;
+		}
 		const inqId = panelSelection.item.inquiry_id;
 		inqDaysSaving = true;
 		try {
@@ -569,40 +568,35 @@
 	}
 
 	/**
-	 * Adds a new day row to the local inquiry days editor state.
+	 * Generates the inquiry day list from the inquiry's origin date to inqUntilDate.
 	 *
-	 * Called by: Template (+ button in InquiryDaysEditor)
-	 * Purpose: Prepopulates the next available day_number and suggests the next calendar date.
+	 * Called by: saveInquiryDays
+	 * Purpose: User picks an end date; all dates from origin through that date are
+	 *          generated automatically instead of adding days one by one.
+	 *
+	 * @returns false if the range is invalid (until before origin, or no origin)
 	 */
-	function addInquiryDay() {
-		const nextNum = inqDays.length > 0 ? Math.max(...inqDays.map(d => d.day_number)) + 1 : 1;
-		// suggest the day after the last one
-		let nextDate = '';
-		if (inqDays.length > 0) {
-			const lastDate = inqDays[inqDays.length - 1].day_date;
-			const d = new Date(lastDate + 'T00:00:00');
-			d.setDate(d.getDate() + 1);
-			nextDate = d.toISOString().slice(0, 10);
-		} else if (panelSelection && panelSelection.kind === 'inquiry') {
-			nextDate = panelSelection.item.scheduled_date?.slice(0, 10)
-				?? panelSelection.item.preferred_date?.slice(0, 10)
-				?? '';
+	function applyInquiryDateRange(): boolean {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return false;
+		const originStr = panelSelection.item.scheduled_date?.slice(0, 10)
+			?? panelSelection.item.preferred_date?.slice(0, 10) ?? '';
+		if (!originStr) return false;
+		const origin = new Date(originStr + 'T00:00:00');
+		const until  = inqUntilDate ? new Date(inqUntilDate + 'T00:00:00') : origin;
+		if (until < origin) return false;
+		const days: InquiryDay[] = [];
+		const cur = new Date(origin);
+		let num = 1;
+		while (cur <= until) {
+			const y = cur.getFullYear();
+			const m = String(cur.getMonth() + 1).padStart(2, '0');
+			const d = String(cur.getDate()).padStart(2, '0');
+			days.push({ day_date: `${y}-${m}-${d}`, day_number: num++, notes: null });
+			cur.setDate(cur.getDate() + 1);
 		}
-		inqDays = [...inqDays, { day_date: nextDate, day_number: nextNum, notes: null }];
+		inqDays = days;
 		inqDaysDirty = true;
-	}
-
-	/**
-	 * Removes a day row from the local inquiry days editor state by index.
-	 *
-	 * Called by: Template (× button per day row)
-	 * Purpose: Removes the day and re-numbers remaining entries sequentially.
-	 *
-	 * @param idx - Zero-based index of the day to remove
-	 */
-	function removeInquiryDay(idx: number) {
-		inqDays = inqDays.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day_number: i + 1 }));
-		inqDaysDirty = true;
+		return true;
 	}
 
 	/**
@@ -2150,36 +2144,25 @@
 							{#if inqDaysLoading}
 								<p class="panel-loading">Laden...</p>
 							{:else}
-								{#if inqDays.length > 0}
-									<div class="days-list">
-										{#each inqDays as day, idx}
-											<div class="day-row">
-												<span class="day-num">Tag {day.day_number}</span>
-												<input
-													type="date"
-													class="neu-input day-date-input"
-													value={day.day_date}
-													oninput={(e) => {
-														inqDays = inqDays.map((d, i) => i === idx ? { ...d, day_date: (e.target as HTMLInputElement).value } : d);
-														inqDaysDirty = true;
-													}}
-												/>
-												<button class="btn-icon btn-remove" onclick={() => removeInquiryDay(idx)} title="Entfernen"><X size={11} /></button>
-											</div>
-										{/each}
+								{@const originStr = panelSelection.item.scheduled_date?.slice(0,10) ?? panelSelection.item.preferred_date?.slice(0,10) ?? ''}
+								<div class="field-row">
+									<div class="field">
+										<label>Von</label>
+										<span class="day-origin-label">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
 									</div>
+									<div class="field">
+										<label for="inq-until">Bis</label>
+										<input id="inq-until" type="date" class="neu-input" min={originStr} bind:value={inqUntilDate} />
+									</div>
+								</div>
+								{#if inqDays.length > 1}
+									<p class="day-range-summary">{inqDays.length} Tage geplant</p>
 								{/if}
 								<div class="days-actions">
-									<button class="btn btn-ghost btn-sm" onclick={addInquiryDay}><Plus size={12} /> Tag hinzufügen</button>
-									{#if inqDays.length > 0 || inqDaysDirty}
-										<button class="btn btn-primary btn-sm" onclick={saveInquiryDays} disabled={inqDaysSaving}>
-											{inqDaysSaving ? '...' : 'Tage speichern'}
-										</button>
-									{/if}
+									<button class="btn btn-primary btn-sm" onclick={saveInquiryDays} disabled={inqDaysSaving || !inqUntilDate}>
+										{inqDaysSaving ? '...' : 'Zeitraum speichern'}
+									</button>
 								</div>
-								{#if inqDays.length === 0}
-									<p class="panel-empty">Eintägig — Tag hinzufügen für Mehrtagesumzug.</p>
-								{/if}
 							{/if}
 						</div>
 
@@ -3536,11 +3519,9 @@
 	}
 
 	/* ─── InquiryDaysEditor ───────────────────────────────────────────────────── */
-	.days-list { display: flex; flex-direction: column; gap: 0.3rem; }
-	.day-row { display: flex; align-items: center; gap: 0.375rem; }
-	.day-num { font-size: 0.7rem; font-weight: 700; color: var(--dt-primary); min-width: 36px; flex-shrink: 0; }
-	.day-date-input { width: auto; flex: 1; padding: 0.25rem 0.4rem; font-size: 0.75rem; }
 	.days-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
+	.day-origin-label { font-size: 0.875rem; font-weight: 600; color: var(--dt-on-surface); display: block; padding: 0.25rem 0; }
+	.day-range-summary { font-size: 0.75rem; color: var(--dt-on-surface-variant); margin: 0.25rem 0 0; }
 
 	/* ─── Day timeline view ───────────────────────────────────────────────────── */
 	.day-timeline {

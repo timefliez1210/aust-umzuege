@@ -162,6 +162,9 @@
 		clock_in: string | null;
 		clock_out: string | null;
 		actual_hours: number | null;
+		employee_clock_in: string | null;
+		employee_clock_out: string | null;
+		employee_actual_hours: number | null;
 		notes: string | null;
 	}
 
@@ -2177,6 +2180,21 @@
 	}
 
 	/**
+	 * Returns true when admin-set and employee-reported hours differ by >15 min.
+	 *
+	 * Called by: Template (discrepancy highlight on employee time cells).
+	 * Purpose: Visual flag so Alex can quickly spot when an employee's self-reported
+	 *          hours don't match the admin-entered times.
+	 *
+	 * @param emp - Employee assignment record
+	 * @returns True if both sets of hours exist and differ by more than 0.25h
+	 */
+	function hasDiscrepancy(emp: EmployeeAssignment): boolean {
+		if (emp.actual_hours == null || emp.employee_actual_hours == null) return false;
+		return Math.abs(emp.actual_hours - emp.employee_actual_hours) > 0.25;
+	}
+
+	/**
 	 * Removes an employee from the current inquiry.
 	 *
 	 * Called by: Template (remove button)
@@ -3557,9 +3575,17 @@
 							<tr>
 								<th>Name</th>
 								<th class="num">Geplant (h)</th>
-								<th>Arbeitsbeginn</th>
-								<th>Arbeitsende</th>
-								<th class="num">Ist</th>
+								<th colspan="2" class="group-header admin-group">Admin-Zeiten</th>
+								<th colspan="2" class="group-header emp-group">Mitarbeiter-Zeiten</th>
+								<th></th>
+							</tr>
+							<tr class="subheader-row">
+								<th></th>
+								<th></th>
+								<th>Beginn</th>
+								<th class="num">Ende / Ist</th>
+								<th>Beginn</th>
+								<th class="num">Ende / Ist</th>
 								<th></th>
 							</tr>
 						</thead>
@@ -3576,6 +3602,7 @@
 											onblur={(e) => updatePlannedHours(emp.employee_id, (e.target as HTMLInputElement).value)}
 										/>
 									</td>
+									<!-- Admin-set times (editable) -->
 									<td>
 										<input
 											type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
@@ -3584,16 +3611,26 @@
 											onblur={(e) => updateEmployeeClock(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
 										/>
 									</td>
-									<td>
+									<td class="num">
 										<input
 											type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
 											class="inline-input"
 											value={isoToLocalTime(emp.clock_out)}
 											onblur={(e) => updateEmployeeClock(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
 										/>
+										{#if emp.actual_hours != null}
+											<span class="hours-badge">{fmtActualHours(emp.actual_hours)}</span>
+										{/if}
 									</td>
-									<td class="num">
-										<span class="muted">{fmtActualHours(emp.actual_hours)}</span>
+									<!-- Employee self-reported times (read-only) -->
+									<td class:discrepancy={hasDiscrepancy(emp)}>
+										<span class="emp-time">{isoToLocalTime(emp.employee_clock_in) || '—'}</span>
+									</td>
+									<td class="num" class:discrepancy={hasDiscrepancy(emp)}>
+										<span class="emp-time">{isoToLocalTime(emp.employee_clock_out) || '—'}</span>
+										{#if emp.employee_actual_hours != null}
+											<span class="hours-badge emp-badge">{fmtActualHours(emp.employee_actual_hours)}</span>
+										{/if}
 									</td>
 									<td>
 										<button
@@ -3612,14 +3649,19 @@
 								<td><strong>Gesamt</strong></td>
 								<td class="num"><strong>{emps.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)}</strong></td>
 								<td></td>
-								<td></td>
 								<td class="num">
 									<strong>
 										{#if emps.some(e => e.actual_hours != null)}
 											{fmtActualHours(emps.reduce((s, e) => s + (e.actual_hours ?? 0), 0))}
-										{:else}
-											—
-										{/if}
+										{:else}—{/if}
+									</strong>
+								</td>
+								<td></td>
+								<td class="num">
+									<strong>
+										{#if emps.some(e => e.employee_actual_hours != null)}
+											{fmtActualHours(emps.reduce((s, e) => s + (e.employee_actual_hours ?? 0), 0))}
+										{:else}—{/if}
 									</strong>
 								</td>
 								<td></td>
@@ -5613,6 +5655,56 @@
 	.emp-table .total-row td {
 		background: var(--dt-surface-container-high);
 		font-weight: 700;
+	}
+
+	.emp-table .group-header {
+		text-align: center;
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+	}
+
+	.emp-table .admin-group {
+		background: #eff6ff;
+		color: #1d4ed8;
+		border-bottom: 2px solid #bfdbfe;
+	}
+
+	.emp-table .emp-group {
+		background: #f0fdf4;
+		color: #15803d;
+		border-bottom: 2px solid #bbf7d0;
+	}
+
+	.emp-table .subheader-row th {
+		font-size: 0.75rem;
+		font-weight: 500;
+		padding: 0.25rem 0.75rem;
+	}
+
+	.emp-table td.discrepancy {
+		background: #fff7ed;
+	}
+
+	.emp-time {
+		font-variant-numeric: tabular-nums;
+		font-size: 0.875rem;
+		color: var(--dt-on-surface-variant);
+	}
+
+	.hours-badge {
+		display: inline-block;
+		font-size: 0.6875rem;
+		background: #e0e7ff;
+		color: #4338ca;
+		border-radius: 999px;
+		padding: 0.1rem 0.4rem;
+		margin-left: 0.25rem;
+		font-weight: 600;
+	}
+
+	.emp-badge {
+		background: #dcfce7;
+		color: #15803d;
 	}
 
 	.inline-input {

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { workerGet } from '$lib/stores/worker.svelte';
-	import { ArrowLeft, MapPin, Package, Phone, Mail, Users, Box } from 'lucide-svelte';
+	import { workerGet, workerFetch } from '$lib/stores/worker.svelte';
+	import { ArrowLeft, MapPin, Package, Phone, Users, Box, Clock } from 'lucide-svelte';
 
 	interface ItemInfo {
 		name: string;
@@ -17,26 +17,33 @@
 		origin_street: string | null;
 		origin_city: string | null;
 		origin_postal_code: string | null;
-		origin_floor: number | null;
+		origin_floor: string | null;
 		origin_elevator: boolean | null;
 		destination_street: string | null;
 		destination_city: string | null;
 		destination_postal_code: string | null;
-		destination_floor: number | null;
+		destination_floor: string | null;
 		destination_elevator: boolean | null;
 		estimated_volume_m3: number | null;
 		items: ItemInfo[];
 		customer_name: string | null;
 		customer_phone: string | null;
-		customer_email: string | null;
 		planned_hours: number;
-		actual_hours: number | null;
 		notes: string | null;
+		employee_clock_in: string | null;
+		employee_clock_out: string | null;
+		employee_actual_hours: number | null;
 		colleague_names: string[];
 	}
 
 	let job = $state<JobDetail | null>(null);
 	let loading = $state(true);
+
+	// Clock-in/out editing state
+	let clockIn = $state('');
+	let clockOut = $state('');
+	let clockSaving = $state(false);
+	let clockSaved = $state(false);
 
 	$effect(() => {
 		const id = $page.params.id;
@@ -55,11 +62,61 @@
 		loading = true;
 		try {
 			job = await workerGet<JobDetail>(`/api/v1/employee/jobs/${id}`);
+			// Pre-fill clock inputs from existing employee times
+			clockIn  = job.employee_clock_in  ? isoToLocalTime(job.employee_clock_in)  : '';
+			clockOut = job.employee_clock_out ? isoToLocalTime(job.employee_clock_out) : '';
 		} catch {
 			job = null;
 		} finally {
 			loading = false;
 		}
+	}
+
+	/**
+	 * Saves the employee's self-reported clock-in and clock-out times.
+	 *
+	 * Called by: Template (Speichern button in Meine Zeiten section).
+	 * Purpose: PATCHes /employee/jobs/{id}/clock with the employee's own times.
+	 *          These are stored separately from admin-set times for discrepancy checking.
+	 */
+	async function saveClockTimes() {
+		if (!job) return;
+		clockSaving = true;
+		try {
+			const jobDate = job.job_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
+			const toIso = (t: string) =>
+				t.length === 5 ? new Date(`${jobDate}T${t}:00`).toISOString() : null;
+
+			await workerFetch(`/api/v1/employee/jobs/${job.inquiry_id}/clock`, {
+				method: 'PATCH',
+				body: JSON.stringify({
+					employee_clock_in:  clockIn  ? toIso(clockIn)  : null,
+					employee_clock_out: clockOut ? toIso(clockOut) : null,
+				}),
+			});
+			clockSaved = true;
+			setTimeout(() => (clockSaved = false), 2000);
+			// Refresh to update computed hours
+			await loadJob(job.inquiry_id);
+		} catch {
+			// silent — user can retry
+		} finally {
+			clockSaving = false;
+		}
+	}
+
+	/**
+	 * Extracts HH:MM from an ISO datetime string using local time.
+	 *
+	 * Called by: loadJob (pre-filling clock inputs).
+	 * Purpose: Converts ISO 8601 timestamp to the 24h HH:MM string used in text inputs.
+	 *
+	 * @param iso - ISO 8601 datetime string
+	 * @returns HH:MM string
+	 */
+	function isoToLocalTime(iso: string): string {
+		const d = new Date(iso);
+		return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 	}
 
 	/**
@@ -73,7 +130,7 @@
 	 */
 	function fmtDate(d: string | null): string {
 		if (!d) return 'Datum unbekannt';
-		return new Date(d).toLocaleDateString('de-DE', {
+		return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', {
 			weekday: 'long',
 			day: 'numeric',
 			month: 'long',
@@ -82,20 +139,20 @@
 	}
 
 	/**
-	 * Formats floor number to German label.
+	 * Formats floor string and elevator flag to a German label.
 	 *
 	 * Called by: Template (address floor display).
-	 * Purpose: Converts numeric floor to a human-readable string.
+	 * Purpose: Displays floor info (stored as VARCHAR in DB) with elevator indicator.
 	 *
-	 * @param floor - Floor number or null
+	 * @param floor - Floor string from DB (e.g. "2", "EG") or null
 	 * @param elevator - Whether elevator is available or null
-	 * @returns Formatted string like "2. OG · Aufzug"
+	 * @returns Formatted string like "2. OG · Aufzug" or ""
 	 */
-	function floorLabel(floor: number | null, elevator: boolean | null): string {
-		if (floor === null) return '';
-		const f = floor === 0 ? 'EG' : `${floor}. OG`;
-		const e = elevator ? ' · Aufzug' : '';
-		return f + e;
+	function floorLabel(floor: string | null, elevator: boolean | null): string {
+		if (!floor) return '';
+		const num = parseInt(floor, 10);
+		const f = !isNaN(num) ? (num === 0 ? 'EG' : `${num}. OG`) : floor;
+		return f + (elevator ? ' · Aufzug' : '');
 	}
 </script>
 
@@ -123,9 +180,16 @@
 
 		<div class="address-card">
 			<div class="address-label">Auszug</div>
-			<div class="address-line">{job.origin_street ?? '—'}</div>
-			<div class="address-line">{job.origin_postal_code ?? ''} {job.origin_city ?? ''}</div>
-			{#if job.origin_floor !== null}
+			{#if job.origin_street}
+				<div class="address-line">{job.origin_street}</div>
+			{/if}
+			{#if job.origin_postal_code || job.origin_city}
+				<div class="address-line">{[job.origin_postal_code, job.origin_city].filter(Boolean).join(' ')}</div>
+			{/if}
+			{#if !job.origin_street && !job.origin_city}
+				<div class="address-line muted">Adresse unbekannt</div>
+			{/if}
+			{#if floorLabel(job.origin_floor, job.origin_elevator)}
 				<div class="address-floor">{floorLabel(job.origin_floor, job.origin_elevator)}</div>
 			{/if}
 		</div>
@@ -134,58 +198,38 @@
 
 		<div class="address-card">
 			<div class="address-label">Einzug</div>
-			<div class="address-line">{job.destination_street ?? '—'}</div>
-			<div class="address-line">{job.destination_postal_code ?? ''} {job.destination_city ?? ''}</div>
-			{#if job.destination_floor !== null}
+			{#if job.destination_street}
+				<div class="address-line">{job.destination_street}</div>
+			{/if}
+			{#if job.destination_postal_code || job.destination_city}
+				<div class="address-line">{[job.destination_postal_code, job.destination_city].filter(Boolean).join(' ')}</div>
+			{/if}
+			{#if !job.destination_street && !job.destination_city}
+				<div class="address-line muted">Adresse unbekannt</div>
+			{/if}
+			{#if floorLabel(job.destination_floor, job.destination_elevator)}
 				<div class="address-floor">{floorLabel(job.destination_floor, job.destination_elevator)}</div>
 			{/if}
 		</div>
 	</div>
 
-	<!-- Volume & Items -->
-	<div class="section">
-		<h2 class="section-title"><Package size={15} /> Umzugsgut</h2>
-		{#if job.estimated_volume_m3}
-			<div class="volume-chip">Gesamtvolumen: {job.estimated_volume_m3.toFixed(1)} m³</div>
-		{/if}
-		{#if job.items.length > 0}
-			<div class="item-list">
-				{#each job.items as item}
-					<div class="item-row">
-						<Box size={13} />
-						<span>{item.quantity > 1 ? `${item.quantity}×` : ''} {item.name}</span>
-						{#if item.volume_m3}
-							<span class="item-vol">{item.volume_m3.toFixed(2)} m³</span>
-						{/if}
-					</div>
-				{/each}
+	<!-- Customer Contact — phone only -->
+	{#if job.customer_name || job.customer_phone}
+		<div class="section">
+			<h2 class="section-title"><Phone size={15} /> Auftraggeber</h2>
+			<div class="contact-card">
+				{#if job.customer_name}
+					<div class="contact-name">{job.customer_name}</div>
+				{/if}
+				{#if job.customer_phone}
+					<a class="contact-link" href="tel:{job.customer_phone}">
+						<Phone size={14} />
+						{job.customer_phone}
+					</a>
+				{/if}
 			</div>
-		{:else}
-			<p class="muted">Keine Artikelliste vorhanden.</p>
-		{/if}
-	</div>
-
-	<!-- Customer Contact -->
-	<div class="section">
-		<h2 class="section-title"><Phone size={15} /> Auftraggeber</h2>
-		<div class="contact-card">
-			{#if job.customer_name}
-				<div class="contact-name">{job.customer_name}</div>
-			{/if}
-			{#if job.customer_phone}
-				<a class="contact-link" href="tel:{job.customer_phone}">
-					<Phone size={14} />
-					{job.customer_phone}
-				</a>
-			{/if}
-			{#if job.customer_email}
-				<a class="contact-link" href="mailto:{job.customer_email}">
-					<Mail size={14} />
-					{job.customer_email}
-				</a>
-			{/if}
 		</div>
-	</div>
+	{/if}
 
 	<!-- Team -->
 	{#if job.colleague_names.length > 0}
@@ -199,17 +243,81 @@
 		</div>
 	{/if}
 
-	<!-- Hours & Notes -->
-	<div class="section">
-		<h2 class="section-title">Stunden</h2>
-		<div class="hours-row">
-			<span>Geplant</span><strong>{job.planned_hours.toFixed(1)} h</strong>
+	<!-- Volume & Items -->
+	{#if job.estimated_volume_m3 || job.items.length > 0}
+		<div class="section">
+			<h2 class="section-title"><Package size={15} /> Umzugsgut</h2>
+			{#if job.estimated_volume_m3}
+				<div class="volume-chip">Gesamtvolumen: {job.estimated_volume_m3.toFixed(1)} m³</div>
+			{/if}
+			{#if job.items.length > 0}
+				<div class="item-list">
+					{#each job.items as item}
+						<div class="item-row">
+							<Box size={13} />
+							<span>{item.quantity > 1 ? `${item.quantity}×` : ''} {item.name}</span>
+							{#if item.volume_m3}
+								<span class="item-vol">{item.volume_m3.toFixed(2)} m³</span>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</div>
-		{#if job.actual_hours !== null}
+	{/if}
+
+	<!-- My Times — employee self-reported clock-in/out -->
+	<div class="section">
+		<h2 class="section-title"><Clock size={15} /> Meine Zeiten</h2>
+
+		{#if job.planned_hours > 0}
 			<div class="hours-row">
-				<span>Ist</span><strong>{job.actual_hours.toFixed(1)} h</strong>
+				<span>Geplant</span><strong>{job.planned_hours.toFixed(1)} h</strong>
 			</div>
 		{/if}
+		{#if job.employee_actual_hours !== null}
+			<div class="hours-row">
+				<span>Gearbeitet</span><strong>{job.employee_actual_hours.toFixed(1)} h</strong>
+			</div>
+		{/if}
+
+		<div class="clock-form">
+			<div class="clock-row">
+				<label for="clock-in">Beginn</label>
+				<input
+					id="clock-in"
+					type="text"
+					inputmode="decimal"
+					placeholder="08:00"
+					maxlength="5"
+					pattern="[0-9]{2}:[0-5][0-9]"
+					class="clock-input"
+					bind:value={clockIn}
+				/>
+			</div>
+			<div class="clock-row">
+				<label for="clock-out">Ende</label>
+				<input
+					id="clock-out"
+					type="text"
+					inputmode="decimal"
+					placeholder="17:00"
+					maxlength="5"
+					pattern="[0-9]{2}:[0-5][0-9]"
+					class="clock-input"
+					bind:value={clockOut}
+				/>
+			</div>
+			<button
+				class="btn-save"
+				class:saved={clockSaved}
+				onclick={saveClockTimes}
+				disabled={clockSaving}
+			>
+				{clockSaving ? '...' : clockSaved ? 'Gespeichert ✓' : 'Zeiten speichern'}
+			</button>
+		</div>
+
 		{#if job.notes}
 			<p class="notes">{job.notes}</p>
 		{/if}
@@ -275,6 +383,11 @@
 		font-size: 0.9375rem;
 		font-weight: 500;
 		color: #1e293b;
+	}
+
+	.address-line.muted {
+		color: #94a3b8;
+		font-weight: 400;
 	}
 
 	.address-floor {
@@ -367,6 +480,61 @@
 		padding: 0.375rem 0;
 		border-bottom: 1px solid #f1f5f9;
 	}
+
+	.clock-form {
+		margin-top: 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.625rem;
+	}
+
+	.clock-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.clock-row label {
+		font-size: 0.9375rem;
+		color: #475569;
+		font-weight: 500;
+		min-width: 4rem;
+	}
+
+	.clock-input {
+		flex: 1;
+		max-width: 110px;
+		padding: 0.5rem 0.75rem;
+		border: 1.5px solid #e2e8f0;
+		border-radius: 0.5rem;
+		font-size: 1rem;
+		text-align: center;
+		outline: none;
+		transition: border-color 150ms;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.clock-input:focus {
+		border-color: #4f46e5;
+	}
+
+	.btn-save {
+		padding: 0.625rem 1rem;
+		background: #4f46e5;
+		color: #fff;
+		border: none;
+		border-radius: 0.5rem;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 150ms;
+		width: 100%;
+	}
+
+	.btn-save:hover:not(:disabled) { background: #4338ca; }
+	.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+	.btn-save.saved { background: #16a34a; }
 
 	.notes {
 		font-size: 0.875rem;

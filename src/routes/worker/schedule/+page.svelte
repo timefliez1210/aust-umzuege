@@ -8,7 +8,9 @@
 		inquiry_id: string | null;
 		job_date: string | null;
 		status: string;
+		origin_street: string | null;
 		origin_city: string | null;
+		destination_street: string | null;
 		destination_city: string | null;
 		estimated_volume_m3: number | null;
 		customer_name: string | null;
@@ -145,9 +147,11 @@
 						<MapPin size={14} />
 						<span>
 							{#if job.origin_city && job.destination_city}
-								{job.origin_city} → {job.destination_city}
+								{job.origin_street ? job.origin_street + ', ' : ''}{job.origin_city} → {job.destination_street ? job.destination_street + ', ' : ''}{job.destination_city}
+							{:else if job.origin_city || job.destination_city}
+								{job.origin_street ? job.origin_street + ', ' : ''}{job.origin_city ?? job.destination_city}
 							{:else}
-								{job.origin_city ?? job.destination_city ?? '—'}
+								—
 							{/if}
 						</span>
 					</div>

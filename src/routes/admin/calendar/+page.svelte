@@ -1105,8 +1105,8 @@
 				if (!empState[emp.employee_id]) {
 					empState[emp.employee_id] = {
 						planned: String(emp.planned_hours),
-						clock_in: isoToLocalTime(emp.clock_in),
-						clock_out: isoToLocalTime(emp.clock_out),
+						clock_in: isoToLocalTime(emp.clock_in) || inqEditStartTime,
+						clock_out: isoToLocalTime(emp.clock_out) || inqEditEndTime,
 						notes: emp.notes ?? ''
 					};
 				}
@@ -1261,8 +1261,8 @@
 				if (!empState[emp.employee_id]) {
 					empState[emp.employee_id] = {
 						planned: String(emp.planned_hours),
-						clock_in: isoToLocalTime(emp.clock_in),
-						clock_out: isoToLocalTime(emp.clock_out),
+						clock_in: isoToLocalTime(emp.clock_in) || termEditStartTime,
+						clock_out: isoToLocalTime(emp.clock_out) || termEditEndTime,
 						notes: emp.notes ?? ''
 					};
 				}

@@ -2109,7 +2109,13 @@
 		if (isNaN(numValue)) return;
 		employeeSaving = empId;
 		try {
-			await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, { planned_hours: numValue });
+			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, { planned_hours: numValue });
+			if (data.employees) {
+				const idx = data.employees.findIndex((e: EmployeeAssignment) => e.employee_id === empId);
+				if (idx !== -1) {
+					data.employees[idx] = { ...data.employees[idx], ...updated };
+				}
+			}
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		} finally {
@@ -2137,7 +2143,14 @@
 		const iso = new Date(`${date}T${time}:00`).toISOString();
 		employeeSaving = empId;
 		try {
-			await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, { [field]: iso });
+			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, { [field]: iso });
+			// Update local state so actual_hours badge and planned_hours reflect immediately
+			if (data.employees) {
+				const idx = data.employees.findIndex((e: EmployeeAssignment) => e.employee_id === empId);
+				if (idx !== -1) {
+					data.employees[idx] = { ...data.employees[idx], ...updated };
+				}
+			}
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		} finally {

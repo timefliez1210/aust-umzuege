@@ -2039,11 +2039,11 @@
 							<div class="field-row">
 								<div class="field">
 									<label for="inq-start">Startzeit</label>
-									<input id="inq-start" type="time" lang="de" class="neu-input" bind:value={inqEditStartTime} />
+									<input id="inq-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={inqEditStartTime} />
 								</div>
 								<div class="field">
 									<label for="inq-end">Endzeit</label>
-									<input id="inq-end" type="time" lang="de" class="neu-input" bind:value={inqEditEndTime} />
+									<input id="inq-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={inqEditEndTime} />
 								</div>
 							</div>
 						<div class="field">
@@ -2092,7 +2092,7 @@
 													/>
 													<input
 														class="time-input neu-input"
-														type="time" lang="de"
+														type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
 														title="Arbeitsbeginn"
 														value={s.clock_in}
 														oninput={(e) => {
@@ -2101,7 +2101,7 @@
 													/>
 													<input
 														class="time-input neu-input"
-														type="time" lang="de"
+														type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
 														title="Arbeitsende"
 														value={s.clock_out}
 														oninput={(e) => {
@@ -2202,11 +2202,11 @@
 							<div class="field-row">
 								<div class="field">
 									<label for="term-start">Startzeit</label>
-									<input id="term-start" type="time" lang="de" class="neu-input" bind:value={termEditStartTime} />
+									<input id="term-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={termEditStartTime} />
 								</div>
 								<div class="field">
 									<label for="term-end">Endzeit</label>
-									<input id="term-end" type="time" lang="de" class="neu-input" bind:value={termEditEndTime} />
+									<input id="term-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={termEditEndTime} />
 								</div>
 							</div>
 							<div class="field">
@@ -2270,7 +2270,7 @@
 													/>
 													<input
 														class="time-input neu-input"
-														type="time" lang="de"
+														type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
 														title="Arbeitsbeginn"
 														value={s.clock_in}
 														oninput={(e) => {
@@ -2279,7 +2279,7 @@
 													/>
 													<input
 														class="time-input neu-input"
-														type="time" lang="de"
+														type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
 														title="Arbeitsende"
 														value={s.clock_out}
 														oninput={(e) => {
@@ -2488,11 +2488,11 @@
 			<div class="qc-row">
 				<div class="qc-field">
 					<label for="qt-start">Startzeit *</label>
-					<input id="qt-start" type="time" lang="de" bind:value={qtStartTime} required />
+					<input id="qt-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" bind:value={qtStartTime} required />
 				</div>
 				<div class="qc-field">
 					<label for="qt-end">Endzeit</label>
-					<input id="qt-end" type="time" lang="de" bind:value={qtEndTime} />
+					<input id="qt-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" bind:value={qtEndTime} />
 				</div>
 			</div>
 			<div class="qc-row">

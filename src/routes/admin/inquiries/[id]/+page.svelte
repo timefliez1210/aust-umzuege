@@ -3578,7 +3578,7 @@
 									</td>
 									<td>
 										<input
-											type="time"
+											type="time" lang="de"
 											class="inline-input"
 											value={isoToLocalTime(emp.clock_in)}
 											onblur={(e) => updateEmployeeClock(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
@@ -3586,7 +3586,7 @@
 									</td>
 									<td>
 										<input
-											type="time"
+											type="time" lang="de"
 											class="inline-input"
 											value={isoToLocalTime(emp.clock_out)}
 											onblur={(e) => updateEmployeeClock(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
@@ -5634,7 +5634,7 @@
 		background: var(--dt-surface-container-lowest);
 	}
 
-	.inline-input[type="time"] {
+	.inline-input[type="time" lang="de"] {
 		width: 88px;
 		text-align: left;
 	}

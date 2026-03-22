@@ -837,7 +837,7 @@
 		e.stopPropagation();
 		inqEditStatus = inq.status;
 		inqEditNotes = inq.notes ?? '';
-		inqEditPreferredDate = inq.preferred_date ?? '';
+		inqEditPreferredDate = inq.scheduled_date?.slice(0, 10) ?? inq.preferred_date?.slice(0, 10) ?? '';
 		inqEditStartTime = formatTime(inq.start_time);
 		inqEditEndTime = formatTime(inq.end_time);
 		panelSelection = { kind: 'inquiry', item: inq };
@@ -1910,7 +1910,12 @@
 					{#if panelSelection.kind === 'day'}
 						<h2 class="panel-title">{formatDateDE(panelSelection.date)}</h2>
 					{:else if panelSelection.kind === 'inquiry'}
-						<h2 class="panel-title">{panelSelection.item.customer_name ?? 'Anfrage'}</h2>
+						<div class="panel-title-block">
+							<h2 class="panel-title">{panelSelection.item.customer_name ?? 'Anfrage'}</h2>
+							{#if panelSelection.item.scheduled_date || panelSelection.item.preferred_date}
+								<span class="panel-subtitle">{(panelSelection.item.scheduled_date?.slice(0,10) ?? panelSelection.item.preferred_date?.slice(0,10) ?? '').split('-').reverse().join('.')}</span>
+							{/if}
+						</div>
 					{:else}
 						<h2 class="panel-title">{panelSelection.item.title}</h2>
 					{/if}
@@ -2034,7 +2039,7 @@
 								</select>
 							</div>
 							<div class="field">
-								<label for="inq-pref-date">Wunschdatum</label>
+								<label for="inq-pref-date">Datum</label>
 								<input id="inq-pref-date" type="date" class="neu-input" bind:value={inqEditPreferredDate} />
 							</div>
 							<div class="field-row">
@@ -2938,6 +2943,18 @@
 		backdrop-filter: var(--dt-glass-blur);
 		border-bottom: var(--dt-glass-border);
 		border-radius: var(--dt-radius-lg) var(--dt-radius-lg) 0 0;
+	}
+	.panel-title-block {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		min-width: 0;
+	}
+	.panel-subtitle {
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: rgba(255,255,255,0.7);
+		margin: 0;
 	}
 	.panel-title {
 		font-size: 0.9375rem;

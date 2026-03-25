@@ -233,17 +233,8 @@
 	.back-link:hover { color: var(--dt-on-surface); }
 
 	.page-header {
-		margin-bottom: 1.5rem;
-		display: flex;
-		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
-	}
-	.page-header h1 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		letter-spacing: -0.01em;
-		color: var(--dt-on-surface);
+		margin-bottom: 1.5rem;
 	}
 
 	.btn-delete-entity {
@@ -278,9 +269,8 @@
 	.grid { display: flex; flex-direction: column; gap: 1rem; }
 
 	.card {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
 		overflow: hidden;
+		padding: 0;
 	}
 
 	.card-header {
@@ -323,25 +313,6 @@
 	}
 	.form-value { font-size: 0.875rem; color: var(--dt-on-surface-variant); }
 
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 1rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		transition: opacity var(--dt-transition);
-		border: none;
-		cursor: pointer;
-		border-radius: var(--dt-radius-md);
-	}
-	.btn-primary {
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-		color: var(--dt-on-primary);
-	}
-	.btn-primary:hover:not(:disabled) { opacity: 0.9; }
-	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
 	.list-item {
 		display: flex;
 		align-items: center;
@@ -358,14 +329,8 @@
 	.empty { padding: 1.5rem; text-align: center; color: var(--dt-on-surface-variant); font-size: 0.875rem; }
 
 	@media (max-width: 768px) {
-		.page-header { flex-wrap: wrap; }
-
-		.btn-delete-entity { min-height: 44px; }
-		.btn { min-height: 44px; }
-
 		.grid { gap: 0.75rem; }
 		.card-body { padding: 1rem; }
-
 		.list-item { padding: 0.75rem 1rem; }
 	}
 </style>

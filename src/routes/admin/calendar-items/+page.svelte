@@ -270,9 +270,7 @@
 
 <style>
 	.page-header {
-		display: flex;
 		justify-content: space-between;
-		align-items: center;
 		margin-bottom: 1.5rem;
 	}
 
@@ -299,9 +297,6 @@
 	}
 
 	.toolbar {
-		display: flex;
-		gap: 1rem;
-		align-items: center;
 		margin-bottom: 1.25rem;
 	}
 
@@ -379,41 +374,18 @@
 
 	.badge-gray   { background: var(--dt-surface-container); color: var(--dt-on-surface-variant); }
 	.badge-indigo { background: var(--dt-primary-container); color: var(--dt-on-primary); }
-	.badge-green  { background: #dcfce7; color: #14532d; }
-	.badge-red    { background: #fee2e2; color: #991b1b; }
-
-	.empty-state {
-		text-align: center;
-		padding: 3rem;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-	}
-
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
+	.badge-green  { background: var(--dt-success-bg); color: var(--dt-success-text); }
+	.badge-red    { background: var(--dt-error-bg);   color: var(--dt-error-text); }
 
 	.modal {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
 		padding: 0;
-		width: 90%;
 		max-width: 540px;
-		box-shadow: var(--dt-shadow-ambient);
 		overflow: hidden;
 	}
 
 	.modal h2 {
 		margin: 0;
 		font-size: 1.0625rem;
-		font-weight: 600;
 		color: var(--dt-on-primary);
 		padding: 1rem 1.25rem;
 		background: var(--dt-glass-bg);
@@ -425,84 +397,22 @@
 		padding: 1.25rem;
 	}
 
-	.form-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	.field { display: flex; flex-direction: column; gap: 0.25rem; }
 	.field.span-2 { grid-column: span 2; }
-
-	.field label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-	}
 
 	.field input,
 	.field select,
 	.field textarea {
 		padding: 0.5rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
 		font-family: inherit;
-		color: var(--dt-on-surface);
 		resize: vertical;
-		outline: none;
-		transition: var(--dt-transition);
-	}
-
-	.field input:focus,
-	.field select:focus,
-	.field textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 1rem;
 	}
 
 	.alert-error {
-		background: #fee2e2;
-		color: #991b1b;
+		background: var(--dt-error-bg);
+		color: var(--dt-error-text);
 		padding: 0.5rem 0.75rem;
 		border-radius: var(--dt-radius-sm);
 		font-size: 0.875rem;
 		margin-bottom: 0.75rem;
-	}
-
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 1rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface);
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn:hover { background: var(--dt-surface-container-low); }
-	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-	.btn-primary {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		border: none;
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background: linear-gradient(135deg, var(--dt-primary-container), var(--dt-primary));
 	}
 </style>

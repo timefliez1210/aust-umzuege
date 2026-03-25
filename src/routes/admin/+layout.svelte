@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '../../styles/admin-components.css';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { goto, afterNavigate } from '$app/navigation';
 	import { page } from '$app/stores';

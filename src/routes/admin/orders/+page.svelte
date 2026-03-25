@@ -213,31 +213,15 @@
 		max-width: 1200px;
 	}
 
-	.page-header {
-		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		margin-bottom: 1.25rem;
-	}
-
 	.page-header h1 {
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: var(--dt-on-surface);
 	}
 
 	.page-count {
 		font-size: 0.8125rem;
 		color: var(--dt-on-surface-variant);
 		flex: 1;
-	}
-
-	.toolbar {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		margin-bottom: 1rem;
-		flex-wrap: wrap;
 	}
 
 	.tabs {
@@ -273,12 +257,7 @@
 	}
 
 	.search-box {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background: var(--dt-surface-container-high);
-		border-radius: var(--dt-radius-md);
 		margin-left: auto;
 	}
 
@@ -336,36 +315,4 @@
 		color: var(--dt-secondary);
 	}
 
-	.pagination {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-top: 1rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.pagination button {
-		display: flex;
-		align-items: center;
-		padding: 0.375rem;
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-lowest);
-		border: var(--dt-ghost-border);
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		box-shadow: var(--dt-shadow-ambient);
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-
-	.pagination button:hover:not(:disabled) {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-low);
-	}
-
-	.pagination button:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
 </style>

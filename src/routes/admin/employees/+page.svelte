@@ -350,10 +350,7 @@
 
 <style>
 	.page-header {
-		display: flex;
 		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
 	}
 
 	.page-header-left {
@@ -381,38 +378,10 @@
 		border-radius: var(--dt-radius-sm);
 	}
 
-	.toolbar {
-		display: flex;
-		gap: 1rem;
-		align-items: center;
-		margin-bottom: 1rem;
-		flex-wrap: wrap;
-	}
-
 	.search-box {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		background: var(--dt-surface-container-high);
-		border-radius: var(--dt-radius-md);
-		padding: 0.5rem 0.75rem;
 		flex: 1;
 		min-width: 200px;
 		max-width: 400px;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.search-box input {
-		border: none;
-		background: transparent;
-		outline: none;
-		font-size: 0.875rem;
-		width: 100%;
-		color: var(--dt-on-surface);
-	}
-
-	.search-box input::placeholder {
-		color: var(--dt-outline-variant);
 	}
 
 	.month-picker {
@@ -531,99 +500,12 @@
 		color: var(--dt-on-surface-variant);
 	}
 
-	.pagination {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		margin-top: 1rem;
-	}
-
 	.page-info {
 		font-size: 0.875rem;
 		color: var(--dt-on-surface-variant);
 	}
 
-	.loading,
-	.empty-state {
-		text-align: center;
-		padding: 3rem;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-	}
-
 	/* Modal */
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
-
-	.modal {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.5rem;
-		width: 90%;
-		max-width: 520px;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.modal h2 {
-		margin: 0 0 1rem;
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.form-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.field label {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.field input,
-	.field select {
-		padding: 0.5rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-	}
-
-	.field input:focus,
-	.field select:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom-color: var(--dt-primary);
-	}
-
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 1rem;
-	}
-
 	.alert-error {
 		background: rgba(168, 57, 0, 0.08);
 		color: var(--dt-secondary);
@@ -633,55 +515,10 @@
 		margin-bottom: 0.75rem;
 	}
 
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 1rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface);
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn:hover {
-		background: var(--dt-surface-container);
-	}
-
-	.btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.btn-primary {
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-		color: var(--dt-on-primary);
-		border: none;
-	}
-
-	.btn-primary:hover {
-		opacity: 0.9;
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-	}
-
-	.btn-sm {
-		padding: 0.375rem 0.625rem;
-		font-size: 0.8125rem;
-	}
-
 	@media (max-width: 768px) {
-		.form-grid {
-			grid-template-columns: 1fr;
-		}
-
 		.page-header {
 			flex-direction: column;
 			align-items: flex-start;
-			gap: 0.75rem;
 		}
 
 		.toolbar {

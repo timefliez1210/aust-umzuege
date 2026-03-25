@@ -241,43 +241,10 @@
 		max-width: 1200px;
 	}
 
-	.page-header {
-		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		margin-bottom: 1.25rem;
-	}
-
-	.page-header h1 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		letter-spacing: -0.01em;
-		color: var(--dt-on-surface);
-	}
-
 	.page-count {
 		font-size: 0.8125rem;
 		color: var(--dt-on-surface-variant);
 		flex: 1;
-	}
-
-	.btn-create {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem var(--dt-space-6);
-		border-radius: var(--dt-radius-md);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-primary);
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-		border: none;
-		cursor: pointer;
-		transition: opacity var(--dt-transition);
-	}
-
-	.btn-create:hover {
-		opacity: 0.9;
 	}
 
 	.create-form {
@@ -344,36 +311,6 @@
 		color: var(--dt-secondary);
 	}
 
-	.toolbar {
-		display: flex;
-		margin-bottom: 1rem;
-	}
-
-	.search-box {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-md);
-		padding: 0 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.search-box input {
-		background: transparent;
-		border: none;
-		color: var(--dt-on-surface);
-		padding: 0.5rem 0;
-		font-size: 0.875rem;
-		outline: none;
-		width: 280px;
-	}
-
-	.search-box input::placeholder {
-		color: var(--dt-outline-variant);
-	}
-
 	.sal-badge {
 		display: inline-block;
 		font-size: 0.65rem;
@@ -396,59 +333,4 @@
 		color: var(--dt-on-surface-variant);
 	}
 
-	.pagination {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-top: 1rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.pagination button {
-		display: flex;
-		align-items: center;
-		padding: 0.375rem;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface-variant);
-		border: var(--dt-ghost-border);
-		background: var(--dt-surface-container-lowest);
-		transition: all var(--dt-transition);
-	}
-
-	.pagination button:hover:not(:disabled) {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container);
-	}
-
-	.pagination button:disabled {
-		opacity: 0.3;
-		cursor: not-allowed;
-	}
-
-	.pagination span {
-		color: var(--dt-on-surface-variant);
-	}
-
-	@media (max-width: 768px) {
-		.page-header {
-			flex-wrap: wrap;
-		}
-		.search-box {
-			flex: 1;
-			min-width: 0;
-		}
-		.search-box input {
-			width: 100%;
-		}
-		.btn-create {
-			min-height: 44px;
-		}
-		.pagination button {
-			min-height: 44px;
-			min-width: 44px;
-			justify-content: center;
-		}
-	}
 </style>

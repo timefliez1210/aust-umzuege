@@ -86,4 +86,18 @@
 	--admin-shadow-outset-primary: 0 4px 16px -2px rgba(2, 36, 72, 0.20);
 	--admin-shadow-inset:          inset 0 2px 4px rgba(2, 36, 72, 0.06);
 	--admin-shadow-focus:          0 0 0 2px rgba(2, 36, 72, 0.20);
+
+	/* ─── Status colors (use for badges, alerts, status indicators) ── */
+	--dt-success-bg:   #dcfce7;
+	--dt-success-text: #166634;
+	--dt-error-bg:     #fee2e2;
+	--dt-error-text:   #991b1b;
+	--dt-info-bg:      #e0e7ff;
+	--dt-info-text:    #3730a3;
+	--dt-warning-bg:   #fef3c7;
+	--dt-warning-text: #92400e;
+
+	/* ─── RGB helpers for rgba() usage ──────────────────────────── */
+	--dt-primary-rgb:   2, 36, 72;
+	--dt-secondary-rgb: 168, 57, 0;
 }

@@ -457,17 +457,8 @@
 		gap: 1.5rem;
 	}
 
-	.page-header h1 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		letter-spacing: -0.01em;
-		color: var(--dt-on-surface);
-	}
-
 	.card {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.5rem;
+		box-shadow: none;
 	}
 
 	.card-header {
@@ -496,37 +487,9 @@
 		gap: 1rem;
 	}
 
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-	}
-
-	.field label {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-	}
-
 	.field input {
 		padding: 0.625rem 0.75rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-md);
-		color: var(--dt-on-surface);
 		font-size: 0.9375rem;
-		outline: none;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-	}
-
-	.field input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom-color: var(--dt-primary);
-	}
-
-	.field input::placeholder {
-		color: var(--dt-outline-variant);
 	}
 
 	.role-toggle {
@@ -558,29 +521,10 @@
 	}
 
 	.btn-create {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
 		padding: 0.75rem var(--dt-space-6);
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-		color: var(--dt-on-primary);
-		font-weight: 600;
 		font-size: 0.9375rem;
-		border: none;
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: opacity var(--dt-transition);
 		align-self: flex-start;
-	}
-
-	.btn-create:hover:not(:disabled) {
-		opacity: 0.9;
-	}
-
-	.btn-create:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
+		justify-content: center;
 	}
 
 	/* Users list */
@@ -688,25 +632,12 @@
 
 	/* Confirm Modal */
 	.modal-backdrop {
-		position: fixed;
-		inset: 0;
 		z-index: 9999;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		animation: fadeIn 150ms ease;
 	}
 
 	.modal {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
 		padding: 2rem;
 		max-width: 420px;
-		width: 90vw;
-		position: relative;
 		text-align: center;
 	}
 
@@ -756,55 +687,15 @@
 	}
 
 	.modal-actions {
-		display: flex;
-		gap: 0.75rem;
 		justify-content: center;
 	}
 
 	.btn-cancel {
 		padding: 0.625rem 1.25rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface);
-		font-weight: 600;
-		font-size: 0.875rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn-cancel:hover {
-		background: var(--dt-surface-container);
 	}
 
 	.btn-confirm-danger {
 		padding: 0.625rem 1.25rem;
-		background: linear-gradient(135deg, #a83900, #8a2e00);
-		color: #ffffff;
-		font-weight: 600;
-		font-size: 0.875rem;
-		border: none;
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: opacity var(--dt-transition);
-	}
-
-	.btn-confirm-danger:hover:not(:disabled) {
-		opacity: 0.9;
-	}
-
-	.btn-confirm-danger:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
 	}
 
 	@media (max-width: 600px) {

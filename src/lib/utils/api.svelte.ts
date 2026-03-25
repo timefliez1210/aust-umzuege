@@ -212,7 +212,7 @@ export async function apiDownload(path: string, filename: string): Promise<void>
 	URL.revokeObjectURL(url);
 }
 
-export { formatEuro, formatDate, formatDateTime } from '$lib/utils/format';
+export { formatEuro, formatDate, formatDateTime, formatTime } from '$lib/utils/format';
 
 /**
  * Formats a byte count as a human-readable size string.

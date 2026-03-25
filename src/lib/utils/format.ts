@@ -69,3 +69,18 @@ export function formatDateTime(dateStr: string): string {
 		minute: '2-digit'
 	}).format(new Date(dateStr));
 }
+
+/**
+ * Formats a time string (HH:MM:SS or HH:MM) to HH:MM display format.
+ *
+ * Called by: calendar/+page.svelte (time display in calendar cells and side panel),
+ *            calendar-items/[id]/+page.svelte (start/end time display)
+ * Purpose: Strips seconds from the raw TIME value returned by the API for cleaner display.
+ *          Returns an empty string for null/undefined values so templates can use it safely.
+ *
+ * @param t - Time string from the API (e.g. "09:00:00" or "09:00"), or null/undefined
+ * @returns Formatted string "HH:MM", or empty string if the input is null/undefined
+ */
+export function formatTime(t: string | null | undefined): string {
+	return t ? t.slice(0, 5) : '';
+}

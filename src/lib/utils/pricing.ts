@@ -1,3 +1,47 @@
+/**
+ * German VAT multiplier (19%).
+ *
+ * Used by: calculateBruttoCents, bruttoCentsToNetto, formatBrutto, reverseCalculateRate
+ * Purpose: Single constant so all VAT arithmetic in the admin uses the same rate
+ *          and a rate change only needs updating in one place.
+ */
+export const VAT_RATE = 1.19;
+
+/**
+ * Converts brutto cents (including 19% VAT) to netto cents and rounds to the nearest cent.
+ *
+ * Called by: calendar/+page.svelte (price display), inquiries/[id]/+page.svelte (rate back-calc)
+ * Purpose: Reverses the VAT addition so the netto amount can be stored or used in further
+ *          pricing calculations; complements calculateBruttoCents.
+ *
+ * @param bruttoCents - Gross amount including 19% VAT, in cents
+ * @returns Net amount before tax, in cents, rounded to nearest integer
+ *
+ * Math: nettoCents = round(bruttoCents / 1.19)
+ */
+export function bruttoCentsToNetto(bruttoCents: number): number {
+	return Math.round(bruttoCents / VAT_RATE);
+}
+
+/**
+ * Formats a netto cent amount as a brutto Euro display string with German locale formatting.
+ *
+ * Called by: any page that needs to show a customer-facing gross price as a formatted string
+ * Purpose: Applies VAT and formats in one step, producing strings like "1.234 €" suitable
+ *          for compact display contexts where decimal cents are not needed.
+ *
+ * @param nettoCents - Net amount before tax, in cents
+ * @returns Brutto (gross) amount formatted as a German locale string, e.g. "1.234 €"
+ *
+ * Math: bruttoEuros = round(nettoCents * 1.19) / 100
+ */
+export function formatBrutto(nettoCents: number): string {
+	return (Math.round(nettoCents * VAT_RATE) / 100).toLocaleString('de-DE', {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	}) + ' €';
+}
+
 export interface RowOption {
 	row: number;
 	label: string;
@@ -81,7 +125,7 @@ export function calculateNonLaborCents(
  * Math: bruttoCents = round(nettoCents * 1.19)
  */
 export function calculateBruttoCents(nettoCents: number): number {
-	return Math.round(nettoCents * 1.19);
+	return Math.round(nettoCents * VAT_RATE);
 }
 
 /**
@@ -170,7 +214,7 @@ export function reverseCalculateRate(
 	persons: number,
 	hours: number
 ): number {
-	const targetNetto = Math.round(bruttoCents / 1.19);
+	const targetNetto = Math.round(bruttoCents / VAT_RATE);
 	const availableForLabor = targetNetto - nonLaborCents;
 	if (persons > 0 && hours > 0 && availableForLabor > 0) {
 		return Math.round(availableForLabor / (persons * hours));

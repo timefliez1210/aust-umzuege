@@ -2,8 +2,12 @@
 	import { apiGet, apiPut, apiPatch, apiPost, apiDelete, formatEuro } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { buildCalendar } from '$lib/utils/calendar';
+	import { INQUIRY_STATUS_LABELS, formatStatus } from '$lib/utils/status';
+	import { formatTime } from '$lib/utils/format';
+	import { calculateBruttoCents } from '$lib/utils/pricing';
 	import { ChevronLeft, ChevronRight, X, Save, Trash2, Plus, Check, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+	import CapacityEditor from './_components/CapacityEditor.svelte';
 
 	// ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -111,14 +115,6 @@
 		'cancelled', 'scheduled', 'completed', 'invoiced', 'paid'
 	];
 
-	const INQUIRY_STATUS_LABELS: Record<string, string> = {
-		pending: 'Ausstehend', info_requested: 'Info angefragt', estimating: 'Wird geschätzt',
-		estimated: 'Geschätzt', offer_ready: 'Angebot bereit', offer_sent: 'Angebot gesendet',
-		accepted: 'Angenommen', rejected: 'Abgelehnt', expired: 'Abgelaufen',
-		cancelled: 'Abgesagt', scheduled: 'Geplant', completed: 'Abgeschlossen',
-		invoiced: 'Fakturiert', paid: 'Bezahlt'
-	};
-
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
 
 	// ─── Helper functions ────────────────────────────────────────────────────────
@@ -184,19 +180,6 @@
 	}
 
 	/**
-	 * Formats a time string (HH:MM:SS or HH:MM) to HH:MM display format.
-	 *
-	 * Called by: Template (time display in calendar cells and side panel)
-	 * Purpose: Strips seconds from the raw TIME value returned by the API for cleaner display.
-	 *
-	 * @param t - Time string from the API, e.g. "09:00:00" or "09:00"
-	 * @returns Formatted string e.g. "09:00"
-	 */
-	function formatTime(t: string | null | undefined): string {
-		return t ? t.slice(0, 5) : '';
-	}
-
-	/**
 	 * Converts a UTC ISO 8601 timestamp to a local HH:MM string for time inputs.
 	 *
 	 * Called by: Employee state seeding (openInquiryPanel, openTerminPanel, inqSaveEmp)
@@ -257,10 +240,6 @@
 	// Side panel
 	let panelSelection = $state<PanelSelection>(null);
 	let panelLoading = $state(false);
-
-	// Day-panel capacity
-	let capacityInput = $state('');
-	let savingCapacity = $state(false);
 
 	// Inquiry panel edit state
 	let inqEditStatus = $state('');
@@ -695,7 +674,7 @@
 	/**
 	 * Fetches the inquiry schedule for the currently displayed calendar month.
 	 *
-	 * Called by: $effect (on mount and whenever currentDate changes), prevMonth, nextMonth, saveCapacity
+	 * Called by: $effect (on mount and whenever currentDate changes), prevMonth, nextMonth, CapacityEditor.onSaved
 	 * Purpose: Requests the full month's day schedules from
 	 *          GET /api/v1/calendar/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD and stores them
 	 *          so the calendar grid stays consistent with server state.
@@ -814,7 +793,6 @@
 		if (!dateStr) return;
 		const schedule = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1 };
 		panelSelection = { kind: 'day', date: dateStr, schedule };
-		capacityInput = String(schedule.capacity);
 	}
 
 	/**
@@ -925,37 +903,6 @@
 	 */
 	function closePanel() {
 		panelSelection = null;
-	}
-
-	// ─── Day panel: capacity ─────────────────────────────────────────────────────
-
-	/**
-	 * Persists the capacity override for the selected day to the API.
-	 *
-	 * Called by: Template ("Speichern" button in day panel capacity section)
-	 * Purpose: PUTs the new integer capacity to PUT /api/v1/calendar/capacity/{date},
-	 *          then reloads the schedule so the calendar cell reflects the change.
-	 */
-	async function saveCapacity() {
-		if (!panelSelection || panelSelection.kind !== 'day') return;
-		savingCapacity = true;
-		try {
-			const dateStr = panelSelection.date;
-			await apiPut(`/api/v1/calendar/capacity/${dateStr}`, {
-				capacity: parseInt(capacityInput) || 1
-			});
-			showToast('Kapazität gespeichert', 'success');
-			await loadSchedule();
-			const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-			if (updated) {
-				panelSelection = { kind: 'day', date: dateStr, schedule: updated };
-				capacityInput = String(updated.capacity);
-			}
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		} finally {
-			savingCapacity = false;
-		}
 	}
 
 	// ─── Inquiry panel: save ─────────────────────────────────────────────────────
@@ -1770,7 +1717,7 @@
 												{/if}
 												{#if entry.item.offer_price_cents || entry.item.volume_m3}
 													<div class="wc-meta">
-														{#if entry.item.offer_price_cents}<span class="wc-price">{Math.round(entry.item.offer_price_cents * 1.19 / 100)} €</span>{/if}
+														{#if entry.item.offer_price_cents}<span class="wc-price">{(calculateBruttoCents(entry.item.offer_price_cents) / 100).toFixed(0)} €</span>{/if}
 														{#if entry.item.volume_m3}<span class="wc-vol">{entry.item.volume_m3.toFixed(1)} m³</span>{/if}
 													</div>
 												{/if}
@@ -1935,21 +1882,18 @@
 							</div>
 						</div>
 
-						<div class="panel-section">
-							<div class="section-title">Kapazität überschreiben</div>
-							<div class="capacity-row">
-								<input
-									type="number"
-									min="0"
-									max="10"
-									class="neu-input capacity-input"
-									bind:value={capacityInput}
-								/>
-								<button class="btn btn-primary btn-sm" onclick={saveCapacity} disabled={savingCapacity}>
-									{savingCapacity ? '...' : 'Speichern'}
-								</button>
-							</div>
-						</div>
+						<CapacityEditor
+							date={ds.date.split('T')[0]}
+							currentCapacity={ds.capacity}
+							onSaved={async (newCapacity) => {
+								await loadSchedule();
+								const dateStr = ds.date.split('T')[0];
+								const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
+								if (updated) {
+									panelSelection = { kind: 'day', date: dateStr, schedule: updated };
+								}
+							}}
+						/>
 
 						{#if ds.inquiries.length > 0 || dayTermine.length > 0}
 							<div class="panel-section">
@@ -2017,7 +1961,7 @@
 							{#if inq.offer_price_cents}
 								<div class="panel-kv">
 									<span class="kv-label">Angebotspreis</span>
-									<span class="kv-value">{(inq.offer_price_cents / 100 * 1.19).toFixed(0)} € brutto</span>
+									<span class="kv-value">{(calculateBruttoCents(inq.offer_price_cents) / 100).toFixed(0)} € brutto</span>
 								</div>
 							{/if}
 						</div>

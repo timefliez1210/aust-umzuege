@@ -21,9 +21,10 @@
 	import MediaDropzone from "$lib/components/MediaDropzone.svelte";
 	import MediaPreviewGrid from "$lib/components/MediaPreviewGrid.svelte";
 	import { floorLabel, parseFloor } from "$lib/utils/floor";
+	import AddressEditor from "./_components/AddressEditor.svelte";
 	import { sortItems, filterItemsByPhotoIndex } from "$lib/utils/sorting";
 	import { computeTotalVolume } from "$lib/utils/volume";
-	import { normalizeFlatTotalItem } from "$lib/utils/pricing";
+	import { normalizeFlatTotalItem, calculateBruttoCents, bruttoCentsToNetto } from "$lib/utils/pricing";
 	import {
 		ArrowLeft,
 		Save,
@@ -219,23 +220,6 @@
 
 	let editingCustomer = $state(false);
 	let editCustomer = $state({ first_name: "", last_name: "", email: "", phone: "" });
-
-	let editingOrigin = $state(false);
-	let editingDest = $state(false);
-	let editOrigin = $state({
-		street: "",
-		postal_code: "",
-		city: "",
-		floor: "0",
-		elevator: false,
-	});
-	let editDest = $state({
-		street: "",
-		postal_code: "",
-		city: "",
-		floor: "0",
-		elevator: false,
-	});
 
 	// Editable items
 	let editItems = $state<EditableItem[]>([]);
@@ -469,9 +453,7 @@
 		),
 	);
 	let calculatedNettoCents = $derived(nonLaborCents + laborCents);
-	let calculatedBruttoCents = $derived(
-		Math.round(calculatedNettoCents * 1.19),
-	);
+	let calculatedBruttoCents = $derived(calculateBruttoCents(calculatedNettoCents));
 	const COST_PER_PERSON_HOUR = 18.23;
 	let laborProfit = $derived(
 		editPersons * editHours * (editRateCents / 100 - COST_PER_PERSON_HOUR),
@@ -1365,7 +1347,7 @@
 	 *          sets `priceDirty = true`)
 	 */
 	function onBruttoChange() {
-		const targetNetto = Math.round(editBruttoCents / 1.19);
+		const targetNetto = bruttoCentsToNetto(editBruttoCents);
 		const availableForLabor = targetNetto - nonLaborCents;
 		if (editPersons > 0 && editHours > 0 && availableForLabor > 0) {
 			editRateCents = Math.round(
@@ -1418,7 +1400,7 @@
 				rate: editRateCents / 100,
 			};
 			if (priceDirty) {
-				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
+				payload.price_cents_netto = bruttoCentsToNetto(editBruttoCents);
 			}
 			// If the admin has a Fahrkostenpauschale in editLineItems, that value is law —
 			// always send it as fahrt_flat_total so backend never recalculates via ORS.
@@ -1476,7 +1458,7 @@
 				rate: editRateCents / 100,
 			};
 			if (priceDirty) {
-				payload.price_cents_netto = Math.round(editBruttoCents / 1.19);
+				payload.price_cents_netto = bruttoCentsToNetto(editBruttoCents);
 			}
 			// Extract Fahrkostenpauschale as fahrt_flat_total — admin-set value is law.
 			const fahrtItemGen = editLineItems.find((li) => li.label === "Fahrkostenpauschale");
@@ -1614,76 +1596,6 @@
 			});
 			showToast("Kunde gespeichert", "success");
 			editingCustomer = false;
-			await loadInquiry();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		}
-	}
-
-	/**
-	 * Called by: Template (onclick on the "Bearbeiten" button in the origin address card)
-	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
-	 *          existing data rather than an empty form.
-	 *
-	 * @returns void (side-effect: populates `editOrigin`, sets `editingOrigin = true`)
-	 */
-	function startEditOrigin() {
-		if (!data?.origin_address) return;
-		const a = data.origin_address;
-		editOrigin = {
-			street: a.street,
-			postal_code: a.postal_code || "",
-			city: a.city,
-			floor: a.floor || "0",
-			elevator: a.elevator ?? false,
-		};
-		editingOrigin = true;
-	}
-
-	/**
-	 * Copies the destination address fields into the inline edit form and activates destination edit mode.
-	 *
-	 * Called by: Template (onclick on the "Bearbeiten" button in the destination address card)
-	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
-	 *          existing data rather than an empty form.
-	 *
-	 * @returns void (side-effect: populates `editDest`, sets `editingDest = true`)
-	 */
-	function startEditDest() {
-		if (!data?.destination_address) return;
-		const a = data.destination_address;
-		editDest = {
-			street: a.street,
-			postal_code: a.postal_code || "",
-			city: a.city,
-			floor: a.floor || "0",
-			elevator: a.elevator ?? false,
-		};
-		editingDest = true;
-	}
-
-	/**
-	 * Saves an edited address (origin or destination) to the API and exits edit mode.
-	 *
-	 * Called by: Template (onclick on the "Speichern" button inside the inline origin/destination address form)
-	 * Purpose: Persists corrections to street, city, postal code, floor, or elevator for either address.
-	 *          Calls PATCH /api/v1/admin/addresses/{addressId} then reloads the inquiry so the
-	 *          route map and pricing defaults reflect the corrected address.
-	 *
-	 * @param addressId - UUID of the address record to update
-	 * @param fields - Object with the current form values (street, postal_code, city, floor, elevator)
-	 * @param setEditing - Callback to set the editing flag (e.g. `(v) => editingOrigin = v`) to false on success
-	 * @returns void (side-effect: shows toast, calls setEditing(false) and loadInquiry on success)
-	 */
-	async function saveAddress(
-		addressId: string,
-		fields: typeof editOrigin,
-		setEditing: (v: boolean) => void,
-	) {
-		try {
-			await apiPatch(`/api/v1/admin/addresses/${addressId}`, fields);
-			showToast("Adresse gespeichert", "success");
-			setEditing(false);
 			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, "error");
@@ -2024,8 +1936,8 @@
 	function partialPreview(): { first: number; remaining: number } | null {
 		const offerNetto = data?.offer?.total_netto_cents;
 		if (!offerNetto) return null;
-		// offer total_netto_cents is netto; brutto = netto * 1.19
-		const brutto = Math.round(offerNetto * 1.19);
+		// offer total_netto_cents is netto; brutto = netto * VAT_RATE
+		const brutto = calculateBruttoCents(offerNetto);
 		const first = Math.round(brutto * partialPercent / 100);
 		return { first, remaining: brutto - first };
 	}
@@ -2515,216 +2427,11 @@
 			</div>
 
 			<!-- Addresses -->
-			{#if data.origin_address}
-				<div class="card">
-					<div class="card-header">
-						<h3>Von</h3>
-						{#if !editingOrigin}
-							<button
-								class="btn btn-sm"
-								onclick={startEditOrigin}
-							>
-								<Pencil size={14} />
-								Bearbeiten
-							</button>
-						{/if}
-					</div>
-					{#if editingOrigin}
-						<div class="form-grid">
-							<div class="field full-width">
-								<label for="origin-street">Strasse</label>
-								<input
-									id="origin-street"
-									type="text"
-									bind:value={editOrigin.street}
-								/>
-							</div>
-							<div class="field">
-								<label for="origin-plz">PLZ</label>
-								<input
-									id="origin-plz"
-									type="text"
-									bind:value={editOrigin.postal_code}
-								/>
-							</div>
-							<div class="field">
-								<label for="origin-city">Stadt</label>
-								<input
-									id="origin-city"
-									type="text"
-									bind:value={editOrigin.city}
-								/>
-							</div>
-							<div class="field">
-								<label for="origin-floor">Stockwerk</label>
-								<select
-									id="origin-floor"
-									bind:value={editOrigin.floor}
-								>
-									<option value="-1">Keller</option>
-									<option value="0">Erdgeschoss</option>
-									<option value="1">1. OG</option>
-									<option value="2">2. OG</option>
-									<option value="3">3. OG</option>
-									<option value="4">4. OG</option>
-									<option value="5">5. OG</option>
-								</select>
-							</div>
-							<div class="field">
-								<label class="checkbox-label">
-									<input
-										type="checkbox"
-										bind:checked={editOrigin.elevator}
-									/>
-									Aufzug
-								</label>
-							</div>
-							<div class="field full-width addr-actions">
-								<button
-									class="btn btn-sm btn-save"
-									onclick={() =>
-										saveAddress(
-											data!.origin_address!.id,
-											editOrigin,
-											(v) => (editingOrigin = v),
-										)}
-								>
-									<Save size={14} />
-									Speichern
-								</button>
-								<button
-									class="btn btn-sm"
-									onclick={() => (editingOrigin = false)}
-								>
-									Abbrechen
-								</button>
-							</div>
-						</div>
-					{:else}
-						<div class="info-grid">
-							<div class="info-item">
-								<span class="info-label">Adresse</span>
-								<span class="info-value">
-									{data.origin_address.street}, {data
-										.origin_address.postal_code || ""}
-									{data.origin_address.city}
-								</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">Stockwerk</span>
-								<span class="info-value">
-									{floorLabel(data.origin_address.floor)}
-									{#if data.origin_address.elevator}(Aufzug){/if}
-								</span>
-							</div>
-						</div>
-					{/if}
-				</div>
-			{/if}
-
-			{#if data.destination_address}
-				<div class="card">
-					<div class="card-header">
-						<h3>Nach</h3>
-						{#if !editingDest}
-							<button class="btn btn-sm" onclick={startEditDest}>
-								<Pencil size={14} />
-								Bearbeiten
-							</button>
-						{/if}
-					</div>
-					{#if editingDest}
-						<div class="form-grid">
-							<div class="field full-width">
-								<label for="dest-street">Strasse</label>
-								<input
-									id="dest-street"
-									type="text"
-									bind:value={editDest.street}
-								/>
-							</div>
-							<div class="field">
-								<label for="dest-plz">PLZ</label>
-								<input
-									id="dest-plz"
-									type="text"
-									bind:value={editDest.postal_code}
-								/>
-							</div>
-							<div class="field">
-								<label for="dest-city">Stadt</label>
-								<input
-									id="dest-city"
-									type="text"
-									bind:value={editDest.city}
-								/>
-							</div>
-							<div class="field">
-								<label for="dest-floor">Stockwerk</label>
-								<select
-									id="dest-floor"
-									bind:value={editDest.floor}
-								>
-									<option value="-1">Keller</option>
-									<option value="0">Erdgeschoss</option>
-									<option value="1">1. OG</option>
-									<option value="2">2. OG</option>
-									<option value="3">3. OG</option>
-									<option value="4">4. OG</option>
-									<option value="5">5. OG</option>
-								</select>
-							</div>
-							<div class="field">
-								<label class="checkbox-label">
-									<input
-										type="checkbox"
-										bind:checked={editDest.elevator}
-									/>
-									Aufzug
-								</label>
-							</div>
-							<div class="field full-width addr-actions">
-								<button
-									class="btn btn-sm btn-save"
-									onclick={() =>
-										saveAddress(
-											data!.destination_address!.id,
-											editDest,
-											(v) => (editingDest = v),
-										)}
-								>
-									<Save size={14} />
-									Speichern
-								</button>
-								<button
-									class="btn btn-sm"
-									onclick={() => (editingDest = false)}
-								>
-									Abbrechen
-								</button>
-							</div>
-						</div>
-					{:else}
-						<div class="info-grid">
-							<div class="info-item">
-								<span class="info-label">Adresse</span>
-								<span class="info-value">
-									{data.destination_address.street}, {data
-										.destination_address.postal_code || ""}
-									{data.destination_address.city}
-								</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">Stockwerk</span>
-								<span class="info-value">
-									{floorLabel(data.destination_address.floor)}
-									{#if data.destination_address.elevator}(Aufzug){/if}
-								</span>
-							</div>
-						</div>
-					{/if}
-				</div>
-			{/if}
+			<AddressEditor
+				originAddress={data.origin_address}
+				destinationAddress={data.destination_address}
+				onSaved={loadInquiry}
+			/>
 
 			<!-- Editable Fields -->
 			<div class="card">

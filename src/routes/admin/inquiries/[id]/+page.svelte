@@ -22,6 +22,7 @@
 	import MediaPreviewGrid from "$lib/components/MediaPreviewGrid.svelte";
 	import { floorLabel, parseFloor } from "$lib/utils/floor";
 	import AddressEditor from "./_components/AddressEditor.svelte";
+	import EmployeeAssignmentPanel from "$lib/components/admin/EmployeeAssignmentPanel.svelte";
 	import { sortItems, filterItemsByPhotoIndex } from "$lib/utils/sorting";
 	import { computeTotalVolume } from "$lib/utils/volume";
 	import { normalizeFlatTotalItem, calculateBruttoCents, bruttoCentsToNetto } from "$lib/utils/pricing";
@@ -3277,156 +3278,15 @@
 
 <!-- Mitarbeiter Card (visible for accepted+ statuses) -->
 {#if showEmployeeCard && data}
-	{@const emps = data.employees ?? []}
 	<div class="employees-section">
 		<div class="card">
-			<div class="card-header">
-				<h3>Mitarbeiter</h3>
-				<button class="btn btn-sm" onclick={openAssignModal}>
-					<Plus size={14} />
-					Zuweisen
-				</button>
-			</div>
-
-			{#if emps.length > 0}
-				<div class="emp-table-wrapper">
-					<table class="emp-table">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th class="num">Geplant (h)</th>
-								<th colspan="2" class="group-header admin-group">Admin-Zeiten</th>
-								<th colspan="2" class="group-header emp-group">Mitarbeiter-Zeiten</th>
-								<th></th>
-							</tr>
-							<tr class="subheader-row">
-								<th></th>
-								<th></th>
-								<th>Beginn</th>
-								<th class="num">Ende / Ist</th>
-								<th>Beginn</th>
-								<th class="num">Ende / Ist</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each emps as emp}
-								<tr>
-									<td>{emp.first_name} {emp.last_name}</td>
-									<td class="num">
-										<input
-											type="number"
-											step="0.5"
-											class="inline-input"
-											value={emp.planned_hours}
-											onblur={(e) => updatePlannedHours(emp.employee_id, (e.target as HTMLInputElement).value)}
-										/>
-									</td>
-									<!-- Admin-set times (editable) -->
-									<td>
-										<input
-											type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
-											class="inline-input"
-											value={isoToLocalTime(emp.clock_in)}
-											onblur={(e) => updateEmployeeClock(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
-										/>
-									</td>
-									<td class="num">
-										<input
-											type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]"
-											class="inline-input"
-											value={isoToLocalTime(emp.clock_out)}
-											onblur={(e) => updateEmployeeClock(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
-										/>
-										{#if emp.actual_hours != null}
-											<span class="hours-badge">{fmtActualHours(emp.actual_hours)}</span>
-										{/if}
-									</td>
-									<!-- Employee self-reported times (read-only) -->
-									<td class:discrepancy={hasDiscrepancy(emp)}>
-										<span class="emp-time">{isoToLocalTime(emp.employee_clock_in) || '—'}</span>
-									</td>
-									<td class="num" class:discrepancy={hasDiscrepancy(emp)}>
-										<span class="emp-time">{isoToLocalTime(emp.employee_clock_out) || '—'}</span>
-										{#if emp.employee_actual_hours != null}
-											<span class="hours-badge emp-badge">{fmtActualHours(emp.employee_actual_hours)}</span>
-										{/if}
-									</td>
-									<td>
-										<button
-											class="btn-icon danger"
-											title="Entfernen"
-											onclick={() => removeEmployee(emp.employee_id)}
-										>
-											<Trash2 size={14} />
-										</button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-						<tfoot>
-							<tr class="total-row">
-								<td><strong>Gesamt</strong></td>
-								<td class="num"><strong>{emps.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)}</strong></td>
-								<td></td>
-								<td class="num">
-									<strong>
-										{#if emps.some(e => e.actual_hours != null)}
-											{fmtActualHours(emps.reduce((s, e) => s + (e.actual_hours ?? 0), 0))}
-										{:else}—{/if}
-									</strong>
-								</td>
-								<td></td>
-								<td class="num">
-									<strong>
-										{#if emps.some(e => e.employee_actual_hours != null)}
-											{fmtActualHours(emps.reduce((s, e) => s + (e.employee_actual_hours ?? 0), 0))}
-										{:else}—{/if}
-									</strong>
-								</td>
-								<td></td>
-							</tr>
-						</tfoot>
-					</table>
-				</div>
-			{:else}
-				<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
-			{/if}
+			<EmployeeAssignmentPanel
+				entityId={data.id}
+				entityType="inquiry"
+				preferredDate={data.preferred_date}
+			/>
 		</div>
 	</div>
-
-	<!-- Assign modal -->
-	{#if showAssignModal}
-		<div class="modal-overlay" onclick={() => (showAssignModal = false)}>
-			<div class="modal" onclick={(e) => e.stopPropagation()}>
-				<h3>Mitarbeiter zuweisen</h3>
-				<form onsubmit={(e) => { e.preventDefault(); handleAssign(); }}>
-					<div class="field" style="margin-bottom:0.75rem">
-						<label for="assign-emp">Mitarbeiter</label>
-						<select id="assign-emp" bind:value={assignEmployeeId}>
-							{#each availableEmployees as emp}
-								<option value={emp.id}>{emp.first_name} {emp.last_name} ({emp.email})</option>
-							{/each}
-						</select>
-					</div>
-					<div class="field" style="margin-bottom:0.75rem">
-						<label for="assign-hours">Geplante Stunden</label>
-						<input id="assign-hours" type="number" step="0.5" bind:value={assignPlannedHours} />
-					</div>
-					<div class="field" style="margin-bottom:0.75rem">
-						<label for="assign-notes">Notizen</label>
-						<input id="assign-notes" type="text" bind:value={assignNotes} placeholder="Optional" />
-					</div>
-					<div class="modal-actions">
-						<button type="button" class="btn" onclick={() => (showAssignModal = false)}>Abbrechen</button>
-						<button type="submit" class="btn btn-primary" disabled={assignLoading || !assignEmployeeId}>
-							{assignLoading ? 'Zuweisen...' : 'Zuweisen'}
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	{/if}
 {/if}
 
 <!-- Rechnungen Card (visible for accepted+ statuses) -->

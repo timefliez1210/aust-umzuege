@@ -4,6 +4,7 @@
 	import { apiGet, apiPatch, apiPost, apiDownload, apiFetch, formatDate } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import { ArrowLeft, Save, Trash2, Upload, Download, X, FileText } from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 
@@ -59,6 +60,9 @@
 	let data = $state<Employee | null>(null);
 	let loading = $state(true);
 	let saving = $state(false);
+	let showDeleteDialog = $state(false);
+	let pendingDocType = $state<string | null>(null);
+	let showDocDeleteDialog = $state(false);
 	let hoursSummary = $state<HoursSummary | null>(null);
 
 	// Editable fields
@@ -154,10 +158,17 @@
 	 * Called by: Template (delete button)
 	 * Purpose: Sets active=false, preserving assignment history.
 	 */
+	/**
+	 * Soft-deletes (deactivates) the employee after confirmation dialog.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: Sets active=false, preserving assignment history. Navigates back to list.
+	 */
 	async function handleDelete() {
-		if (!data || !confirm('Mitarbeiter deaktivieren?')) return;
+		if (!data) return;
 		try {
 			await apiPost(`/api/v1/admin/employees/${data.id}/delete`);
+			showDeleteDialog = false;
 			showToast('Mitarbeiter deaktiviert', 'success');
 			goto('/admin/employees');
 		} catch (e: unknown) {
@@ -285,8 +296,28 @@
 	 *
 	 * @param docType - "arbeitsvertrag" or "mitarbeiterfragebogen"
 	 */
-	async function handleDocDelete(docType: string) {
-		if (!data || !confirm(`${DOC_LABELS[docType]} wirklich loeschen?`)) return;
+	/**
+	 * Opens the document delete confirmation dialog.
+	 *
+	 * Called by: Template (delete icon per doc type).
+	 * Purpose: Records which doc type is pending deletion and shows the dialog.
+	 *
+	 * @param docType - "arbeitsvertrag" or "mitarbeiterfragebogen"
+	 */
+	function confirmDocDelete(docType: string) {
+		pendingDocType = docType;
+		showDocDeleteDialog = true;
+	}
+
+	/**
+	 * Deletes the pending document from S3 and clears the DB key after confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: Removes a previously uploaded document and resets the slot to "not uploaded".
+	 */
+	async function handleDocDelete() {
+		const docType = pendingDocType;
+		if (!data || !docType) return;
 		deletingDoc = docType;
 		try {
 			const updated = await apiFetch<Employee>(
@@ -294,6 +325,8 @@
 				{ method: 'DELETE' }
 			);
 			data = { ...data, ...updated };
+			showDocDeleteDialog = false;
+			pendingDocType = null;
 			showToast(`${DOC_LABELS[docType]} geloescht`, 'success');
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : 'Fehler beim Loeschen', 'error');
@@ -316,7 +349,7 @@
 	</button>
 	{#if data && auth.user?.role === 'admin'}
 		<div class="header-actions">
-			<button class="btn btn-danger" onclick={handleDelete}>
+			<button class="btn btn-danger" onclick={() => { showDeleteDialog = true; }}>
 				<Trash2 size={16} />
 				Deaktivieren
 			</button>
@@ -455,7 +488,7 @@
 							</button>
 							<button
 								class="btn btn-sm btn-danger-sm"
-								onclick={() => handleDocDelete(docType)}
+								onclick={() => confirmDocDelete(docType)}
 								disabled={deleting}
 								title="Loeschen"
 							>
@@ -835,3 +868,21 @@
 		}
 	}
 </style>
+
+<ConfirmationDialog
+	bind:open={showDeleteDialog}
+	title="Mitarbeiter deaktivieren"
+	message={data ? `Mitarbeiter „${data.first_name} ${data.last_name}" deaktivieren?` : ''}
+	confirmLabel="Deaktivieren"
+	onConfirm={handleDelete}
+/>
+
+<ConfirmationDialog
+	bind:open={showDocDeleteDialog}
+	title="Dokument löschen"
+	message={pendingDocType ? `${DOC_LABELS[pendingDocType]} wirklich löschen?` : ''}
+	confirmLabel="Löschen"
+	loading={deletingDoc !== null}
+	onConfirm={handleDocDelete}
+	onCancel={() => { pendingDocType = null; }}
+/>

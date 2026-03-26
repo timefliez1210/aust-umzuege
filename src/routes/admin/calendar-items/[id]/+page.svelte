@@ -4,6 +4,7 @@
 	import { apiGet, apiPost, apiPatch, apiDelete, formatDate } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { ArrowLeft, Save, Trash2, Plus, X, Check } from 'lucide-svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 
 	interface CalendarItemDetail {
 		id: string;
@@ -46,6 +47,9 @@
 	let data = $state<CalendarItemDetail | null>(null);
 	let loading = $state(true);
 	let saving = $state(false);
+	let showDeleteDialog = $state(false);
+	let pendingRemoveEmp = $state<{ id: string; name: string } | null>(null);
+	let showRemoveEmpDialog = $state(false);
 
 	// Edit fields
 	let editTitle = $state('');
@@ -174,10 +178,17 @@
 	 * Called by: Template (Delete button).
 	 * Purpose: Removes the item permanently after confirmation.
 	 */
+	/**
+	 * Deletes the calendar item after confirmation and navigates back to the list.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: Removes the item permanently via DELETE /admin/calendar-items/{id}.
+	 */
 	async function handleDelete() {
-		if (!data || !confirm(`Termin "${data.title}" löschen?`)) return;
+		if (!data) return;
 		try {
 			await apiDelete(`/api/v1/admin/calendar-items/${data.id}`);
+			showDeleteDialog = false;
 			showToast('Termin gelöscht', 'success');
 			goto('/admin/calendar-items');
 		} catch (e: unknown) {
@@ -258,11 +269,34 @@
 	 * @param empId - The employee UUID to remove
 	 * @param name  - Employee display name for the confirm dialog
 	 */
-	async function handleRemoveEmp(empId: string, name: string) {
-		if (!data || !confirm(`${name} aus diesem Termin entfernen?`)) return;
+	/**
+	 * Opens the remove-employee confirmation dialog.
+	 *
+	 * Called by: Template (× button per assignment row).
+	 * Purpose: Records which employee is pending removal and shows dialog.
+	 *
+	 * @param empId - The employee UUID to remove
+	 * @param name  - Employee display name for the dialog
+	 */
+	function confirmRemoveEmp(empId: string, name: string) {
+		pendingRemoveEmp = { id: empId, name };
+		showRemoveEmpDialog = true;
+	}
+
+	/**
+	 * Removes the pending employee assignment after confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: DELETEs the assignment and reloads the item.
+	 */
+	async function handleRemoveEmp() {
+		if (!data || !pendingRemoveEmp) return;
+		const { id: empId } = pendingRemoveEmp;
 		removingEmp = { ...removingEmp, [empId]: true };
 		try {
 			await apiDelete(`/api/v1/admin/calendar-items/${data.id}/employees/${empId}`);
+			showRemoveEmpDialog = false;
+			pendingRemoveEmp = null;
 			await loadItem(data.id);
 			showToast('Mitarbeiter entfernt', 'success');
 		} catch (e: unknown) {
@@ -366,7 +400,7 @@
 				<Save size={16} />
 				{saving ? 'Speichern...' : 'Speichern'}
 			</button>
-			<button class="btn btn-danger" onclick={handleDelete}>
+			<button class="btn btn-danger" onclick={() => { showDeleteDialog = true; }}>
 				<Trash2 size={16} />
 				Löschen
 			</button>
@@ -563,7 +597,7 @@
 								</button>
 								<button
 									class="btn-icon btn-remove"
-									onclick={() => handleRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
+									onclick={() => confirmRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
 									disabled={removingEmp[emp.employee_id]}
 									title="Entfernen"
 								>
@@ -611,6 +645,23 @@
 		</div>
 	</div>
 {/if}
+
+<ConfirmationDialog
+	bind:open={showDeleteDialog}
+	title="Termin löschen"
+	message={data ? `Termin „${data.title}" löschen?` : ''}
+	confirmLabel="Löschen"
+	onConfirm={handleDelete}
+/>
+
+<ConfirmationDialog
+	bind:open={showRemoveEmpDialog}
+	title="Mitarbeiter entfernen"
+	message={pendingRemoveEmp ? `${pendingRemoveEmp.name} aus diesem Termin entfernen?` : ''}
+	confirmLabel="Entfernen"
+	onConfirm={handleRemoveEmp}
+	onCancel={() => { pendingRemoveEmp = null; }}
+/>
 
 <style>
 	.page-header {

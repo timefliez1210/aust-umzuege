@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
-	import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
+	import { Search, Plus } from 'lucide-svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
+	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 
 	interface Customer {
 		id: string;
@@ -90,32 +91,6 @@
 	}
 
 	/**
-	 * Navigates to the previous page of the customer list.
-	 *
-	 * Called by: Template (previous-page pagination button click)
-	 * Purpose: Decrements the offset by one page length (clamped to 0) and reloads the
-	 *          customer list so the user can browse backwards through results.
-	 *
-	 * @returns void
-	 */
-	function prevPage() {
-		if (offset > 0) { offset = Math.max(0, offset - limit); loadCustomers(); }
-	}
-
-	/**
-	 * Navigates to the next page of the customer list.
-	 *
-	 * Called by: Template (next-page pagination button click)
-	 * Purpose: Increments the offset by one page length when more records exist beyond the
-	 *          current window and reloads the list to show the following page.
-	 *
-	 * @returns void
-	 */
-	function nextPage() {
-		if (offset + limit < total) { offset += limit; loadCustomers(); }
-	}
-
-	/**
 	 * Creates a new customer record via the API and navigates to the new customer's detail page.
 	 *
 	 * Called by: Template (create-form submit button click and Enter keydown on email/phone inputs)
@@ -146,7 +121,6 @@
 		}
 	}
 
-	let currentPage = $derived(Math.floor(offset / limit) + 1);
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
 </script>
 
@@ -228,11 +202,13 @@
 	</DataTable>
 
 	{#if totalPages > 1}
-		<div class="pagination">
-			<button onclick={prevPage} disabled={offset === 0}><ChevronLeft size={16} /></button>
-			<span>Seite {currentPage} von {totalPages}</span>
-			<button onclick={nextPage} disabled={offset + limit >= total}><ChevronRight size={16} /></button>
-		</div>
+		<PaginationControls
+			page={Math.floor(offset / limit)}
+			total={total}
+			limit={limit}
+			onPrev={() => { offset = Math.max(0, offset - limit); loadCustomers(); }}
+			onNext={() => { offset += limit; loadCustomers(); }}
+		/>
 	{/if}
 </div>
 

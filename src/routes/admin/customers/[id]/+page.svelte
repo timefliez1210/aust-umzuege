@@ -6,6 +6,8 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
+	import LoadingButton from '$lib/components/admin/LoadingButton.svelte';
 
 	interface CustomerDetail {
 		id: string;
@@ -21,6 +23,8 @@
 	let data = $state<CustomerDetail | null>(null);
 	let loading = $state(true);
 	let saving = $state(false);
+	let deleting = $state(false);
+	let showDeleteDialog = $state(false);
 	let editName = $state('');
 	let editPhone = $state('');
 	let editEmail = $state('');
@@ -92,15 +96,24 @@
 	 *
 	 * @returns void
 	 */
+	/**
+	 * Permanently deletes the current customer and all associated data.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm callback).
+	 * Purpose: POSTs to customers/{id}/delete; on success navigates back to list.
+	 */
 	async function deleteCustomer() {
 		if (!data) return;
-		if (!confirm(`Kunde "${data.name || data.email}" und alle zugehoerigen Daten unwiderruflich loeschen?`)) return;
+		deleting = true;
 		try {
 			await apiPost(`/api/v1/admin/customers/${data.id}/delete`);
+			showDeleteDialog = false;
 			showToast('Kunde geloescht', 'success');
 			goto('/admin/customers');
 		} catch (e) {
 			showToast((e as Error).message, 'error');
+		} finally {
+			deleting = false;
 		}
 	}
 </script>
@@ -116,7 +129,7 @@
 		<div class="page-header">
 			<h1>{data.name || data.email}</h1>
 			{#if auth.user?.role === 'admin'}
-			<button class="btn-delete-entity" onclick={deleteCustomer} title="Kunde loeschen">
+			<button class="btn-delete-entity" onclick={() => { showDeleteDialog = true; }} title="Kunde loeschen">
 				<Trash2 size={16} />
 				Loeschen
 			</button>
@@ -149,9 +162,9 @@
 						<span class="form-label">Erstellt</span>
 						<span class="form-value">{formatDate(data.created_at)}</span>
 					</div>
-					<button class="btn btn-primary" onclick={saveCustomer} disabled={saving}>
-						<Save size={16} /> {saving ? 'Speichern...' : 'Speichern'}
-					</button>
+					<LoadingButton loading={saving} variant="primary" onclick={saveCustomer}>
+						<Save size={16} /> Speichern
+					</LoadingButton>
 				</div>
 			</div>
 
@@ -216,6 +229,15 @@
 		</div>
 	{/if}
 </div>
+
+<ConfirmationDialog
+	bind:open={showDeleteDialog}
+	title="Kunde löschen"
+	message={data ? `Kunde „${data.name || data.email}" und alle zugehörigen Daten unwiderruflich löschen?` : ''}
+	confirmLabel="Löschen"
+	loading={deleting}
+	onConfirm={deleteCustomer}
+/>
 
 <style>
 	.page { max-width: 1000px; }

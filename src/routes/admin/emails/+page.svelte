@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDateTime } from '$lib/utils/api.svelte';
-	import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
+	import { Search, Plus } from 'lucide-svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 
 	interface EmailThread {
 		id: string;
@@ -92,33 +93,7 @@
 		loadThreads();
 	}
 
-	/**
-	 * Navigates to the previous page of the email thread list.
-	 *
-	 * Called by: Template (previous-page pagination button click)
-	 * Purpose: Decrements the offset by one page length (clamped to 0) and reloads the
-	 *          thread list so the admin can browse backwards through correspondence history.
-	 *
-	 * @returns void
-	 */
-	function prevPage() {
-		if (offset > 0) { offset = Math.max(0, offset - limit); loadThreads(); }
-	}
-
-	/**
-	 * Navigates to the next page of the email thread list.
-	 *
-	 * Called by: Template (next-page pagination button click)
-	 * Purpose: Increments the offset by one page length when further threads exist and
-	 *          reloads the list to display the following page of results.
-	 *
-	 * @returns void
-	 */
-	function nextPage() {
-		if (offset + limit < total) { offset += limit; loadThreads(); }
-	}
-
-	/**
+/**
 	 * Composes and saves a new outbound email thread as a draft via the API.
 	 *
 	 * Called by: Template ("Erstellen" button click in the compose form)
@@ -162,7 +137,6 @@
 		composeBody = '';
 	}
 
-	let currentPage = $derived(Math.floor(offset / limit) + 1);
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
 </script>
 
@@ -242,11 +216,13 @@
 	</DataTable>
 
 	{#if totalPages > 1}
-		<div class="pagination">
-			<button onclick={prevPage} disabled={offset === 0}><ChevronLeft size={16} /></button>
-			<span>Seite {currentPage} von {totalPages}</span>
-			<button onclick={nextPage} disabled={offset + limit >= total}><ChevronRight size={16} /></button>
-		</div>
+		<PaginationControls
+			page={Math.floor(offset / limit)}
+			total={total}
+			limit={limit}
+			onPrev={() => { offset = Math.max(0, offset - limit); loadThreads(); }}
+			onNext={() => { offset += limit; loadThreads(); }}
+		/>
 	{/if}
 </div>
 

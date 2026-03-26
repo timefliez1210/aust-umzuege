@@ -3,7 +3,8 @@
 	import { apiGet, formatDate, formatEuro } from '$lib/utils/api.svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
-	import { Search, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { Search } from 'lucide-svelte';
+	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 
 	interface Order {
 		id: string;
@@ -91,22 +92,7 @@
 		loadOrders();
 	}
 
-	function prevPage() {
-		if (offset > 0) {
-			offset = Math.max(0, offset - limit);
-			loadOrders();
-		}
-	}
-
-	function nextPage() {
-		if (offset + limit < total) {
-			offset += limit;
-			loadOrders();
-		}
-	}
-
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
-	let currentPage = $derived(Math.floor(offset / limit) + 1);
 
 	function formatBookingDate(order: Order): string {
 		const d = order.booking_date || order.preferred_date;
@@ -196,15 +182,13 @@
 	</DataTable>
 
 	{#if totalPages > 1}
-		<div class="pagination">
-			<button onclick={prevPage} disabled={offset === 0}>
-				<ChevronLeft size={16} />
-			</button>
-			<span>Seite {currentPage} von {totalPages}</span>
-			<button onclick={nextPage} disabled={offset + limit >= total}>
-				<ChevronRight size={16} />
-			</button>
-		</div>
+		<PaginationControls
+			page={Math.floor(offset / limit)}
+			total={total}
+			limit={limit}
+			onPrev={() => { offset = Math.max(0, offset - limit); loadOrders(); }}
+			onNext={() => { offset += limit; loadOrders(); }}
+		/>
 	{/if}
 </div>
 

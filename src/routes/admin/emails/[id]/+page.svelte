@@ -3,6 +3,7 @@
 	import { apiGet, apiPost, apiPatch, formatDateTime } from '$lib/utils/api.svelte';
 	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save } from 'lucide-svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 
 	interface EmailMessage {
 		id: string;
@@ -35,6 +36,9 @@
 	let loading = $state(true);
 	let error = $state('');
 	let actionLoading = $state<string | null>(null);
+	let pendingActionMsgId = $state<string | null>(null);
+	let showSendConfirm = $state(false);
+	let showDiscardConfirm = $state(false);
 
 	// Edit draft state
 	let editingId = $state<string | null>(null);
@@ -85,17 +89,37 @@
 	 * @param msgId - The ID of the draft message to send
 	 * @returns void
 	 */
-	async function sendDraft(msgId: string) {
-		if (!confirm('E-Mail jetzt an den Kunden senden?')) return;
-		actionLoading = msgId;
+	/**
+	 * Opens the send confirmation dialog for the given draft message.
+	 *
+	 * Called by: Template ("Senden" button click on a draft message bubble).
+	 * Purpose: Records which message is pending action and shows the dialog.
+	 *
+	 * @param msgId - The ID of the draft to send
+	 */
+	function confirmSendDraft(msgId: string) {
+		pendingActionMsgId = msgId;
+		showSendConfirm = true;
+	}
+
+	/**
+	 * Sends the pending draft message after confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: POSTs to /messages/{id}/send, reloads the thread on success.
+	 */
+	async function sendDraft() {
+		if (!pendingActionMsgId) return;
+		actionLoading = pendingActionMsgId;
 		try {
-			const res = await apiPost<{ message: string }>(`/api/v1/admin/emails/messages/${msgId}/send`);
+			const res = await apiPost<{ message: string }>(`/api/v1/admin/emails/messages/${pendingActionMsgId}/send`);
 			showToast(res.message, 'success');
 			await loadThread();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
 			actionLoading = null;
+			pendingActionMsgId = null;
 		}
 	}
 
@@ -110,17 +134,37 @@
 	 * @param msgId - The ID of the draft message to discard
 	 * @returns void
 	 */
-	async function discardDraft(msgId: string) {
-		if (!confirm('Entwurf verwerfen?')) return;
-		actionLoading = msgId;
+	/**
+	 * Opens the discard confirmation dialog for the given draft message.
+	 *
+	 * Called by: Template ("Verwerfen" button click on a draft message bubble).
+	 * Purpose: Records which message is pending and shows the dialog.
+	 *
+	 * @param msgId - The ID of the draft to discard
+	 */
+	function confirmDiscardDraft(msgId: string) {
+		pendingActionMsgId = msgId;
+		showDiscardConfirm = true;
+	}
+
+	/**
+	 * Discards the pending draft message after confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: POSTs to /messages/{id}/discard, reloads the thread on success.
+	 */
+	async function discardDraft() {
+		if (!pendingActionMsgId) return;
+		actionLoading = pendingActionMsgId;
 		try {
-			await apiPost(`/api/v1/admin/emails/messages/${msgId}/discard`);
+			await apiPost(`/api/v1/admin/emails/messages/${pendingActionMsgId}/discard`);
 			showToast('Entwurf verworfen', 'success');
 			await loadThread();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
 		} finally {
 			actionLoading = null;
+			pendingActionMsgId = null;
 		}
 	}
 
@@ -310,7 +354,7 @@
 							<div class="draft-actions">
 								<button
 									class="btn btn-send"
-									onclick={() => sendDraft(msg.id)}
+									onclick={() => confirmSendDraft(msg.id)}
 									disabled={actionLoading === msg.id}
 								>
 									<Send size={14} />
@@ -326,7 +370,7 @@
 								</button>
 								<button
 									class="btn btn-discard"
-									onclick={() => discardDraft(msg.id)}
+									onclick={() => confirmDiscardDraft(msg.id)}
 									disabled={actionLoading === msg.id}
 								>
 									<X size={14} />
@@ -392,6 +436,27 @@
 		</div>
 	{/if}
 </div>
+
+<ConfirmationDialog
+	bind:open={showSendConfirm}
+	title="E-Mail senden"
+	message="E-Mail jetzt an den Kunden senden?"
+	confirmLabel="Senden"
+	variant="primary"
+	loading={actionLoading !== null}
+	onConfirm={sendDraft}
+	onCancel={() => { pendingActionMsgId = null; }}
+/>
+
+<ConfirmationDialog
+	bind:open={showDiscardConfirm}
+	title="Entwurf verwerfen"
+	message="Entwurf unwiderruflich verwerfen?"
+	confirmLabel="Verwerfen"
+	loading={actionLoading !== null}
+	onConfirm={discardDraft}
+	onCancel={() => { pendingActionMsgId = null; }}
+/>
 
 <style>
 	.page { max-width: 900px; }

@@ -2,7 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
+	import { Search, Plus } from 'lucide-svelte';
+	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
@@ -98,33 +99,7 @@
 		loadEmployees();
 	}
 
-	/**
-	 * Navigate to previous page.
-	 *
-	 * Called by: Template (prev page button)
-	 * Purpose: Offset-based pagination backward.
-	 */
-	function prevPage() {
-		if (offset >= limit) {
-			offset -= limit;
-			loadEmployees();
-		}
-	}
-
-	/**
-	 * Navigate to next page.
-	 *
-	 * Called by: Template (next page button)
-	 * Purpose: Offset-based pagination forward.
-	 */
-	function nextPage() {
-		if (offset + limit < total) {
-			offset += limit;
-			loadEmployees();
-		}
-	}
-
-	/**
+/**
 	 * Handles month picker change.
 	 *
 	 * Called by: Template (month input onchange)
@@ -332,19 +307,14 @@
 		</table>
 	</div>
 
-	<!-- Pagination -->
 	{#if total > limit}
-		<div class="pagination">
-			<button class="btn btn-sm" onclick={prevPage} disabled={offset === 0}>
-				<ChevronLeft size={16} />
-			</button>
-			<span class="page-info">
-				{offset + 1}–{Math.min(offset + limit, total)} von {total}
-			</span>
-			<button class="btn btn-sm" onclick={nextPage} disabled={offset + limit >= total}>
-				<ChevronRight size={16} />
-			</button>
-		</div>
+		<PaginationControls
+			page={Math.floor(offset / limit)}
+			total={total}
+			limit={limit}
+			onPrev={() => { offset = Math.max(0, offset - limit); loadEmployees(); }}
+			onNext={() => { offset += limit; loadEmployees(); }}
+		/>
 	{/if}
 {/if}
 

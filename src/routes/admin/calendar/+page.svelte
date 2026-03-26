@@ -8,6 +8,7 @@
 	import { ChevronLeft, ChevronRight, X, Save, Trash2, Plus, Check, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CapacityEditor from './_components/CapacityEditor.svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 
 	// ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -249,6 +250,12 @@
 	let inqEditEndTime = $state('');
 	let savingInquiry = $state(false);
 	let deletingInquiry = $state(false);
+	let showDeleteInquiryDialog = $state(false);
+	let showInqRemoveEmpDialog = $state(false);
+	let pendingInqRemoveEmp = $state<{ id: string; name: string } | null>(null);
+	let showDeleteTerminDialog = $state(false);
+	let showTermRemoveEmpDialog = $state(false);
+	let pendingTermRemoveEmp = $state<{ id: string; name: string } | null>(null);
 
 	// Inquiry employee state
 	let inqEmployees = $state<EmployeeAssignment[]>([]);
@@ -944,8 +951,18 @@
 	 */
 	async function deleteInquiry() {
 		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		showDeleteInquiryDialog = true;
+	}
+
+	/**
+	 * Executes the inquiry deletion after dialog confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: DELETEs /api/v1/inquiries/{id}, closes panel and reloads calendar.
+	 */
+	async function confirmDeleteInquiry() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
 		const inq = panelSelection.item;
-		if (!confirm(`Anfrage von "${inq.customer_name}" löschen?`)) return;
 		deletingInquiry = true;
 		try {
 			await apiDelete(`/api/v1/inquiries/${inq.inquiry_id}`);
@@ -1003,15 +1020,28 @@
 	 * @param empId - The employee UUID to remove
 	 * @param name - Employee display name for the confirm dialog
 	 */
-	async function inqRemoveEmp(empId: string, name: string) {
-		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
-		if (!confirm(`${name} aus dieser Anfrage entfernen?`)) return;
+	/**
+	 * Opens the remove-employee confirmation dialog for an inquiry assignment.
+	 *
+	 * Called by: Template (× icon per inquiry employee row).
+	 * Purpose: Records pending removal and shows dialog.
+	 */
+	function confirmInqRemoveEmp(empId: string, name: string) {
+		pendingInqRemoveEmp = { id: empId, name };
+		showInqRemoveEmpDialog = true;
+	}
+
+	async function inqRemoveEmp() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry' || !pendingInqRemoveEmp) return;
+		const empId = pendingInqRemoveEmp.id;
 		const inqId = panelSelection.item.inquiry_id;
 		inqRemovingEmp = { ...inqRemovingEmp, [empId]: true };
 		try {
 			await apiDelete(`/api/v1/inquiries/${inqId}/employees/${empId}`);
 			const res = await apiGet<{ assignments: EmployeeAssignment[] }>(`/api/v1/inquiries/${inqId}/employees`);
 			inqEmployees = res.assignments ?? [];
+			showInqRemoveEmpDialog = false;
+			pendingInqRemoveEmp = null;
 			showToast('Mitarbeiter entfernt', 'success');
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
@@ -1104,8 +1134,18 @@
 	 */
 	async function deleteTermin() {
 		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		showDeleteTerminDialog = true;
+	}
+
+	/**
+	 * Executes the termin deletion after dialog confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: DELETEs /api/v1/admin/calendar-items/{id}, closes panel and reloads.
+	 */
+	async function confirmDeleteTermin() {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
 		const ci = panelSelection.item;
-		if (!confirm(`Termin "${ci.title}" löschen?`)) return;
 		deletingTermin = true;
 		try {
 			await apiDelete(`/api/v1/admin/calendar-items/${ci.id}`);
@@ -1153,23 +1193,28 @@
 	}
 
 	/**
-	 * Removes an employee assignment from the currently selected termin.
+	/**
+	 * Opens the remove-employee dialog for a termin assignment.
 	 *
-	 * Called by: Template (× icon per termin employee row)
-	 * Purpose: DELETEs DELETE /api/v1/admin/calendar-items/{id}/employees/{emp_id}.
-	 *
-	 * @param empId - The employee UUID to remove
-	 * @param name - Display name for confirm dialog
+	 * Called by: Template (× icon per termin employee row).
+	 * Purpose: Records pending removal and shows dialog.
 	 */
-	async function termRemoveEmp(empId: string, name: string) {
-		if (!panelSelection || panelSelection.kind !== 'termin') return;
-		if (!confirm(`${name} aus diesem Termin entfernen?`)) return;
+	function confirmTermRemoveEmp(empId: string, name: string) {
+		pendingTermRemoveEmp = { id: empId, name };
+		showTermRemoveEmpDialog = true;
+	}
+
+	async function termRemoveEmp() {
+		if (!panelSelection || panelSelection.kind !== 'termin' || !pendingTermRemoveEmp) return;
+		const empId = pendingTermRemoveEmp.id;
 		const ciId = panelSelection.item.id;
 		termRemovingEmp = { ...termRemovingEmp, [empId]: true };
 		try {
 			await apiDelete(`/api/v1/admin/calendar-items/${ciId}/employees/${empId}`);
 			const detail = await apiGet<{ employees: EmployeeAssignment[] }>(`/api/v1/admin/calendar-items/${ciId}`);
 			termEmployees = detail.employees ?? [];
+			showTermRemoveEmpDialog = false;
+			pendingTermRemoveEmp = null;
 			showToast('Mitarbeiter entfernt', 'success');
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
@@ -1539,6 +1584,16 @@
 	}
 
 	const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+	/** Returns the inquiry customer name from panelSelection for the delete dialog message. */
+	const pendingDeleteInquiryName = $derived(
+		panelSelection?.kind === 'inquiry' ? (panelSelection.item.customer_name ?? 'diese Anfrage') : ''
+	);
+
+	/** Returns the termin title from panelSelection for the delete dialog message. */
+	const pendingDeleteTerminTitle = $derived(
+		panelSelection?.kind === 'termin' ? panelSelection.item.title : ''
+	);
 </script>
 
 <svelte:window onkeydown={(e) => { if (e.key === 'Escape') { closePanel(); closeContextMenu(); quickCreateMode = null; } }} />
@@ -2056,7 +2111,7 @@
 												</div>
 												<div class="emp-actions">
 													<button class="btn-icon btn-save" onclick={() => inqSaveEmp(emp.employee_id)} disabled={inqSavingEmp[emp.employee_id]} title="Speichern"><Check size={12} /></button>
-													<button class="btn-icon btn-remove" onclick={() => inqRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)} disabled={inqRemovingEmp[emp.employee_id]} title="Entfernen"><X size={12} /></button>
+													<button class="btn-icon btn-remove" onclick={() => confirmInqRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)} disabled={inqRemovingEmp[emp.employee_id]} title="Entfernen"><X size={12} /></button>
 												</div>
 											</div>
 										{/each}
@@ -2234,7 +2289,7 @@
 												</div>
 												<div class="emp-actions">
 													<button class="btn-icon btn-save" onclick={() => termSaveEmp(emp.employee_id)} disabled={termSavingEmp[emp.employee_id]} title="Speichern"><Check size={12} /></button>
-													<button class="btn-icon btn-remove" onclick={() => termRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)} disabled={termRemovingEmp[emp.employee_id]} title="Entfernen"><X size={12} /></button>
+													<button class="btn-icon btn-remove" onclick={() => confirmTermRemoveEmp(emp.employee_id, `${emp.first_name} ${emp.last_name}`)} disabled={termRemovingEmp[emp.employee_id]} title="Entfernen"><X size={12} /></button>
 												</div>
 											</div>
 										{/each}
@@ -3663,3 +3718,39 @@
 	.fab-item:hover { background: var(--dt-surface-container-low); }
 	.fab-item-icon { font-size: 1.1rem; }
 </style>
+
+<ConfirmationDialog
+	bind:open={showDeleteInquiryDialog}
+	title="Anfrage löschen"
+	message={`Anfrage von „${pendingDeleteInquiryName}" löschen?`}
+	confirmLabel="Löschen"
+	loading={deletingInquiry}
+	onConfirm={confirmDeleteInquiry}
+/>
+
+<ConfirmationDialog
+	bind:open={showInqRemoveEmpDialog}
+	title="Mitarbeiter entfernen"
+	message={pendingInqRemoveEmp ? `${pendingInqRemoveEmp.name} aus dieser Anfrage entfernen?` : ''}
+	confirmLabel="Entfernen"
+	onConfirm={inqRemoveEmp}
+	onCancel={() => { pendingInqRemoveEmp = null; }}
+/>
+
+<ConfirmationDialog
+	bind:open={showDeleteTerminDialog}
+	title="Termin löschen"
+	message={`Termin „${pendingDeleteTerminTitle}" löschen?`}
+	confirmLabel="Löschen"
+	loading={deletingTermin}
+	onConfirm={confirmDeleteTermin}
+/>
+
+<ConfirmationDialog
+	bind:open={showTermRemoveEmpDialog}
+	title="Mitarbeiter entfernen"
+	message={pendingTermRemoveEmp ? `${pendingTermRemoveEmp.name} aus diesem Termin entfernen?` : ''}
+	confirmLabel="Entfernen"
+	onConfirm={termRemoveEmp}
+	onCancel={() => { pendingTermRemoveEmp = null; }}
+/>

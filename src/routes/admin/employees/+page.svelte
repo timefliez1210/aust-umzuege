@@ -272,7 +272,7 @@
 					{@const util = utilization(emp)}
 					<tr class="clickable-row" onclick={() => goto(`/admin/employees/${emp.id}`)}>
 						<td>
-							{#if emp.salutation}{emp.salutation} {/if}{emp.first_name} {emp.last_name}
+							{emp.salutation ? emp.salutation + ' ' : ''}{emp.first_name} {emp.last_name}
 						</td>
 						<td>{emp.email}</td>
 						<td>{emp.phone ?? '—'}</td>

@@ -2192,4 +2192,41 @@
 	}
 	.fab-item:hover { background: var(--dt-surface-container-low); }
 	.fab-item-icon { font-size: 1.1rem; }
+
+	/* ─── Holidays & school breaks ─────────────────────────────────────────────── */
+	.cal-cell.school-holiday,
+	.week-cell.school-holiday { background: linear-gradient(135deg, #fffbeb, #fef9c3); }
+	.holiday-badge {
+		display: inline-block;
+		font-size: 0.6rem;
+		font-weight: 600;
+		color: #92400e;
+		background: #fef3c7;
+		border-radius: 3px;
+		padding: 0 4px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 100%;
+	}
+	.school-holiday-label {
+		font-size: 0.6rem;
+		color: #92400e;
+		opacity: 0.85;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		padding: 0 2px 2px;
+	}
+	.holiday-legend {
+		display: flex;
+		gap: 16px;
+		padding: 6px 4px 2px;
+		font-size: 0.7rem;
+		color: var(--dt-on-surface-variant);
+	}
+	.legend-item { display: flex; align-items: center; gap: 5px; }
+	.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+	.legend-public { background: #fef3c7; }
+	.legend-school { background: #fffbeb; }
 </style>

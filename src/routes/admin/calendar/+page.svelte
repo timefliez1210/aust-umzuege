@@ -469,10 +469,24 @@
 				to = dayViewDate;
 				itemMonths = [dayViewDate.slice(0, 7)];
 			} else {
-				from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-				const lastDay = new Date(year, month + 1, 0).getDate();
-				to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-				itemMonths = [`${year}-${String(month + 1).padStart(2, '0')}`];
+				const pad = (n: number) => String(n).padStart(2, '0');
+				// Extend fetch range to cover the full grid (including overflow days from adjacent months)
+				const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Monday=0
+				const daysInMonth = new Date(year, month + 1, 0).getDate();
+				const trailing = (7 - ((firstDow + daysInMonth) % 7)) % 7;
+				const gridStart = new Date(year, month, 1 - firstDow);
+				const gridEnd = new Date(year, month + 1, trailing);
+				from = `${gridStart.getFullYear()}-${pad(gridStart.getMonth() + 1)}-${pad(gridStart.getDate())}`;
+				to = `${gridEnd.getFullYear()}-${pad(gridEnd.getMonth() + 1)}-${pad(gridEnd.getDate())}`;
+				itemMonths = [`${year}-${pad(month + 1)}`];
+				if (firstDow > 0) {
+					const prevYM = `${gridStart.getFullYear()}-${pad(gridStart.getMonth() + 1)}`;
+					if (!itemMonths.includes(prevYM)) itemMonths.unshift(prevYM);
+				}
+				if (trailing > 0) {
+					const nextYM = `${gridEnd.getFullYear()}-${pad(gridEnd.getMonth() + 1)}`;
+					if (!itemMonths.includes(nextYM)) itemMonths.push(nextYM);
+				}
 			}
 			const schedRes = await apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`);
 			schedule = Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? []);

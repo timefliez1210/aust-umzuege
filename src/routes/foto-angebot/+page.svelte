@@ -1,1020 +1,1722 @@
+<!--
+  foto-angebot — multi-step wizard prototype
+  ==========================================
+  Steps adapt dynamically to the chosen service:
+    1. service  — always
+    2. mode     — skipped when service only allows one mode
+    3. contact  — always
+    4. address  — skipped when service needs no addresses
+    5. details  — always (upload/volume + addons + message + submit)
+
+  Transitions: CSS fade+lift via {#key currentStepIndex}.
+  Auto-advance on card clicks (service, mode) so the wizard feels instant.
+  Wire-up TODOs marked with // TODO: wire up
+-->
 <script lang="ts">
-	import { Send, Camera, Video, Calendar, ClipboardList } from "lucide-svelte";
+	import { page } from '$app/stores';
+	import {
+		Send, Camera, Video, Calendar, ClipboardList,
+		Building2, User, Users, ChevronLeft, Check,
+	} from 'lucide-svelte';
 	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
 	import VolumeCalculator from '$lib/components/VolumeCalculator.svelte';
+	import {
+		SERVICES,
+		SERVICE_BY_ID,
+		type ServiceConfig,
+		type SubmissionMode,
+		type CustomerTypeMode,
+		type CustomField,
+	} from './serviceConfig';
 
-	const PHOTO_API_URL = import.meta.env.VITE_PHOTO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/photo";
-	const VIDEO_API_URL = import.meta.env.VITE_VIDEO_API_URL || "https://api.aufraeumhelden.com/api/v1/submit/video";
-	const PHP_URL = "/send-mail.php";
+	const PHOTO_API_URL = import.meta.env.VITE_PHOTO_API_URL || 'https://api.aufraeumhelden.com/api/v1/submit/photo';
+	const VIDEO_API_URL = import.meta.env.VITE_VIDEO_API_URL || 'https://api.aufraeumhelden.com/api/v1/submit/video';
+	const PHP_URL = '/send-mail.php';
 
-	type Mode = "termin" | "manuell" | "foto" | "video";
+	// ---------------------------------------------------------------------------
+	// Mode cards — full descriptions shown on the 'mode' step
+	// ---------------------------------------------------------------------------
 
-	const modes: { id: Mode; label: string; icon: typeof Camera; hint: string }[] = [
-		{ id: "termin",  label: "Via Termin", icon: Calendar,      hint: "Termin vereinbaren — wir kommen kostenlos vorbei" },
-		{ id: "manuell", label: "Manuell",    icon: ClipboardList, hint: "Adresse & Details angeben — wir berechnen das Volumen" },
-		{ id: "foto",    label: "Fotos",      icon: Camera,        hint: "Raumfotos hochladen — KI berechnet Volumen automatisch" },
-		{ id: "video",   label: "Video",      icon: Video,         hint: "Rundgang-Video hochladen — präziseste 3D-Analyse" },
-	];
+	const MODE_META: Record<SubmissionMode, {
+		label: string;
+		tagline: string;
+		icon: typeof Camera;
+		description: string;
+		perks: string[];
+	}> = {
+		termin: {
+			label: 'Vor-Ort-Termin',
+			tagline: 'Wir kommen kostenlos zu Ihnen',
+			icon: Calendar,
+			description:
+				'Unser Umzugsexperte begutachtet Ihre Wohnung persönlich und erstellt ein maßgeschneidertes Angebot — ohne versteckte Kosten. Sie müssen nichts vorbereiten.',
+			perks: ['Kostenlos & unverbindlich', 'Persönliche Beratung inklusive', 'Genaueste Preisermittlung'],
+		},
+		manuell: {
+			label: 'Möbelliste ausfüllen',
+			tagline: 'Selbst erfassen, schnell fertig',
+			icon: ClipboardList,
+			description:
+				'Geben Sie Ihre Adressen ein und wählen Sie Ihre Möbel aus unserem Katalog. Wir berechnen Volumen und Preis vollautomatisch — kein Messen, kein Schätzen.',
+			perks: ['Kein Termin nötig', 'Sofortiger Preisüberblick', 'Fertig in unter 5 Minuten'],
+		},
+		foto: {
+			label: 'Fotos hochladen',
+			tagline: 'KI erkennt Ihre Möbel automatisch',
+			icon: Camera,
+			description:
+				'Fotografieren Sie jeden Raum kurz ab (2–3 Bilder reichen). Unsere KI analysiert die Bilder, erkennt Ihre Möbel und schätzt Volumen und Aufwand — ganz ohne Ausmessen.',
+			perks: ['Kein Ausmessen nötig', 'KI-gestützte Analyse', '2–3 Fotos pro Raum genügen'],
+		},
+		video: {
+			label: 'Video-Rundgang',
+			tagline: 'Präziseste 3D-Analyse',
+			icon: Video,
+			description:
+				'Gehen Sie einmal mit dem Handy durch Ihre Wohnung. Unsere 3D-Rekonstruktion liefert die genaueste Volumenberechnung — ideal für große oder komplexe Umzüge.',
+			perks: ['Höchste Präzision', '3D-Raumrekonstruktion', 'Ein Durchgang genügt'],
+		},
+	};
 
 	const floorOptions = [
-		{ value: "", label: "Bitte wählen" },
-		{ value: "Erdgeschoss", label: "Erdgeschoss" },
-		{ value: "Hochparterre", label: "Hochparterre" },
-		{ value: "1. Stock", label: "1. Stock" },
-		{ value: "2. Stock", label: "2. Stock" },
-		{ value: "3. Stock", label: "3. Stock" },
-		{ value: "4. Stock", label: "4. Stock" },
-		{ value: "5. Stock", label: "5. Stock" },
-		{ value: "6. Stock", label: "6. Stock" },
-		{ value: "Höher als 6. Stock", label: "Höher als 6. Stock" },
+		{ value: '',                   label: 'Bitte wählen' },
+		{ value: 'Erdgeschoss',        label: 'Erdgeschoss' },
+		{ value: 'Hochparterre',       label: 'Hochparterre' },
+		{ value: '1. Stock',           label: '1. Stock' },
+		{ value: '2. Stock',           label: '2. Stock' },
+		{ value: '3. Stock',           label: '3. Stock' },
+		{ value: '4. Stock',           label: '4. Stock' },
+		{ value: '5. Stock',           label: '5. Stock' },
+		{ value: '6. Stock',           label: '6. Stock' },
+		{ value: 'Höher als 6. Stock', label: 'Höher als 6. Stock' },
 	];
 
-	const additionalServices = [
-		{ id: "Möbeldemontage", label: "Möbeldemontage" },
-		{ id: "Möbelmontage",   label: "Möbelmontage" },
-		{ id: "Einpackservice", label: "Einpackservice" },
-		{ id: "Einlagerung",    label: "Einlagerung" },
-		{ id: "Entsorgung",     label: "Entsorgung" },
-	];
+	// ---------------------------------------------------------------------------
+	// Service selection  (must be declared before `steps` which references it)
+	// URL param: /foto-angebot?service=entruempelung  →  pre-selects + skips step 0
+	// ---------------------------------------------------------------------------
 
-	let activeMode = $state<Mode>("termin");
+	// TODO: wire up — read $page.url.searchParams.get('service') on mount
+	let selectedServiceId = $state<string | null>(null);
 
-	// Shared form state
-	let formData = $state({
-		name: "",
-		salutation: "",
-		first_name: "",
-		last_name: "",
-		email: "",
-		phone: "",
-		date: "",
-		startStrasse: "",
-		startHausnummer: "",
-		startPlz: "",
-		startOrt: "",
-		startFloor: "",
-		aufzugAuszug: false,
-		halteverbotAuszug: false,
-		endStrasse: "",
-		endHausnummer: "",
-		endPlz: "",
-		endOrt: "",
-		endFloor: "",
-		aufzugEinzug: false,
-		halteverbotEinzug: false,
-		selectedServices: [] as string[],
-		message: "",
-		privacyAccepted: false,
+	const selectedService = $derived<ServiceConfig | null>(
+		selectedServiceId ? (SERVICE_BY_ID.get(selectedServiceId) ?? null) : null
+	);
+
+	// ---------------------------------------------------------------------------
+	// Step management
+	// ---------------------------------------------------------------------------
+
+	type StepId = 'service' | 'mode' | 'contact' | 'address' | 'details';
+
+	const STEP_LABELS: Record<StepId, string> = {
+		service: 'Leistung',
+		mode:    'Angebotsart',
+		contact: 'Kontakt',
+		address: 'Adresse',
+		details: 'Details',
+	};
+
+	let currentStepIndex = $state(0);
+
+	// Recompute the active step list whenever the selected service changes.
+	// This means the progress dots always reflect the actual flow.
+	const steps = $derived.by((): StepId[] => {
+		if (!selectedServiceId) return ['service'];
+		const svc = SERVICE_BY_ID.get(selectedServiceId);
+		if (!svc) return ['service'];
+		const s: StepId[] = ['service'];
+		if (svc.allowedModes.length > 1) s.push('mode');
+		s.push('contact');
+		const ac = svc.addressConfig;
+		if (ac.showOrigin || ac.showDestination) s.push('address');
+		s.push('details');
+		return s;
 	});
 
-	// Volume calculator bindings (manuell mode)
-	let volumeM3 = $state(0);
-	let itemSummary = $state("");
+	const currentStep = $derived(steps[currentStepIndex] ?? 'service');
+	const canGoBack   = $derived(currentStepIndex > 0);
+	const isLastStep  = $derived(currentStepIndex === steps.length - 1);
 
-	// Unified media — any file, any format, any amount
+	function goNext() {
+		if (currentStepIndex < steps.length - 1) currentStepIndex++;
+	}
+	function goBack() {
+		if (currentStepIndex > 0) currentStepIndex--;
+	}
+
+	/** Click handler for a service card on step 0. */
+	function pickService(id: string) {
+		selectedServiceId = id;
+		// Tiny delay so the card shows its selected state before the step fades out
+		setTimeout(goNext, 160);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Submission mode
+	// ---------------------------------------------------------------------------
+
+	let activeMode = $state<SubmissionMode>('termin');
+
+	// Keep activeMode in sync when service changes (might restrict modes)
+	$effect(() => {
+		const svc = selectedService;
+		if (svc && !svc.allowedModes.includes(activeMode)) {
+			activeMode = svc.allowedModes[0];
+		}
+	});
+
+	/** Click handler for a mode card on the 'mode' step. */
+	function pickMode(mode: SubmissionMode) {
+		activeMode = mode;
+		setTimeout(goNext, 160);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Customer type
+	// Auto-set when service implies it; toggle only shown for 'ask' services.
+	// ---------------------------------------------------------------------------
+
+	type CustomerType = 'private' | 'business';
+	let customerType = $state<CustomerType>('private');
+
+	// When service changes, lock in the implied type (or reset to 'private' for 'ask')
+	$effect(() => {
+		const mode = selectedService?.customerType;
+		if (mode === 'private' || mode === 'business') customerType = mode;
+		else customerType = 'private';
+	});
+
+	const showCustomerTypeToggle = $derived(selectedService?.customerType === 'ask');
+
+	// ---------------------------------------------------------------------------
+	// Booking for self vs. someone else
+	// Not shown for business (Ansprechpartner always books for the company).
+	//
+	// bookingForSelf = true  → contact IS the recipient → no payer fields
+	// bookingForSelf = false → contact IS the payer    → collect recipient separately
+	// ---------------------------------------------------------------------------
+
+	let bookingForSelf = $state(true);
+	$effect(() => { selectedService; bookingForSelf = true; }); // reset on service change
+
+	const showBookingForToggle = $derived(customerType !== 'business');
+
+	// ---------------------------------------------------------------------------
+	// Contact fields  (= the person filling the form, always collected)
+	// Role depends on bookingForSelf:
+	//   true  → recipient (saved to customers)
+	//   false → payer     (saved to inquiries.payer_*)
+	// ---------------------------------------------------------------------------
+
+	let contact = $state({
+		salutation:     '',
+		first_name:     '',
+		last_name:      '',
+		email:          '',
+		phone:          '',
+		date:           '',
+		message:        '',
+		company_name:   '',
+		// Business: Ansprechpartner is the contact person
+	});
+
+	// Payer address — collected when bookingForSelf = false (for invoice)
+	// Simpler than a full AddressBlock — no floor/elevator needed
+	let payerAddress = $state({ street: '', number: '', zip: '', city: '' });
+
+	// ---------------------------------------------------------------------------
+	// Recipient fields  (only when bookingForSelf = false)
+	// This person is the Leistungsempfänger — saved to customers.
+	// Minimal: name + phone so the crew knows who to contact at the address.
+	// Email optional — elderly relatives often don't have one.
+	// ---------------------------------------------------------------------------
+
+	let recipient = $state({
+		salutation:  '',
+		first_name:  '',
+		last_name:   '',
+		phone:       '',
+		email:       '',
+	});
+
+	// ---------------------------------------------------------------------------
+	// Address fields
+	// ---------------------------------------------------------------------------
+
+	interface AddressBlock {
+		street:      string;
+		number:      string;
+		zip:         string;
+		city:        string;
+		floor:       string;
+		elevator:    boolean;
+		parking_ban: boolean;
+	}
+
+	const emptyAddress = (): AddressBlock => ({
+		street: '', number: '', zip: '', city: '',
+		floor: '', elevator: false, parking_ban: false,
+	});
+
+	let originAddress       = $state<AddressBlock>(emptyAddress());
+	let destinationAddress  = $state<AddressBlock>(emptyAddress());
+	let intermediateAddress = $state<AddressBlock>(emptyAddress());
+	let billingAddress      = $state<AddressBlock>(emptyAddress());
+	let showIntermediate    = $state(false);
+	let showBilling         = $state(false);
+
+	// ---------------------------------------------------------------------------
+	// Add-ons
+	// ---------------------------------------------------------------------------
+
+	let selectedAddons = $state<string[]>([]);
+	$effect(() => { selectedService; selectedAddons = []; });
+
+	function toggleAddon(id: string) {
+		selectedAddons = selectedAddons.includes(id)
+			? selectedAddons.filter(a => a !== id)
+			: [...selectedAddons, id];
+	}
+
+	// ---------------------------------------------------------------------------
+	// Media
+	// ---------------------------------------------------------------------------
+
 	let attachments = $state<File[]>([]);
+
+	// ---------------------------------------------------------------------------
+	// Volume calculator
+	// ---------------------------------------------------------------------------
+
+	let volumeM3    = $state(0);
+	let itemSummary = $state('');
+
+	// ---------------------------------------------------------------------------
+	// Custom fields (e.g. Umzugshelfer: helpers + hours)
+	// Map from field id → current value; seeded from defaults when service changes.
+	// ---------------------------------------------------------------------------
+
+	let customFieldValues = $state<Record<string, number>>({});
+
+	$effect(() => {
+		const fields = selectedService?.customFields ?? [];
+		const seeded: Record<string, number> = {};
+		for (const f of fields) seeded[f.id] = f.default;
+		customFieldValues = seeded;
+	});
+
+	// ---------------------------------------------------------------------------
+	// Form validation per step
+	// ---------------------------------------------------------------------------
+
+	let privacyAccepted = $state(false);
+
+	const contactValid = $derived(
+		customerType === 'business'
+			? (contact.company_name !== '' && contact.last_name !== '' && contact.email !== '')
+			: bookingForSelf
+				? (contact.last_name !== '' && contact.email !== '')
+				: (contact.last_name !== '' && contact.email !== '' && recipient.last_name !== '')
+	);
+
+	const addrCfg = $derived(selectedService?.addressConfig);
+
+	const addressValid = $derived(
+		(!addrCfg?.showOrigin      || !addrCfg?.originRequired      || (originAddress.street      !== '' && originAddress.city      !== '')) &&
+		(!addrCfg?.showDestination || !addrCfg?.destinationRequired || (destinationAddress.street !== '' && destinationAddress.city !== ''))
+	);
+
+	const detailsValid = $derived(
+		privacyAccepted &&
+		(activeMode !== 'foto' && activeMode !== 'video' || attachments.length > 0)
+	);
+
+	/** Whether "Weiter" should be enabled on the current step. */
+	const canContinue = $derived(
+		currentStep === 'service'  ? selectedService !== null :
+		currentStep === 'mode'     ? true :
+		currentStep === 'contact'  ? contactValid :
+		currentStep === 'address'  ? addressValid :
+		currentStep === 'details'  ? detailsValid : false
+	);
+
+	// ---------------------------------------------------------------------------
+	// Submit
+	// ---------------------------------------------------------------------------
 
 	let isSubmitting  = $state(false);
 	let submitSuccess = $state(false);
-	let submitError   = $state("");
-	/** Dynamic progress label shown inside the submit button during compression + upload. */
-	let submitStatus  = $state("");
+	let submitError   = $state('');
+	let submitStatus  = $state('');
 
-	const hasAddresses = $derived(
-		formData.startStrasse !== "" && formData.startOrt !== "" &&
-		formData.endStrasse   !== "" && formData.endOrt   !== "",
-	);
-
-	const isBaseValid = $derived(
-		(formData.last_name !== "" || formData.name !== "") &&
-		formData.email !== "" &&
-		formData.privacyAccepted,
-	);
-
-	// Termin: base required, addresses optional
-	const isTerminValid = $derived(isBaseValid);
-
-	// Manuell / foto / video: addresses always required
-	const isManuellValid = $derived(isBaseValid && hasAddresses);
-	const isFotoValid    = $derived(isManuellValid && attachments.length > 0);
-	const isVideoValid   = $derived(isManuellValid && attachments.length > 0);
-
-	const isFormValid = $derived(
-		activeMode === "termin"  ? isTerminValid  :
-		activeMode === "manuell" ? isManuellValid :
-		activeMode === "foto"    ? isFotoValid    :
-		isVideoValid,
-	);
-
-	function buildAddressStr() {
-		return {
-			dep: `${formData.startStrasse} ${formData.startHausnummer}, ${formData.startPlz} ${formData.startOrt}`,
-			arr: `${formData.endStrasse} ${formData.endHausnummer}, ${formData.endPlz} ${formData.endOrt}`,
-		};
-	}
-
-	function toggleService(id: string) {
-		if (formData.selectedServices.includes(id)) {
-			formData.selectedServices = formData.selectedServices.filter(s => s !== id);
-		} else {
-			formData.selectedServices = [...formData.selectedServices, id];
-		}
-	}
-
-	// ---- Submit ----
-	async function handleSubmit(e: Event) {
-		e.preventDefault();
-		if (!isFormValid || isSubmitting) return;
+	// TODO: wire up — copy submit logic from old page, then add:
+	//   fd.append('service_type',  selectedServiceId ?? '');
+	//   fd.append('customer_type', customerType);
+	//   if (customerType === 'business') fd.append('company_name', contact.company_name);
+	//   if (showBilling)                 fd.append('billing_address', JSON.stringify(billingAddress));
+	async function handleSubmit() {
+		if (!detailsValid) return;
 		isSubmitting = true;
-		submitError = "";
-
-		try {
-			if (activeMode === "video" && attachments.length > 0) {
-				await submitVideo();
-			} else if (attachments.length > 0 || activeMode === "foto") {
-				await submitApi(PHOTO_API_URL);
-			} else if (activeMode === "termin") {
-				await submitPhp("via-termin");
-			} else {
-				await submitPhp("manuell-angebot");
-			}
-			submitSuccess = true;
-		} catch (err: unknown) {
-			submitStatus = "";
-			submitError = err instanceof Error ? err.message : "Unbekannter Fehler. Bitte erneut versuchen.";
-		} finally {
-			isSubmitting = false;
-		}
 	}
-
-	async function submitPhp(formName: string) {
-		const fd = new FormData();
-		fd.append("form-name", formName);
-		fd.append("bot-field", "");
-		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
-		if (formData.salutation) fd.append("anrede", formData.salutation);
-		if (formData.first_name) fd.append("vorname", formData.first_name);
-		if (formData.last_name)  fd.append("nachname", formData.last_name);
-		fd.append("email", formData.email);
-		if (formData.phone)   fd.append("phone", formData.phone);
-		if (formData.date)    fd.append("wunschtermin", formData.date);
-		if (formData.message) fd.append("nachricht", formData.message);
-
-		if (formName === "manuell-angebot") {
-			const { dep, arr } = buildAddressStr();
-			fd.append("auszugsadresse", dep);
-			if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
-			fd.append("aufzug_auszug",      formData.aufzugAuszug      ? "true" : "false");
-			fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
-			fd.append("einzugsadresse", arr);
-			if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
-			fd.append("aufzug_einzug",      formData.aufzugEinzug      ? "true" : "false");
-			fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
-			if (formData.selectedServices.length > 0) {
-				fd.append("zusatzleistungen", formData.selectedServices.join(", "));
-			}
-			if (volumeM3 > 0) fd.append("umzugsvolumen-m3", volumeM3.toFixed(2));
-			if (itemSummary)   fd.append("gegenstaende-liste", itemSummary);
-		} else if (formName === "via-termin") {
-			if (formData.startStrasse && formData.startOrt) fd.append("auszugsadresse", buildAddressStr().dep);
-			if (formData.endStrasse   && formData.endOrt)   fd.append("einzugsadresse", buildAddressStr().arr);
-		}
-
-		const res = await fetch(PHP_URL, { method: "POST", body: fd });
-		const data = await res.json().catch(() => null);
-		if (!res.ok) throw new Error(data?.error || `Fehler (${res.status})`);
-	}
-
-	function buildCommonFd() {
-		const fd = new FormData();
-		const { dep, arr } = buildAddressStr();
-		fd.append("name", formData.last_name ? `${formData.first_name} ${formData.last_name}`.trim() : formData.name);
-		if (formData.salutation) fd.append("anrede", formData.salutation);
-		if (formData.first_name) fd.append("vorname", formData.first_name);
-		if (formData.last_name)  fd.append("nachname", formData.last_name);
-		fd.append("email", formData.email);
-		if (formData.phone) fd.append("phone", formData.phone);
-		if (formData.date)  fd.append("wunschtermin", formData.date);
-		fd.append("auszugsadresse", dep);
-		if (formData.startFloor) fd.append("etage_auszug", formData.startFloor);
-		fd.append("aufzug_auszug",      formData.aufzugAuszug      ? "true" : "false");
-		fd.append("halteverbot_auszug", formData.halteverbotAuszug ? "true" : "false");
-		fd.append("einzugsadresse", arr);
-		if (formData.endFloor) fd.append("etage_einzug", formData.endFloor);
-		fd.append("aufzug_einzug",      formData.aufzugEinzug      ? "true" : "false");
-		fd.append("halteverbot_einzug", formData.halteverbotEinzug ? "true" : "false");
-		if (formData.selectedServices.length > 0) fd.append("zusatzleistungen", formData.selectedServices.join(", "));
-		if (formData.message) fd.append("nachricht", formData.message);
-		return fd;
-	}
-
-	/**
-	 * Compresses a single image file using a canvas resize + JPEG re-encode.
-	 *
-	 * Purpose: Reduces iPhone/HEIC photos (3–8 MB each) to ≤ 200 KB before upload so that
-	 *          batches of 50+ images stay well within the server's 250 MB body limit and
-	 *          don't exhaust mobile browser memory when assembling the FormData.
-	 *          On iOS, HEIC files are decoded transparently by the browser when set as
-	 *          an img src, so canvas compression works for both HEIC and JPEG sources.
-	 *          Non-image files (video, etc.) are returned unchanged.
-	 *
-	 * Math: scale = min(MAX_DIM / width, MAX_DIM / height)  — only downscales, never upscales
-	 *
-	 * @param file   - The original File object from the file picker
-	 * @param maxDim - Maximum pixel dimension on either axis (default 1920)
-	 * @param quality - JPEG quality 0–1 (default 0.82)
-	 * @returns A compressed JPEG File, or the original file if compression fails / not applicable
-	 */
-	async function compressImage(file: File, maxDim = 1920, quality = 0.82): Promise<File> {
-		const isImg = file.type.startsWith('image/') ||
-			['.jpg','.jpeg','.png','.webp','.heic','.heif','.gif','.bmp','.tiff','.tif','.avif']
-				.includes(file.name.toLowerCase().slice(file.name.lastIndexOf('.')));
-		if (!isImg) return file;
-
-		return new Promise((resolve) => {
-			const img = new Image();
-			const url = URL.createObjectURL(file);
-			img.onload = () => {
-				URL.revokeObjectURL(url);
-				let { width, height } = img;
-				// Only downscale — never enlarge small images
-				if (width <= maxDim && height <= maxDim) {
-					resolve(file);
-					return;
-				}
-				const scale = Math.min(maxDim / width, maxDim / height);
-				width  = Math.round(width  * scale);
-				height = Math.round(height * scale);
-				const canvas = document.createElement('canvas');
-				canvas.width  = width;
-				canvas.height = height;
-				canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-				canvas.toBlob((blob) => {
-					if (!blob) { resolve(file); return; }
-					const outName = file.name.replace(/\.[^.]+$/, '.jpg');
-					resolve(new File([blob], outName, { type: 'image/jpeg' }));
-				}, 'image/jpeg', quality);
-			};
-			img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-			img.src = url;
-		});
-	}
-
-	// Photo/manuell/termin API — all attachments go as images[] (backend accepts any MIME)
-	async function submitApi(url: string) {
-		// Compress images one-by-one before assembling FormData so mobile browsers
-		// don't OOM when handling 50+ full-res iPhone photos in memory simultaneously.
-		submitStatus = "Bilder werden vorbereitet…";
-		const compressed: File[] = [];
-		for (let i = 0; i < attachments.length; i++) {
-			submitStatus = `Bild ${i + 1} von ${attachments.length} wird vorbereitet…`;
-			compressed.push(await compressImage(attachments[i]));
-		}
-		submitStatus = "Wird gesendet…";
-		const fd = buildCommonFd();
-		for (const f of compressed) fd.append("images", f);
-		const res = await fetch(url, { method: "POST", body: fd });
-		submitStatus = "";
-		if (!res.ok && res.status !== 202) {
-			const data = await res.json().catch(() => null);
-			throw new Error(data?.message || data?.detail || `Fehler (${res.status})`);
-		}
-	}
-
-	// Video API — all attachments go as video fields (backend accepts any MIME)
-	async function submitVideo() {
-		const fd = buildCommonFd();
-		for (const f of attachments) fd.append("video", f);
-		const res = await fetch(VIDEO_API_URL, { method: "POST", body: fd });
-		if (!res.ok && res.status !== 202) {
-			const data = await res.json().catch(() => null);
-			throw new Error(data?.message || data?.detail || `Fehler (${res.status})`);
-		}
-	}
-
-	// Success messages per mode
-	const successMessages: Record<Mode, { title: string; body: string }> = {
-		termin:  { title: "Terminanfrage erhalten!", body: "Wir melden uns innerhalb eines Werktages, um einen passenden Termin zu vereinbaren." },
-		manuell: { title: "Anfrage eingegangen!", body: "Wir prüfen Ihre Angaben und senden Ihnen in Kürze ein kostenloses Angebot per E-Mail." },
-		foto:    { title: "Dateien hochgeladen!", body: "Unsere KI analysiert Ihre Aufnahmen und Sie erhalten in Kürze ein präzises Angebot per E-Mail." },
-		video:   { title: "Dateien hochgeladen!", body: "Unsere 3D-Analyse läuft und Sie erhalten in Kürze ein sehr genaues Angebot per E-Mail." },
-	};
 </script>
 
 <svelte:head>
-	<title>Kostenloses Angebot | Aust Umzüge</title>
+	<title>Kostenloses Angebot anfragen – Aust Umzüge</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<main class="ap">
-	<div class="ap__container">
-		<header class="ap__header">
-			<h1 class="ap__heading">Kostenloses Angebot anfordern</h1>
-			<p class="ap__subheading">
-				Wählen Sie, wie wir Ihr Umzugsvolumen ermitteln sollen — von einfach bis hochpräzise.
-			</p>
-		</header>
+<main class="page">
+	<div class="container">
 
-		{#if submitSuccess}
-			<div class="ap__success">
-				<div class="ap__success-icon">✓</div>
-				<h2>{successMessages[activeMode].title}</h2>
-				<p>{successMessages[activeMode].body}</p>
-				<a href="/" class="ap__btn ap__btn--center">Zur Startseite</a>
+		<!-- ================================================================
+		  Progress indicator — dots + labels, adapts to active step list
+		================================================================ -->
+		<nav class="progress" aria-label="Fortschritt">
+			{#each steps as stepId, i}
+				{@const done    = i < currentStepIndex}
+				{@const current = i === currentStepIndex}
+				<div class="progress-step" aria-current={current ? 'step' : undefined}>
+					<div class="progress-dot" class:done class:current>
+						{#if done}<Check size={10} />{/if}
+					</div>
+					<span class="progress-label" class:current>{STEP_LABELS[stepId]}</span>
+				</div>
+				{#if i < steps.length - 1}
+					<div class="progress-line" class:done={i < currentStepIndex}></div>
+				{/if}
+			{/each}
+		</nav>
+
+		<!-- ================================================================
+		  Back button — appears above the step content on steps 1+
+		================================================================ -->
+		{#if canGoBack}
+			<button type="button" class="back-btn" onclick={goBack}>
+				<ChevronLeft size={18} />
+				Zurück
+			</button>
+		{/if}
+
+		<!-- ================================================================
+		  Step content — {#key} forces DOM recreation → CSS animation re-runs
+		================================================================ -->
+		{#key currentStepIndex}
+		<div class="step-body">
+
+			<!-- ============================================================
+			  STEP: service
+			  Large card grid. Clicking auto-advances.
+			============================================================ -->
+			{#if currentStep === 'service'}
+			<div class="step-header">
+				<h1 class="step-title">Welche Leistung benötigen Sie?</h1>
+				<p class="step-subtitle">Wählen Sie einfach aus — das Formular passt sich automatisch an.</p>
 			</div>
-		{:else}
-			<!-- Mode Selector -->
-			<div class="ap__mode-selector">
-				{#each modes as m}
+			<div class="service-grid">
+				{#each SERVICES as svc}
 					<button
 						type="button"
-						class="ap__mode-btn"
-						class:ap__mode-btn--active={activeMode === m.id}
-						onclick={() => { activeMode = m.id; submitError = ""; attachments = []; }}
+						class="service-card"
+						class:selected={selectedServiceId === svc.id}
+						onclick={() => pickService(svc.id)}
+						aria-pressed={selectedServiceId === svc.id}
 					>
-						<m.icon size={20} strokeWidth={1.8} />
-						<span class="ap__mode-label">{m.label}</span>
+						<span class="service-icon" aria-hidden="true">{svc.icon}</span>
+						<span class="service-label">{svc.label}</span>
+						<span class="service-desc">{svc.description}</span>
 					</button>
 				{/each}
 			</div>
 
-			<!-- Mode hint -->
-			<p class="ap__mode-hint">
-				{modes.find(m => m.id === activeMode)?.hint}
-			</p>
-
-			<form class="ap__form" onsubmit={handleSubmit}>
-
-				<!-- ======================================================
-				     MEDIA SECTION — foto/video modes only
-				     ====================================================== -->
-				{#if activeMode === "foto" || activeMode === "video"}
-				<section class="ap__section">
-					<h2 class="ap__section-title">
-						<span class="ap__step">1</span>
-						{#if activeMode === "foto"}Fotos &amp; Videos *
-						{:else}Videos &amp; Fotos *
-						{/if}
-					</h2>
-					<p class="ap__hint">
-						{#if activeMode === "video"}
-							Videos für präzise 3D-Analyse — langsam gehen, gute Beleuchtung. Fotos willkommen.
-						{:else}
-							Jeden Raum aus einer Ecke fotografieren. Videos sind ebenfalls willkommen.
-						{/if}
-						Jedes Format akzeptiert, beliebig viele Dateien.
-					</p>
-
-					<MediaDropzone
-						variant="public"
-						accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp,.tiff,.tif,.avif,.mp4,.mov,.mpeg,.mpg,.avi,.webm,.mkv,.3gp,.m4v"
-						label="Dateien hinzufügen"
-						hint="Klicken oder hierher ziehen — jedes Format, beliebig viele"
-						hasFiles={attachments.length > 0}
-						id="foto-angebot-files"
-						onfiles={(files) => { attachments = [...attachments, ...files]; }}
+			<!-- ============================================================
+			  STEP: mode
+			  Full-height cards with description + perks list. Clicking auto-advances.
+			============================================================ -->
+			{:else if currentStep === 'mode'}
+			<div class="step-header">
+				<h1 class="step-title">Wie möchten Sie Ihr Angebot erhalten?</h1>
+				<p class="step-subtitle">Wählen Sie die Methode, die am besten zu Ihnen passt.</p>
+			</div>
+			<div class="mode-cards">
+				{#each selectedService!.allowedModes as modeId}
+					{@const meta = MODE_META[modeId]}
+					<button
+						type="button"
+						class="mode-card"
+						class:selected={activeMode === modeId}
+						onclick={() => pickMode(modeId)}
+						aria-pressed={activeMode === modeId}
 					>
-						<MediaPreviewGrid
-							files={attachments}
-							mode="mixed"
-							variant="public"
-							dropzoneId="foto-angebot-files"
-							onremove={(i) => { attachments = attachments.filter((_, idx) => idx !== i); }}
-						/>
-					</MediaDropzone>
-
-					{#if attachments.length > 0}
-						<p class="ap__count">{attachments.length} {attachments.length === 1 ? "Datei" : "Dateien"} ausgewählt</p>
-					{/if}
-				</section>
-				{/if}
-
-				<!-- ======================================================
-				     TERMIN — appointment details
-				     ====================================================== -->
-				{#if activeMode === "termin"}
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">2</span>
-							Terminwunsch
-						</h2>
-						<div class="ap__grid">
-							<div class="ap__field">
-								<label for="termin-date">Gewünschter Besichtigungstermin</label>
-								<input type="date" id="termin-date" bind:value={formData.date} />
+						<div class="mode-card-header">
+							<div class="mode-card-icon">
+								<meta.icon size={22} />
 							</div>
-							<div class="ap__field">
-								<label for="termin-msg">Nachricht (optional)</label>
-								<textarea id="termin-msg" bind:value={formData.message} rows={3}
-									placeholder="Erreichbarkeit, Besonderheiten..."></textarea>
+							<div>
+								<div class="mode-card-label">{meta.label}</div>
+								<div class="mode-card-tagline">{meta.tagline}</div>
 							</div>
+							{#if activeMode === modeId}
+								<div class="mode-card-check"><Check size={16} /></div>
+							{/if}
 						</div>
-					</section>
-
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">3</span>
-							Adressen {attachments.length > 0 ? "*" : "(optional)"}
-						</h2>
-						{#if attachments.length === 0}
-							<p class="ap__hint">Hilft uns, den richtigen Mitarbeiter zu schicken.</p>
-						{/if}
-						{@render addressBlock()}
-					</section>
-				{/if}
-
-				<!-- ======================================================
-				     MANUELL — addresses required
-				     ====================================================== -->
-				{#if activeMode === "manuell"}
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">2</span>
-							Volumenberechnung für Ihren Umzug
-						</h2>
-						<VolumeCalculator bind:volumeM3 bind:itemSummary />
-					</section>
-
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">3</span>
-							Umzugsdetails
-						</h2>
-						{@render addressBlock()}
-					</section>
-
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">4</span>
-							Zusatzleistungen (optional)
-						</h2>
-						{@render servicesBlock()}
-					</section>
-				{/if}
-
-				<!-- ======================================================
-				     FOTO / VIDEO — addresses + services
-				     ====================================================== -->
-				{#if activeMode === "foto" || activeMode === "video"}
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">2</span>
-							Umzugsdetails
-						</h2>
-						{@render addressBlock()}
-					</section>
-
-					<section class="ap__section">
-						<h2 class="ap__section-title">
-							<span class="ap__step">3</span>
-							Zusatzleistungen (optional)
-						</h2>
-						{@render servicesBlock()}
-					</section>
-				{/if}
-
-				<!-- ======================================================
-				     CONTACT — always last
-				     ====================================================== -->
-				<section class="ap__section">
-					<h2 class="ap__section-title">
-						<span class="ap__step">4</span>
-						Ihre Kontaktdaten
-					</h2>
-					<div class="ap__grid">
-						<div class="ap__field ap__field--full">
-							<label>Anrede</label>
-							<div class="ap__radio-group">
-								<label class="ap__radio">
-									<input type="radio" name="salutation" value="Herr" bind:group={formData.salutation} />
-									<span>Herr</span>
-								</label>
-								<label class="ap__radio">
-									<input type="radio" name="salutation" value="Frau" bind:group={formData.salutation} />
-									<span>Frau</span>
-								</label>
-								<label class="ap__radio">
-									<input type="radio" name="salutation" value="D" bind:group={formData.salutation} />
-									<span>Divers</span>
-								</label>
-							</div>
-						</div>
-						<div class="ap__field">
-							<label for="first_name">Vorname</label>
-							<input type="text" id="first_name" bind:value={formData.first_name} placeholder="Max" />
-						</div>
-						<div class="ap__field">
-							<label for="last_name">Nachname *</label>
-							<input type="text" id="last_name" bind:value={formData.last_name} placeholder="Mustermann" required />
-						</div>
-						<div class="ap__field">
-							<label for="email">E-Mail-Adresse *</label>
-							<input type="email" id="email" bind:value={formData.email} placeholder="max@beispiel.de" required />
-						</div>
-						<div class="ap__field">
-							<label for="phone">Telefonnummer</label>
-							<input type="tel" id="phone" bind:value={formData.phone} placeholder="05121 1234567" />
-						</div>
-						{#if activeMode !== "termin"}
-							<div class="ap__field">
-								<label for="date">Wunschtermin Umzug</label>
-								<input type="date" id="date" bind:value={formData.date} />
-							</div>
-						{/if}
-					</div>
-					<div class="ap__field" style="margin-top: var(--space-4);">
-						<label for="message">Nachricht (optional)</label>
-						<textarea id="message" bind:value={formData.message} rows={3}
-							placeholder="Klavier, Tresor, enge Treppenhäuser..."></textarea>
-					</div>
-				</section>
-
-				<!-- Privacy & Submit -->
-				<section class="ap__section ap__section--submit">
-					<label class="ap__privacy">
-						<input type="checkbox" bind:checked={formData.privacyAccepted} required />
-						<span class="ap__privacy-text">
-							Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage verarbeitet werden.
-							Die <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> habe ich zur Kenntnis genommen.
-						</span>
-					</label>
-
-					{#if submitError}
-						<p class="ap__error">{submitError}</p>
-					{/if}
-
-					<button type="submit" class="ap__btn" disabled={!isFormValid || isSubmitting}>
-						{#if isSubmitting}
-							<span class="ap__spinner"></span>
-							<span>{submitStatus || "Wird gesendet…"}</span>
-						{:else}
-							<Send size={20} />
-							<span>
-								{activeMode === "termin"  ? "Terminanfrage senden" :
-								 activeMode === "manuell" ? "Angebot anfordern"    :
-								 activeMode === "foto"    ? "Dateien einreichen"   :
-								                           "Dateien einreichen"}
-							</span>
-						{/if}
+						<p class="mode-card-desc">{meta.description}</p>
+						<ul class="mode-card-perks">
+							{#each meta.perks as perk}
+								<li><Check size={13} /> {perk}</li>
+							{/each}
+						</ul>
 					</button>
-				</section>
-			</form>
-		{/if}
+				{/each}
+			</div>
+
+			<!-- ============================================================
+			  STEP: contact
+			============================================================ -->
+			{:else if currentStep === 'contact'}
+			<div class="step-header">
+				<h1 class="step-title">Kontaktdaten</h1>
+				<p class="step-subtitle">
+					{customerType === 'business'
+						? 'Firmenanschrift und Ihr Ansprechpartner für dieses Projekt.'
+						: bookingForSelf
+							? 'So können wir Ihr Angebot vorbereiten und Sie erreichen.'
+							: 'Ihre Angaben als Auftraggeber und die Angaben zur betreuten Person.'}
+				</p>
+			</div>
+
+			<!-- ── Private / Business toggle (only for ambiguous services) ── -->
+			{#if showCustomerTypeToggle}
+			<div class="type-toggle" role="group" aria-label="Kundentyp">
+				<button type="button" class="type-btn" class:active={customerType === 'private'}
+					onclick={() => customerType = 'private'}>
+					<User size={15} /> Privatkunde
+				</button>
+				<button type="button" class="type-btn" class:active={customerType === 'business'}
+					onclick={() => customerType = 'business'}>
+					<Building2 size={15} /> Geschäftskunde
+				</button>
+			</div>
+			{/if}
+
+			<!-- ══════════════════════════════════════════════════════════
+			     BUSINESS FLOW
+			══════════════════════════════════════════════════════════ -->
+			{#if customerType === 'business'}
+
+			<div class="contact-block">
+				<div class="contact-block-header">
+					<Building2 size={16} />
+					<span>Firmenangaben</span>
+				</div>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label for="company_name">Firmenname *</label>
+						<input id="company_name" type="text" bind:value={contact.company_name}
+							autocomplete="organization" required />
+					</div>
+				</div>
+			</div>
+
+			<div class="contact-block">
+				<div class="contact-block-header">
+					<User size={16} />
+					<span>Ansprechpartner</span>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label for="sal_b">Anrede</label>
+						<select id="sal_b" bind:value={contact.salutation}>
+							<option value="">–</option>
+							<option>Herr</option><option>Frau</option><option>Divers</option>
+						</select>
+					</div>
+					<div class="field field--grow">
+						<label for="fn_b">Vorname</label>
+						<input id="fn_b" type="text" bind:value={contact.first_name} autocomplete="given-name" />
+					</div>
+					<div class="field field--grow">
+						<label for="ln_b">Nachname *</label>
+						<input id="ln_b" type="text" bind:value={contact.last_name} autocomplete="family-name" required />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="email_b">E-Mail *</label>
+						<input id="email_b" type="email" bind:value={contact.email} autocomplete="email" required />
+					</div>
+					<div class="field field--half">
+						<label for="phone_b">Telefon</label>
+						<input id="phone_b" type="tel" bind:value={contact.phone} autocomplete="tel" />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="date_b">Wunschtermin</label>
+						<input id="date_b" type="date" bind:value={contact.date} />
+					</div>
+				</div>
+			</div>
+
+			<!-- ══════════════════════════════════════════════════════════
+			     PRIVATE FLOW
+			══════════════════════════════════════════════════════════ -->
+			{:else}
+
+			<!-- Booking-for selector — two option cards -->
+			{#if showBookingForToggle}
+			<div class="booking-for-cards" role="group" aria-label="Für wen buchen Sie?">
+				<button
+					type="button"
+					class="booking-card"
+					class:selected={bookingForSelf}
+					onclick={() => bookingForSelf = true}
+					aria-pressed={bookingForSelf}
+				>
+					<div class="booking-card-icon"><User size={20} /></div>
+					<div>
+						<div class="booking-card-label">Für mich selbst</div>
+						<div class="booking-card-hint">Ich bin die Person, für die der Auftrag durchgeführt wird.</div>
+					</div>
+					{#if bookingForSelf}<div class="booking-card-check"><Check size={14} /></div>{/if}
+				</button>
+				<button
+					type="button"
+					class="booking-card"
+					class:selected={!bookingForSelf}
+					onclick={() => bookingForSelf = false}
+					aria-pressed={!bookingForSelf}
+				>
+					<div class="booking-card-icon"><Users size={20} /></div>
+					<div>
+						<div class="booking-card-label">Für jemand anderen</div>
+						<div class="booking-card-hint">z.B. Elternteil, Angehörige oder eine andere Person.</div>
+					</div>
+					{#if !bookingForSelf}<div class="booking-card-check"><Check size={14} /></div>{/if}
+				</button>
+			</div>
+			{/if}
+
+			{#if bookingForSelf}
+			<!-- ── FOR MYSELF: single contact block ── -->
+			<div class="contact-block">
+				<div class="contact-block-header"><User size={16} /><span>Ihre Angaben</span></div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label for="sal_s">Anrede</label>
+						<select id="sal_s" bind:value={contact.salutation}>
+							<option value="">–</option>
+							<option>Herr</option><option>Frau</option><option>Divers</option>
+						</select>
+					</div>
+					<div class="field field--grow">
+						<label for="fn_s">Vorname</label>
+						<input id="fn_s" type="text" bind:value={contact.first_name} autocomplete="given-name" />
+					</div>
+					<div class="field field--grow">
+						<label for="ln_s">Nachname *</label>
+						<input id="ln_s" type="text" bind:value={contact.last_name} autocomplete="family-name" required />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="email_s">E-Mail *</label>
+						<input id="email_s" type="email" bind:value={contact.email} autocomplete="email" required />
+					</div>
+					<div class="field field--half">
+						<label for="phone_s">Telefon</label>
+						<input id="phone_s" type="tel" bind:value={contact.phone} autocomplete="tel" />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="date_s">Wunschtermin</label>
+						<input id="date_s" type="date" bind:value={contact.date} />
+					</div>
+				</div>
+			</div>
+
+			{:else}
+			<!-- ── FOR SOMEONE ELSE: payer (me) + recipient (them) ── -->
+
+			<!-- Your details = payer, receive invoice here -->
+			<div class="contact-block">
+				<div class="contact-block-header contact-block-header--payer">
+					<User size={16} />
+					<span>Ihre Angaben <em>(Auftraggeber)</em></span>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label for="sal_p">Anrede</label>
+						<select id="sal_p" bind:value={contact.salutation}>
+							<option value="">–</option>
+							<option>Herr</option><option>Frau</option><option>Divers</option>
+						</select>
+					</div>
+					<div class="field field--grow">
+						<label for="fn_p">Vorname</label>
+						<input id="fn_p" type="text" bind:value={contact.first_name} autocomplete="given-name" />
+					</div>
+					<div class="field field--grow">
+						<label for="ln_p">Nachname *</label>
+						<input id="ln_p" type="text" bind:value={contact.last_name} autocomplete="family-name" required />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="email_p">E-Mail *</label>
+						<input id="email_p" type="email" bind:value={contact.email} autocomplete="email" required />
+					</div>
+					<div class="field field--half">
+						<label for="phone_p">Telefon</label>
+						<input id="phone_p" type="tel" bind:value={contact.phone} autocomplete="tel" />
+					</div>
+				</div>
+				<!-- Payer address — for invoice -->
+				<div class="field-hint">Ihre Adresse (für die Rechnung)</div>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label for="pstr">Straße</label>
+						<input id="pstr" type="text" bind:value={payerAddress.street} autocomplete="street-address" />
+					</div>
+					<div class="field field--shrink">
+						<label for="pnum">Nr.</label>
+						<input id="pnum" type="text" bind:value={payerAddress.number} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label for="pzip">PLZ</label>
+						<input id="pzip" type="text" bind:value={payerAddress.zip} maxlength="5" autocomplete="postal-code" />
+					</div>
+					<div class="field field--grow">
+						<label for="pcity">Ort</label>
+						<input id="pcity" type="text" bind:value={payerAddress.city} autocomplete="address-level2" />
+					</div>
+				</div>
+			</div>
+
+			<!-- Recipient details — the person the service is for -->
+			<div class="contact-block contact-block--recipient">
+				<div class="contact-block-header contact-block-header--recipient">
+					<Users size={16} />
+					<span>Angaben zur betreuten Person</span>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label for="sal_r">Anrede</label>
+						<select id="sal_r" bind:value={recipient.salutation}>
+							<option value="">–</option>
+							<option>Herr</option><option>Frau</option><option>Divers</option>
+						</select>
+					</div>
+					<div class="field field--grow">
+						<label for="fn_r">Vorname</label>
+						<input id="fn_r" type="text" bind:value={recipient.first_name} />
+					</div>
+					<div class="field field--grow">
+						<label for="ln_r">Nachname *</label>
+						<input id="ln_r" type="text" bind:value={recipient.last_name} required />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="phone_r">Telefon vor Ort</label>
+						<input id="phone_r" type="tel" bind:value={recipient.phone} />
+					</div>
+					<div class="field field--half">
+						<label for="email_r">E-Mail <span class="optional">(optional)</span></label>
+						<input id="email_r" type="email" bind:value={recipient.email} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--half">
+						<label for="date_r">Wunschtermin</label>
+						<input id="date_r" type="date" bind:value={contact.date} />
+					</div>
+				</div>
+			</div>
+			{/if}
+
+			{/if}
+			<!-- end business/private switch -->
+
+			<div class="step-nav">
+				<button type="button" class="btn-primary" disabled={!canContinue} onclick={goNext}>
+					Weiter
+				</button>
+			</div>
+
+			<!-- ============================================================
+			  STEP: address
+			============================================================ -->
+			{:else if currentStep === 'address'}
+			<div class="step-header">
+				<h1 class="step-title">Adressdaten</h1>
+				<p class="step-subtitle">
+					{selectedService?.addressConfig.showDestination
+						? 'Von wo nach wo ziehen Sie um?'
+						: 'Wo soll unser Team eingesetzt werden?'}
+				</p>
+			</div>
+
+			{#if selectedService?.addressConfig.showOrigin}
+			<div class="address-block">
+				<h3 class="address-block-title">{selectedService.addressConfig.originLabel}</h3>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label>Straße *</label>
+						<input type="text" bind:value={originAddress.street} autocomplete="street-address" required />
+					</div>
+					<div class="field field--shrink">
+						<label>Nr.</label>
+						<input type="text" bind:value={originAddress.number} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label>PLZ *</label>
+						<input type="text" bind:value={originAddress.zip} maxlength="5" autocomplete="postal-code" required />
+					</div>
+					<div class="field field--grow">
+						<label>Ort *</label>
+						<input type="text" bind:value={originAddress.city} autocomplete="address-level2" required />
+					</div>
+					<div class="field field--quarter">
+						<label>Etage</label>
+						<select bind:value={originAddress.floor}>
+							{#each floorOptions as opt}<option value={opt.value}>{opt.label}</option>{/each}
+						</select>
+					</div>
+				</div>
+				<div class="checks-row">
+					<label class="check-label">
+						<input type="checkbox" bind:checked={originAddress.elevator} />
+						Aufzug vorhanden
+					</label>
+					<label class="check-label">
+						<input type="checkbox" bind:checked={originAddress.parking_ban} />
+						Halteverbotszone nötig
+					</label>
+				</div>
+			</div>
+			{/if}
+
+			{#if selectedService?.addressConfig.showIntermediate}
+			<div class="expand-row">
+				<button
+					type="button"
+					class="expand-btn"
+					onclick={() => showIntermediate = !showIntermediate}
+					aria-expanded={showIntermediate}
+				>
+					{showIntermediate ? '−' : '+'} Zwischenstopp hinzufügen
+				</button>
+			</div>
+			{#if showIntermediate}
+			<div class="address-block address-block--dashed">
+				<h3 class="address-block-title">Zwischenstopp</h3>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label>Straße</label>
+						<input type="text" bind:value={intermediateAddress.street} />
+					</div>
+					<div class="field field--shrink">
+						<label>Nr.</label>
+						<input type="text" bind:value={intermediateAddress.number} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label>PLZ</label>
+						<input type="text" bind:value={intermediateAddress.zip} maxlength="5" />
+					</div>
+					<div class="field field--grow">
+						<label>Ort</label>
+						<input type="text" bind:value={intermediateAddress.city} />
+					</div>
+					<div class="field field--quarter">
+						<label>Etage</label>
+						<select bind:value={intermediateAddress.floor}>
+							{#each floorOptions as opt}<option value={opt.value}>{opt.label}</option>{/each}
+						</select>
+					</div>
+				</div>
+			</div>
+			{/if}
+			{/if}
+
+			{#if selectedService?.addressConfig.showDestination}
+			<div class="address-block">
+				<h3 class="address-block-title">{selectedService.addressConfig.destinationLabel}</h3>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label>Straße *</label>
+						<input type="text" bind:value={destinationAddress.street} required />
+					</div>
+					<div class="field field--shrink">
+						<label>Nr.</label>
+						<input type="text" bind:value={destinationAddress.number} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label>PLZ *</label>
+						<input type="text" bind:value={destinationAddress.zip} maxlength="5" required />
+					</div>
+					<div class="field field--grow">
+						<label>Ort *</label>
+						<input type="text" bind:value={destinationAddress.city} required />
+					</div>
+					<div class="field field--quarter">
+						<label>Etage</label>
+						<select bind:value={destinationAddress.floor}>
+							{#each floorOptions as opt}<option value={opt.value}>{opt.label}</option>{/each}
+						</select>
+					</div>
+				</div>
+				<div class="checks-row">
+					<label class="check-label">
+						<input type="checkbox" bind:checked={destinationAddress.elevator} />
+						Aufzug vorhanden
+					</label>
+					<label class="check-label">
+						<input type="checkbox" bind:checked={destinationAddress.parking_ban} />
+						Halteverbotszone nötig
+					</label>
+				</div>
+			</div>
+			{/if}
+
+			{#if selectedService?.addressConfig.showBilling}
+			<div class="expand-row">
+				<button
+					type="button"
+					class="expand-btn"
+					onclick={() => showBilling = !showBilling}
+					aria-expanded={showBilling}
+				>
+					{showBilling ? '−' : '+'} Abweichende Rechnungsadresse angeben
+				</button>
+			</div>
+			{#if showBilling}
+			<div class="address-block address-block--dashed">
+				<h3 class="address-block-title">Rechnungsadresse</h3>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label>Straße</label>
+						<input type="text" bind:value={billingAddress.street} />
+					</div>
+					<div class="field field--shrink">
+						<label>Nr.</label>
+						<input type="text" bind:value={billingAddress.number} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label>PLZ</label>
+						<input type="text" bind:value={billingAddress.zip} maxlength="5" />
+					</div>
+					<div class="field field--grow">
+						<label>Ort</label>
+						<input type="text" bind:value={billingAddress.city} />
+					</div>
+				</div>
+			</div>
+			{/if}
+			{/if}
+
+			<div class="step-nav">
+				<button
+					type="button"
+					class="btn-primary"
+					disabled={!canContinue}
+					onclick={goNext}
+				>
+					Weiter
+				</button>
+			</div>
+
+			<!-- ============================================================
+			  STEP: details  (upload / volume / addons / message / submit)
+			============================================================ -->
+			{:else if currentStep === 'details'}
+			<div class="step-header">
+				<h1 class="step-title">Fast geschafft!</h1>
+				<p class="step-subtitle">Noch ein paar Details, dann ist Ihre Anfrage fertig.</p>
+			</div>
+
+			<!-- Volume calculator (manuell + volume-bearing services) -->
+			{#if activeMode === 'manuell' && selectedService?.showVolumeCalculator}
+			<div class="subsection">
+				<h2 class="subsection-title">Umzugsgut erfassen</h2>
+				<VolumeCalculator bind:volumeM3 bind:itemSummary />
+			</div>
+			{/if}
+
+			<!-- Media upload (foto / video) -->
+			{#if activeMode === 'foto' || activeMode === 'video'}
+			<div class="subsection">
+				<h2 class="subsection-title">
+					{activeMode === 'foto' ? 'Fotos hochladen' : 'Video hochladen'}
+				</h2>
+				<p class="subsection-hint">
+					{activeMode === 'foto'
+						? 'Laden Sie Fotos aller Räume hoch. 2–3 Bilder pro Raum aus verschiedenen Blickwinkeln genügen.'
+						: 'Laden Sie ein Video hoch, in dem Sie durch alle Räume gehen. Ein ruhiger Durchgang reicht.'}
+				</p>
+				<MediaDropzone
+					accept={activeMode === 'foto' ? 'image/*' : 'video/*'}
+					multiple={activeMode === 'foto'}
+					hasFiles={attachments.length > 0}
+					onfiles={(f) => attachments = [...attachments, ...f]}
+				/>
+				{#if attachments.length > 0}
+					<MediaPreviewGrid
+						files={attachments}
+						mode={activeMode === 'foto' ? 'thumbnails' : 'queue'}
+						onremove={(i) => attachments = attachments.filter((_, j) => j !== i)}
+					/>
+				{/if}
+			</div>
+			{/if}
+
+			<!-- Custom fields (Umzugshelfer: helpers + hours) -->
+			{#if selectedService && selectedService.customFields.length > 0}
+			<div class="subsection">
+				<h2 class="subsection-title">Umfang</h2>
+				<div class="custom-fields">
+					{#each selectedService.customFields as field}
+					<div class="stepper-row">
+						<span class="stepper-label">{field.label}</span>
+						<div class="stepper">
+							<button
+								type="button"
+								class="stepper-btn"
+								disabled={(customFieldValues[field.id] ?? field.default) <= field.min}
+								onclick={() => customFieldValues[field.id] = Math.max(field.min, (customFieldValues[field.id] ?? field.default) - field.step)}
+							>−</button>
+							<span class="stepper-value">
+								{customFieldValues[field.id] ?? field.default}
+								<span class="stepper-unit">{field.unit}</span>
+							</span>
+							<button
+								type="button"
+								class="stepper-btn"
+								disabled={(customFieldValues[field.id] ?? field.default) >= field.max}
+								onclick={() => customFieldValues[field.id] = Math.min(field.max, (customFieldValues[field.id] ?? field.default) + field.step)}
+							>+</button>
+						</div>
+					</div>
+					{/each}
+				</div>
+			</div>
+			{/if}
+
+			<!-- Add-ons -->
+			{#if selectedService && selectedService.additionalServices.length > 0}
+			<div class="subsection">
+				<h2 class="subsection-title">Zusatzleistungen</h2>
+				<div class="addon-list">
+					{#each selectedService.additionalServices as addon}
+						<label class="addon-label">
+							<input
+								type="checkbox"
+								checked={selectedAddons.includes(addon.id)}
+								onchange={() => toggleAddon(addon.id)}
+							/>
+							{addon.label}
+						</label>
+					{/each}
+				</div>
+			</div>
+			{/if}
+
+			<!-- Message -->
+			<div class="subsection">
+				<div class="field">
+					<label for="message">Nachricht (optional)</label>
+					<textarea id="message" rows="3" bind:value={contact.message}></textarea>
+				</div>
+			</div>
+
+			<!-- Privacy + Submit -->
+			<label class="privacy-label">
+				<input type="checkbox" bind:checked={privacyAccepted} required />
+				Ich habe die
+				<a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>
+				gelesen und akzeptiere diese. *
+			</label>
+
+			{#if submitError}
+				<p class="submit-error">{submitError}</p>
+			{/if}
+
+			{#if submitSuccess}
+				<div class="submit-success">
+					<Check size={20} />
+					<div>
+						<strong>Vielen Dank!</strong>
+						Wir melden uns so schnell wie möglich bei Ihnen.
+					</div>
+				</div>
+			{:else}
+				<div class="step-nav">
+					<button
+						type="button"
+						class="btn-submit"
+						disabled={!canContinue || isSubmitting}
+						onclick={handleSubmit}
+					>
+						<Send size={17} />
+						{isSubmitting ? (submitStatus || 'Wird gesendet…') : 'Angebot anfordern'}
+					</button>
+				</div>
+			{/if}
+
+			{/if}
+			<!-- end step switch -->
+
+		</div>
+		{/key}
+
 	</div>
 </main>
 
-<!-- ======================================================
-     Shared snippets
-     ====================================================== -->
-{#snippet addressBlock()}
-	<div class="ap__grid">
-		<div class="ap__field">
-			<label>Auszugsadresse *</label>
-			<div class="ap__addr-row">
-				<input type="text" bind:value={formData.startStrasse} placeholder="Straße"
-					required={activeMode !== "termin"} aria-label="Straße (Auszug)" />
-				<input class="ap__addr-nr" type="text" bind:value={formData.startHausnummer} placeholder="Nr."
-					required={activeMode !== "termin"} aria-label="Hausnummer (Auszug)" />
-			</div>
-			<div class="ap__addr-row">
-				<input class="ap__addr-plz" type="text" bind:value={formData.startPlz} placeholder="PLZ"
-					pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5"
-					required={activeMode !== "termin"} aria-label="PLZ (Auszug)" />
-				<input type="text" bind:value={formData.startOrt} placeholder="Ort"
-					required={activeMode !== "termin"} aria-label="Ort (Auszug)" />
-			</div>
-		</div>
-
-		<div class="ap__field">
-			<label for="startFloor">Etage Auszug</label>
-			<select id="startFloor" bind:value={formData.startFloor}>
-				{#each floorOptions as o}<option value={o.value}>{o.label}</option>{/each}
-			</select>
-		</div>
-
-		<div class="ap__field ap__field--full ap__field--checks">
-			<label class="ap__check">
-				<input type="checkbox" bind:checked={formData.aufzugAuszug} />
-				<span>Aufzug vorhanden</span>
-			</label>
-			<label class="ap__check">
-				<input type="checkbox" bind:checked={formData.halteverbotAuszug} />
-				<span>Halteverbot benötigt</span>
-			</label>
-		</div>
-
-		<div class="ap__field">
-			<label>Einzugsadresse *</label>
-			<div class="ap__addr-row">
-				<input type="text" bind:value={formData.endStrasse} placeholder="Straße"
-					required={activeMode !== "termin"} aria-label="Straße (Einzug)" />
-				<input class="ap__addr-nr" type="text" bind:value={formData.endHausnummer} placeholder="Nr."
-					required={activeMode !== "termin"} aria-label="Hausnummer (Einzug)" />
-			</div>
-			<div class="ap__addr-row">
-				<input class="ap__addr-plz" type="text" bind:value={formData.endPlz} placeholder="PLZ"
-					pattern={"[0-9]{5}"} inputmode="numeric" maxlength="5"
-					required={activeMode !== "termin"} aria-label="PLZ (Einzug)" />
-				<input type="text" bind:value={formData.endOrt} placeholder="Ort"
-					required={activeMode !== "termin"} aria-label="Ort (Einzug)" />
-			</div>
-		</div>
-
-		<div class="ap__field">
-			<label for="endFloor">Etage Einzug</label>
-			<select id="endFloor" bind:value={formData.endFloor}>
-				{#each floorOptions as o}<option value={o.value}>{o.label}</option>{/each}
-			</select>
-		</div>
-
-		<div class="ap__field ap__field--full ap__field--checks">
-			<label class="ap__check">
-				<input type="checkbox" bind:checked={formData.aufzugEinzug} />
-				<span>Aufzug vorhanden</span>
-			</label>
-			<label class="ap__check">
-				<input type="checkbox" bind:checked={formData.halteverbotEinzug} />
-				<span>Halteverbot benötigt</span>
-			</label>
-		</div>
-	</div>
-{/snippet}
-
-{#snippet servicesBlock()}
-	<div class="ap__services">
-		{#each additionalServices as s}
-			<label class="ap__service">
-				<input type="checkbox" checked={formData.selectedServices.includes(s.id)} onchange={() => toggleService(s.id)} />
-				<span class="ap__service-box"></span>
-				<span class="ap__service-label">{s.label}</span>
-			</label>
-		{/each}
-	</div>
-{/snippet}
-
 <style>
-	/* ===== Page ===== */
-	.ap {
-		background-color: #f4f6f8;
-		min-height: 60vh;
-		padding-block: var(--space-12);
-	}
-	.ap__container {
-		max-width: 900px;
-		margin-inline: auto;
-		padding-inline: var(--container-padding);
-	}
-	.ap__header {
-		text-align: center;
-		margin-bottom: var(--space-8);
-	}
-	.ap__heading {
-		color: var(--color-info-bar);
-		font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
-		font-weight: var(--font-bold);
-		margin: 0 0 var(--space-3);
-	}
-	.ap__subheading {
-		color: #4a5568;
-		font-size: var(--text-lg);
-		line-height: 1.6;
-		margin: 0;
-		max-width: 600px;
-		margin-inline: auto;
+	/* -------------------------------------------------------------------------
+	   Page shell
+	------------------------------------------------------------------------- */
+	.page      { padding: 3rem 0 5rem; min-height: 60vh; }
+	.container { max-width: 720px; margin: 0 auto; padding: 0 1.25rem; }
+
+	/* -------------------------------------------------------------------------
+	   Fade-lift animation — triggered by {#key currentStepIndex}
+	------------------------------------------------------------------------- */
+	@keyframes stepIn {
+		from { opacity: 0; transform: translateY(18px); }
+		to   { opacity: 1; transform: translateY(0); }
 	}
 
-	/* ===== Mode selector ===== */
-	.ap__mode-selector {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: var(--space-2);
-		margin-bottom: var(--space-2);
-	}
-	.ap__mode-btn {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-4) var(--space-2);
-		background-color: var(--color-text);
-		border: 2px solid #e2e8f0;
-		border-radius: var(--radius-lg);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		color: #64748b;
-	}
-	.ap__mode-btn:hover {
-		border-color: var(--color-nav-accent);
-		color: var(--color-nav-accent);
-	}
-	.ap__mode-btn--active {
-		border-color: var(--color-nav-accent);
-		background-color: rgba(196, 65, 0, 0.06);
-		color: var(--color-nav-accent);
-	}
-	.ap__mode-label {
-		font-size: var(--text-sm);
-		font-weight: var(--font-semibold);
-	}
-	.ap__mode-hint {
-		text-align: center;
-		color: #64748b;
-		font-size: var(--text-sm);
-		margin: 0 0 var(--space-6);
+	.step-body {
+		animation: stepIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
-	/* ===== Form ===== */
-	.ap__form {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-6);
-	}
-
-	/* ===== Sections ===== */
-	.ap__section {
-		background-color: var(--color-text);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-		box-shadow: var(--shadow-md);
-	}
-	.ap__section-title {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		color: var(--color-info-bar);
-		font-size: var(--text-lg);
-		font-weight: var(--font-bold);
-		margin: 0 0 var(--space-5);
-	}
-	.ap__step {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
-		background-color: var(--color-nav-accent);
-		color: var(--color-text);
-		border-radius: var(--radius-full);
-		font-size: var(--text-sm);
-		font-weight: var(--font-bold);
-		flex-shrink: 0;
-	}
-	.ap__step-optional {
-		font-size: var(--text-sm);
-		font-weight: var(--font-normal);
-		color: #94a3b8;
-		margin-left: var(--space-1);
-	}
-	.ap__hint {
-		color: #64748b;
-		font-size: var(--text-sm);
-		line-height: 1.6;
-		margin: calc(-1 * var(--space-3)) 0 var(--space-4);
-	}
-	.ap__warn {
-		color: #b45309;
-		font-size: var(--text-sm);
-		margin-top: var(--space-2);
-		background: #fef3c7;
-		border: 1px solid #fcd34d;
-		border-radius: var(--radius-md);
-		padding: var(--space-2) var(--space-3);
-	}
-
-	/* ===== Grid / Fields ===== */
-	.ap__grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--space-4);
-	}
-	.ap__field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
-	.ap__field--full { grid-column: 1 / -1; }
-	.ap__radio-group {
-		display: flex;
-		gap: var(--space-4);
-		flex-wrap: wrap;
-	}
-	.ap__radio {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		cursor: pointer;
-		font-size: var(--text-base);
-		color: #2d3748;
-	}
-	.ap__radio input[type="radio"] {
-		width: 1.1rem;
-		height: 1.1rem;
-		accent-color: var(--color-nav-accent);
-		cursor: pointer;
-	}
-	.ap__field--checks {
-		flex-direction: row;
-		gap: var(--space-3);
-		flex-wrap: wrap;
-	}
-	.ap__field label {
-		color: #4a5568;
-		font-size: var(--text-sm);
-		font-weight: var(--font-medium);
-	}
-	.ap__field input,
-	.ap__field textarea,
-	.ap__field select {
-		padding: var(--space-3) var(--space-4);
-		border: 1.5px solid #e2e8f0;
-		border-radius: var(--radius-md);
-		font-size: var(--text-base);
-		background-color: #f8fafc;
-		transition: all var(--transition-fast);
-		font-family: inherit;
-	}
-	.ap__field select {
-		cursor: pointer;
-		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: right 12px center;
-		padding-right: var(--space-10);
-	}
-	.ap__field input:focus,
-	.ap__field textarea:focus,
-	.ap__field select:focus {
-		border-color: var(--color-nav-accent);
-		background-color: var(--color-text);
-		outline: none;
-		box-shadow: 0 0 0 3px rgba(196, 65, 0, 0.1);
-	}
-	.ap__field textarea { resize: vertical; min-height: 80px; }
-
-	/* ===== Address sub-rows ===== */
-	.ap__addr-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-	.ap__addr-row input { flex: 1; min-width: 0; }
-	input.ap__addr-nr  { flex: 0 0 80px;  max-width: 80px; }
-	input.ap__addr-plz { flex: 0 0 100px; max-width: 100px; }
-
-	/* ===== Checkbox rows ===== */
-	.ap__check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-3);
-		background-color: #f8fafc;
-		border: 1.5px solid #e2e8f0;
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-	.ap__check:hover { background-color: #edf2f7; }
-	.ap__check input[type="checkbox"] { cursor: pointer; width: 18px; height: 18px; }
-	.ap__check span { color: #4a5568; font-size: var(--text-sm); font-weight: var(--font-medium); }
-
-	/* ===== Services grid ===== */
-	.ap__services {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--space-3);
-	}
-	.ap__service {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-3) var(--space-4);
-		background-color: #f8fafc;
-		border: 1.5px solid #e2e8f0;
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-	.ap__service:hover { background-color: #edf2f7; }
-	.ap__service input { display: none; }
-	.ap__service-box {
-		width: 20px; height: 20px;
-		border: 2px solid #cbd5e0;
-		border-radius: var(--radius-sm);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all var(--transition-fast);
-		flex-shrink: 0;
-	}
-	.ap__service input:checked + .ap__service-box {
-		background-color: var(--color-nav-accent);
-		border-color: var(--color-nav-accent);
-	}
-	.ap__service input:checked + .ap__service-box::after {
-		content: "\2713";
-		color: white;
-		font-size: 12px;
-		font-weight: bold;
-	}
-	.ap__service-label { color: #4a5568; font-size: var(--text-sm); }
-
-	.ap__count { color: #64748b; font-size: var(--text-sm); margin-top: var(--space-2); }
-
-	/* ===== Submit section ===== */
-	.ap__section--submit {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-5);
-		align-items: center;
-	}
-	.ap__privacy {
+	/* -------------------------------------------------------------------------
+	   Progress indicator
+	------------------------------------------------------------------------- */
+	.progress {
 		display: flex;
 		align-items: flex-start;
-		gap: var(--space-3);
-		cursor: pointer;
+		margin-bottom: 2.25rem;
 	}
-	.ap__privacy input { margin-top: 4px; flex-shrink: 0; }
-	.ap__privacy-text { color: #4a5568; font-size: var(--text-sm); line-height: 1.6; }
-	.ap__privacy-text a { color: var(--color-nav-accent); text-decoration: none; }
-	.ap__privacy-text a:hover { text-decoration: underline; }
-	.ap__error { color: #dc2626; font-size: var(--text-sm); margin: 0; text-align: center; }
 
-	.ap__btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-3);
-		width: 100%;
-		max-width: 400px;
-		padding: var(--space-4) var(--space-6);
-		background-color: var(--color-nav-accent);
-		color: var(--color-text);
-		border: none;
-		border-radius: var(--radius-md);
-		font-size: var(--text-lg);
-		font-weight: var(--font-semibold);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		text-decoration: none;
-		font-family: inherit;
-	}
-	.ap__btn--center { margin-inline: auto; }
-	.ap__btn:hover:not(:disabled) { background-color: #b83b00; transform: translateY(-2px); }
-	.ap__btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
-
-	/* ===== Success ===== */
-	.ap__success {
-		background-color: var(--color-text);
-		border-radius: var(--radius-lg);
-		padding: var(--space-12) var(--space-10);
-		box-shadow: var(--shadow-md);
-		text-align: center;
+	.progress-step {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--space-4);
+		gap: 0.35rem;
+		flex-shrink: 0;
 	}
-	.ap__success-icon {
-		width: 64px; height: 64px;
-		background-color: var(--color-nav-accent);
-		color: white;
-		border-radius: var(--radius-full);
+
+	.progress-dot {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		border: 2px solid #d1d5db;
+		background: #fff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 28px;
-		font-weight: bold;
+		color: #fff;
+		transition: all 0.25s ease;
 	}
-	.ap__success h2 { color: var(--color-info-bar); margin: 0; }
-	.ap__success p  { color: #4a5568; margin: 0; max-width: 480px; }
 
-	/* ===== Spinner ===== */
-	.ap__spinner {
-		width: 18px; height: 18px;
-		border: 2px solid rgba(255,255,255,0.4);
-		border-top-color: white;
-		border-radius: var(--radius-full);
-		animation: spin 0.7s linear infinite;
+	.progress-dot.done {
+		background: var(--dt-primary, #022448);
+		border-color: var(--dt-primary, #022448);
+	}
+
+	.progress-dot.current {
+		background: var(--dt-primary, #022448);
+		border-color: var(--dt-primary, #022448);
+		box-shadow: 0 0 0 4px rgba(2, 36, 72, 0.12);
+		width: 26px;
+		height: 26px;
+	}
+
+	.progress-label {
+		font-size: 0.68rem;
+		color: #9ca3af;
+		white-space: nowrap;
+		letter-spacing: 0.01em;
+	}
+
+	.progress-label.current {
+		color: var(--dt-primary, #022448);
+		font-weight: 600;
+	}
+
+	.progress-line {
+		flex: 1;
+		height: 2px;
+		background: #e5e7eb;
+		margin: 0 4px;
+		margin-top: 11px; /* align with dot centre */
+		align-self: flex-start;
+		transition: background 0.3s ease;
+	}
+
+	.progress-line.done { background: var(--dt-primary, #022448); }
+
+	/* -------------------------------------------------------------------------
+	   Back button
+	------------------------------------------------------------------------- */
+	.back-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		background: none;
+		border: none;
+		color: var(--dt-primary, #022448);
+		font-size: 0.9rem;
+		cursor: pointer;
+		padding: 0.25rem 0;
+		margin-bottom: 1.25rem;
+		opacity: 0.75;
+		transition: opacity 0.15s;
+	}
+
+	.back-btn:hover { opacity: 1; }
+
+	/* -------------------------------------------------------------------------
+	   Step header
+	------------------------------------------------------------------------- */
+	.step-title {
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: var(--dt-primary, #022448);
+		margin-bottom: 0.4rem;
+		line-height: 1.2;
+	}
+
+	.step-subtitle {
+		color: #6b7280;
+		font-size: 0.95rem;
+		margin-bottom: 1.75rem;
+	}
+
+	/* -------------------------------------------------------------------------
+	   Service selection grid
+	------------------------------------------------------------------------- */
+	.service-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.65rem;
+	}
+
+	@media (max-width: 560px) {
+		.service-grid { grid-template-columns: repeat(2, 1fr); }
+	}
+
+	.service-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		padding: 0.9rem 1rem;
+		border: 2px solid #e5e7eb;
+		border-radius: 12px;
+		background: #fff;
+		cursor: pointer;
+		text-align: left;
+		transition: border-color 0.15s, background 0.15s, transform 0.1s;
+	}
+
+	.service-card:hover {
+		border-color: var(--dt-primary, #022448);
+		background: #f8fafc;
+		transform: translateY(-1px);
+	}
+
+	.service-card.selected {
+		border-color: var(--dt-primary, #022448);
+		background: var(--dt-primary, #022448);
+		color: #fff;
+		transform: translateY(-1px);
+	}
+
+	.service-icon  { font-size: 1.5rem; line-height: 1; }
+	.service-label { font-weight: 600; font-size: 0.92rem; }
+	.service-desc  { font-size: 0.75rem; opacity: 0.65; line-height: 1.35; }
+
+	/* -------------------------------------------------------------------------
+	   Mode cards (step 2)
+	------------------------------------------------------------------------- */
+	.mode-cards {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.mode-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		padding: 1.25rem 1.4rem;
+		border: 2px solid #e5e7eb;
+		border-radius: 14px;
+		background: #fff;
+		cursor: pointer;
+		text-align: left;
+		transition: border-color 0.15s, background 0.15s, transform 0.1s;
+	}
+
+	.mode-card:hover {
+		border-color: #94a3b8;
+		background: #f8fafc;
+		transform: translateY(-1px);
+	}
+
+	.mode-card.selected {
+		border-color: var(--dt-primary, #022448);
+		background: #f0f5fb;
+	}
+
+	.mode-card-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.85rem;
+	}
+
+	.mode-card-icon {
+		width: 42px;
+		height: 42px;
+		border-radius: 10px;
+		background: var(--dt-primary, #022448);
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
 	}
-	@keyframes spin { to { transform: rotate(360deg); } }
 
-	/* ===== Responsive ===== */
-	@media (max-width: 767px) {
-		.ap { padding-block: var(--space-8); }
-		.ap__mode-selector { grid-template-columns: repeat(2, 1fr); }
-		.ap__mode-btn { min-height: 64px; }
-		.ap__grid { grid-template-columns: 1fr; }
-		.ap__services { grid-template-columns: repeat(2, 1fr); }
-		.ap__section { padding: var(--space-4); }
-		.ap__field--checks { flex-direction: column; }
-		.ap__check { min-height: 44px; }
+	.mode-card.selected .mode-card-icon { background: var(--dt-primary, #022448); }
+
+	.mode-card-label   { font-weight: 700; font-size: 1rem; color: #111827; }
+	.mode-card-tagline { font-size: 0.82rem; color: #6b7280; margin-top: 0.1rem; }
+
+	.mode-card-check {
+		margin-left: auto;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: var(--dt-primary, #022448);
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
 	}
-	@media (max-width: 480px) {
-		.ap__services { grid-template-columns: 1fr; }
-		.ap__mode-label { font-size: var(--text-xs); }
-		.ap__addr-row { flex-direction: column; }
-		input.ap__addr-nr,
-		input.ap__addr-plz {
-			flex: 1 1 auto;
-			max-width: 100%;
-		}
+
+	.mode-card-desc {
+		font-size: 0.88rem;
+		color: #4b5563;
+		line-height: 1.55;
+		margin: 0;
+	}
+
+	.mode-card-perks {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.mode-card-perks li {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.82rem;
+		color: #166534;
+		font-weight: 500;
+	}
+
+	/* -------------------------------------------------------------------------
+	   Customer type toggle
+	------------------------------------------------------------------------- */
+	.type-toggle {
+		display: inline-flex;
+		border: 2px solid #e5e7eb;
+		border-radius: 10px;
+		overflow: hidden;
+		margin-bottom: 1.5rem;
+	}
+
+	.type-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1.3rem;
+		background: #fff;
+		border: none;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: #6b7280;
+		transition: background 0.15s, color 0.15s;
+	}
+
+	.type-btn:not(:first-child) { border-left: 2px solid #e5e7eb; }
+	.type-btn.active { background: var(--dt-primary, #022448); color: #fff; }
+
+	/* -------------------------------------------------------------------------
+	   Booking-for selector cards
+	------------------------------------------------------------------------- */
+	.booking-for-cards {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.booking-card {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem 1.1rem;
+		border: 2px solid #e5e7eb;
+		border-radius: 12px;
+		background: #fff;
+		cursor: pointer;
+		text-align: left;
+		transition: border-color 0.15s, background 0.15s;
+	}
+
+	.booking-card:hover        { border-color: #94a3b8; background: #f8fafc; }
+	.booking-card.selected     { border-color: var(--dt-primary, #022448); background: #f0f5fb; }
+
+	.booking-card-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: #f1f5f9;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--dt-primary, #022448);
+		flex-shrink: 0;
+		transition: background 0.15s;
+	}
+
+	.booking-card.selected .booking-card-icon { background: var(--dt-primary, #022448); color: #fff; }
+
+	.booking-card-label { font-weight: 600; font-size: 0.95rem; color: #111827; }
+	.booking-card-hint  { font-size: 0.8rem; color: #6b7280; margin-top: 0.15rem; }
+
+	.booking-card-check {
+		margin-left: auto;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: var(--dt-primary, #022448);
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	/* -------------------------------------------------------------------------
+	   Contact blocks — grouped sections within the contact step
+	------------------------------------------------------------------------- */
+	.contact-block {
+		border: 1.5px solid #e5e7eb;
+		border-radius: 12px;
+		padding: 1.1rem 1.2rem;
+		margin-bottom: 1rem;
+		background: #fafbfc;
+	}
+
+	.contact-block--recipient { background: #f8fafc; border-color: #cbd5e1; }
+
+	.contact-block-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: #374151;
+		margin-bottom: 1rem;
+		padding-bottom: 0.6rem;
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.contact-block-header em { font-style: normal; font-weight: 400; color: #9ca3af; }
+
+	.contact-block-header--payer    { color: var(--dt-primary, #022448); }
+	.contact-block-header--recipient { color: #0f766e; }
+	.contact-block--recipient .contact-block-header { border-bottom-color: #b2e8e0; }
+
+	.field-hint {
+		font-size: 0.8rem;
+		color: #6b7280;
+		margin-bottom: 0.5rem;
+		margin-top: 0.25rem;
+	}
+
+	.optional { font-size: 0.75rem; color: #9ca3af; font-weight: 400; }
+
+	/* -------------------------------------------------------------------------
+	   Form fields
+	------------------------------------------------------------------------- */
+	.field-row {
+		display: flex;
+		gap: 0.65rem;
+		margin-bottom: 0.65rem;
+		flex-wrap: wrap;
+	}
+
+	.checks-row {
+		display: flex;
+		gap: 1.5rem;
+		flex-wrap: wrap;
+		margin-top: 0.25rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.field { display: flex; flex-direction: column; gap: 0.28rem; min-width: 0; }
+	.field--grow    { flex: 1 1 auto; }
+	.field--half    { flex: 1 1 calc(50% - 0.325rem); }
+	.field--shrink  { flex: 0 0 90px; }
+	.field--quarter { flex: 0 0 130px; }
+
+	.field label { font-size: 0.82rem; font-weight: 500; color: #374151; }
+
+	.field input,
+	.field select,
+	.field textarea {
+		padding: 0.55rem 0.8rem;
+		border: 1.5px solid #d1d5db;
+		border-radius: 8px;
+		font-size: 0.93rem;
+		background: #fff;
+		width: 100%;
+		box-sizing: border-box;
+		transition: border-color 0.15s;
+		color: #111827;
+	}
+
+	.field input:focus,
+	.field select:focus,
+	.field textarea:focus {
+		outline: none;
+		border-color: var(--dt-primary, #022448);
+		box-shadow: 0 0 0 3px rgba(2, 36, 72, 0.08);
+	}
+
+	/* -------------------------------------------------------------------------
+	   Address blocks
+	------------------------------------------------------------------------- */
+	.address-block {
+		padding: 1.1rem 1.2rem;
+		border: 1.5px solid #e5e7eb;
+		border-radius: 12px;
+		margin-bottom: 1rem;
+		background: #fafbfc;
+	}
+
+	.address-block--dashed {
+		border-style: dashed;
+		background: #f8f8f8;
+	}
+
+	.address-block-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #374151;
+		margin-bottom: 0.85rem;
+	}
+
+	.check-label {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.87rem;
+		cursor: pointer;
+		color: #374151;
+	}
+
+	.expand-row { margin-bottom: 0.85rem; }
+
+	.expand-btn {
+		background: none;
+		border: none;
+		color: var(--dt-primary, #022448);
+		cursor: pointer;
+		font-size: 0.88rem;
+		font-weight: 500;
+		padding: 0.2rem 0;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	/* -------------------------------------------------------------------------
+	   Details step: subsections
+	------------------------------------------------------------------------- */
+	.subsection {
+		margin-bottom: 1.75rem;
+	}
+
+	.subsection-title {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--dt-primary, #022448);
+		margin-bottom: 0.65rem;
+		padding-bottom: 0.4rem;
+		border-bottom: 1.5px solid #e5e7eb;
+	}
+
+	.subsection-hint {
+		font-size: 0.85rem;
+		color: #6b7280;
+		margin-bottom: 0.85rem;
+	}
+
+	/* -------------------------------------------------------------------------
+	   Add-ons
+	------------------------------------------------------------------------- */
+	/* -------------------------------------------------------------------------
+	   Custom field steppers (helpers / hours)
+	------------------------------------------------------------------------- */
+	.custom-fields { display: flex; flex-direction: column; gap: 0.85rem; }
+
+	.stepper-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.stepper-label { font-size: 0.95rem; color: #374151; font-weight: 500; }
+
+	.stepper {
+		display: flex;
+		align-items: center;
+		gap: 0;
+		border: 1.5px solid #d1d5db;
+		border-radius: 10px;
+		overflow: hidden;
+	}
+
+	.stepper-btn {
+		width: 40px;
+		height: 40px;
+		background: #f9fafb;
+		border: none;
+		font-size: 1.25rem;
+		cursor: pointer;
+		color: var(--dt-primary, #022448);
+		transition: background 0.15s;
+		line-height: 1;
+	}
+
+	.stepper-btn:hover:not(:disabled) { background: #e5e7eb; }
+	.stepper-btn:disabled { color: #d1d5db; cursor: not-allowed; }
+
+	.stepper-value {
+		min-width: 80px;
+		text-align: center;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #111827;
+		border-left: 1.5px solid #d1d5db;
+		border-right: 1.5px solid #d1d5db;
+		padding: 0 0.5rem;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+	}
+
+	.stepper-unit { font-size: 0.78rem; font-weight: 400; color: #6b7280; }
+
+	.addon-list  { display: flex; flex-direction: column; gap: 0.55rem; }
+	.addon-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.93rem; cursor: pointer; }
+
+	/* -------------------------------------------------------------------------
+	   Privacy + submit
+	------------------------------------------------------------------------- */
+	.privacy-label {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+		color: #4b5563;
+		margin-bottom: 1.25rem;
+		line-height: 1.5;
+		cursor: pointer;
+	}
+
+	.privacy-label a { color: var(--dt-primary, #022448); }
+
+	/* -------------------------------------------------------------------------
+	   Navigation buttons
+	------------------------------------------------------------------------- */
+	.step-nav {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 1.5rem;
+		gap: 0.75rem;
+	}
+
+	.btn-primary,
+	.btn-submit {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.72rem 2rem;
+		background: var(--dt-primary, #022448);
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: opacity 0.15s, transform 0.1s;
+	}
+
+	.btn-primary:hover:not(:disabled),
+	.btn-submit:hover:not(:disabled) {
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+
+	.btn-primary:disabled,
+	.btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+	/* -------------------------------------------------------------------------
+	   Error / success
+	------------------------------------------------------------------------- */
+	.submit-error {
+		color: #991b1b;
+		background: #fee2e2;
+		padding: 0.75rem 1rem;
+		border-radius: 8px;
+		font-size: 0.88rem;
+		margin-bottom: 1rem;
+	}
+
+	.submit-success {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		color: #166534;
+		background: #dcfce7;
+		padding: 1rem 1.25rem;
+		border-radius: 10px;
+		font-size: 0.95rem;
 	}
 </style>

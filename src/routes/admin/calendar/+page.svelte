@@ -972,18 +972,6 @@
 					{/each}
 
 					{#each calendarDays as day}
-						{#if day.isOverflow}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<button
-								class="cal-cell overflow"
-								title="Zum {day.date}. navigieren"
-								onclick={() => { if (day.dateStr < `${year}-${String(month + 1).padStart(2, '0')}-01`) prevMonth(); else nextMonth(); }}
-							>
-								<div class="cal-cell-header">
-									<span class="cal-date">{day.date}</span>
-								</div>
-							</button>
-						{:else}
 							{@const dateStr = day.dateStr}
 							{@const allEntries = buildDayEntries(dateStr)}
 							{@const booked = day.schedule?.booked || 0}
@@ -993,12 +981,13 @@
 							{@const schoolHol = schoolHolidayMap.get(dateStr)}
 							<button
 								class="cal-cell"
+								class:overflow={day.isOverflow}
 								class:today={day.isToday}
 								class:overbooked
 								class:school-holiday={!!schoolHol}
 								class:public-holiday={!!publicHol}
 								class:drag-over={dragOverDate === dateStr}
-								onclick={() => openDayPanel(day.schedule, day.date)}
+								onclick={() => openDayPanel(day.schedule, null, day.dateStr)}
 								ondragover={(e) => onCellDragOver(e, dateStr)}
 								ondragleave={onCellDragLeave}
 								ondrop={(e) => onCellDrop(e, dateStr)}
@@ -1072,7 +1061,6 @@
 								</div>
 								{/each}
 							</button>
-						{/if}
 					{/each}
 				</div>
 				{:else if viewMode === 'week'}

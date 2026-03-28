@@ -270,11 +270,6 @@
 	<div class="section">
 		<h2 class="section-title"><Clock size={15} /> Meine Zeiten</h2>
 
-		{#if job.planned_hours > 0}
-			<div class="hours-row">
-				<span>Geplant</span><strong>{job.planned_hours.toFixed(1)} h</strong>
-			</div>
-		{/if}
 		{#if job.employee_actual_hours !== null}
 			<div class="hours-row">
 				<span>Gearbeitet</span><strong>{job.employee_actual_hours.toFixed(1)} h</strong>
@@ -293,19 +288,6 @@
 					pattern="[0-9]{2}:[0-5][0-9]"
 					class="clock-input"
 					bind:value={clockIn}
-				/>
-			</div>
-			<div class="clock-row">
-				<label for="clock-out">Ende</label>
-				<input
-					id="clock-out"
-					type="text"
-					inputmode="decimal"
-					placeholder="17:00"
-					maxlength="5"
-					pattern="[0-9]{2}:[0-5][0-9]"
-					class="clock-input"
-					bind:value={clockOut}
 				/>
 			</div>
 			<button

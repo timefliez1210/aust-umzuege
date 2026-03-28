@@ -11,8 +11,10 @@
 		Settings,
 		PanelLeftClose,
 		PanelLeft,
-		ClipboardList
+		ClipboardList,
+		Flag
 	} from 'lucide-svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 
 	let {
 		collapsed,
@@ -80,6 +82,15 @@
 				{/if}
 			</a>
 		{/each}
+		{#if auth.user?.role === 'admin'}
+			{@const active = isActive('/admin/reports', $page.url.pathname)}
+			<a href="/admin/reports" class="sidebar-link" class:active aria-current={active ? 'page' : undefined}>
+				<Flag size={20} />
+				{#if !collapsed}
+					<span>Reports</span>
+				{/if}
+			</a>
+		{/if}
 	</nav>
 </aside>
 

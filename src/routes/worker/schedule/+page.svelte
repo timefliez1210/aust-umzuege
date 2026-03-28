@@ -113,7 +113,6 @@
 {:else}
 	<div class="job-list">
 		{#each jobs as job}
-			{@const s = statusLabel(job.status)}
 			{#if job.entry_type === 'item'}
 				<div class="job-card item-card">
 					<div class="job-top">
@@ -131,16 +130,11 @@
 							<span>{job.location}</span>
 						</div>
 					{/if}
-
-					<div class="job-meta">
-						<span class="meta-pill">{job.planned_hours.toFixed(1)} h</span>
-					</div>
 				</div>
 			{:else}
 				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}`)}>
 					<div class="job-top">
 						<span class="job-date">{fmtDate(job.job_date)}</span>
-						<span class="badge {s.cls}">{s.label}</span>
 					</div>
 
 					<div class="job-route">
@@ -169,7 +163,6 @@
 								+{job.colleague_names.length}
 							</span>
 						{/if}
-						<span class="meta-pill">{job.planned_hours.toFixed(1)} h</span>
 					</div>
 
 					<ChevronRight size={16} class="chevron" />

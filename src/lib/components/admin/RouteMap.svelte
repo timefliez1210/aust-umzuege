@@ -135,5 +135,6 @@
 		height: 300px;
 		border-radius: var(--dt-radius-md);
 		overflow: hidden;
+		isolation: isolate;
 	}
 </style>

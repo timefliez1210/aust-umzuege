@@ -958,10 +958,19 @@
 					{/each}
 
 					{#each calendarDays as day}
-						{#if day.date === null}
-							<div class="cal-cell empty"></div>
+						{#if day.isOverflow}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<button
+								class="cal-cell overflow"
+								title="Zum {day.date}. navigieren"
+								onclick={() => { if (day.dateStr < `${year}-${String(month + 1).padStart(2, '0')}-01`) prevMonth(); else nextMonth(); }}
+							>
+								<div class="cal-cell-header">
+									<span class="cal-date">{day.date}</span>
+								</div>
+							</button>
 						{:else}
-							{@const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`}
+							{@const dateStr = day.dateStr}
 							{@const allEntries = buildDayEntries(dateStr)}
 							{@const booked = day.schedule?.booked || 0}
 							{@const capacity = day.schedule?.capacity || 1}
@@ -1578,6 +1587,9 @@
 	}
 	.cal-cell:hover { background: var(--dt-surface-container-low); }
 	.cal-cell.empty { background: var(--dt-surface-container); cursor: default; pointer-events: none; }
+	.cal-cell.overflow { background: var(--dt-surface-container); opacity: 0.55; }
+	.cal-cell.overflow:hover { background: var(--dt-surface-container-low); opacity: 0.75; }
+	.cal-cell.overflow .cal-date { color: var(--dt-outline); }
 	.cal-cell.today { background: rgba(2, 36, 72, 0.06); }
 	.cal-cell.today:hover { background: rgba(2, 36, 72, 0.10); }
 	.cal-cell.overbooked { background: rgba(168, 57, 0, 0.06); }

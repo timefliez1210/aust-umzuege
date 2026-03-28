@@ -430,10 +430,16 @@
 		if (!data) return;
 		downloadingPdf = true;
 		try {
-			const offerNum = data.offer?.offer_number || data.id.slice(0, 8);
+			// Build "{seq}-{year} {last_name}.pdf", e.g. "1113-2026 Spatz.pdf"
+			// offer_number format from backend: "{year}-{seq:04}" e.g. "2026-1113"
+			const offerNum = data.offer?.offer_number ?? '';
+			const [year, seqStr] = offerNum.includes('-') ? offerNum.split('-') : ['', offerNum];
+			const seq = seqStr ? String(parseInt(seqStr, 10)) : data.id.slice(0, 8);
+			const lastName = data.customer?.last_name ?? data.customer?.name?.split(' ').pop() ?? 'Angebot';
+			const filename = year ? `${seq}-${year} ${lastName}.pdf` : `angebot_${offerNum || data.id.slice(0, 8)}.pdf`;
 			await apiDownload(
 				`/api/v1/inquiries/${data.id}/pdf`,
-				`angebot_${offerNum}.pdf`,
+				filename,
 			);
 		} catch (e) {
 			showToast((e as Error).message, "error");

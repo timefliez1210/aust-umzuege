@@ -987,33 +987,32 @@
 									{#if publicHol}<span class="holiday-badge">🎉 {publicHol}</span>{/if}
 								</div>
 								{#if schoolHol}<div class="school-holiday-label">{schoolHol}</div>{/if}
-								{@const mdEntries = allEntries.filter(e => e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1).sort((a, b) => a.item.inquiry_id.localeCompare(b.item.inquiry_id))}
-								{@const sdEntries = allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1))}
-								{@const sdCap = Math.max(2, 4 - mdEntries.length)}
-								{#each mdEntries as entry}
-									{@const dayNum = entry.item.day_number ?? 1}
-									{@const totalDays = entry.item.total_days ?? 1}
-									{@const dow = new Date(entry.item.scheduled_date ?? dateStr).getDay()}
-									{@const isVisualStart = dayNum === 1 || dow === 1}
-									{@const isVisualEnd = dayNum === totalDays || dow === 0}
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<div
-										class="md-bar {inquiryEntryClass(entry.item.status)}"
-										class:md-bar-start={isVisualStart}
-										class:md-bar-end={isVisualEnd}
-										title="{entry.item.customer_name ?? ''} · Tag {dayNum}/{totalDays}"
-										draggable="true"
-										ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
-										onclick={(e) => openInquiryPanel(e, entry.item)}
-										role="button"
-										tabindex="0"
-										onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
-									>
-										{#if isVisualStart}<span class="md-bar-text">{truncate(entry.item.customer_name, 12)}</span>{/if}
-									</div>
-								{/each}
-								<div class="cal-entries">
-									{#each sdEntries.slice(0, sdCap) as entry}
+								{#each [{ mdEntries: allEntries.filter(e => e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1).sort((a, b) => a.item.inquiry_id.localeCompare(b.item.inquiry_id)), sdEntries: allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1)) }] as { mdEntries, sdEntries }}
+									{@const sdCap = Math.max(2, 4 - mdEntries.length)}
+									{#each mdEntries as entry}
+										{@const dayNum = entry.item.day_number ?? 1}
+										{@const totalDays = entry.item.total_days ?? 1}
+										{@const dow = new Date(entry.item.scheduled_date ?? dateStr).getDay()}
+										{@const isVisualStart = dayNum === 1 || dow === 1}
+										{@const isVisualEnd = dayNum === totalDays || dow === 0}
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<div
+											class="md-bar {inquiryEntryClass(entry.item.status)}"
+											class:md-bar-start={isVisualStart}
+											class:md-bar-end={isVisualEnd}
+											title="{entry.item.customer_name ?? ''} · Tag {dayNum}/{totalDays}"
+											draggable="true"
+											ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
+											onclick={(e) => openInquiryPanel(e, entry.item)}
+											role="button"
+											tabindex="0"
+											onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
+										>
+											{#if isVisualStart}<span class="md-bar-text">{truncate(entry.item.customer_name, 12)}</span>{/if}
+										</div>
+									{/each}
+									<div class="cal-entries">
+										{#each sdEntries.slice(0, sdCap) as entry}
 										{#if entry.type === 'inquiry'}
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
 											<span
@@ -1048,6 +1047,7 @@
 										<span class="cal-more">+{sdEntries.length - sdCap} mehr</span>
 									{/if}
 								</div>
+								{/each}
 							</button>
 						{/if}
 					{/each}

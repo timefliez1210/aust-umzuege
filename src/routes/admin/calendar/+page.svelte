@@ -987,8 +987,33 @@
 									{#if publicHol}<span class="holiday-badge">🎉 {publicHol}</span>{/if}
 								</div>
 								{#if schoolHol}<div class="school-holiday-label">{schoolHol}</div>{/if}
+								{@const mdEntries = allEntries.filter(e => e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1).sort((a, b) => a.item.inquiry_id.localeCompare(b.item.inquiry_id))}
+								{@const sdEntries = allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1))}
+								{@const sdCap = Math.max(2, 4 - mdEntries.length)}
+								{#each mdEntries as entry}
+									{@const dayNum = entry.item.day_number ?? 1}
+									{@const totalDays = entry.item.total_days ?? 1}
+									{@const dow = new Date(entry.item.scheduled_date ?? dateStr).getDay()}
+									{@const isVisualStart = dayNum === 1 || dow === 1}
+									{@const isVisualEnd = dayNum === totalDays || dow === 0}
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<div
+										class="md-bar {inquiryEntryClass(entry.item.status)}"
+										class:md-bar-start={isVisualStart}
+										class:md-bar-end={isVisualEnd}
+										title="{entry.item.customer_name ?? ''} · Tag {dayNum}/{totalDays}"
+										draggable="true"
+										ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
+										onclick={(e) => openInquiryPanel(e, entry.item)}
+										role="button"
+										tabindex="0"
+										onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
+									>
+										{#if isVisualStart}<span class="md-bar-text">{truncate(entry.item.customer_name, 12)}</span>{/if}
+									</div>
+								{/each}
 								<div class="cal-entries">
-									{#each allEntries.slice(0, 4) as entry}
+									{#each sdEntries.slice(0, sdCap) as entry}
 										{#if entry.type === 'inquiry'}
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
 											<span
@@ -1001,7 +1026,7 @@
 												tabindex="0"
 												onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
 											>
-												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 10)}{#if entry.item.day_number && entry.item.total_days && entry.item.total_days > 1}<span class="multiday-badge"> T{entry.item.day_number}/{entry.item.total_days}</span>{/if}
+												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 10)}
 											</span>
 										{:else}
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1019,8 +1044,8 @@
 											</span>
 										{/if}
 									{/each}
-									{#if allEntries.length > 4}
-										<span class="cal-more">+{allEntries.length - 4} mehr</span>
+									{#if sdEntries.length > sdCap}
+										<span class="cal-more">+{sdEntries.length - sdCap} mehr</span>
 									{/if}
 								</div>
 							</button>
@@ -1595,6 +1620,38 @@
 
 	.entry-id { font-weight: 400; opacity: 0.7; font-size: 0.55rem; }
 	.cal-more { font-size: 0.6rem; color: var(--dt-on-surface-variant); font-weight: 500; padding: 1px 3px; }
+
+	/* ─── Multi-day spanning bars (month view) ─────────────────────────────────── */
+	.md-bar {
+		display: block;
+		font-size: 0.6rem;
+		font-weight: 600;
+		padding: 2px 0;
+		white-space: nowrap;
+		overflow: hidden;
+		cursor: pointer;
+		/* extend through cell padding (left 0.375rem, right 0.25rem) to fill cell edge-to-edge */
+		margin: 1px -0.25rem 1px -0.375rem;
+		border-radius: 0;
+		min-height: 14px;
+		transition: opacity var(--dt-transition);
+	}
+	.md-bar:hover { opacity: 0.8; }
+	.md-bar.md-bar-start {
+		margin-left: 1px;
+		border-top-left-radius: 3px;
+		border-bottom-left-radius: 3px;
+	}
+	.md-bar.md-bar-end {
+		margin-right: 1px;
+		border-top-right-radius: 3px;
+		border-bottom-right-radius: 3px;
+	}
+	.md-bar.md-bar-start.md-bar-end {
+		margin: 1px;
+		border-radius: 3px;
+	}
+	.md-bar-text { padding-left: 5px; }
 
 	/* ─── Week view grid ───────────────────────────────────────────────────────── */
 	.week-grid {

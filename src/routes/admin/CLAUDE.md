@@ -36,6 +36,7 @@ The admin panel is a **separate SPA** from the public website. It runs client-si
 | `RouteMap.svelte` | Leaflet map with route polyline, start/end markers, distance badge |
 | `Toast.svelte` | Notification system — success/error/info, 4s auto-dismiss, `showToast()` export |
 | `ImageLightbox.svelte` | Full-size image overlay with bounding box visualization |
+| `CalendarSidePanel.svelte` | Side-panel overlay for calendar — day/inquiry/termin detail, capacity editor, employee assignments. Located in `src/routes/admin/calendar/` (not `$lib/components/admin/`) to co-locate with its sub-components. |
 
 ## API Client (`$lib/utils/api.svelte.ts`)
 
@@ -121,7 +122,8 @@ InquiryItem: { inquiry_id, customer_name, departure_address, arrival_address, vo
 
 - Monthly grid view (Mon-Sun), cell shows booked/capacity badge
 - Calendar hydrates directly from inquiries — no separate bookings table
-- Day click opens modal: capacity editor + list of inquiries (click through to inquiry detail)
+- Day click opens side panel (`CalendarSidePanel.svelte`): capacity editor + inquiry list + termin detail
+- `+page.svelte` owns `panelSelection: PanelSelection` (`$state`), passes via `bind:panelSelection` to `CalendarSidePanel`
 - Dashboard surfaces conflict dates (overbooked days)
 
 ## Auth Patterns

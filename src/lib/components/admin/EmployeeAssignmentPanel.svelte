@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiDelete } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import { Plus, Trash2, Check, X } from 'lucide-svelte';
 
 	// ---------------------------------------------------------------------------
@@ -42,21 +43,25 @@
 	/**
 	 * Component props.
 	 *
-	 * @prop entityId   - UUID of the inquiry or calendar item this panel is bound to.
-	 * @prop entityType - Which resource the employees are assigned to.
-	 *                    'inquiry'       → /api/v1/inquiries/{id}/employees
-	 *                    'calendar_item' → /api/v1/admin/calendar-items/{id}/employees
+	 * @prop entityId      - UUID of the inquiry or calendar item this panel is bound to.
+	 * @prop entityType    - Which resource the employees are assigned to.
+	 *                       'inquiry'       → /api/v1/inquiries/{id}/employees
+	 *                       'calendar_item' → /api/v1/admin/calendar-items/{id}/employees
 	 * @prop preferredDate - (Optional) ISO date string used to build clock timestamps for
 	 *                       inquiry assignments (YYYY-MM-DD portion). Ignored for calendar items.
+	 * @prop onUpdated     - (Optional) callback invoked after any successful mutation
+	 *                       (add, save, remove). The parent can use this to refresh its own state.
 	 */
 	let {
 		entityId,
 		entityType,
-		preferredDate = undefined
+		preferredDate = undefined,
+		onUpdated = undefined
 	}: {
 		entityId: string;
 		entityType: 'inquiry' | 'calendar_item';
 		preferredDate?: string | null;
+		onUpdated?: () => void;
 	} = $props();
 
 	// ---------------------------------------------------------------------------
@@ -96,6 +101,11 @@
 
 	// Per-row saving for inquiry mode (blur-to-save)
 	let inquerySaving = $state<string | null>(null);
+
+	// Remove-employee confirmation dialog
+	let showRemoveDialog = $state(false);
+	let pendingRemove = $state<{ id: string; name: string } | null>(null);
+	let removingEmp = $state(false);
 
 	// ---------------------------------------------------------------------------
 	// Load on mount
@@ -213,6 +223,7 @@
 			showToast('Mitarbeiter zugewiesen', 'success');
 			showAddForm = false;
 			await loadAssignments();
+			onUpdated?.();
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		} finally {
@@ -303,6 +314,7 @@
 			});
 			await loadAssignments();
 			showToast('Gespeichert', 'success');
+			onUpdated?.();
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		} finally {
@@ -315,22 +327,42 @@
 	// ---------------------------------------------------------------------------
 
 	/**
-	 * DELETEs an employee assignment after confirmation.
+	 * Opens the remove-employee confirmation dialog.
 	 *
 	 * Called by: Template (remove button onclick).
-	 * Purpose: DELETE /api/v1/inquiries|calendar-items/{id}/employees/{emp_id}.
+	 * Purpose: Records which employee is pending removal and shows the dialog,
+	 *          replacing the browser's native confirm() with a styled modal.
 	 *
 	 * @param empId - Employee UUID to remove.
-	 * @param name  - Display name used in the confirm dialog.
+	 * @param name  - Display name used in the confirm dialog message.
 	 */
-	async function removeEmployee(empId: string, name: string) {
-		if (!confirm(`${name} aus diesem Eintrag entfernen?`)) return;
+	function openRemoveDialog(empId: string, name: string) {
+		pendingRemove = { id: empId, name };
+		showRemoveDialog = true;
+	}
+
+	/**
+	 * Executes the employee removal after the ConfirmationDialog is confirmed.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: DELETE /api/v1/inquiries|calendar-items/{id}/employees/{emp_id},
+	 *          then reloads assignments and notifies the parent via onUpdated.
+	 */
+	async function handleRemoveEmp() {
+		if (!pendingRemove) return;
+		const { id: empId } = pendingRemove;
+		removingEmp = true;
 		try {
 			await apiDelete(`${baseUrl}/${empId}`);
 			showToast('Mitarbeiter entfernt', 'success');
+			showRemoveDialog = false;
+			pendingRemove = null;
 			await loadAssignments();
+			onUpdated?.();
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			removingEmp = false;
 		}
 	}
 
@@ -496,7 +528,7 @@
 									class="btn-icon danger"
 									title="Entfernen"
 									onclick={() =>
-										removeEmployee(
+										openRemoveDialog(
 											emp.employee_id,
 											`${emp.first_name} ${emp.last_name}`
 										)}
@@ -607,7 +639,7 @@
 						<button
 							class="btn-icon btn-remove"
 							onclick={() =>
-								removeEmployee(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
+								openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
 							disabled={savingEmp[emp.employee_id]}
 							title="Entfernen"
 						>
@@ -680,6 +712,16 @@
 		</div>
 	{/if}
 </div>
+
+<ConfirmationDialog
+	bind:open={showRemoveDialog}
+	title="Mitarbeiter entfernen"
+	message={pendingRemove ? `${pendingRemove.name} aus diesem Eintrag entfernen?` : ''}
+	confirmLabel="Entfernen"
+	loading={removingEmp}
+	onConfirm={handleRemoveEmp}
+	onCancel={() => { pendingRemove = null; }}
+/>
 
 <style>
 	.emp-panel {

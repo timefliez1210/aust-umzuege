@@ -141,7 +141,8 @@ src/
 │       │   └── [id]/
 │       │       └── +page.svelte    # Thread detail with draft management
 │       ├── calendar/
-│       │   └── +page.svelte        # Monthly calendar — bookings, capacity, day modal
+│       │   ├── +page.svelte        # Monthly calendar — grid, navigation, panelSelection state
+│       │   └── CalendarSidePanel.svelte  # Side panel — day/inquiry/termin detail, employee assignments
 │       ├── settings/
 │       │   └── +page.svelte        # User management, password change, role assignment
 │       ├── CLAUDE.md               # Internal developer reference (API endpoints, data models)
@@ -245,7 +246,7 @@ Each apiFetch() call:
 | `/admin/customers/[id]` | Kunde Detail | Customer profile with linked quotes and offers |
 | `/admin/emails` | E-Mails | Email thread list with search and compose form |
 | `/admin/emails/[id]` | E-Mail Thread | Thread view with message history, draft body editing, LLM regeneration, send and discard actions |
-| `/admin/calendar` | Kalender | Monthly grid calendar (Monday-first). Click any day to open a modal showing bookings, capacity override editor, and a create booking form. Dashboard surfaces overbooked days. |
+| `/admin/calendar` | Kalender | Monthly grid calendar (Monday-first). Click any day to open `CalendarSidePanel` showing day bookings, capacity override editor, inquiry detail, and termin detail. `panelSelection` state in page drives the panel via `bind:panelSelection`. Dashboard surfaces overbooked days. |
 | `/admin/settings` | Einstellungen | User list, create user form (name, email, password, role), delete user, change own password |
 
 ---

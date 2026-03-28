@@ -7,6 +7,7 @@
 	import Sidebar from '$lib/components/admin/Sidebar.svelte';
 	import Toast from '$lib/components/admin/Toast.svelte';
 	import Notepad from '$lib/components/admin/Notepad.svelte';
+	import ReportButton from '$lib/components/admin/ReportButton.svelte';
 
 	let { children } = $props();
 	let sidebarCollapsed = $state(false);
@@ -101,6 +102,7 @@
 	</div>
 
 	<Notepad />
+	<ReportButton />
 {/if}
 
 <Toast />

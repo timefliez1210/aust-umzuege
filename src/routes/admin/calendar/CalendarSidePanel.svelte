@@ -57,11 +57,27 @@
 		inquiries: InquiryItem[];
 	}
 
+	interface DayEmployee {
+		employee_id: string;
+		first_name: string;
+		last_name: string;
+		planned_hours: number | null;
+		notes: string | null;
+	}
+
 	interface InquiryDay {
 		day_date: string;
 		day_number: number;
 		notes: string | null;
+		/** Per-day start time ("HH:MM") — null means inherit from parent. */
+		start_time: string | null;
+		/** Per-day end time ("HH:MM") — null means inherit from parent. */
+		end_time: string | null;
+		employees: DayEmployee[];
 	}
+
+	// Identical shape to InquiryDay; alias for clarity in termin context.
+	type TerminDay = InquiryDay;
 
 	interface PanelDay {
 		kind: 'day';
@@ -148,12 +164,26 @@
 	let deletingInquiry = $state(false);
 	let showDeleteInquiryDialog = $state(false);
 
+	// Available employees — loaded once when first needed for day-level assignment
+	let allEmployees = $state<{ id: string; first_name: string; last_name: string }[]>([]);
+	let allEmployeesLoaded = $state(false);
+
+	// Shared state for the "add employee to a day" popover (used for both inq and termin days)
+	let addEmpDayTarget = $state<string | null>(null); // e.g. "inq-0" or "term-2"
+	let addEmpId = $state('');
+	let addEmpHours = $state('');
+
 	// Inquiry days (multi-day editor)
 	let inqDays = $state<InquiryDay[]>([]);
 	let inqDaysLoading = $state(false);
 	let inqDaysSaving = $state(false);
-	let inqDaysDirty = $state(false);
 	let inqUntilDate = $state('');
+
+	// Termin days (multi-day editor — mirrors inquiry days)
+	let termDays = $state<TerminDay[]>([]);
+	let termDaysLoading = $state(false);
+	let termDaysSaving = $state(false);
+	let termUntilDate = $state('');
 
 	// Termin panel edit state
 	let termEditTitle = $state('');
@@ -208,7 +238,9 @@
 			inqEditPreferredDate = sel.item.scheduled_date?.slice(0, 10) ?? sel.item.preferred_date?.slice(0, 10) ?? '';
 			inqEditStartTime = formatTime(sel.item.start_time);
 			inqEditEndTime = formatTime(sel.item.end_time);
+			addEmpDayTarget = null;
 			loadInquiryDays(sel.item.inquiry_id);
+			ensureEmployeesLoaded();
 		} else if (sel.kind === 'termin') {
 			termEditTitle = sel.item.title;
 			termEditCategory = sel.item.category;
@@ -219,6 +251,9 @@
 			termEditDuration = String(sel.item.duration_hours);
 			termEditLocation = sel.item.location ?? '';
 			termEditDescription = sel.item.description ?? '';
+			addEmpDayTarget = null;
+			loadTerminDays(sel.item.id);
+			ensureEmployeesLoaded();
 		}
 	});
 
@@ -234,23 +269,156 @@
 		panelSelection = null;
 	}
 
+	// ─── Employees: shared helpers ────────────────────────────────────────────────
+
+	/**
+	 * Loads all active employees once; no-ops on subsequent calls.
+	 *
+	 * Called by: $effect (when inquiry or termin panel opens)
+	 * Purpose: Populates the per-day employee dropdown without repeated fetches.
+	 */
+	async function ensureEmployeesLoaded() {
+		if (allEmployeesLoaded) return;
+		try {
+			const res = await apiGet<{ id: string; first_name: string; last_name: string; active: boolean }[]>(
+				'/api/v1/admin/employees'
+			);
+			allEmployees = (Array.isArray(res) ? res : []).filter(e => e.active !== false);
+			allEmployeesLoaded = true;
+		} catch {
+			// Non-fatal — dropdowns just stay empty
+		}
+	}
+
+	/**
+	 * Opens the "add employee" popover for a specific day slot.
+	 *
+	 * Called by: Template (Mitarbeiter button per day)
+	 * Purpose: Toggles the inline add-employee form for the clicked day.
+	 *
+	 * @param target - Identifier string like "inq-0" or "term-2"
+	 */
+	function openAddEmp(target: string) {
+		addEmpDayTarget = target;
+		addEmpId = '';
+		addEmpHours = '';
+	}
+
+	/**
+	 * Adds the selected employee to a specific inquiry day.
+	 *
+	 * Called by: Template (confirm button in add-employee popover)
+	 * Purpose: Appends a DayEmployee entry to inqDays[index].employees without saving yet.
+	 *
+	 * @param dayIndex - Index into inqDays[]
+	 */
+	function confirmAddInqDayEmployee(dayIndex: number) {
+		if (!addEmpId) return;
+		const emp = allEmployees.find(e => e.id === addEmpId);
+		if (!emp) return;
+		inqDays[dayIndex].employees = [
+			...inqDays[dayIndex].employees,
+			{
+				employee_id: emp.id,
+				first_name: emp.first_name,
+				last_name: emp.last_name,
+				planned_hours: addEmpHours ? parseFloat(addEmpHours) : null,
+				notes: null,
+			},
+		];
+		addEmpDayTarget = null;
+	}
+
+	/**
+	 * Removes an employee from a specific inquiry day (local state only, not saved yet).
+	 *
+	 * Called by: Template (× button on employee chip)
+	 * Purpose: Allows the admin to unassign an employee before saving the full day list.
+	 *
+	 * @param dayIndex - Index into inqDays[]
+	 * @param employeeId - UUID of the employee to remove
+	 */
+	function removeInqDayEmployee(dayIndex: number, employeeId: string) {
+		inqDays[dayIndex].employees = inqDays[dayIndex].employees.filter(
+			e => e.employee_id !== employeeId
+		);
+	}
+
+	/**
+	 * Adds the selected employee to a specific termin day.
+	 *
+	 * Called by: Template (confirm button in add-employee popover for termin days)
+	 * Purpose: Appends a DayEmployee entry to termDays[index].employees without saving yet.
+	 *
+	 * @param dayIndex - Index into termDays[]
+	 */
+	function confirmAddTermDayEmployee(dayIndex: number) {
+		if (!addEmpId) return;
+		const emp = allEmployees.find(e => e.id === addEmpId);
+		if (!emp) return;
+		termDays[dayIndex].employees = [
+			...termDays[dayIndex].employees,
+			{
+				employee_id: emp.id,
+				first_name: emp.first_name,
+				last_name: emp.last_name,
+				planned_hours: addEmpHours ? parseFloat(addEmpHours) : null,
+				notes: null,
+			},
+		];
+		addEmpDayTarget = null;
+	}
+
+	/**
+	 * Removes an employee from a specific termin day (local state only, not saved yet).
+	 *
+	 * Called by: Template (× button on employee chip for termin days)
+	 *
+	 * @param dayIndex - Index into termDays[]
+	 * @param employeeId - UUID of the employee to remove
+	 */
+	function removeTermDayEmployee(dayIndex: number, employeeId: string) {
+		termDays[dayIndex].employees = termDays[dayIndex].employees.filter(
+			e => e.employee_id !== employeeId
+		);
+	}
+
 	// ─── Inquiry: multi-day editor ────────────────────────────────────────────────
+
+	/**
+	 * Formats a YYYY-MM-DD date string to a short German display (DD.MM.).
+	 *
+	 * Called by: Template (day row labels in multi-day editors)
+	 * Purpose: Compact date label that fits in the narrow day list.
+	 *
+	 * @param d - ISO date string YYYY-MM-DD
+	 */
+	function formatDayDate(d: string): string {
+		if (!d) return '';
+		const [, m, day] = d.split('-');
+		return `${day}.${m}.`;
+	}
 
 	/**
 	 * Loads scheduled days for the currently selected inquiry.
 	 *
 	 * Called by: $effect (when panelSelection changes to kind='inquiry')
-	 * Purpose: Populates inqDays for the multi-day date range editor.
+	 * Purpose: Populates inqDays (with per-day times and employees) for the multi-day editor.
 	 *
 	 * @param inqId - UUID of the inquiry
 	 */
 	async function loadInquiryDays(inqId: string) {
 		inqDaysLoading = true;
-		inqDaysDirty = false;
 		try {
 			const res = await apiGet<InquiryDay[]>(`/api/v1/inquiries/${inqId}/days`);
 			const days = Array.isArray(res) ? res : [];
-			inqDays = days;
+			// Normalise time strings to HH:MM (API may return HH:MM:SS)
+			inqDays = days.map(d => ({
+				...d,
+				start_time: d.start_time ? d.start_time.slice(0, 5) : null,
+				end_time:   d.end_time   ? d.end_time.slice(0, 5)   : null,
+				employees: d.employees ?? [],
+			}));
 			inqUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
 		} catch {
 			inqDays = [];
@@ -260,60 +428,176 @@
 	}
 
 	/**
-	 * Generates the inquiry day list from the inquiry's origin date to inqUntilDate.
+	 * Generates/updates the inquiry day list from the inquiry's origin date to inqUntilDate.
 	 *
-	 * Called by: saveInquiryDays
-	 * Purpose: User picks an end date; all dates in the range are auto-generated
-	 *          instead of adding days one by one.
-	 *
-	 * @returns false if the range is invalid (until before origin, or no origin date)
+	 * Called by: Template (oninput on the "Bis" date picker) and saveInquiryDays
+	 * Purpose: Auto-generates date entries for the range; preserves times and employees
+	 *          for dates that already exist in inqDays so edits are not lost on resize.
 	 */
-	function applyInquiryDateRange(): boolean {
-		if (!panelSelection || panelSelection.kind !== 'inquiry') return false;
+	function applyInquiryDateRange() {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
 		const originStr = panelSelection.item.scheduled_date?.slice(0, 10)
 			?? panelSelection.item.preferred_date?.slice(0, 10) ?? '';
-		if (!originStr) return false;
+		if (!originStr || !inqUntilDate) return;
 		const origin = new Date(originStr + 'T00:00:00');
-		const until  = inqUntilDate ? new Date(inqUntilDate + 'T00:00:00') : origin;
-		if (until < origin) return false;
+		const until  = new Date(inqUntilDate + 'T00:00:00');
+		if (until < origin) return;
+
+		// Build a lookup of existing day data keyed by date string
+		const existing = new Map(inqDays.map(d => [d.day_date, d]));
+
 		const days: InquiryDay[] = [];
 		const cur = new Date(origin);
 		let num = 1;
 		while (cur <= until) {
-			const y = cur.getFullYear();
-			const m = String(cur.getMonth() + 1).padStart(2, '0');
-			const d = String(cur.getDate()).padStart(2, '0');
-			days.push({ day_date: `${y}-${m}-${d}`, day_number: num++, notes: null });
+			const iso = cur.toISOString().slice(0, 10);
+			const prev = existing.get(iso);
+			days.push({
+				day_date:   iso,
+				day_number: num++,
+				notes:      prev?.notes      ?? null,
+				start_time: prev?.start_time ?? null,
+				end_time:   prev?.end_time   ?? null,
+				employees:  prev?.employees  ?? [],
+			});
 			cur.setDate(cur.getDate() + 1);
 		}
 		inqDays = days;
-		inqDaysDirty = true;
-		return true;
 	}
 
 	/**
 	 * Persists the current inquiry day list via PUT /api/v1/inquiries/{id}/days.
 	 *
 	 * Called by: Template (Zeitraum speichern button in inquiry panel)
-	 * Purpose: Full-replace semantics — sends the complete day list to the API.
+	 * Purpose: Full-replace semantics — sends the complete day list (with per-day
+	 *          times and employees) to the API, then reloads the schedule.
 	 */
 	async function saveInquiryDays() {
 		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
-		if (!applyInquiryDateRange()) {
-			showToast('Ungültiger Zeitraum', 'error');
-			return;
-		}
+		if (!inqUntilDate) { showToast('Enddatum fehlt', 'error'); return; }
+		applyInquiryDateRange();
 		const inqId = panelSelection.item.inquiry_id;
 		inqDaysSaving = true;
 		try {
-			await apiPut(`/api/v1/inquiries/${inqId}/days`, { days: inqDays });
-			inqDaysDirty = false;
+			const payload = inqDays.map(d => ({
+				day_date:   d.day_date,
+				day_number: d.day_number,
+				notes:      d.notes || null,
+				start_time: d.start_time ? (d.start_time.length === 5 ? d.start_time + ':00' : d.start_time) : null,
+				end_time:   d.end_time   ? (d.end_time.length   === 5 ? d.end_time   + ':00' : d.end_time)   : null,
+				employees:  d.employees.map(e => ({
+					employee_id:   e.employee_id,
+					planned_hours: e.planned_hours ?? null,
+					notes:         e.notes ?? null,
+				})),
+			}));
+			await apiPut(`/api/v1/inquiries/${inqId}/days`, { days: payload });
 			showToast('Tage gespeichert', 'success');
 			await onLoadSchedule();
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		} finally {
 			inqDaysSaving = false;
+		}
+	}
+
+	// ─── Termin: multi-day editor ─────────────────────────────────────────────────
+
+	/**
+	 * Loads scheduled days for the currently selected calendar item (Termin).
+	 *
+	 * Called by: $effect (when panelSelection changes to kind='termin')
+	 * Purpose: Populates termDays (with per-day times and employees) for the multi-day editor.
+	 *
+	 * @param itemId - UUID of the calendar item
+	 */
+	async function loadTerminDays(itemId: string) {
+		termDaysLoading = true;
+		try {
+			const res = await apiGet<TerminDay[]>(`/api/v1/admin/calendar-items/${itemId}/days`);
+			const days = Array.isArray(res) ? res : [];
+			termDays = days.map(d => ({
+				...d,
+				start_time: d.start_time ? d.start_time.slice(0, 5) : null,
+				end_time:   d.end_time   ? d.end_time.slice(0, 5)   : null,
+				employees:  d.employees ?? [],
+			}));
+			termUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
+		} catch {
+			termDays = [];
+		} finally {
+			termDaysLoading = false;
+		}
+	}
+
+	/**
+	 * Generates/updates the termin day list from the termin's date to termUntilDate.
+	 *
+	 * Called by: Template (oninput on the "Bis" date picker for termins)
+	 * Purpose: Mirrors applyInquiryDateRange for calendar items.
+	 */
+	function applyTerminDateRange() {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		const originStr = panelSelection.item.scheduled_date ?? '';
+		if (!originStr || !termUntilDate) return;
+		const origin = new Date(originStr + 'T00:00:00');
+		const until  = new Date(termUntilDate + 'T00:00:00');
+		if (until < origin) return;
+
+		const existing = new Map(termDays.map(d => [d.day_date, d]));
+
+		const days: TerminDay[] = [];
+		const cur = new Date(origin);
+		let num = 1;
+		while (cur <= until) {
+			const iso = cur.toISOString().slice(0, 10);
+			const prev = existing.get(iso);
+			days.push({
+				day_date:   iso,
+				day_number: num++,
+				notes:      prev?.notes      ?? null,
+				start_time: prev?.start_time ?? null,
+				end_time:   prev?.end_time   ?? null,
+				employees:  prev?.employees  ?? [],
+			});
+			cur.setDate(cur.getDate() + 1);
+		}
+		termDays = days;
+	}
+
+	/**
+	 * Persists the termin day list via PUT /api/v1/admin/calendar-items/{id}/days.
+	 *
+	 * Called by: Template (Zeitraum speichern button in termin panel)
+	 * Purpose: Full-replace semantics — sends the complete day list with per-day
+	 *          times and employees, then reloads the schedule.
+	 */
+	async function saveTerminDays() {
+		if (!panelSelection || panelSelection.kind !== 'termin') return;
+		if (!termUntilDate) { showToast('Enddatum fehlt', 'error'); return; }
+		applyTerminDateRange();
+		const itemId = panelSelection.item.id;
+		termDaysSaving = true;
+		try {
+			const payload = termDays.map(d => ({
+				day_date:   d.day_date,
+				day_number: d.day_number,
+				notes:      d.notes || null,
+				start_time: d.start_time ? (d.start_time.length === 5 ? d.start_time + ':00' : d.start_time) : null,
+				end_time:   d.end_time   ? (d.end_time.length   === 5 ? d.end_time   + ':00' : d.end_time)   : null,
+				employees:  d.employees.map(e => ({
+					employee_id:   e.employee_id,
+					planned_hours: e.planned_hours ?? null,
+					notes:         e.notes ?? null,
+				})),
+			}));
+			await apiPut(`/api/v1/admin/calendar-items/${itemId}/days`, { days: payload });
+			showToast('Tage gespeichert', 'success');
+			await onLoadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			termDaysSaving = false;
 		}
 	}
 
@@ -646,11 +930,56 @@
 							</div>
 							<div class="field">
 								<label for="inq-until">Bis</label>
-								<input id="inq-until" type="date" class="neu-input" min={originStr} bind:value={inqUntilDate} />
+								<input id="inq-until" type="date" class="neu-input" min={originStr} bind:value={inqUntilDate} oninput={applyInquiryDateRange} />
 							</div>
 						</div>
 						{#if inqDays.length > 1}
-							<p class="day-range-summary">{inqDays.length} Tage geplant</p>
+							<div class="day-list">
+								{#each inqDays as day, i}
+									<div class="day-row">
+										<div class="day-row-header">
+											<span class="day-label">Tag {day.day_number} — {formatDayDate(day.day_date)}</span>
+										</div>
+										<div class="field-row">
+											<div class="field">
+												<label>Start</label>
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].start_time} />
+											</div>
+											<div class="field">
+												<label>Ende</label>
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].end_time} />
+											</div>
+										</div>
+										{#if day.employees.length > 0}
+											<div class="day-emp-list">
+												{#each day.employees as emp}
+													<span class="day-emp-chip">
+														{emp.first_name} {emp.last_name[0]}.{emp.planned_hours ? ` ({emp.planned_hours}h)` : ''}
+														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
+													</span>
+												{/each}
+											</div>
+										{/if}
+										{#if addEmpDayTarget === `inq-${i}`}
+											<div class="day-emp-add-row">
+												<select class="neu-input" bind:value={addEmpId}>
+													<option value="">— wählen —</option>
+													{#each allEmployees.filter(e => !day.employees.some(de => de.employee_id === e.id)) as e}
+														<option value={e.id}>{e.first_name} {e.last_name}</option>
+													{/each}
+												</select>
+												<input type="number" step="0.5" min="0" max="24" class="neu-input hours-input" placeholder="h" bind:value={addEmpHours} />
+												<button class="btn btn-primary btn-sm" onclick={() => confirmAddInqDayEmployee(i)} disabled={!addEmpId}><Check size={12} /></button>
+												<button class="btn btn-ghost btn-sm" onclick={() => addEmpDayTarget = null}>×</button>
+											</div>
+										{:else}
+											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`inq-${i}`)}>
+												<Plus size={11} /> Mitarbeiter
+											</button>
+										{/if}
+									</div>
+								{/each}
+							</div>
 						{/if}
 						<div class="days-actions">
 							<button class="btn btn-primary btn-sm" onclick={saveInquiryDays} disabled={inqDaysSaving || !inqUntilDate}>
@@ -736,13 +1065,88 @@
 					</div>
 				</div>
 
-				<!-- Employee assignments -->
+				<!-- Employee assignments (single-day; hidden when multi-day is active) -->
+				{#if termDays.length <= 1}
 				<div class="panel-section">
 					<EmployeeAssignmentPanel
 						entityId={panelSelection.item.id}
 						entityType="calendar_item"
 						onUpdated={() => onLoadSchedule()}
 					/>
+				</div>
+				{/if}
+
+				<!-- Multi-day scheduling section -->
+				<div class="panel-section">
+					<div class="section-title">Mehrtägiger Termin</div>
+					{#if termDaysLoading}
+						<p class="panel-loading">Laden...</p>
+					{:else}
+						{@const originStr = panelSelection.item.scheduled_date ?? ''}
+						<div class="field-row">
+							<div class="field">
+								<label>Von</label>
+								<span class="day-origin-label">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
+							</div>
+							<div class="field">
+								<label for="term-until">Bis</label>
+								<input id="term-until" type="date" class="neu-input" min={originStr} bind:value={termUntilDate} oninput={applyTerminDateRange} />
+							</div>
+						</div>
+						{#if termDays.length > 1}
+							<div class="day-list">
+								{#each termDays as day, i}
+									<div class="day-row">
+										<div class="day-row-header">
+											<span class="day-label">Tag {day.day_number} — {formatDayDate(day.day_date)}</span>
+										</div>
+										<div class="field-row">
+											<div class="field">
+												<label>Start</label>
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].start_time} />
+											</div>
+											<div class="field">
+												<label>Ende</label>
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].end_time} />
+											</div>
+										</div>
+										{#if day.employees.length > 0}
+											<div class="day-emp-list">
+												{#each day.employees as emp}
+													<span class="day-emp-chip">
+														{emp.first_name} {emp.last_name[0]}.{emp.planned_hours ? ` ({emp.planned_hours}h)` : ''}
+														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
+													</span>
+												{/each}
+											</div>
+										{/if}
+										{#if addEmpDayTarget === `term-${i}`}
+											<div class="day-emp-add-row">
+												<select class="neu-input" bind:value={addEmpId}>
+													<option value="">— wählen —</option>
+													{#each allEmployees.filter(e => !day.employees.some(de => de.employee_id === e.id)) as e}
+														<option value={e.id}>{e.first_name} {e.last_name}</option>
+													{/each}
+												</select>
+												<input type="number" step="0.5" min="0" max="24" class="neu-input hours-input" placeholder="h" bind:value={addEmpHours} />
+												<button class="btn btn-primary btn-sm" onclick={() => confirmAddTermDayEmployee(i)} disabled={!addEmpId}><Check size={12} /></button>
+												<button class="btn btn-ghost btn-sm" onclick={() => addEmpDayTarget = null}>×</button>
+											</div>
+										{:else}
+											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`term-${i}`)}>
+												<Plus size={11} /> Mitarbeiter
+											</button>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/if}
+						<div class="days-actions">
+							<button class="btn btn-primary btn-sm" onclick={saveTerminDays} disabled={termDaysSaving || !termUntilDate}>
+								{termDaysSaving ? '...' : 'Zeitraum speichern'}
+							</button>
+						</div>
+					{/if}
 				</div>
 			{/if}
 
@@ -1019,6 +1423,18 @@
 	.days-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
 	.day-origin-label { font-size: 0.875rem; font-weight: 600; color: var(--dt-on-surface); display: block; padding: 0.25rem 0; }
 	.day-range-summary { font-size: 0.75rem; color: var(--dt-on-surface-variant); margin: 0.25rem 0 0; }
+	.day-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+	.day-row { background: var(--dt-surface-variant); border-radius: 8px; padding: 0.5rem 0.625rem; }
+	.day-row-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.375rem; }
+	.day-label { font-size: 0.8125rem; font-weight: 600; color: var(--dt-on-surface); }
+	.day-emp-list { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+	.day-emp-chip { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--dt-surface); border: 1px solid var(--dt-outline-variant); border-radius: 12px; padding: 0.125rem 0.5rem; font-size: 0.75rem; color: var(--dt-on-surface); }
+	.day-emp-remove { background: none; border: none; cursor: pointer; color: var(--dt-on-surface-variant); padding: 0 0.125rem; line-height: 1; display: flex; align-items: center; }
+	.day-emp-remove:hover { color: var(--dt-error, #b91c1c); }
+	.day-emp-add-row { margin-top: 0.375rem; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
+	.day-add-emp-btn { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--dt-surface); border: 1px dashed var(--dt-outline-variant); border-radius: 8px; cursor: pointer; color: var(--dt-on-surface-variant); }
+	.day-add-emp-btn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }
+	.hours-input { width: 4.5rem; padding: 0.2rem 0.375rem; font-size: 0.75rem; border: 1px solid var(--dt-outline-variant); border-radius: 6px; background: var(--dt-surface); color: var(--dt-on-surface); }
 
 	/* ─── Mobile: bottom sheet handle ─────────────────────────────────────────── */
 	.sheet-handle-bar {

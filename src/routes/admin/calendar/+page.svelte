@@ -973,6 +973,7 @@
 								class:today={day.isToday}
 								class:overbooked
 								class:school-holiday={!!schoolHol}
+								class:public-holiday={!!publicHol}
 								class:drag-over={dragOverDate === dateStr}
 								onclick={() => openDayPanel(day.schedule, day.date)}
 								ondragover={(e) => onCellDragOver(e, dateStr)}
@@ -1045,6 +1046,7 @@
 							class:today={isToday}
 							class:overbooked
 							class:school-holiday={!!wSchoolHol}
+							class:public-holiday={!!wPublicHol}
 							class:drag-over={dragOverDate === dateStr}
 							onclick={() => openDayPanel(sched ?? null, null, dateStr)}
 							ondragover={(e) => onCellDragOver(e, dateStr)}
@@ -2196,12 +2198,17 @@
 	/* ─── Holidays & school breaks ─────────────────────────────────────────────── */
 	.cal-cell.school-holiday,
 	.week-cell.school-holiday { background: linear-gradient(135deg, #fffbeb, #fef9c3); }
+	.cal-cell.public-holiday,
+	.week-cell.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
+	/* Public holiday takes precedence when both apply */
+	.cal-cell.school-holiday.public-holiday,
+	.week-cell.school-holiday.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
 	.holiday-badge {
 		display: inline-block;
 		font-size: 0.6rem;
 		font-weight: 600;
-		color: #92400e;
-		background: #fef3c7;
+		color: #991b1b;
+		background: #fecaca;
 		border-radius: 3px;
 		padding: 0 4px;
 		white-space: nowrap;
@@ -2227,6 +2234,6 @@
 	}
 	.legend-item { display: flex; align-items: center; gap: 5px; }
 	.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
-	.legend-public { background: #fef3c7; }
+	.legend-public { background: #fecaca; }
 	.legend-school { background: #fffbeb; }
 </style>

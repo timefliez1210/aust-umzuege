@@ -16,7 +16,7 @@
 	import { page } from '$app/stores';
 	import {
 		Send, Camera, Video, Calendar, ClipboardList,
-		Building2, User, Users, ChevronLeft, Check,
+		Building2, User, Users, ChevronLeft, Check, MapPin,
 	} from 'lucide-svelte';
 	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
@@ -315,7 +315,8 @@
 
 	const contactValid = $derived(
 		customerType === 'business'
-			? (contact.company_name !== '' && contact.last_name !== '' && contact.email !== '')
+			? (contact.company_name !== '' && contact.last_name !== '' && contact.email !== ''
+				&& billingAddress.street !== '' && billingAddress.zip !== '' && billingAddress.city !== '')
 			: bookingForSelf
 				? (contact.last_name !== '' && contact.email !== '')
 				: (contact.last_name !== '' && contact.email !== '' && recipient.last_name !== '')
@@ -515,6 +516,33 @@
 						<label for="company_name">Firmenname *</label>
 						<input id="company_name" type="text" bind:value={contact.company_name}
 							autocomplete="organization" required />
+					</div>
+				</div>
+			</div>
+
+			<div class="contact-block">
+				<div class="contact-block-header">
+					<MapPin size={16} />
+					<span>Firmensitz / Rechnungsadresse</span>
+				</div>
+				<div class="field-row">
+					<div class="field field--grow">
+						<label for="ba_street">Straße *</label>
+						<input id="ba_street" type="text" bind:value={billingAddress.street} autocomplete="street-address" required />
+					</div>
+					<div class="field field--shrink">
+						<label for="ba_number">Nr.</label>
+						<input id="ba_number" type="text" bind:value={billingAddress.number} />
+					</div>
+				</div>
+				<div class="field-row">
+					<div class="field field--shrink">
+						<label for="ba_zip">PLZ *</label>
+						<input id="ba_zip" type="text" bind:value={billingAddress.zip} maxlength="5" autocomplete="postal-code" required />
+					</div>
+					<div class="field field--grow">
+						<label for="ba_city">Ort *</label>
+						<input id="ba_city" type="text" bind:value={billingAddress.city} autocomplete="address-level2" required />
 					</div>
 				</div>
 			</div>

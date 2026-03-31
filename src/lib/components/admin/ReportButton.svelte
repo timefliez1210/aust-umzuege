@@ -82,6 +82,25 @@
 		formFiles = [...formFiles, ...Array.from(input.files ?? [])];
 		input.value = '';
 	}
+
+	/**
+	 * Handles clipboard paste of images into the panel.
+	 *
+	 * Called by: Template (onpaste on the panel div).
+	 * Purpose: Allows pasting screenshots directly from clipboard (Ctrl+V / Cmd+V).
+	 *
+	 * @param e - Native ClipboardEvent
+	 */
+	function onPaste(e: ClipboardEvent) {
+		const images = Array.from(e.clipboardData?.items ?? [])
+			.filter((item) => item.type.startsWith('image/'))
+			.map((item) => item.getAsFile())
+			.filter((f): f is File => f !== null);
+		if (images.length > 0) {
+			e.preventDefault();
+			formFiles = [...formFiles, ...images];
+		}
+	}
 </script>
 
 <!-- FAB -->
@@ -95,7 +114,8 @@
 
 <!-- Panel -->
 {#if open}
-	<div class="report-panel">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div class="report-panel" role="region" onpaste={onPaste}>
 		<div class="panel-header">
 			<span>Report einreichen</span>
 		</div>
@@ -127,7 +147,7 @@
 			role="presentation"
 		>
 			<Upload size={14} />
-			<span>Screenshots ablegen oder</span>
+			<span>Ablegen, einfügen (Strg+V) oder</span>
 			<button class="btn-link" onclick={() => document.getElementById('rfab-file')?.click()}>
 				auswählen
 			</button>

@@ -543,7 +543,7 @@
 						{#each hoursSummary.assignments as a}
 							<tr
 								class="clickable-row"
-								onclick={() => goto(`/admin/inquiries/${a.inquiry_id}`)}
+								onclick={() => { if (a.inquiry_id) goto(`/admin/inquiries/${a.inquiry_id}`); }}
 							>
 								<td>{a.booking_date ? formatDate(a.booking_date) : '—'}</td>
 								<td>{a.customer_name ?? '—'}</td>

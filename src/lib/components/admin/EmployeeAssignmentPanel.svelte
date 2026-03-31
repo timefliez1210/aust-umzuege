@@ -404,20 +404,6 @@
 		return m > 0 ? `${h}h ${m}m` : `${h}h`;
 	}
 
-	/**
-	 * Returns true when admin-set and employee-reported hours differ by more than 15 min.
-	 *
-	 * Called by: Template (discrepancy highlight, inquiry mode).
-	 * Purpose: Visual flag so Alex can spot mismatches between admin-entered and
-	 *          self-reported times.
-	 *
-	 * @param emp - The assignment record to check.
-	 * @returns True if both actual_hours and employee_actual_hours exist and differ by >0.25h.
-	 */
-	function hasDiscrepancy(emp: EmployeeAssignment): boolean {
-		if (emp.actual_hours == null || emp.employee_actual_hours == null) return false;
-		return Math.abs(emp.actual_hours - emp.employee_actual_hours) > 0.25;
-	}
 </script>
 
 <div class="emp-panel">
@@ -437,136 +423,64 @@
 	{:else if assignments.length === 0}
 		<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
 	{:else if entityType === 'inquiry'}
-		<!-- ── Inquiry mode: table with clock columns ── -->
-		<div class="emp-table-wrapper">
-			<table class="emp-table">
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th class="num">Geplant (h)</th>
-						<th colspan="2" class="group-header admin-group">Admin-Zeiten</th>
-						<th colspan="2" class="group-header emp-group">Mitarbeiter-Zeiten</th>
-						<th></th>
-					</tr>
-					<tr class="subheader-row">
-						<th></th>
-						<th></th>
-						<th>Beginn</th>
-						<th class="num">Ende / Ist</th>
-						<th>Beginn</th>
-						<th class="num">Ende / Ist</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each assignments as emp}
-						<tr class:saving-row={inquerySaving === emp.employee_id}>
-							<td>{emp.first_name} {emp.last_name}</td>
-							<td class="num">
-								<input
-									type="number"
-									step="0.5"
-									class="inline-input"
-									value={emp.planned_hours}
-									onblur={(e) =>
-										updatePlannedHours(
-											emp.employee_id,
-											(e.target as HTMLInputElement).value
-										)}
-								/>
-							</td>
-							<!-- Admin-set times (editable) -->
-							<td>
-								<input
-									type="text"
-									inputmode="decimal"
-									placeholder="HH:MM"
-									maxlength="5"
-									pattern="[0-9]{2}:[0-5][0-9]"
-									class="inline-input"
-									value={isoToLocalTime(emp.clock_in)}
-									onblur={(e) =>
-										updateClock(
-											emp.employee_id,
-											'clock_in',
-											(e.target as HTMLInputElement).value
-										)}
-								/>
-							</td>
-							<td class="num">
-								<input
-									type="text"
-									inputmode="decimal"
-									placeholder="HH:MM"
-									maxlength="5"
-									pattern="[0-9]{2}:[0-5][0-9]"
-									class="inline-input"
-									value={isoToLocalTime(emp.clock_out)}
-									onblur={(e) =>
-										updateClock(
-											emp.employee_id,
-											'clock_out',
-											(e.target as HTMLInputElement).value
-										)}
-								/>
-								{#if emp.actual_hours != null}
-									<span class="hours-badge">{fmtHours(emp.actual_hours)}</span>
-								{/if}
-							</td>
-							<!-- Employee self-reported times (read-only) -->
-							<td class:discrepancy={hasDiscrepancy(emp)}>
-								<span class="emp-time">{isoToLocalTime(emp.employee_clock_in) || '—'}</span>
-							</td>
-							<td class="num" class:discrepancy={hasDiscrepancy(emp)}>
-								<span class="emp-time">{isoToLocalTime(emp.employee_clock_out) || '—'}</span>
-								{#if emp.employee_actual_hours != null}
-									<span class="hours-badge emp-badge">{fmtHours(emp.employee_actual_hours)}</span>
-								{/if}
-							</td>
-							<td>
-								<button
-									class="btn-icon danger"
-									title="Entfernen"
-									onclick={() =>
-										openRemoveDialog(
-											emp.employee_id,
-											`${emp.first_name} ${emp.last_name}`
-										)}
-								>
-									<Trash2 size={14} />
-								</button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-				<tfoot>
-					<tr class="total-row">
-						<td><strong>Gesamt</strong></td>
-						<td class="num">
-							<strong>{assignments.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)}</strong>
-						</td>
-						<td></td>
-						<td class="num">
-							<strong>
-								{#if assignments.some((e) => e.actual_hours != null)}
-									{fmtHours(assignments.reduce((s, e) => s + (e.actual_hours ?? 0), 0))}
-								{:else}—{/if}
-							</strong>
-						</td>
-						<td></td>
-						<td class="num">
-							<strong>
-								{#if assignments.some((e) => e.employee_actual_hours != null)}
-									{fmtHours(
-										assignments.reduce((s, e) => s + (e.employee_actual_hours ?? 0), 0)
-									)}
-								{:else}—{/if}
-							</strong>
-						</td>
-						<td></td>
-					</tr>
-				</tfoot>
-			</table>
+		<!-- ── Inquiry mode: compact single-row per employee ── -->
+		<div class="inq-emp-list">
+			<div class="inq-emp-header">
+				<span>Name</span>
+				<span>h</span>
+				<span>Beginn – Ende</span>
+				<span></span>
+			</div>
+			{#each assignments as emp}
+				<div class="inq-emp-row" class:saving-row={inquerySaving === emp.employee_id}>
+					<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
+					<input
+						class="inq-input inq-hrs"
+						type="number"
+						step="0.5"
+						min="0"
+						value={emp.planned_hours}
+						onblur={(e) => updatePlannedHours(emp.employee_id, (e.target as HTMLInputElement).value)}
+					/>
+					<div class="inq-times">
+						<input
+							class="inq-input inq-time"
+							type="text"
+							inputmode="decimal"
+							placeholder="--:--"
+							maxlength="5"
+							value={isoToLocalTime(emp.clock_in)}
+							onblur={(e) => updateClock(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
+						/>
+						<span class="inq-sep">–</span>
+						<input
+							class="inq-input inq-time"
+							type="text"
+							inputmode="decimal"
+							placeholder="--:--"
+							maxlength="5"
+							value={isoToLocalTime(emp.clock_out)}
+							onblur={(e) => updateClock(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
+						/>
+						{#if emp.actual_hours != null}
+							<span class="hours-badge">{fmtHours(emp.actual_hours)}</span>
+						{/if}
+					</div>
+					<button
+						class="btn-icon danger"
+						title="Entfernen"
+						onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
+					>
+						<Trash2 size={13} />
+					</button>
+				</div>
+			{/each}
+			<div class="inq-total">
+				{assignments.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)} h geplant
+				{#if assignments.some((e) => e.actual_hours != null)}
+					· <span class="hours-badge">{fmtHours(assignments.reduce((s, e) => s + (e.actual_hours ?? 0), 0))} Ist</span>
+				{/if}
+			</div>
 		</div>
 	{:else}
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
@@ -750,80 +664,6 @@
 		margin: 0;
 	}
 
-	/* ── Inquiry mode: emp-table ── */
-
-	.emp-table-wrapper {
-		overflow-x: auto;
-	}
-
-	.emp-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-
-	.emp-table th {
-		text-align: left;
-		padding: 0.5rem 0.75rem;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		font-weight: 600;
-		font-size: 0.8125rem;
-	}
-
-	.emp-table td {
-		padding: 0.5rem 0.75rem;
-		color: var(--dt-on-surface);
-	}
-
-	.emp-table tr:nth-child(even) td {
-		background: var(--dt-surface-container-low);
-	}
-
-	.emp-table .num {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.emp-table .total-row td {
-		background: var(--dt-surface-container-high);
-		font-weight: 700;
-	}
-
-	.emp-table .group-header {
-		text-align: center;
-		font-size: 0.75rem;
-		letter-spacing: 0.04em;
-	}
-
-	.emp-table .admin-group {
-		background: #eff6ff;
-		color: #1d4ed8;
-		border-bottom: 2px solid #bfdbfe;
-	}
-
-	.emp-table .emp-group {
-		background: #f0fdf4;
-		color: #15803d;
-		border-bottom: 2px solid #bbf7d0;
-	}
-
-	.emp-table .subheader-row th {
-		font-size: 0.75rem;
-		font-weight: 500;
-		padding: 0.25rem 0.75rem;
-	}
-
-	.emp-table td.discrepancy {
-		background: #fff7ed;
-	}
-
-	.emp-time {
-		font-variant-numeric: tabular-nums;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
 	.hours-badge {
 		display: inline-block;
 		font-size: 0.6875rem;
@@ -833,35 +673,6 @@
 		padding: 0.1rem 0.4rem;
 		margin-left: 0.25rem;
 		font-weight: 600;
-	}
-
-	.emp-badge {
-		background: #dcfce7;
-		color: #15803d;
-	}
-
-	.inline-input {
-		width: 60px;
-		padding: 0.25rem 0.375rem;
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-		outline: none;
-		transition: border-bottom var(--dt-transition), background var(--dt-transition);
-	}
-
-	.inline-input:focus {
-		border-bottom-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-	}
-
-	.inline-input[type='text'] {
-		width: 88px;
-		text-align: left;
 	}
 
 	.btn-icon {
@@ -893,7 +704,7 @@
 		pointer-events: none;
 	}
 
-	/* ── Calendar-item mode: emp-list ── */
+	/* ── Card list (both modes) ── */
 
 	.emp-list {
 		display: flex;
@@ -982,5 +793,93 @@
 	@keyframes spin {
 		from { transform: rotate(0deg); }
 		to   { transform: rotate(360deg); }
+	}
+
+	/* ── Inquiry mode: compact rows ── */
+
+	.inq-emp-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.inq-emp-header {
+		display: grid;
+		grid-template-columns: 1fr 36px 1fr 24px;
+		gap: 0.375rem;
+		padding: 0.25rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--dt-on-surface-variant);
+		border-bottom: 1px solid var(--dt-outline-variant);
+		margin-bottom: 0.25rem;
+	}
+
+	.inq-emp-row {
+		display: grid;
+		grid-template-columns: 1fr 36px 1fr 24px;
+		gap: 0.375rem;
+		align-items: center;
+		padding: 0.3rem 0.5rem;
+		border-radius: var(--dt-radius-sm);
+		transition: background var(--dt-transition);
+	}
+
+	.inq-emp-row:hover {
+		background: var(--dt-surface-container-low);
+	}
+
+	.inq-name {
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--dt-on-surface);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.inq-input {
+		padding: 0.2rem 0.3rem;
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: 4px;
+		background: var(--dt-surface-container-high);
+		font-size: 0.8125rem;
+		outline: none;
+		transition: border-color var(--dt-transition);
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.inq-input:focus {
+		border-color: var(--dt-primary);
+	}
+
+	.inq-hrs {
+		text-align: center;
+	}
+
+	.inq-times {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+	}
+
+	.inq-time {
+		width: 56px;
+		text-align: center;
+		flex-shrink: 0;
+	}
+
+	.inq-sep {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		flex-shrink: 0;
+	}
+
+	.inq-total {
+		padding: 0.375rem 0.5rem;
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		border-top: 1px solid var(--dt-outline-variant);
+		margin-top: 0.25rem;
 	}
 </style>

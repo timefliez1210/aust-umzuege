@@ -930,7 +930,7 @@
 							</div>
 							<div class="field">
 								<label for="inq-until">Bis</label>
-								<input id="inq-until" type="date" class="neu-input" min={originStr} bind:value={inqUntilDate} oninput={applyInquiryDateRange} />
+								<input id="inq-until" type="date" class="neu-input" min={originStr} bind:value={inqUntilDate} oninput={applyInquiryDateRange} onfocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
 							</div>
 						</div>
 						{#if inqDays.length > 1}
@@ -1090,7 +1090,7 @@
 							</div>
 							<div class="field">
 								<label for="term-until">Bis</label>
-								<input id="term-until" type="date" class="neu-input" min={originStr} bind:value={termUntilDate} oninput={applyTerminDateRange} />
+								<input id="term-until" type="date" class="neu-input" min={originStr} bind:value={termUntilDate} oninput={applyTerminDateRange} onfocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
 							</div>
 						</div>
 						{#if termDays.length > 1}
@@ -1260,7 +1260,7 @@
 	.panel-body {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0.75rem 1rem 1.25rem;
+		padding: 0.75rem 1rem 18rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0;

@@ -229,6 +229,34 @@
 	}
 
 	/**
+	 * Saves the edited draft and immediately sends it.
+	 *
+	 * Called by: Template ("Speichern & Senden" button in the inline edit form)
+	 * Purpose: Combines the save and send steps so the admin does not have to
+	 *          close the editor first, find the Senden button, and click it separately.
+	 *
+	 * @param msgId - The ID of the draft message being edited
+	 * @returns void
+	 */
+	async function saveAndSend(msgId: string) {
+		saving = true;
+		try {
+			await apiPatch(`/api/v1/admin/emails/messages/${msgId}`, {
+				subject: editSubject || null,
+				body_text: editBody || null,
+			});
+			editingId = null;
+			const res = await apiPost<{ message: string }>(`/api/v1/admin/emails/messages/${msgId}/send`);
+			showToast(res.message, 'success');
+			await loadThread();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			saving = false;
+		}
+	}
+
+	/**
 	 * Creates a new outbound reply message as a draft within the current thread.
 	 *
 	 * Called by: Template ("Als Entwurf speichern" button click in the reply composer)
@@ -328,6 +356,14 @@
 							></textarea>
 						</div>
 						<div class="draft-actions">
+							<button
+								class="btn btn-send"
+								onclick={() => saveAndSend(msg.id)}
+								disabled={saving}
+							>
+								<Send size={14} />
+								{saving ? 'Sende...' : 'Speichern & Senden'}
+							</button>
 							<button
 								class="btn btn-save"
 								onclick={() => saveEdit(msg.id)}

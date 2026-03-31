@@ -210,7 +210,7 @@
 		rows={inquiries}
 		bind:sortKey
 		bind:sortDir
-		onRowClick={(row) => goto(`/admin/inquiries/${(row as InquiryListItem).id}`)}
+		onRowClick={(row) => { const id = (row as InquiryListItem).id; if (id) goto(`/admin/inquiries/${id}`); }}
 	>
 		{#snippet row(item, _i)}
 			{@const q = item as InquiryListItem}

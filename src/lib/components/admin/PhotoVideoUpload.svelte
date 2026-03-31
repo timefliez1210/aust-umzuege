@@ -238,13 +238,16 @@
 	 *          Times out after 120 attempts (10 minutes at 5-second intervals).
 	 *
 	 * @param estimationIds - Array of estimation UUIDs returned from the upload response that are still processing
+	 * @param mode - 'photo' or 'video' — controls which progress state and toast labels are used
 	 */
-	async function pollEstimations(estimationIds: string[]) {
+	async function pollEstimations(estimationIds: string[], mode: 'photo' | 'video') {
 		const maxAttempts = 120; // 10 min at 5s intervals
 		const pending = new Set(estimationIds);
 		let completed = 0;
 		let failed = 0;
 		const total = estimationIds.length;
+		const label = mode === 'photo' ? 'Foto' : 'Video';
+		const unit = mode === 'photo' ? 'Fotos' : 'Videos';
 
 		for (let i = 0; i < maxAttempts && pending.size > 0; i++) {
 			await new Promise((r) => setTimeout(r, 5000));
@@ -265,21 +268,26 @@
 				}
 			}
 			if (pending.size > 0) {
-				videoProgress = `${completed + failed}/${total} Videos analysiert...`;
+				const progressText = `${completed + failed}/${total} ${unit} analysiert...`;
+				if (mode === 'photo') {
+					photoProgress = progressText;
+				} else {
+					videoProgress = progressText;
+				}
 			}
 		}
 
 		if (failed > 0 && completed === 0) {
-			showToast('Video-Analyse fehlgeschlagen', 'error');
+			showToast(`${label}-Analyse fehlgeschlagen`, 'error');
 		} else if (failed > 0) {
 			showToast(
-				`${completed}/${total} Videos analysiert, ${failed} fehlgeschlagen`,
+				`${completed}/${total} ${unit} analysiert, ${failed} fehlgeschlagen`,
 				'error',
 			);
 		} else if (pending.size > 0) {
-			showToast('Video-Analyse Timeout', 'error');
+			showToast(`${label}-Analyse Timeout`, 'error');
 		} else {
-			showToast('Video-Analyse abgeschlossen', 'success');
+			showToast(`${label}-Analyse abgeschlossen`, 'success');
 		}
 		onUpdated();
 	}
@@ -325,7 +333,7 @@
 				.filter((r) => r.status === 'processing')
 				.map((r) => r.id);
 			if (processingIds.length > 0) {
-				await pollEstimations(processingIds);
+				await pollEstimations(processingIds, 'photo');
 			} else {
 				onUpdated();
 			}
@@ -378,7 +386,7 @@
 				.filter((r) => r.status === 'processing')
 				.map((r) => r.id);
 			if (processingIds.length > 0) {
-				await pollEstimations(processingIds);
+				await pollEstimations(processingIds, 'video');
 			} else {
 				onUpdated();
 			}

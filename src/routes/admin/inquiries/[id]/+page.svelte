@@ -145,6 +145,7 @@
 		destination_address: AddressSnapshot | null;
 		stop_address: AddressSnapshot | null;
 		estimation: EstimationSnapshot | null;
+		estimations?: EstimationSnapshot[];
 		items: ItemSnapshot[];
 		offer: OfferSnapshot | null;
 		employees?: EmployeeAssignment[];
@@ -464,9 +465,24 @@
 	}
 
 	let estimationsList = $derived.by((): EstimationEntry[] => {
+		// Prefer the full estimations array (all statuses: processing, failed, completed).
+		// Fall back to the single completed estimation for backward compatibility.
+		const ests = data?.estimations;
+		if (ests && ests.length > 0) {
+			return ests.map((est) => ({
+				id: est.id,
+				method: est.method,
+				status: est.status,
+				total_volume_m3: est.total_volume_m3,
+				item_count: est.item_count,
+				created_at: est.created_at,
+				source_video_url: est.source_video ?? null,
+				source_image_urls: est.source_images ?? [],
+			}));
+		}
 		const est = data?.estimation;
 		if (!est) return [];
-		const entries: EstimationEntry[] = [
+		return [
 			{
 				id: est.id,
 				method: est.method,
@@ -474,11 +490,10 @@
 				total_volume_m3: est.total_volume_m3,
 				item_count: est.item_count,
 				created_at: est.created_at,
-				source_video_url: est.source_video,
+				source_video_url: est.source_video ?? null,
 				source_image_urls: est.source_images ?? [],
 			},
 		];
-		return entries;
 	});
 
 	/** Full-URL photo list — index-aligned so EstimationItemsTable can resolve filterPhotoIndex. */

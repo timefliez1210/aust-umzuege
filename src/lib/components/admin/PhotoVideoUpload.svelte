@@ -339,13 +339,17 @@
 	}
 
 	/**
-	 * Compresses, uploads all queued photos to the photo estimation endpoint and polls for results.
+	 * Compresses and uploads all queued photos in batches, then polls for results.
 	 *
 	 * Called by: Template (onclick on "Hochladen" button in the Foto-Analyse card)
-	 * Purpose: Compresses each image client-side (max 1600 px / JPEG 82 %) to stay within
-	 *          Cloudflare Tunnel's upload limit, then POSTs to
-	 *          POST /api/v1/inquiries/{id}/estimate/depth (multipart FormData with images fields).
-	 *          After upload, polls for completion via pollEstimations.
+	 * Purpose: Compresses each image client-side (max 1600 px / JPEG 82 %), then splits
+	 *          into batches of BATCH_SIZE before POSTing to
+	 *          POST /api/v1/inquiries/{id}/estimate/depth.
+	 *
+	 *          Batching is required because Cloudflare Tunnel enforces a ~100 MB per-request
+	 *          limit. HEIC photos (iPhone) cannot be decoded by Canvas and fall back to their
+	 *          original size (4–6 MB each), so 20+ uncompressed photos can exceed the cap.
+	 *          At BATCH_SIZE=15, worst-case is 15 × 6 MB = 90 MB — safely under the limit.
 	 *
 	 * @returns void (side-effect: clears photoQueue, shows toast, calls onUpdated on completion)
 	 */
@@ -354,27 +358,42 @@
 
 		photoUploading = true;
 		const count = photoQueue.length;
+		const BATCH_SIZE = 15;
 
 		try {
+			// 1. Compress all images (HEIC fallback: returns original file unchanged)
 			const compressed: File[] = [];
 			for (let i = 0; i < photoQueue.length; i++) {
 				photoProgress = `Komprimiere ${i + 1}/${count}...`;
 				compressed.push(await compressImage(photoQueue[i]));
 			}
 
-			photoProgress = `${count} Foto${count > 1 ? 's' : ''} wird hochgeladen...`;
-			const formData = new FormData();
-			for (const file of compressed) {
-				formData.append('images', file);
+			// 2. Split into batches and POST each one sequentially
+			const allProcessingIds: string[] = [];
+			const batches: File[][] = [];
+			for (let i = 0; i < compressed.length; i += BATCH_SIZE) {
+				batches.push(compressed.slice(i, i + BATCH_SIZE));
 			}
 
-			const results = await apiFetch<{ id: string; status: string }[]>(
-				`/api/v1/inquiries/${inquiryId}/estimate/depth`,
-				{
-					method: 'POST',
-					body: formData,
-				},
-			);
+			for (let b = 0; b < batches.length; b++) {
+				photoProgress = batches.length > 1
+					? `Hochladen ${b + 1}/${batches.length}...`
+					: `${count} Foto${count > 1 ? 's' : ''} wird hochgeladen...`;
+
+				const formData = new FormData();
+				for (const file of batches[b]) {
+					formData.append('images', file);
+				}
+
+				const results = await apiFetch<{ id: string; status: string }[]>(
+					`/api/v1/inquiries/${inquiryId}/estimate/depth`,
+					{ method: 'POST', body: formData },
+				);
+
+				for (const r of results) {
+					if (r.status === 'processing') allProcessingIds.push(r.id);
+				}
+			}
 
 			photoQueue = [];
 			showToast(
@@ -382,11 +401,8 @@
 				'success',
 			);
 
-			const processingIds = results
-				.filter((r) => r.status === 'processing')
-				.map((r) => r.id);
-			if (processingIds.length > 0) {
-				await pollEstimations(processingIds, 'photo');
+			if (allProcessingIds.length > 0) {
+				await pollEstimations(allProcessingIds, 'photo');
 			} else {
 				onUpdated();
 			}

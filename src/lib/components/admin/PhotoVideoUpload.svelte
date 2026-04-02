@@ -293,40 +293,26 @@
 	}
 
 	/**
-	 * Converts any image (including HEIC/HEIF) to a resized JPEG via an offscreen canvas.
+	 * Resizes and JPEG-compresses a single image file using an offscreen canvas.
 	 *
 	 * Called by: uploadPhotos (for every file in photoQueue before FormData assembly)
-	 * Why: Phone photos are typically 3–10 MB each. 92 photos can exceed Cloudflare
-	 *      Tunnel's ~100 MB upload limit. Resizing to max 1600 px at 82 % JPEG quality
-	 *      reduces a typical 5 MB photo to ~300 KB (15×) with no visible loss for ML.
+	 * Why: Phone photos are typically 3–10 MB each. Resizing to max 1600 px at 82 %
+	 *      JPEG quality reduces a typical 5 MB photo to ~300 KB (15×) with no visible
+	 *      loss for ML estimation purposes.
 	 *
-	 *      HEIC/HEIF (iPhone default format) cannot be decoded by the browser's Canvas
-	 *      API on desktop. heic2any is used to convert those to a JPEG blob first, after
-	 *      which the normal canvas resize path runs.
+	 *      HEIC/HEIF (iPhone) cannot be decoded by the browser Canvas API on desktop —
+	 *      those fall back to the original file. Batching (15/request) ensures even
+	 *      15 × 6 MB uncompressed HEIC files stay under Cloudflare's 100 MB limit.
 	 *
 	 * @param file    - Raw File from the file picker
-	 * @returns       Compressed JPEG File, or the original File if all conversion fails
+	 * @returns       Compressed JPEG File, or the original File if canvas cannot decode it
 	 */
 	async function compressImage(file: File): Promise<File> {
 		const MAX_DIM = 1600;
 		const QUALITY = 0.82;
-
-		// HEIC/HEIF: convert to JPEG blob via heic2any before handing to canvas
-		let source: File | Blob = file;
-		const isHeic = /^image\/(heic|heif)$/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
-		if (isHeic) {
-			try {
-				const heic2any = (await import('heic2any')).default;
-				const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: QUALITY });
-				source = Array.isArray(result) ? result[0] : result;
-			} catch {
-				return file; // heic2any failed — send original, batching keeps it under limit
-			}
-		}
-
 		return new Promise((resolve) => {
 			const img = new Image();
-			const url = URL.createObjectURL(source);
+			const url = URL.createObjectURL(file);
 			img.onload = () => {
 				URL.revokeObjectURL(url);
 				const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));

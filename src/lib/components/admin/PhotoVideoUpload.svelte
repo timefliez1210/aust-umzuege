@@ -293,10 +293,57 @@
 	}
 
 	/**
-	 * Uploads all queued photos to the photo estimation endpoint and polls for results.
+	 * Resizes and JPEG-compresses a single image file using an offscreen canvas.
+	 *
+	 * Called by: uploadPhotos (for every file in photoQueue before FormData assembly)
+	 * Why: Phone photos are typically 3–10 MB each. 92 photos can exceed Cloudflare
+	 *      Tunnel's ~100 MB upload limit, causing the request to be silently dropped.
+	 *      Resizing to max 1600 px on the longest edge at 82 % JPEG quality reduces a
+	 *      typical 5 MB phone photo to ~300 KB — a 15× reduction with no visible loss
+	 *      for ML estimation purposes.
+	 *
+	 * HEIC/HEIF and any format the browser cannot decode fall back to the original file.
+	 *
+	 * @param file    - Raw File from the file picker
+	 * @returns       Compressed JPEG File, or the original File if compression fails
+	 */
+	async function compressImage(file: File): Promise<File> {
+		const MAX_DIM = 1600;
+		const QUALITY = 0.82;
+		return new Promise((resolve) => {
+			const img = new Image();
+			const url = URL.createObjectURL(file);
+			img.onload = () => {
+				URL.revokeObjectURL(url);
+				const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+				const canvas = document.createElement('canvas');
+				canvas.width = Math.round(img.width * scale);
+				canvas.height = Math.round(img.height * scale);
+				canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+				canvas.toBlob(
+					(blob) => {
+						if (!blob) { resolve(file); return; }
+						resolve(new File(
+							[blob],
+							file.name.replace(/\.[^.]+$/, '.jpg'),
+							{ type: 'image/jpeg', lastModified: file.lastModified },
+						));
+					},
+					'image/jpeg',
+					QUALITY,
+				);
+			};
+			img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+			img.src = url;
+		});
+	}
+
+	/**
+	 * Compresses, uploads all queued photos to the photo estimation endpoint and polls for results.
 	 *
 	 * Called by: Template (onclick on "Hochladen" button in the Foto-Analyse card)
-	 * Purpose: Sends queued images to the AI volume estimation pipeline via
+	 * Purpose: Compresses each image client-side (max 1600 px / JPEG 82 %) to stay within
+	 *          Cloudflare Tunnel's upload limit, then POSTs to
 	 *          POST /api/v1/inquiries/{id}/estimate/depth (multipart FormData with images fields).
 	 *          After upload, polls for completion via pollEstimations.
 	 *
@@ -307,11 +354,17 @@
 
 		photoUploading = true;
 		const count = photoQueue.length;
-		photoProgress = `${count} Foto${count > 1 ? 's' : ''} wird hochgeladen...`;
 
 		try {
+			const compressed: File[] = [];
+			for (let i = 0; i < photoQueue.length; i++) {
+				photoProgress = `Komprimiere ${i + 1}/${count}...`;
+				compressed.push(await compressImage(photoQueue[i]));
+			}
+
+			photoProgress = `${count} Foto${count > 1 ? 's' : ''} wird hochgeladen...`;
 			const formData = new FormData();
-			for (const file of photoQueue) {
+			for (const file of compressed) {
 				formData.append('images', file);
 			}
 

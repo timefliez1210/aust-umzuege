@@ -115,7 +115,6 @@
         font-weight: var(--font-bold);
         line-height: 1.15;
         margin: 0;
-        text-wrap: balance;
     }
 
     .hero__subheading {

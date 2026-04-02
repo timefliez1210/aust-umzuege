@@ -18,7 +18,7 @@ export const INQUIRY_STATUS_LABELS: Record<string, string> = {
 	expired: 'Abgelaufen',
 	cancelled: 'Abgesagt',
 	scheduled: 'Geplant',
-	completed: 'Abgeschlossen',
+	completed: 'Erledigt',
 	invoiced: 'Fakturiert',
 	paid: 'Bezahlt',
 };

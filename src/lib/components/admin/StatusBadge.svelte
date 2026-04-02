@@ -13,7 +13,7 @@
 		accepted: { bg: '#d1fae5', color: '#059669', text: 'Akzeptiert' },
 		confirmed: { bg: '#d1fae5', color: '#059669', text: 'Bestaetigt' },
 		scheduled: { bg: '#dbeafe', color: '#2563eb', text: 'Geplant' },
-		completed: { bg: '#d1fae5', color: '#059669', text: 'Abgeschlossen' },
+		completed: { bg: '#d1fae5', color: '#059669', text: 'Erledigt' },
 		invoiced: { bg: '#fef3c7', color: '#d97706', text: 'Fakturiert' },
 		rejected: { bg: '#fee2e2', color: '#dc2626', text: 'Abgelehnt' },
 		cancelled: { bg: '#fee2e2', color: '#dc2626', text: 'Storniert' },

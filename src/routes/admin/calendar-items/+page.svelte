@@ -137,7 +137,7 @@
 	function statusLabel(status: string): string {
 		const map: Record<string, string> = {
 			scheduled: 'Geplant',
-			completed: 'Abgeschlossen',
+			completed: 'Erledigt',
 			cancelled: 'Abgesagt'
 		};
 		return map[status] ?? status;

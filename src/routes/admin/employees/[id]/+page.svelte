@@ -48,7 +48,8 @@
 	}
 
 	interface HoursSummary {
-		month: string;
+		from: string;
+		to: string;
 		target_hours: number;
 		planned_hours: number;
 		actual_hours: number;
@@ -73,14 +74,30 @@
 	let editPhone = $state('');
 	let editTarget = $state('160');
 
-	// Month picker for hours card
+	// Hours view mode: '7d' shows rolling 7-day window from today; 'month' shows calendar month
+	let viewMode = $state<'7d' | 'month'>('7d');
 	let selectedMonth = $state(new Date().toISOString().slice(0, 7));
+
+	/**
+	 * Returns today and today+6 as ISO date strings.
+	 *
+	 * Called by: loadHours (7-day mode)
+	 * Purpose: Computes the rolling 7-day window anchored to the current date.
+	 *
+	 * @returns { from, to } — YYYY-MM-DD strings
+	 */
+	function getWeekRange(): { from: string; to: string } {
+		const today = new Date();
+		const from = today.toISOString().slice(0, 10);
+		const to = new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+		return { from, to };
+	}
 
 	$effect(() => {
 		const id = $page.params.id;
 		if (id) {
 			loadEmployee(id);
-			loadHours(id, selectedMonth);
+			loadHours(id);
 		}
 	});
 
@@ -110,16 +127,21 @@
 	}
 
 	/**
-	 * Loads monthly hours summary.
+	 * Loads hours summary for the active view mode (7-day or month).
 	 *
-	 * Called by: $effect on mount and month picker change
-	 * Purpose: Fetches hours aggregation for selected month.
+	 * Called by: $effect on mount, view mode toggle, month picker change
+	 * Purpose: Fetches hours aggregation for either the rolling 7-day window or a calendar month.
 	 */
-	async function loadHours(id: string, month: string) {
+	async function loadHours(id: string) {
 		try {
-			hoursSummary = await apiGet<HoursSummary>(
-				`/api/v1/admin/employees/${id}/hours?month=${month}`
-			);
+			let url: string;
+			if (viewMode === '7d') {
+				const { from, to } = getWeekRange();
+				url = `/api/v1/admin/employees/${id}/hours?from=${from}&to=${to}`;
+			} else {
+				url = `/api/v1/admin/employees/${id}/hours?month=${selectedMonth}`;
+			}
+			hoursSummary = await apiGet<HoursSummary>(url);
 		} catch {
 			hoursSummary = null;
 		}
@@ -183,9 +205,20 @@
 	 * Purpose: Reloads hours summary for the new month.
 	 */
 	function onHoursMonthChange() {
-		if (data) {
-			loadHours(data.id, selectedMonth);
-		}
+		if (data) loadHours(data.id);
+	}
+
+	/**
+	 * Switches between 7-day and month view modes and reloads hours.
+	 *
+	 * Called by: Template (view mode toggle buttons)
+	 * Purpose: Lets admin switch between rolling 7-day window and calendar month view.
+	 *
+	 * @param mode - '7d' for rolling week view, 'month' for calendar month view
+	 */
+	function setViewMode(mode: '7d' | 'month') {
+		viewMode = mode;
+		if (data) loadHours(data.id);
 	}
 
 	/**
@@ -407,16 +440,30 @@
 			</div>
 		</div>
 
-		<!-- Monthly Hours Card -->
+		<!-- Hours Card (7-day or monthly) -->
 		<div class="card">
 			<div class="card-header">
-				<h2>Monatsstunden</h2>
-				<input
-					type="month"
-					bind:value={selectedMonth}
-					onchange={onHoursMonthChange}
-					class="month-input"
-				/>
+				<h2>Stunden</h2>
+				<div class="view-toggle">
+					<button
+						class="toggle-btn"
+						class:active={viewMode === '7d'}
+						onclick={() => setViewMode('7d')}
+					>7 Tage</button>
+					<button
+						class="toggle-btn"
+						class:active={viewMode === 'month'}
+						onclick={() => setViewMode('month')}
+					>Monat</button>
+					{#if viewMode === 'month'}
+						<input
+							type="month"
+							bind:value={selectedMonth}
+							onchange={onHoursMonthChange}
+							class="month-input"
+						/>
+					{/if}
+				</div>
 			</div>
 			{#if hoursSummary}
 				<div class="hours-summary">
@@ -449,7 +496,9 @@
 					</div>
 				</div>
 			{:else}
-				<div class="empty-state">Keine Daten fuer diesen Monat.</div>
+				<div class="empty-state">
+					{viewMode === '7d' ? 'Keine Einsaetze in den naechsten 7 Tagen.' : 'Keine Daten fuer diesen Monat.'}
+				</div>
 			{/if}
 		</div>
 	</div>
@@ -579,7 +628,9 @@
 				</table>
 			</div>
 		{:else}
-			<div class="empty-state">Keine Einsaetze in diesem Monat.</div>
+			<div class="empty-state">
+				{viewMode === '7d' ? 'Keine Einsaetze in den naechsten 7 Tagen.' : 'Keine Einsaetze in diesem Monat.'}
+			</div>
 		{/if}
 	</div>
 {/if}
@@ -643,6 +694,32 @@
 		border-radius: 0 0 var(--dt-radius-lg) var(--dt-radius-lg);
 		font-size: 0.75rem;
 		color: var(--dt-on-surface-variant);
+	}
+
+	.view-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.toggle-btn {
+		padding: 0.25rem 0.6rem;
+		font-size: 0.8125rem;
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-radius: var(--dt-radius-sm);
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: background var(--dt-transition), color var(--dt-transition);
+	}
+
+	.toggle-btn.active {
+		background: var(--dt-primary);
+		color: var(--dt-on-primary);
+	}
+
+	.toggle-btn:hover:not(.active) {
+		background: var(--dt-surface-container);
 	}
 
 	.month-input {

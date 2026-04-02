@@ -954,7 +954,7 @@
 											<div class="day-emp-list">
 												{#each day.employees as emp}
 													<span class="day-emp-chip">
-														{emp.first_name} {emp.last_name[0]}.{emp.planned_hours ? ` ({emp.planned_hours}h)` : ''}
+														{emp.first_name} {emp.last_name[0]}.
 														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
 													</span>
 												{/each}
@@ -1013,7 +1013,7 @@
 							<label for="term-status">Status</label>
 							<select id="term-status" class="neu-input" bind:value={termEditStatus}>
 								<option value="scheduled">Geplant</option>
-								<option value="completed">Abgeschlossen</option>
+								<option value="completed">Erledigt</option>
 								<option value="cancelled">Abgesagt</option>
 							</select>
 						</div>
@@ -1114,7 +1114,7 @@
 											<div class="day-emp-list">
 												{#each day.employees as emp}
 													<span class="day-emp-chip">
-														{emp.first_name} {emp.last_name[0]}.{emp.planned_hours ? ` ({emp.planned_hours}h)` : ''}
+														{emp.first_name} {emp.last_name[0]}.
 														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
 													</span>
 												{/each}

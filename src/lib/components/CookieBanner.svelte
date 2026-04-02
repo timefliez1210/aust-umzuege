@@ -309,7 +309,7 @@
 		font-weight: 600;
 		font-size: 0.95rem;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s;
 		border: 2px solid transparent;
 		white-space: nowrap;
 	}
@@ -523,7 +523,7 @@
 		font-weight: 600;
 		font-size: 1rem;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: transform 0.2s, box-shadow 0.2s;
 	}
 
 	.cookie-settings__btn--save:hover {

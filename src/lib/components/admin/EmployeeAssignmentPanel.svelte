@@ -427,21 +427,12 @@
 		<div class="inq-emp-list">
 			<div class="inq-emp-header">
 				<span>Name</span>
-				<span>h</span>
 				<span>Beginn – Ende</span>
 				<span></span>
 			</div>
 			{#each assignments as emp}
 				<div class="inq-emp-row" class:saving-row={inquerySaving === emp.employee_id}>
 					<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
-					<input
-						class="inq-input inq-hrs"
-						type="number"
-						step="0.5"
-						min="0"
-						value={emp.planned_hours}
-						onblur={(e) => updatePlannedHours(emp.employee_id, (e.target as HTMLInputElement).value)}
-					/>
 					<div class="inq-times">
 						<input
 							class="inq-input inq-time"
@@ -476,9 +467,10 @@
 				</div>
 			{/each}
 			<div class="inq-total">
-				{assignments.reduce((s, e) => s + e.planned_hours, 0).toFixed(1)} h geplant
 				{#if assignments.some((e) => e.actual_hours != null)}
-					· <span class="hours-badge">{fmtHours(assignments.reduce((s, e) => s + (e.actual_hours ?? 0), 0))} Ist</span>
+					<span class="hours-badge">{fmtHours(assignments.reduce((s, e) => s + (e.actual_hours ?? 0), 0))} Ist</span>
+				{:else}
+					{assignments.length} Mitarbeiter zugewiesen
 				{/if}
 			</div>
 		</div>
@@ -490,23 +482,6 @@
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 					<div class="emp-fields">
-						<label class="tiny-label">Geplant (h)</label>
-						<input
-							class="hour-input"
-							type="number"
-							step="0.5"
-							min="0"
-							value={s.planned}
-							oninput={(e) => {
-								editingEmp = {
-									...editingEmp,
-									[emp.employee_id]: {
-										...s,
-										planned: (e.target as HTMLInputElement).value
-									}
-								};
-							}}
-						/>
 						<label class="tiny-label">Ist (h)</label>
 						<input
 							class="hour-input"
@@ -585,10 +560,6 @@
 								<option value={emp.id}>{emp.first_name} {emp.last_name} ({emp.email})</option>
 							{/each}
 						</select>
-					</div>
-					<div class="field" style="margin-bottom:0.75rem">
-						<label for="emp-hours">Geplante Stunden</label>
-						<input id="emp-hours" type="number" step="0.5" bind:value={addPlannedHours} />
 					</div>
 					<div class="field" style="margin-bottom:0.75rem">
 						<label for="emp-notes">Notizen</label>
@@ -804,7 +775,7 @@
 
 	.inq-emp-header {
 		display: grid;
-		grid-template-columns: 1fr 36px 1fr 24px;
+		grid-template-columns: 1fr 1fr 24px;
 		gap: 0.375rem;
 		padding: 0.25rem 0.5rem;
 		font-size: 0.75rem;
@@ -816,7 +787,7 @@
 
 	.inq-emp-row {
 		display: grid;
-		grid-template-columns: 1fr 36px 1fr 24px;
+		grid-template-columns: 1fr 1fr 24px;
 		gap: 0.375rem;
 		align-items: center;
 		padding: 0.3rem 0.5rem;
@@ -853,9 +824,6 @@
 		border-color: var(--dt-primary);
 	}
 
-	.inq-hrs {
-		text-align: center;
-	}
 
 	.inq-times {
 		display: flex;

@@ -273,7 +273,7 @@
 					<label for="e-status">Status</label>
 					<select id="e-status" bind:value={editStatus}>
 						<option value="scheduled">Geplant</option>
-						<option value="completed">Abgeschlossen</option>
+						<option value="completed">Erledigt</option>
 						<option value="cancelled">Abgesagt</option>
 					</select>
 				</div>

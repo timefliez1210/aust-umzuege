@@ -68,7 +68,7 @@
 			offer_sent: { label: 'Angebot gesendet', cls: 'badge-blue' },
 			accepted: { label: 'Bestätigt', cls: 'badge-green' },
 			scheduled: { label: 'Geplant', cls: 'badge-indigo' },
-			completed: { label: 'Abgeschlossen', cls: 'badge-green' },
+			completed: { label: 'Erledigt', cls: 'badge-green' },
 			cancelled: { label: 'Abgesagt', cls: 'badge-red' },
 		};
 		return map[status] ?? { label: status, cls: 'badge-gray' };

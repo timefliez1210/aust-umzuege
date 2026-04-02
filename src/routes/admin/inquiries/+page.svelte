@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { apiGet, formatDate } from '$lib/utils/api.svelte';
+	import { apiGet, apiPatch, formatDate } from '$lib/utils/api.svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { Search, ChevronLeft, ChevronRight, Plus, X } from 'lucide-svelte';
 	import CreateInquiryModal from './_components/CreateInquiryModal.svelte';
+	import { INQUIRY_STATUS_LABELS } from '$lib/utils/status';
 
 	interface InquiryListItem {
 		id: string;
@@ -157,6 +158,37 @@
 
 	let currentPage = $derived(Math.floor(offset / limit) + 1);
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
+
+	// Inline status editing in the list row
+	let editingStatusId = $state<string | null>(null);
+	let patchingStatusId = $state<string | null>(null);
+
+	const statusOptions = Object.entries(INQUIRY_STATUS_LABELS);
+
+	/**
+	 * PATCHes the inquiry status and updates the local row in-place.
+	 *
+	 * Called by: Template (status select onchange in list row)
+	 * Purpose: Lets Alex change inquiry status from the list without opening the detail page.
+	 *
+	 * @param id        — Inquiry UUID
+	 * @param newStatus — Target status string (e.g. "scheduled")
+	 */
+	async function handleStatusChange(id: string, newStatus: string) {
+		const current = inquiries.find(i => i.id === id)?.status;
+		editingStatusId = null;
+		if (newStatus === current) return;
+		patchingStatusId = id;
+		try {
+			await apiPatch(`/api/v1/inquiries/${id}`, { status: newStatus });
+			inquiries = inquiries.map(i => i.id === id ? { ...i, status: newStatus } : i);
+			showToast('Status aktualisiert', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Speichern', 'error');
+		} finally {
+			patchingStatusId = null;
+		}
+	}
 </script>
 
 <div class="page">
@@ -235,7 +267,28 @@
 					<span class="text-muted">--</span>
 				{/if}
 			</td>
-			<td><StatusBadge status={q.status} /></td>
+			<!-- stopPropagation prevents row-click navigation when interacting with status -->
+			<td onclick={(e) => e.stopPropagation()} class="status-cell">
+				{#if patchingStatusId === q.id}
+					<span class="status-saving">…</span>
+				{:else if editingStatusId === q.id}
+					<select
+						class="status-select"
+						value={q.status}
+						autofocus
+						onchange={(e) => handleStatusChange(q.id, (e.target as HTMLSelectElement).value)}
+						onblur={() => { editingStatusId = null; }}
+					>
+						{#each statusOptions as [val, label]}
+							<option value={val}>{label}</option>
+						{/each}
+					</select>
+				{:else}
+					<button class="status-trigger" onclick={() => { editingStatusId = q.id; }}>
+						<StatusBadge status={q.status} />
+					</button>
+				{/if}
+			</td>
 		{/snippet}
 	</DataTable>
 
@@ -443,5 +496,38 @@
 	.pagination button:disabled {
 		opacity: 0.3;
 		cursor: not-allowed;
+	}
+
+	.status-cell {
+		padding: 0.375rem 0.75rem;
+	}
+
+	.status-trigger {
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		display: inline-flex;
+	}
+
+	.status-trigger:hover {
+		opacity: 0.8;
+	}
+
+	.status-select {
+		padding: 0.25rem 0.375rem;
+		font-size: 0.8125rem;
+		background: var(--dt-surface-container-high);
+		border: 1px solid var(--dt-primary);
+		border-radius: var(--dt-radius-sm);
+		color: var(--dt-on-surface);
+		outline: none;
+		cursor: pointer;
+	}
+
+	.status-saving {
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface-variant);
+		padding: 0.25rem 0;
 	}
 </style>

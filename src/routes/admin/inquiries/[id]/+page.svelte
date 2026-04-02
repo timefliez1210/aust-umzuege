@@ -852,7 +852,7 @@
 		{ value: "sent", label: "Gesendet" },
 		{ value: "accepted", label: "Akzeptiert" },
 		{ value: "scheduled", label: "Geplant" },
-		{ value: "completed", label: "Abgeschlossen" },
+		{ value: "completed", label: "Erledigt" },
 		{ value: "invoiced", label: "Fakturiert" },
 		{ value: "paid", label: "Bezahlt" },
 		{ value: "rejected", label: "Abgelehnt" },

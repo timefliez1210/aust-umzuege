@@ -16,31 +16,31 @@
 				document.body.appendChild(script);
 				observer.disconnect();
 			}
-		}, { rootMargin: '200px' });
+		}, { rootMargin: '0px', threshold: 0.1 });
 		observer.observe(wkdbRef);
 		return () => observer.disconnect();
 	});
 
-	const actualVisibleCards = $derived(() => {
+	const actualVisibleCards = $derived.by(() => {
 		if (windowWidth === 0) return 2;
 		if (windowWidth <= 640) return 1;
 		if (windowWidth <= 1024) return 2;
 		return 2;
 	});
 
-	const maxIndex = $derived(Math.max(0, reviews.length - actualVisibleCards()));
+	const maxIndex = $derived(Math.max(0, reviews.length - actualVisibleCards));
 	const dots = $derived(Array.from({ length: maxIndex + 1 }, (_, i) => i));
 
 	$effect(() => {
 		if (typeof window === 'undefined') return;
-		requestAnimationFrame(() => { windowWidth = window.innerWidth; });
+		// Read synchronously — window.innerWidth does not force a layout reflow.
+		// Using rAF here defers the update to after paint, causing a forced reflow.
+		windowWidth = window.innerWidth;
 		const handleResize = () => {
-			requestAnimationFrame(() => {
-				windowWidth = window.innerWidth;
-				if (currentIndex > maxIndex) currentIndex = maxIndex;
-			});
+			windowWidth = window.innerWidth;
+			if (currentIndex > maxIndex) currentIndex = maxIndex;
 		};
-		window.addEventListener('resize', handleResize);
+		window.addEventListener('resize', handleResize, { passive: true });
 		return () => window.removeEventListener('resize', handleResize);
 	});
 
@@ -140,7 +140,7 @@
 				>
 					<div
 						class="reviews__track"
-						style="transform: translateX(calc(-{currentIndex} * (100% / {actualVisibleCards()} + var(--gap) / {actualVisibleCards()})))"
+						style="transform: translateX(calc(-{currentIndex} * (100% / {actualVisibleCards} + var(--gap) / {actualVisibleCards})))"
 					>
 						{#each reviews as review}
 							<a

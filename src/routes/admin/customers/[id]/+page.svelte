@@ -15,7 +15,7 @@
 		name: string | null;
 		phone: string | null;
 		created_at: string;
-		quotes: { id: string; status: string; estimated_volume_m3: number | null; preferred_date: string | null; created_at: string }[];
+		quotes: { id: string; status: string; estimated_volume_m3: number | null; scheduled_date: string | null; created_at: string }[];
 		offers: { id: string; quote_id: string; price_cents: number; status: string; created_at: string; sent_at: string | null }[];
 		termine: { id: string; title: string; category: string; scheduled_date: string | null; status: string }[];
 	}

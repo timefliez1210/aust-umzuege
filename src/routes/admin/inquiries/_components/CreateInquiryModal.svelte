@@ -265,7 +265,7 @@
 				notes: buildNotes() || null
 			};
 
-			if (preferredDate) body.preferred_date = preferredDate;
+			if (preferredDate) body.scheduled_date = preferredDate;
 			if (distanceKm) body.distance_km = parseFloat(distanceKm);
 
 			// Only include manual volume data in manual mode

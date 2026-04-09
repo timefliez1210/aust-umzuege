@@ -29,7 +29,7 @@
 		day_number?: number | null;
 		total_days?: number | null;
 		day_notes?: string | null;
-		preferred_date?: string | null;
+		
 		scheduled_date?: string | null;
 	}
 
@@ -235,7 +235,7 @@
 		if (sel.kind === 'inquiry') {
 			inqEditStatus = sel.item.status;
 			inqEditNotes = sel.item.notes ?? '';
-			inqEditPreferredDate = sel.item.scheduled_date?.slice(0, 10) ?? sel.item.preferred_date?.slice(0, 10) ?? '';
+			inqEditPreferredDate = sel.item.scheduled_date?.slice(0, 10) ?? '';
 			inqEditStartTime = formatTime(sel.item.start_time);
 			inqEditEndTime = formatTime(sel.item.end_time);
 			addEmpDayTarget = null;
@@ -436,8 +436,7 @@
 	 */
 	function applyInquiryDateRange() {
 		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
-		const originStr = panelSelection.item.scheduled_date?.slice(0, 10)
-			?? panelSelection.item.preferred_date?.slice(0, 10) ?? '';
+		const originStr = panelSelection.item.scheduled_date?.slice(0, 10) ?? '';
 		if (!originStr || !inqUntilDate) return;
 		const origin = new Date(originStr + 'T00:00:00');
 		const until  = new Date(inqUntilDate + 'T00:00:00');
@@ -618,7 +617,7 @@
 			await apiPatch(`/api/v1/inquiries/${inq.inquiry_id}`, {
 				status: inqEditStatus || undefined,
 				notes: inqEditNotes || null,
-				preferred_date: inqEditPreferredDate || null,
+				scheduled_date: inqEditPreferredDate || null,
 				start_time: inqEditStartTime ? (inqEditStartTime.length === 5 ? inqEditStartTime + ':00' : inqEditStartTime) : undefined,
 				end_time: inqEditEndTime ? (inqEditEndTime.length === 5 ? inqEditEndTime + ':00' : inqEditEndTime) : null,
 			});
@@ -751,8 +750,8 @@
 			{:else if panelSelection.kind === 'inquiry'}
 				<div class="panel-title-block">
 					<h2 class="panel-title">{panelSelection.item.customer_name ?? 'Anfrage'}</h2>
-					{#if panelSelection.item.scheduled_date || panelSelection.item.preferred_date}
-						<span class="panel-subtitle">{(panelSelection.item.scheduled_date?.slice(0,10) ?? panelSelection.item.preferred_date?.slice(0,10) ?? '').split('-').reverse().join('.')}</span>
+					{#if panelSelection.item.scheduled_date }
+						<span class="panel-subtitle">{(panelSelection.item.scheduled_date?.slice(0,10) ?? '').split('-').reverse().join('.')}</span>
 					{/if}
 				</div>
 			{:else}
@@ -911,7 +910,7 @@
 					<EmployeeAssignmentPanel
 						entityId={panelSelection.item.inquiry_id}
 						entityType="inquiry"
-						preferredDate={panelSelection.item.scheduled_date ?? panelSelection.item.preferred_date}
+						preferredDate={panelSelection.item.scheduled_date}
 						onUpdated={() => onLoadSchedule()}
 					/>
 				</div>
@@ -922,7 +921,7 @@
 					{#if inqDaysLoading}
 						<p class="panel-loading">Laden...</p>
 					{:else}
-						{@const originStr = panelSelection.item.scheduled_date?.slice(0,10) ?? panelSelection.item.preferred_date?.slice(0,10) ?? ''}
+						{@const originStr = panelSelection.item.scheduled_date?.slice(0,10) ?? ''}
 						<div class="field-row">
 							<div class="field">
 								<label>Von</label>

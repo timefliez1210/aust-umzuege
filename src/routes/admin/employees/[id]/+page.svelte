@@ -5,7 +5,7 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
-	import { ArrowLeft, Save, Trash2, Upload, Download, X, FileText } from 'lucide-svelte';
+	import { ArrowLeft, Save, Trash2, Upload, Download, X, FileText, FileSpreadsheet } from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 
 	interface Employee {
@@ -219,6 +219,30 @@
 	function setViewMode(mode: '7d' | 'month') {
 		viewMode = mode;
 		if (data) loadHours(data.id);
+	}
+
+	let exportingXlsx = $state(false);
+
+	/**
+	 * Downloads the employee's Stundenzettel as an XLSX file for the selected month.
+	 *
+	 * Called by: Template (export button, month view only)
+	 * Purpose: Generates the monthly timesheet document Alex uses for payroll.
+	 */
+	async function exportStundenzettel() {
+		if (!data) return;
+		exportingXlsx = true;
+		try {
+			const filename = `Stundenzettel_${data.last_name}_${data.first_name}_${selectedMonth}.xlsx`;
+			await apiDownload(
+				`/api/v1/admin/employees/${data.id}/hours/export?month=${selectedMonth}`,
+				filename
+			);
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Export fehlgeschlagen', 'error');
+		} finally {
+			exportingXlsx = false;
+		}
 	}
 
 	/**
@@ -462,6 +486,18 @@
 							onchange={onHoursMonthChange}
 							class="month-input"
 						/>
+						<button
+							class="btn btn-sm export-btn"
+							onclick={exportStundenzettel}
+							disabled={exportingXlsx}
+							title="Stundenzettel als XLSX herunterladen"
+						>
+							{#if exportingXlsx}
+								…
+							{:else}
+								<FileSpreadsheet size={14} />
+							{/if}
+						</button>
 					{/if}
 				</div>
 			</div>
@@ -720,6 +756,21 @@
 
 	.toggle-btn:hover:not(.active) {
 		background: var(--dt-surface-container);
+	}
+
+	.export-btn {
+		padding: 0.25rem 0.5rem;
+		color: var(--dt-on-surface-variant);
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-radius: var(--dt-radius-sm);
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.export-btn:hover:not(:disabled) {
+		background: var(--dt-surface-container);
+		color: var(--dt-on-surface);
 	}
 
 	.month-input {

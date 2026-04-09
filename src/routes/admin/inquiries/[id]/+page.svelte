@@ -131,7 +131,6 @@
 		services: Services;
 		volume_m3: number | null;
 		distance_km: number | null;
-		preferred_date: string | null;
 		scheduled_date: string | null;
 		notes: string | null;
 		customer_message: string | null;
@@ -610,7 +609,7 @@
 			editVolume = data.volume_m3;
 			editDistance = data.distance_km ?? 0;
 			editNotes = data.notes || "";
-			editDate = data.scheduled_date || data.preferred_date || "";
+			editDate = data.scheduled_date || "";
 			computePricingDefaults();
 
 			// Load emails non-blocking so the inquiry renders first
@@ -666,7 +665,7 @@
 			estimated_volume_m3: editVolume,
 			distance_km: editDistance,
 			notes: editNotes || null,
-			preferred_date: editDate || null,
+			scheduled_date: editDate || null,
 		});
 	}
 
@@ -1399,7 +1398,7 @@
 	 * Called by: Template (time input blur)
 	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id} with ISO timestamp.
 	 *
-	 * Math: combines the inquiry's preferred_date with the HH:MM time input,
+	 * Math: combines the inquiry's scheduled_date with the HH:MM time input,
 	 * converts to UTC ISO via new Date(...).toISOString().
 	 *
 	 * @param empId - Employee UUID
@@ -1409,7 +1408,7 @@
 	async function updateEmployeeClock(empId: string, field: 'clock_in' | 'clock_out', time: string) {
 		if (!data) return;
 		if (!time) return;
-		const date = data.preferred_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
+		const date = data.scheduled_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
 		const iso = new Date(`${date}T${time}:00`).toISOString();
 		employeeSaving = empId;
 		try {
@@ -2127,7 +2126,7 @@
 			<EmployeeAssignmentPanel
 				entityId={data.id}
 				entityType="inquiry"
-				preferredDate={data.preferred_date}
+				preferredDate={data.scheduled_date}
 			/>
 		</div>
 	</div>

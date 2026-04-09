@@ -103,3 +103,26 @@ export function buildCalendar<S extends BaseDaySchedule>(
 
 	return days;
 }
+
+/**
+ * Returns the ISO 8601 week number (1–53) for a given date string.
+ *
+ * Called by: admin/calendar/+page.svelte (month-view KW column)
+ * Why: ISO week numbers are the standard way German businesses refer to weeks (KW 14 etc.)
+ *
+ * Math:
+ *   Shift to nearest Thursday (ISO weeks run Mon–Sun, keyed on Thursday).
+ *   Week 1 is the week containing the first Thursday of the year.
+ *   weekNumber = ceil((dayOfYear(thursday) + 1) / 7)
+ *
+ * @param dateStr - ISO date string (YYYY-MM-DD)
+ * @returns ISO week number 1–53
+ */
+export function getISOWeek(dateStr: string): number {
+	const d = new Date(dateStr);
+	d.setHours(0, 0, 0, 0);
+	// Shift to nearest Thursday: Mon=1 … Sun=7; getDay() returns 0 for Sun
+	d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+	const yearStart = new Date(d.getFullYear(), 0, 1);
+	return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+}

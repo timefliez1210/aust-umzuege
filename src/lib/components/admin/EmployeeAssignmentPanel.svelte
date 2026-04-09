@@ -267,7 +267,7 @@
 	 * Called by: Template (clock-time inputs onblur, inquiry mode only).
 	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id} with ISO timestamp.
 	 *
-	 * Math: builds ISO from preferred_date (YYYY-MM-DD) + HH:MM user input →
+	 * Math: builds ISO from scheduled_date (YYYY-MM-DD) + HH:MM user input →
 	 *       new Date(`${date}T${time}:00`).toISOString()
 	 *
 	 * @param empId - Employee UUID.

@@ -14,7 +14,7 @@
 		destination_city: string | null;
 		volume_m3: number | null;
 		status: string;
-		preferred_date: string | null;
+		scheduled_date: string | null;
 		offer_price_brutto: number | null;
 		booking_date: string | null;
 		created_at: string;
@@ -35,7 +35,7 @@
 	let offset = $state(0);
 	const limit = 20;
 
-	let sortKey = $state('preferred_date');
+	let sortKey = $state('scheduled_date');
 	let sortDir = $state<'asc' | 'desc'>('asc');
 
 	const tabs = [
@@ -95,7 +95,7 @@
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
 
 	function formatBookingDate(order: Order): string {
-		const d = order.booking_date || order.preferred_date;
+		const d = order.booking_date || order.scheduled_date;
 		if (!d) return '--';
 		return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 	}

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { apiGet, apiPatch, apiPost } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { buildCalendar } from '$lib/utils/calendar';
+	import { buildCalendar, getISOWeek } from '$lib/utils/calendar';
+	import { draggable } from '$lib/utils/draggable';
 	import { formatTime } from '$lib/utils/format';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
@@ -27,7 +28,7 @@
 		day_number?: number | null;
 		total_days?: number | null;
 		day_notes?: string | null;
-		preferred_date?: string | null;
+		
 		scheduled_date?: string | null;
 	}
 
@@ -708,7 +709,7 @@
 			if (type === 'termin') {
 				await apiPatch(`/api/v1/admin/calendar-items/${id}`, { scheduled_date: dateStr });
 			} else {
-				await apiPatch(`/api/v1/inquiries/${id}`, { preferred_date: dateStr });
+				await apiPatch(`/api/v1/inquiries/${id}`, { scheduled_date: dateStr });
 			}
 			showToast('Termin verschoben', 'success');
 			await loadSchedule();
@@ -810,7 +811,7 @@
 			}
 			await apiPost('/api/v1/inquiries', {
 				customer_id: customerId,
-				preferred_date: quickCreateDate,
+				scheduled_date: quickCreateDate,
 				origin: {
 					street: qiOriginStreet.trim(),
 					city: qiOriginCity.trim(),
@@ -967,11 +968,15 @@
 			<div class="calendar-scroll" ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
 				{#if viewMode === 'month'}
 				<div class="calendar-grid">
+					<div class="cal-kw cal-kw-header"></div>
 					{#each weekdays as day}
 						<div class="cal-header">{day}</div>
 					{/each}
 
-					{#each calendarDays as day}
+					{#each calendarDays as day, i}
+						{#if i % 7 === 0}
+							<div class="cal-kw">KW {getISOWeek(day.dateStr)}</div>
+						{/if}
 							{@const dateStr = day.dateStr}
 							{@const allEntries = buildDayEntries(dateStr)}
 							{@const booked = day.schedule?.booked || 0}
@@ -1288,7 +1293,7 @@
 <!-- Quick-create: inquiry -->
 {#if quickCreateMode === 'inquiry'}
 	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
-		<div class="modal modal-wide">
+		<div class="modal modal-wide" use:draggable>
 			<h3>Neue Anfrage — {quickCreateDate}</h3>
 
 			<div class="qc-section-label">Kunde *</div>
@@ -1390,7 +1395,7 @@
 <!-- Quick-create: termin -->
 {#if quickCreateMode === 'termin'}
 	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
-		<div class="modal">
+		<div class="modal" use:draggable>
 			<h3>Neuer Termin — {quickCreateDate}</h3>
 
 			<div class="qc-row">
@@ -1558,7 +1563,7 @@
 	/* ─── Calendar grid ────────────────────────────────────────────────────────── */
 	.calendar-grid {
 		display: grid;
-		grid-template-columns: repeat(7, 1fr);
+		grid-template-columns: 36px repeat(7, 1fr);
 		gap: 1px;
 		background: var(--dt-surface-container);
 		border-radius: var(--dt-radius-lg);
@@ -1573,6 +1578,22 @@
 		color: var(--dt-on-surface-variant);
 		background: var(--dt-surface-container);
 		text-transform: uppercase;
+	}
+
+	.cal-kw {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.6rem;
+		font-weight: 600;
+		color: var(--dt-outline);
+		background: var(--dt-surface-container);
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+		letter-spacing: 0.04em;
+	}
+	.cal-kw-header {
+		background: var(--dt-surface-container);
 	}
 
 	.cal-cell {
@@ -1898,6 +1919,10 @@
 		font-weight: 600;
 		color: var(--dt-on-surface);
 		margin-bottom: 1rem;
+		cursor: grab;
+	}
+	.modal h3:active {
+		cursor: grabbing;
 	}
 
 	.modal-backdrop-clear {

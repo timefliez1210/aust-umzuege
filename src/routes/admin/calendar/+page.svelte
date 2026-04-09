@@ -47,6 +47,21 @@
 		customer_name?: string | null;
 	}
 
+	/** Per-day calendar item row from the schedule API. */
+	interface ScheduleCalendarItem {
+		calendar_item_id: string;
+		title: string;
+		category: string;
+		location: string | null;
+		start_time: string;
+		end_time?: string | null;
+		employees_assigned: number;
+		employee_names?: string | null;
+		day_number?: number | null;
+		total_days?: number | null;
+		day_notes?: string | null;
+	}
+
 	interface HolidayEntry {
 		startDate: string;
 		endDate: string;
@@ -60,6 +75,7 @@
 		booked: number;
 		remaining: number;
 		inquiries: InquiryItem[];
+		calendar_items: ScheduleCalendarItem[];
 	}
 
 
@@ -398,13 +414,17 @@
 	 * @param dateStr - ISO date string YYYY-MM-DD
 	 * @returns Sorted array of discriminated-union entries
 	 */
-	function buildDayEntries(dateStr: string): Array<{ type: 'inquiry'; item: InquiryItem } | { type: 'termin'; item: CalendarItem }> {
+	function buildDayEntries(dateStr: string): Array<{ type: 'inquiry'; item: InquiryItem } | { type: 'termin'; item: CalendarItem } | { type: 'schedule-termin'; item: ScheduleCalendarItem }> {
 		const sched = schedule.find(s => s.date === dateStr || s.date.startsWith(dateStr));
 		const inqEntries = (sched?.inquiries ?? []).map(i => ({ type: 'inquiry' as const, item: i }));
-		const termEntries = calendarItems
+		// Merge schedule calendar items (with multi-day data) alongside the flat list
+		const schedTermEntries = (sched?.calendar_items ?? []).map(ci => ({ type: 'schedule-termin' as const, item: ci }));
+		// Also include legacy flat calendar items that have a scheduled_date matching this day
+		const legacyTermEntries = calendarItems
 			.filter(ci => ci.scheduled_date?.startsWith(dateStr))
+			.filter(ci => !schedTermEntries.some(se => se.item.calendar_item_id === ci.id))
 			.map(ci => ({ type: 'termin' as const, item: ci }));
-		return [...inqEntries, ...termEntries].sort((a, b) =>
+		return [...inqEntries, ...schedTermEntries, ...legacyTermEntries].sort((a, b) =>
 			(a.item.start_time || '').localeCompare(b.item.start_time || '')
 		);
 	}
@@ -490,7 +510,7 @@
 				}
 			}
 			const schedRes = await apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`);
-			schedule = Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? []);
+			schedule = (Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? [])).map(d => ({ ...d, calendar_items: d.calendar_items ?? [] }));
 			const itemResults = await Promise.all(
 				itemMonths.map(m => apiGet<CalendarItem[]>(`/api/v1/admin/calendar-items?month=${m}`).catch(() => [] as CalendarItem[]))
 			);
@@ -1004,28 +1024,30 @@
 									{#if publicHol}<span class="holiday-badge">🎉 {publicHol}</span>{/if}
 								</div>
 								{#if schoolHol}<div class="school-holiday-label">{schoolHol}</div>{/if}
-								{#each [{ mdEntries: allEntries.filter(e => e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1).sort((a, b) => a.item.inquiry_id.localeCompare(b.item.inquiry_id)), sdEntries: allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1)) }] as { mdEntries, sdEntries }}
+										{#each [{ mdEntries: allEntries.filter(e => (e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) || (e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1)).sort((a, b) => { const idA = a.type === 'inquiry' ? a.item.inquiry_id : a.item.calendar_item_id; const idB = b.type === 'inquiry' ? b.item.inquiry_id : b.item.calendar_item_id; return idA.localeCompare(idB); }), sdEntries: allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) && !(e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1)) }] as { mdEntries, sdEntries }}
 									{@const sdCap = Math.max(2, 4 - mdEntries.length)}
 									{#each mdEntries as entry}
 										{@const dayNum = entry.item.day_number ?? 1}
 										{@const totalDays = entry.item.total_days ?? 1}
-										{@const dow = new Date(entry.item.scheduled_date ?? dateStr).getDay()}
+										{@const dow = new Date(dateStr + 'T00:00:00').getDay()}
 										{@const isVisualStart = dayNum === 1 || dow === 1}
 										{@const isVisualEnd = dayNum === totalDays || dow === 0}
+										{@const isMultiDayInquiry = entry.type === 'inquiry'}
+										{@const barColor = isMultiDayInquiry ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.item.category)}
 										<!-- svelte-ignore a11y_no_static_element_interactions -->
 										<div
-											class="md-bar {inquiryEntryClass(entry.item.status)}"
+											class="md-bar {barColor}"
 											class:md-bar-start={isVisualStart}
 											class:md-bar-end={isVisualEnd}
-											title="{entry.item.customer_name ?? ''} · Tag {dayNum}/{totalDays}"
+											title="{isMultiDayInquiry ? (entry.item.customer_name ?? '') : entry.item.title} · Tag {dayNum}/{totalDays}"
 											draggable="true"
-											ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
-											onclick={(e) => openInquiryPanel(e, entry.item)}
+											ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr)}
+											onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 											role="button"
 											tabindex="0"
-											onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
+											onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
 										>
-											{#if isVisualStart}<span class="md-bar-text">{truncate(entry.item.customer_name, 12)}</span>{/if}
+											{#if isVisualStart}<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>{/if}
 										</div>
 									{/each}
 									<div class="cal-entries">
@@ -1044,7 +1066,7 @@
 											>
 												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 10)}
 											</span>
-										{:else}
+										{:else if entry.type === 'termin'}
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
 											<span
 												class="cal-entry {termineEntryClass(entry.item.category)}"
@@ -1055,6 +1077,21 @@
 												role="button"
 												tabindex="0"
 												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, entry.item)}
+											>
+												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.title, 14)}
+											</span>
+										{:else}
+											<!-- schedule-termin from schedule API -->
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<span
+												class="cal-entry {termineEntryClass(entry.item.category)}"
+												title="{entry.item.title}{entry.item.location ? ' @ ' + entry.item.location : ''}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.calendar_item_id, 'termin', dateStr)}
+												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 											>
 												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.title, 14)}
 											</span>
@@ -1146,7 +1183,7 @@
 													<div class="wc-notes">{truncate(entry.item.notes, 70)}</div>
 												{/if}
 											</div>
-										{:else}
+										{:else if entry.type === 'termin'}
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
 											<div
 												class="week-card {termineEntryClass(entry.item.category)}"
@@ -1170,6 +1207,37 @@
 												{/if}
 												{#if entry.item.description}
 													<div class="wc-notes">{truncate(entry.item.description, 70)}</div>
+												{/if}
+											</div>
+										{:else}
+											<!-- schedule-termin from schedule API -->
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<div
+												class="week-card {termineEntryClass(entry.item.category)}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.calendar_item_id, 'termin', dateStr)}
+												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+											>
+												{#if entry.item.total_days && entry.item.total_days > 1}
+													<div class="wc-multiday-bar">
+														{#if entry.item.day_number && entry.item.day_number > 1}<span class="wc-md-arrow wc-md-left">←</span>{/if}
+														<span class="wc-md-label">Tag {entry.item.day_number ?? 1}/{entry.item.total_days}</span>
+														{#if entry.item.day_number && entry.item.day_number < entry.item.total_days}<span class="wc-md-arrow wc-md-right">→</span>{/if}
+													</div>
+												{/if}
+												<div class="wc-header">
+													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+													<span class="cat-badge">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
+												</div>
+												<div class="wc-name">{entry.item.title}</div>
+												{#if entry.item.location}
+													<div class="wc-route">📍 {entry.item.location}</div>
+												{/if}
+												{#if entry.item.employee_names}
+													<div class="wc-employees">👥 {entry.item.employee_names}</div>
 												{/if}
 											</div>
 										{/if}
@@ -1215,8 +1283,8 @@
 										{@const endH = parseInt((entry.item.end_time || (String(startH + 1).padStart(2, '0') + ':00')).slice(0, 2))}
 										{#if startH === hour}
 											<button
-												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'termin' ? entry.item.category : 'other')}"
-												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.item)}
+												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'inquiry' ? 'other' : (entry.item.category || 'other'))}"
+												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.type === 'schedule-termin' ? { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' } : entry.item)}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
 												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>
@@ -1564,7 +1632,7 @@
 	.calendar-grid {
 		display: grid;
 		grid-template-columns: 36px repeat(7, 1fr);
-		gap: 1px;
+		gap: 0;
 		background: var(--dt-surface-container);
 		border-radius: var(--dt-radius-lg);
 		overflow: hidden;
@@ -1578,6 +1646,7 @@
 		color: var(--dt-on-surface-variant);
 		background: var(--dt-surface-container);
 		text-transform: uppercase;
+		border-right: 1px solid var(--dt-surface-container-high);
 	}
 
 	.cal-kw {
@@ -1591,6 +1660,8 @@
 		writing-mode: vertical-rl;
 		text-orientation: mixed;
 		letter-spacing: 0.04em;
+		border-right: 1px solid var(--dt-surface-container-high);
+		border-bottom: 1px solid var(--dt-surface-container-high);
 	}
 	.cal-kw-header {
 		background: var(--dt-surface-container);
@@ -1607,6 +1678,8 @@
 		cursor: pointer;
 		text-align: left;
 		width: 100%;
+		border-right: 1px solid var(--dt-surface-container-high);
+		border-bottom: 1px solid var(--dt-surface-container-high);
 	}
 	.cal-cell:hover { background: var(--dt-surface-container-low); }
 	.cal-cell.empty { background: var(--dt-surface-container); cursor: default; pointer-events: none; }
@@ -1665,7 +1738,7 @@
 		white-space: nowrap;
 		overflow: hidden;
 		cursor: pointer;
-		/* extend through cell padding (left 0.375rem, right 0.25rem) to fill cell edge-to-edge */
+		/* extend through cell padding to fill edge-to-edge, bridging the border */
 		margin: 1px -0.25rem 1px -0.375rem;
 		border-radius: 0;
 		min-height: 14px;

@@ -447,7 +447,7 @@
 				}
 
 				// Add-ons
-				for (const addonId of selectedAddons) fd.append('services[]', addonId);
+				if (selectedAddons.length > 0) fd.append('services', selectedAddons.join(','));
 
 				// Custom fields
 				for (const [k, v] of Object.entries(customFieldValues)) {
@@ -505,7 +505,7 @@
 				if (contact.message) fd.append('message', contact.message);
 
 				// Add-ons
-				for (const addonId of selectedAddons) fd.append('services[]', addonId);
+				if (selectedAddons.length > 0) fd.append('services', selectedAddons.join(','));
 				// Custom fields
 				for (const [k, v] of Object.entries(customFieldValues)) fd.append(`custom_${k}`, String(v));
 				// Manual volume (if filled alongside fotos)
@@ -564,7 +564,7 @@
 				if (contact.date) fd.append('scheduled_date', contact.date);
 				if (contact.message) fd.append('message', contact.message);
 
-				for (const addonId of selectedAddons) fd.append('services[]', addonId);
+				if (selectedAddons.length > 0) fd.append('services', selectedAddons.join(','));
 				for (const [k, v] of Object.entries(customFieldValues)) fd.append(`custom_${k}`, String(v));
 
 				const resp = await fetch(VIDEO_API_URL, { method: 'POST', body: fd });
@@ -575,61 +575,63 @@
 				submitSuccess = true;
 
 			} else {
-				// manuell mode: same as termin but without the PHP handler — use the Rust API
+				// manuell mode: POST multipart to public /submit/manual endpoint
 				submitStatus = 'Anfrage wird erstellt…';
+				const fd = new FormData();
 
-				// Create customer first
-				const custResp = await fetch('/api/v1/admin/customers', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						email: contact.email,
-						first_name: contact.first_name || null,
-						last_name: contact.last_name || null,
-						phone: contact.phone || null,
-						customer_type: customerType,
-						company_name: customerType === 'business' ? contact.company_name || null : null,
-					}),
-				});
-				if (!custResp.ok) throw new Error('Kunde konnte nicht erstellt werden.');
-				const { id: customerId } = await custResp.json();
+				// Contact
+				fd.append('name', `${contact.first_name} ${contact.last_name}`.trim());
+				if (contact.email) fd.append('email', contact.email);
+				if (contact.phone) fd.append('phone', contact.phone);
+				if (contact.salutation) fd.append('salutation', contact.salutation);
+				if (contact.first_name) fd.append('first_name', contact.first_name);
+				if (contact.last_name) fd.append('last_name', contact.last_name);
 
-				// Create inquiry
-				const inqBody: Record<string, unknown> = {
-					customer_id: customerId,
-					service_type: selectedServiceId,
-					submission_mode: 'manuell',
-					notes: contact.message || null,
-				};
-				if (originAddress.street) inqBody.origin = {
-					street: [originAddress.street, originAddress.number].filter(Boolean).join(' '),
-					city: originAddress.city,
-					postal_code: originAddress.zip || null,
-					floor: originAddress.floor || null,
-					elevator: originAddress.elevator || null,
-				};
-				if (destinationAddress.street) inqBody.destination = {
-					street: [destinationAddress.street, destinationAddress.number].filter(Boolean).join(' '),
-					city: destinationAddress.city,
-					postal_code: destinationAddress.zip || null,
-					floor: destinationAddress.floor || null,
-					elevator: destinationAddress.elevator || null,
-				};
-				if (contact.date) inqBody.scheduled_date = contact.date;
-				if (volumeM3 > 0) inqBody.estimated_volume_m3 = volumeM3;
-				if (itemSummary) inqBody.items_list = itemSummary;
-				const addons = selectedAddons.length > 0 ? selectedAddons : undefined;
-				if (addons) inqBody.services = { custom_addons: addons };
-				if (Object.keys(customFieldValues).length > 0) inqBody.custom_fields = customFieldValues;
+				// Service context
+				fd.append('service_type', selectedServiceId ?? 'privatumzug');
+				fd.append('submission_mode', 'manuell');
+				fd.append('customer_type', customerType);
+				if (customerType === 'business') fd.append('company_name', contact.company_name);
 
-				const inqResp = await fetch('/api/v1/inquiries', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(inqBody),
-				});
-				if (!inqResp.ok) {
-					const errText = await inqResp.text().catch(() => '');
-					throw new Error(errText || 'Anfrage konnte nicht erstellt werden.');
+				// Recipient
+				if (!bookingForSelf && recipient.last_name) {
+					fd.append('recipient_first_name', recipient.first_name);
+					fd.append('recipient_last_name', recipient.last_name);
+					fd.append('recipient_phone', recipient.phone);
+					fd.append('recipient_email', recipient.email);
+				}
+
+				// Addresses
+				if (originAddress.street) {
+					fd.append('departure_address', [originAddress.street, originAddress.number].filter(Boolean).join(' '));
+					if (originAddress.zip) fd.append('startPlz', originAddress.zip);
+					if (originAddress.city) fd.append('startOrt', originAddress.city);
+					if (originAddress.floor) fd.append('departure_floor', originAddress.floor);
+					if (originAddress.elevator) fd.append('departure_elevator', 'true');
+					if (originAddress.parking_ban) fd.append('departure_parking_ban', 'true');
+				}
+				if (destinationAddress.street) {
+					fd.append('arrival_address', [destinationAddress.street, destinationAddress.number].filter(Boolean).join(' '));
+					if (destinationAddress.zip) fd.append('endPlz', destinationAddress.zip);
+					if (destinationAddress.city) fd.append('endOrt', destinationAddress.city);
+					if (destinationAddress.floor) fd.append('arrival_floor', destinationAddress.floor);
+					if (destinationAddress.elevator) fd.append('arrival_elevator', 'true');
+					if (destinationAddress.parking_ban) fd.append('arrival_parking_ban', 'true');
+				}
+				if (contact.date) fd.append('scheduled_date', contact.date);
+				if (contact.message) fd.append('message', contact.message);
+
+				// Add-ons (comma-separated as backend expects)
+				if (selectedAddons.length > 0) fd.append('services', selectedAddons.join(','));
+				// Custom fields
+				for (const [k, v] of Object.entries(customFieldValues)) {
+					fd.append(`custom_${k}`, String(v));
+				}
+
+				const resp = await fetch('/api/v1/submit/manual', { method: 'POST', body: fd });
+				if (!resp.ok) {
+					const errText = await resp.text().catch(() => '');
+					throw new Error(errText || 'Anfrage konnte nicht gesendet werden.');
 				}
 				submitSuccess = true;
 			}

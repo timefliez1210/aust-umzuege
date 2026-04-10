@@ -16,6 +16,8 @@
 		inquiry_id: string;
 		customer_name: string | null;
 		customer_email?: string | null;
+		customer_type?: string | null;
+		company_name?: string | null;
 		departure_address: string | null;
 		arrival_address: string | null;
 		volume_m3: number | null;
@@ -1047,7 +1049,13 @@
 					{#if ci.customer_name}
 						<div class="panel-kv">
 							<span class="kv-label">Kunde</span>
-							<span class="kv-value">{ci.customer_name}</span>
+							<span class="kv-value">
+								{#if ci.customer_type === 'business'}
+									<span class="cust-type-badge" data-type="business">Gewerbe</span>
+								{/if}
+								{ci.customer_name}
+								{#if ci.company_name}<span style="color:var(--dt-on-surface-variant);font-size:0.8em;"> ({ci.company_name})</span>{/if}
+							</span>
 						</div>
 					{/if}
 					<div class="panel-actions">
@@ -1482,6 +1490,18 @@
 		.sheet-handle-bar { display: flex; }
 	}
 
+	.cust-type-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		padding: 0.1rem 0.35rem;
+		border-radius: 4px;
+		letter-spacing: 0.03em;
+		margin-right: 0.3rem;
+	}
+	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
+	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
 	.svc-badge {
 		display: inline-block;
 		padding: 0.1rem 0.35rem;

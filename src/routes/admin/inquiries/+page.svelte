@@ -7,6 +7,7 @@
 	import { Search, ChevronLeft, ChevronRight, Plus, X } from 'lucide-svelte';
 	import CreateInquiryModal from './_components/CreateInquiryModal.svelte';
 	import { INQUIRY_STATUS_LABELS } from '$lib/utils/status';
+	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
 
 	interface InquiryListItem {
 		id: string;
@@ -58,16 +59,6 @@
 		{ value: 'paid', label: 'Bezahlt' }
 	];
 
-	const SERVICE_TYPE_LABELS: Record<string, string> = {
-		privatumzug: 'Privatumzug',
-		firmenumzug: 'Firmenumzug',
-		seniorenumzug: 'Seniorenumzug',
-		umzugshelfer: 'Umzugshelfer',
-		montage: 'Montage',
-		haushaltsaufloesung: 'Haushaltsaufloesung',
-		entruempelung: 'Entruempelung',
-		lagerung: 'Lagerung',
-	};
 
 	const columns = [
 		{ key: 'created_at', label: 'Datum', sortable: true, width: '120px' },

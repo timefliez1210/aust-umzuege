@@ -6,6 +6,7 @@
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { X, Camera, List, Upload, Video } from 'lucide-svelte';
+	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
 
 	/**
 	 * Props for the create-inquiry modal/form.
@@ -89,16 +90,6 @@
 	let distanceKm = $state('');
 	let extraNotes = $state('');
 
-	const SERVICE_TYPE_LABELS: Record<string, string> = {
-		privatumzug: 'Privatumzug',
-		firmenumzug: 'Firmenumzug',
-		seniorenumzug: 'Seniorenumzug',
-		umzugshelfer: 'Umzugshelfer',
-		montage: 'Montage',
-		haushaltsaufloesung: 'Haushaltsaufloesung',
-		entruempelung: 'Entruempelung',
-		lagerung: 'Lagerung',
-	};
 
 	const SERVICE_OPTIONS = Object.entries(SERVICE_TYPE_LABELS) as [string, string][];
 

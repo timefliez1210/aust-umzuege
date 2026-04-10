@@ -22,6 +22,7 @@
 	import { normalizeFlatTotalItem, calculateBruttoCents, bruttoCentsToNetto } from "$lib/utils/pricing";
 	import EstimationItemsTable from "$lib/components/admin/EstimationItemsTable.svelte";
 	import PhotoVideoUpload from "$lib/components/admin/PhotoVideoUpload.svelte";
+	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
 	import {
 		ArrowLeft,
 		Save,
@@ -181,16 +182,6 @@
 
 	let data = $state<InquiryResponse | null>(null);
 
-	const SERVICE_TYPE_LABELS: Record<string, string> = {
-		privatumzug: 'Privatumzug',
-		firmenumzug: 'Firmenumzug',
-		seniorenumzug: 'Seniorenumzug',
-		umzugshelfer: 'Umzugshelfer',
-		montage: 'Montage',
-		haushaltsaufloesung: 'Haushaltsaufloesung',
-		entruempelung: 'Entruempelung',
-		lagerung: 'Lagerung',
-	};
 
 	let loading = $state(true);
 	let saving = $state(false);
@@ -216,7 +207,7 @@
 	let rateEditing = $state(false);
 
 	let editingCustomer = $state(false);
-	let editCustomer = $state({ first_name: "", last_name: "", email: "", phone: "" });
+	let editCustomer = $state({ salutation: "", first_name: "", last_name: "", email: "", phone: "", customer_type: "private", company_name: "" });
 
 	// Bindable handles to EstimationItemsTable internals
 	let openPhotoDetailFn = $state<((idx: number) => void) | null>(null);
@@ -946,10 +937,13 @@
 		if (!data?.customer) return;
 		const c = data.customer;
 		editCustomer = {
+			salutation: c.salutation ?? "",
 			first_name: c.first_name ?? "",
 			last_name: c.last_name ?? c.name ?? "",
 			email: c.email,
 			phone: c.phone ?? "",
+			customer_type: c.customer_type ?? "private",
+			company_name: c.company_name ?? "",
 		};
 		editingCustomer = true;
 	}
@@ -966,10 +960,13 @@
 		if (!data?.customer) return;
 		try {
 			await apiPatch(`/api/v1/admin/customers/${data.customer.id}`, {
+				salutation: editCustomer.salutation || null,
 				first_name: editCustomer.first_name || null,
 				last_name: editCustomer.last_name || null,
 				email: editCustomer.email || null,
 				phone: editCustomer.phone || null,
+				customer_type: editCustomer.customer_type || null,
+				company_name: editCustomer.company_name || null,
 			});
 			showToast("Kunde gespeichert", "success");
 			editingCustomer = false;

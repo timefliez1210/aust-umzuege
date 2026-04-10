@@ -15,6 +15,8 @@
 		inquiry_id: string;
 		customer_name: string | null;
 		customer_email?: string | null;
+		customer_type?: string | null;
+		company_name?: string | null;
 		departure_address: string | null;
 		arrival_address: string | null;
 		volume_m3: number | null;
@@ -28,7 +30,7 @@
 		day_number?: number | null;
 		total_days?: number | null;
 		day_notes?: string | null;
-		
+		service_type?: string | null;
 		scheduled_date?: string | null;
 	}
 

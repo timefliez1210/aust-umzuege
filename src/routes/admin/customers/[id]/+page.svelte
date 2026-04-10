@@ -6,6 +6,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import { CUSTOMER_TYPE_LABELS } from '$lib/utils/constants';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import LoadingButton from '$lib/components/admin/LoadingButton.svelte';
 
@@ -30,6 +31,8 @@
 	let saving = $state(false);
 	let deleting = $state(false);
 	let showDeleteDialog = $state(false);
+	let editCustomerType = $state<string>('private');
+	let editCompanyName = $state('');
 	let editName = $state('');
 	let editPhone = $state('');
 	let editEmail = $state('');
@@ -53,6 +56,8 @@
 		loading = true;
 		try {
 			data = await apiGet<CustomerDetail>(`/api/v1/admin/customers/${$page.params.id}`);
+			editCustomerType = data.customer_type ?? 'private';
+			editCompanyName = data.company_name || '';
 			editName = data.name || '';
 			editPhone = data.phone || '';
 			editEmail = data.email;
@@ -80,7 +85,9 @@
 			await apiPatch(`/api/v1/admin/customers/${$page.params.id}`, {
 				name: editName || null,
 				phone: editPhone || null,
-				email: editEmail
+				email: editEmail,
+				customer_type: editCustomerType || null,
+				company_name: editCompanyName || null,
 			});
 			message = { type: 'success', text: 'Kunde gespeichert' };
 			await loadCustomer();
@@ -132,7 +139,15 @@
 		<div class="loading">Laden...</div>
 	{:else if data}
 		<div class="page-header">
-			<h1>{data.name || data.email}</h1>
+			<h1>
+				{#if data.customer_type === 'business'}
+					<span class="cust-type-badge" data-type="business">Gewerbe</span>
+				{:else}
+					<span class="cust-type-badge" data-type="private">Privat</span>
+				{/if}
+				{data.name || data.email}
+				{#if data.company_name}<span style="color: var(--dt-on-surface-variant); font-weight: 400; font-size: 0.9em;"> ({data.company_name})</span>{/if}
+			</h1>
 			{#if auth.user?.role === 'admin'}
 			<button class="btn-delete-entity" onclick={() => { showDeleteDialog = true; }} title="Kunde loeschen">
 				<Trash2 size={16} />
@@ -338,6 +353,25 @@
 		background: var(--dt-surface-container-lowest);
 		border-bottom-color: var(--dt-primary);
 	}
+	.type-toggle {
+		display: inline-flex;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: 6px;
+		overflow: hidden;
+		margin-bottom: 0.5rem;
+	}
+	.type-btn {
+		padding: 0.35rem 0.85rem;
+		border: none;
+		background: var(--dt-surface-container-lowest);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: all 0.12s;
+	}
+	.type-btn:not(:first-child) { border-left: 1.5px solid var(--dt-outline-variant); }
+	.type-btn.active { background: var(--dt-primary); color: #fff; }
 	.form-value { font-size: 0.875rem; color: var(--dt-on-surface-variant); }
 
 	.list-item {

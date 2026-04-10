@@ -38,6 +38,7 @@
 	let createLoading = $state(false);
 
 	const columns = [
+		{ key: 'customer_type', label: 'Typ', width: '80px' },
 		{ key: 'name', label: 'Name', sortable: true },
 		{ key: 'email', label: 'E-Mail', sortable: true },
 		{ key: 'phone', label: 'Telefon', width: '150px' },
@@ -111,7 +112,7 @@
 			const res = await apiPost<Customer>('/api/v1/admin/customers', {
 				email: createEmail.trim(),
 				name: createName.trim() || null,
-				phone: createPhone.trim() || null
+				phone: createPhone.trim() || null,
 			});
 			goto(`/admin/customers/${res.id}`);
 		} catch (e: any) {
@@ -192,8 +193,16 @@
 	>
 		{#snippet row(item, _i)}
 			{@const c = item as Customer}
-			<td class="cell-name">
+			<td>
+			{#if c.customer_type}
+				<span class="cust-type-badge" data-type={c.customer_type}>{CUSTOMER_TYPE_LABELS[c.customer_type] ?? c.customer_type}</span>
+			{:else}
+				<span class="cust-type-badge" data-type="private">Privat</span>
+			{/if}
+		</td>
+		<td class="cell-name">
 			{#if c.salutation}<span class="sal-badge">{c.salutation === 'D' ? 'Div.' : c.salutation}</span>{/if}{c.name || '—'}
+			{#if c.company_name}<span class="cell-company">({c.company_name})</span>{/if}
 		</td>
 			<td>{c.email}</td>
 			<td class="text-muted">{c.phone || '—'}</td>
@@ -287,6 +296,22 @@
 		color: var(--dt-secondary);
 	}
 
+	.cust-type-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		padding: 0.1rem 0.35rem;
+		border-radius: 4px;
+		letter-spacing: 0.03em;
+	}
+	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
+	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
+	.cell-company {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		margin-left: 0.3rem;
+	}
 	.sal-badge {
 		display: inline-block;
 		font-size: 0.65rem;

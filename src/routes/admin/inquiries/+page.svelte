@@ -13,6 +13,8 @@
 		customer_name: string | null;
 		customer_email: string;
 		salutation: string | null;
+		customer_type: string | null;
+		service_type: string | null;
 		origin_city: string | null;
 		destination_city: string | null;
 		volume_m3: number | null;
@@ -56,8 +58,20 @@
 		{ value: 'paid', label: 'Bezahlt' }
 	];
 
+	const SERVICE_TYPE_LABELS: Record<string, string> = {
+		privatumzug: 'Privatumzug',
+		firmenumzug: 'Firmenumzug',
+		seniorenumzug: 'Seniorenumzug',
+		umzugshelfer: 'Umzugshelfer',
+		montage: 'Montage',
+		haushaltsaufloesung: 'Haushaltsaufloesung',
+		entruempelung: 'Entruempelung',
+		lagerung: 'Lagerung',
+	};
+
 	const columns = [
 		{ key: 'created_at', label: 'Datum', sortable: true, width: '120px' },
+		{ key: 'service_type', label: 'Art', width: '110px' },
 		{ key: 'customer_name', label: 'Kunde', sortable: true },
 		{ key: 'route', label: 'Von / Nach' },
 		{ key: 'volume_m3', label: 'Volumen', sortable: true, width: '100px' },
@@ -247,6 +261,13 @@
 		{#snippet row(item, _i)}
 			{@const q = item as InquiryListItem}
 			<td>{formatDate(q.created_at)}</td>
+			<td>
+				{#if q.service_type}
+					<span class="svc-badge" data-type={q.service_type}>{SERVICE_TYPE_LABELS[q.service_type] ?? q.service_type}</span>
+				{:else}
+					<span class="text-muted">--</span>
+				{/if}
+			</td>
 			<td>
 				<div class="cell-name">
 					{#if q.salutation}<span class="sal-badge">{q.salutation === 'D' ? 'Div.' : q.salutation}</span>{/if}{q.customer_name || q.customer_email}
@@ -530,4 +551,24 @@
 		color: var(--dt-on-surface-variant);
 		padding: 0.25rem 0;
 	}
+
+	.svc-badge {
+		display: inline-block;
+		padding: 0.15rem 0.45rem;
+		border-radius: 4px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+		background: #e8eef6;
+		color: #1a3a5c;
+	}
+
+	.svc-badge[data-type='firmenumzug'] { background: #d1fae5; color: #065f46; }
+	.svc-badge[data-type='entruempelung'] { background: #fce7f3; color: #9d174d; }
+	.svc-badge[data-type='haushaltsaufloesung'] { background: #fef3c7; color: #92400e; }
+	.svc-badge[data-type='lagerung'] { background: #e0e7ff; color: #3730a3; }
+	.svc-badge[data-type='montage'] { background: #fef9c3; color: #854d0e; }
+	.svc-badge[data-type='umzugshelfer'] { background: #f0fdf4; color: #166534; }
+	.svc-badge[data-type='seniorenumzug'] { background: #fce7f3; color: #9d174d; }
 </style>

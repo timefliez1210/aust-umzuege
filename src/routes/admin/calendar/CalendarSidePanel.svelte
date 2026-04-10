@@ -22,6 +22,7 @@
 		status: string;
 		notes: string | null;
 		offer_price_cents: number | null;
+		service_type: string | null;
 		start_time: string;
 		end_time: string;
 		employees_assigned: number;
@@ -1480,4 +1481,23 @@
 		}
 		.sheet-handle-bar { display: flex; }
 	}
+
+	.svc-badge {
+		display: inline-block;
+		padding: 0.1rem 0.35rem;
+		border-radius: 4px;
+		font-size: 0.68rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		margin-right: 0.3rem;
+		background: #e8eef6;
+		color: #1a3a5c;
+	}
+	.svc-badge[data-type="firmenumzug"] { background: #d1fae5; color: #065f46; }
+	.svc-badge[data-type="entruempelung"] { background: #fce7f3; color: #9d174d; }
+	.svc-badge[data-type="haushaltsaufloesung"] { background: #fef3c7; color: #92400e; }
+	.svc-badge[data-type="lagerung"] { background: #e0e7ff; color: #3730a3; }
+	.svc-badge[data-type="montage"] { background: #fef9c3; color: #854d0e; }
+	.svc-badge[data-type="umzugshelfer"] { background: #f0fdf4; color: #166534; }
+	.svc-badge[data-type="seniorenumzug"] { background: #fce7f3; color: #9d174d; }
 </style>

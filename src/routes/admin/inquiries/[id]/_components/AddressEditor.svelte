@@ -10,10 +10,12 @@
 	interface AddressSnapshot {
 		id: string;
 		street: string;
+		house_number: string | null;
 		city: string;
 		postal_code: string | null;
 		floor: string | null;
 		elevator: boolean | null;
+		parking_ban: boolean | null;
 	}
 
 	/**
@@ -40,10 +42,12 @@
 	let editingOrigin = $state(false);
 	let editOrigin = $state({
 		street: '',
+		house_number: '',
 		postal_code: '',
 		city: '',
 		floor: '0',
 		elevator: false,
+		parking_ban: false,
 	});
 
 	// ─── Destination address edit state ──────────────────────────────────────
@@ -51,72 +55,47 @@
 	let editingDest = $state(false);
 	let editDest = $state({
 		street: '',
+		house_number: '',
 		postal_code: '',
 		city: '',
 		floor: '0',
 		elevator: false,
+		parking_ban: false,
 	});
 
-	/**
-	 * Copies the origin address fields into the inline edit form and activates origin edit mode.
-	 *
-	 * Called by: Template (onclick on the "Bearbeiten" button in the Von card)
-	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
-	 *          existing data rather than an empty form.
-	 *
-	 * @returns void (side-effect: populates editOrigin, sets editingOrigin = true)
-	 */
 	function startEditOrigin() {
 		if (!originAddress) return;
 		const a = originAddress;
 		editOrigin = {
 			street: a.street,
+			house_number: a.house_number || '',
 			postal_code: a.postal_code || '',
 			city: a.city,
 			floor: a.floor || '0',
 			elevator: a.elevator ?? false,
+			parking_ban: a.parking_ban ?? false,
 		};
 		editingOrigin = true;
 	}
 
-	/**
-	 * Copies the destination address fields into the inline edit form and activates destination edit mode.
-	 *
-	 * Called by: Template (onclick on the "Bearbeiten" button in the Nach card)
-	 * Purpose: Seeds the inline address editor with the current values so the admin starts from
-	 *          existing data rather than an empty form.
-	 *
-	 * @returns void (side-effect: populates editDest, sets editingDest = true)
-	 */
 	function startEditDest() {
 		if (!destinationAddress) return;
 		const a = destinationAddress;
 		editDest = {
 			street: a.street,
+			house_number: a.house_number || '',
 			postal_code: a.postal_code || '',
 			city: a.city,
 			floor: a.floor || '0',
 			elevator: a.elevator ?? false,
+			parking_ban: a.parking_ban ?? false,
 		};
 		editingDest = true;
 	}
 
-	/**
-	 * Saves an edited address (origin or destination) to the API and exits edit mode.
-	 *
-	 * Called by: Template (onclick on the "Speichern" button inside each inline address form)
-	 * Purpose: Persists corrections to street, city, postal code, floor, or elevator for either address.
-	 *          Calls PATCH /api/v1/admin/addresses/{addressId} then calls onSaved so the parent can
-	 *          reload the inquiry so the route map and pricing defaults reflect the corrected address.
-	 *
-	 * @param addressId - UUID of the address record to update
-	 * @param fields - Object with the current form values (street, postal_code, city, floor, elevator)
-	 * @param setEditing - Callback to toggle the editing flag to false on success
-	 * @returns void (side-effect: shows toast, calls setEditing(false) and onSaved on success)
-	 */
 	async function saveAddress(
 		addressId: string,
-		fields: { street: string; postal_code: string; city: string; floor: string; elevator: boolean },
+		fields: { street: string; house_number: string; postal_code: string; city: string; floor: string; elevator: boolean; parking_ban: boolean },
 		setEditing: (v: boolean) => void,
 	) {
 		try {
@@ -135,10 +114,7 @@
 		<div class="card-header">
 			<h3>Von</h3>
 			{#if !editingOrigin}
-				<button
-					class="btn btn-sm"
-					onclick={startEditOrigin}
-				>
+				<button class="btn btn-sm" onclick={startEditOrigin}>
 					<Pencil size={14} />
 					Bearbeiten
 				</button>
@@ -146,36 +122,25 @@
 		</div>
 		{#if editingOrigin}
 			<div class="form-grid">
-				<div class="field full-width">
+				<div class="field">
 					<label for="origin-street">Strasse</label>
-					<input
-						id="origin-street"
-						type="text"
-						bind:value={editOrigin.street}
-					/>
+					<input id="origin-street" type="text" bind:value={editOrigin.street} />
+				</div>
+				<div class="field field--shrink">
+					<label for="origin-number">Nr.</label>
+					<input id="origin-number" type="text" bind:value={editOrigin.house_number} />
 				</div>
 				<div class="field">
 					<label for="origin-plz">PLZ</label>
-					<input
-						id="origin-plz"
-						type="text"
-						bind:value={editOrigin.postal_code}
-					/>
+					<input id="origin-plz" type="text" bind:value={editOrigin.postal_code} />
 				</div>
 				<div class="field">
 					<label for="origin-city">Stadt</label>
-					<input
-						id="origin-city"
-						type="text"
-						bind:value={editOrigin.city}
-					/>
+					<input id="origin-city" type="text" bind:value={editOrigin.city} />
 				</div>
 				<div class="field">
 					<label for="origin-floor">Stockwerk</label>
-					<select
-						id="origin-floor"
-						bind:value={editOrigin.floor}
-					>
+					<select id="origin-floor" bind:value={editOrigin.floor}>
 						<option value="-1">Keller</option>
 						<option value="0">Erdgeschoss</option>
 						<option value="1">1. OG</option>
@@ -187,32 +152,22 @@
 				</div>
 				<div class="field">
 					<label class="checkbox-label">
-						<input
-							type="checkbox"
-							bind:checked={editOrigin.elevator}
-						/>
+						<input type="checkbox" bind:checked={editOrigin.elevator} />
 						Aufzug
 					</label>
 				</div>
+				<div class="field">
+					<label class="checkbox-label">
+						<input type="checkbox" bind:checked={editOrigin.parking_ban} />
+						Halteverbot
+					</label>
+				</div>
 				<div class="field full-width addr-actions">
-					<button
-						class="btn btn-sm btn-save"
-						onclick={() =>
-							saveAddress(
-								originAddress!.id,
-								editOrigin,
-								(v) => (editingOrigin = v),
-							)}
-					>
+					<button class="btn btn-sm btn-save" onclick={() => saveAddress(originAddress!.id, editOrigin, (v) => (editingOrigin = v))}>
 						<Save size={14} />
 						Speichern
 					</button>
-					<button
-						class="btn btn-sm"
-						onclick={() => (editingOrigin = false)}
-					>
-						Abbrechen
-					</button>
+					<button class="btn btn-sm" onclick={() => (editingOrigin = false)}>Abbrechen</button>
 				</div>
 			</div>
 		{:else}
@@ -220,8 +175,7 @@
 				<div class="info-item">
 					<span class="info-label">Adresse</span>
 					<span class="info-value">
-						{originAddress.street}, {originAddress.postal_code || ''}
-						{originAddress.city}
+						{originAddress.street}{originAddress.house_number ? ` ${originAddress.house_number}` : ''}, {originAddress.postal_code || ''} {originAddress.city}
 					</span>
 				</div>
 				<div class="info-item">
@@ -231,6 +185,12 @@
 						{#if originAddress.elevator}(Aufzug){/if}
 					</span>
 				</div>
+				{#if originAddress.parking_ban}
+					<div class="info-item">
+						<span class="info-label">Halteverbot</span>
+						<span class="info-value">Ja</span>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -249,36 +209,25 @@
 		</div>
 		{#if editingDest}
 			<div class="form-grid">
-				<div class="field full-width">
+				<div class="field">
 					<label for="dest-street">Strasse</label>
-					<input
-						id="dest-street"
-						type="text"
-						bind:value={editDest.street}
-					/>
+					<input id="dest-street" type="text" bind:value={editDest.street} />
+				</div>
+				<div class="field field--shrink">
+					<label for="dest-number">Nr.</label>
+					<input id="dest-number" type="text" bind:value={editDest.house_number} />
 				</div>
 				<div class="field">
 					<label for="dest-plz">PLZ</label>
-					<input
-						id="dest-plz"
-						type="text"
-						bind:value={editDest.postal_code}
-					/>
+					<input id="dest-plz" type="text" bind:value={editDest.postal_code} />
 				</div>
 				<div class="field">
 					<label for="dest-city">Stadt</label>
-					<input
-						id="dest-city"
-						type="text"
-						bind:value={editDest.city}
-					/>
+					<input id="dest-city" type="text" bind:value={editDest.city} />
 				</div>
 				<div class="field">
 					<label for="dest-floor">Stockwerk</label>
-					<select
-						id="dest-floor"
-						bind:value={editDest.floor}
-					>
+					<select id="dest-floor" bind:value={editDest.floor}>
 						<option value="-1">Keller</option>
 						<option value="0">Erdgeschoss</option>
 						<option value="1">1. OG</option>
@@ -290,32 +239,22 @@
 				</div>
 				<div class="field">
 					<label class="checkbox-label">
-						<input
-							type="checkbox"
-							bind:checked={editDest.elevator}
-						/>
+						<input type="checkbox" bind:checked={editDest.elevator} />
 						Aufzug
 					</label>
 				</div>
+				<div class="field">
+					<label class="checkbox-label">
+						<input type="checkbox" bind:checked={editDest.parking_ban} />
+						Halteverbot
+					</label>
+				</div>
 				<div class="field full-width addr-actions">
-					<button
-						class="btn btn-sm btn-save"
-						onclick={() =>
-							saveAddress(
-								destinationAddress!.id,
-								editDest,
-								(v) => (editingDest = v),
-							)}
-					>
+					<button class="btn btn-sm btn-save" onclick={() => saveAddress(destinationAddress!.id, editDest, (v) => (editingDest = v))}>
 						<Save size={14} />
 						Speichern
 					</button>
-					<button
-						class="btn btn-sm"
-						onclick={() => (editingDest = false)}
-					>
-						Abbrechen
-					</button>
+					<button class="btn btn-sm" onclick={() => (editingDest = false)}>Abbrechen</button>
 				</div>
 			</div>
 		{:else}
@@ -323,8 +262,7 @@
 				<div class="info-item">
 					<span class="info-label">Adresse</span>
 					<span class="info-value">
-						{destinationAddress.street}, {destinationAddress.postal_code || ''}
-						{destinationAddress.city}
+						{destinationAddress.street}{destinationAddress.house_number ? ` ${destinationAddress.house_number}` : ''}, {destinationAddress.postal_code || ''} {destinationAddress.city}
 					</span>
 				</div>
 				<div class="info-item">
@@ -334,6 +272,12 @@
 						{#if destinationAddress.elevator}(Aufzug){/if}
 					</span>
 				</div>
+				{#if destinationAddress.parking_ban}
+					<div class="info-item">
+						<span class="info-label">Halteverbot</span>
+						<span class="info-value">Ja</span>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -357,5 +301,9 @@
 		gap: 0.375rem;
 		font-size: 0.875rem;
 		cursor: pointer;
+	}
+
+	.field--shrink {
+		flex: 0 0 80px;
 	}
 </style>

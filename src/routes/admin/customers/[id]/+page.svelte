@@ -13,7 +13,12 @@
 		id: string;
 		email: string;
 		name: string | null;
+		salutation: string | null;
+		first_name: string | null;
+		last_name: string | null;
 		phone: string | null;
+		customer_type: string | null;
+		company_name: string | null;
 		created_at: string;
 		quotes: { id: string; status: string; estimated_volume_m3: number | null; scheduled_date: string | null; created_at: string }[];
 		offers: { id: string; quote_id: string; price_cents: number; status: string; created_at: string; sent_at: string | null }[];
@@ -355,4 +360,18 @@
 		.card-body { padding: 1rem; }
 		.list-item { padding: 0.75rem 1rem; }
 	}
+
+	.cust-type-badge {
+		display: inline-block;
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		margin-right: 0.35rem;
+		vertical-align: middle;
+	}
+	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
+	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
 </style>

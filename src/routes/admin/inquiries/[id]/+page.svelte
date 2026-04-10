@@ -40,12 +40,14 @@
 	interface AddressSnapshot {
 		id: string;
 		street: string;
+		house_number: string | null;
 		city: string;
 		postal_code: string | null;
 		country: string;
 		floor: string | null;
 		elevator: boolean | null;
 		needs_parking_ban: boolean | null;
+		parking_ban: boolean | null;
 		latitude: number | null;
 		longitude: number | null;
 	}
@@ -58,6 +60,8 @@
 		last_name: string | null;
 		email: string;
 		phone: string | null;
+		customer_type: string | null;
+		company_name: string | null;
 	}
 
 	interface ItemSnapshot {
@@ -138,6 +142,10 @@
 		updated_at: string;
 		offer_sent_at: string | null;
 		accepted_at: string | null;
+		service_type: string | null;
+		submission_mode: string | null;
+		recipient: CustomerSnapshot | null;
+		billing_address: AddressSnapshot | null;
 
 		customer: CustomerSnapshot | null;
 		origin_address: AddressSnapshot | null;
@@ -172,6 +180,18 @@
 	}
 
 	let data = $state<InquiryResponse | null>(null);
+
+	const SERVICE_TYPE_LABELS: Record<string, string> = {
+		privatumzug: 'Privatumzug',
+		firmenumzug: 'Firmenumzug',
+		seniorenumzug: 'Seniorenumzug',
+		umzugshelfer: 'Umzugshelfer',
+		montage: 'Montage',
+		haushaltsaufloesung: 'Haushaltsaufloesung',
+		entruempelung: 'Entruempelung',
+		lagerung: 'Lagerung',
+	};
+
 	let loading = $state(true);
 	let saving = $state(false);
 
@@ -1736,6 +1756,18 @@
 				{#if editingCustomer}
 					<div class="form-grid">
 						<div class="field">
+							<label for="cust-type">Kundentyp</label>
+							<select id="cust-type" bind:value={editCustomer.customer_type}>
+								<option value={null}>–</option>
+								<option value="private">Privat</option>
+								<option value="business">Gewerbe</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="cust-company">Firma</label>
+							<input id="cust-company" type="text" bind:value={editCustomer.company_name} placeholder="{editCustomer.customer_type === 'business' ? 'Firmenname' : 'optional'}" />
+						</div>
+						<div class="field">
 							<label for="cust-first-name">Vorname</label>
 							<input id="cust-first-name" type="text" bind:value={editCustomer.first_name} />
 						</div>
@@ -1761,6 +1793,11 @@
 						<div class="info-item">
 							<span class="info-label">Name</span>
 							<span class="info-value name-with-salutation">
+								{#if data.customer?.customer_type === 'business'}
+									<span class="cust-type-badge" data-type="business">Gewerbe</span>
+								{:else}
+									<span class="cust-type-badge" data-type="private">Privat</span>
+								{/if}
 								{#if data.customer?.salutation}
 									<span class="salutation-badge">{data.customer.salutation === "D" ? "Divers" : data.customer.salutation}</span>
 								{/if}
@@ -1769,6 +1806,12 @@
 									: (data.customer?.last_name ?? data.customer?.name ?? "—")}
 							</span>
 						</div>
+						{#if data.customer?.company_name}
+							<div class="info-item">
+								<span class="info-label">Firma</span>
+								<span class="info-value">{data.customer.company_name}</span>
+							</div>
+						{/if}
 						<div class="info-item">
 							<span class="info-label">E-Mail</span>
 							<span class="info-value">{data.customer?.email}</span>
@@ -1782,6 +1825,65 @@
 					</div>
 				{/if}
 			</div>
+
+			{#if data.recipient}
+				<div class="card">
+					<div class="card-header">
+						<h3>Leistungsempfänger</h3>
+					</div>
+					<div class="info-grid">
+						<div class="info-item">
+							<span class="info-label">Name</span>
+							<span class="info-value">
+								{#if data.recipient.salutation}
+									<span class="salutation-badge">{data.recipient.salutation === "D" ? "Divers" : data.recipient.salutation}</span>
+								{/if}
+								{data.recipient.first_name && data.recipient.last_name
+									? `${data.recipient.first_name} ${data.recipient.last_name}`
+									: (data.recipient.last_name ?? "—")}
+							</span>
+						</div>
+						<div class="info-item">
+							<span class="info-label">E-Mail</span>
+							<span class="info-value">{data.recipient.email ?? "—"}</span>
+						</div>
+						{#if data.recipient.phone}
+							<div class="info-item">
+								<span class="info-label">Telefon</span>
+								<span class="info-value">{data.recipient.phone}</span>
+							</div>
+						{/if}
+					</div>
+				</div>
+			{/if}
+
+			{#if data.billing_address}
+				<div class="card">
+					<div class="card-header">
+						<h3>Rechnungsadresse</h3>
+					</div>
+					<div class="info-grid">
+						<div class="info-item">
+							<span class="info-label">Strasse</span>
+							<span class="info-value">{data.billing_address.street}{data.billing_address.house_number ? ` ${data.billing_address.house_number}` : ''}</span>
+						</div>
+						<div class="info-item">
+							<span class="info-label">Ort</span>
+							<span class="info-value">{data.billing_address.postal_code ? `${data.billing_address.postal_code} ` : ''}{data.billing_address.city}</span>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Service info -->
+			{#if data.service_type}
+				<div class="card" style="padding: 0.75rem 1rem;">
+					<span class="svc-badge" data-type={data.service_type}>{SERVICE_TYPE_LABELS[data.service_type] ?? data.service_type}</span>
+					{#if data.submission_mode && data.submission_mode !== 'termin'}
+						<span class="svc-badge" style="margin-left: 0.5rem; background: #f3f4f6; color: #6b7280;">{data.submission_mode}</span>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- Addresses -->
 			<AddressEditor
@@ -2622,6 +2724,48 @@
 		color: var(--dt-primary);
 		letter-spacing: 0.03em;
 	}
+
+	.cust-type-badge {
+		display: inline-block;
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		margin-right: 0.35rem;
+		vertical-align: middle;
+	}
+
+	.cust-type-badge[data-type="business"] {
+		background: #d1fae5;
+		color: #065f46;
+	}
+
+	.cust-type-badge[data-type="private"] {
+		background: #dbeafe;
+		color: #1e40af;
+	}
+
+	.svc-badge {
+		display: inline-block;
+		padding: 0.15rem 0.45rem;
+		border-radius: 4px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+		background: #e8eef6;
+		color: #1a3a5c;
+	}
+
+	.svc-badge[data-type="firmenumzug"] { background: #d1fae5; color: #065f46; }
+	.svc-badge[data-type="entruempelung"] { background: #fce7f3; color: #9d174d; }
+	.svc-badge[data-type="haushaltsaufloesung"] { background: #fef3c7; color: #92400e; }
+	.svc-badge[data-type="lagerung"] { background: #e0e7ff; color: #3730a3; }
+	.svc-badge[data-type="montage"] { background: #fef9c3; color: #854d0e; }
+	.svc-badge[data-type="umzugshelfer"] { background: #f0fdf4; color: #166534; }
+	.svc-badge[data-type="seniorenumzug"] { background: #fce7f3; color: #9d174d; }
 
 	.form-grid {
 		display: grid;

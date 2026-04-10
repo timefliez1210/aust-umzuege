@@ -89,6 +89,44 @@
 	let distanceKm = $state('');
 	let extraNotes = $state('');
 
+	const SERVICE_TYPE_LABELS: Record<string, string> = {
+		privatumzug: 'Privatumzug',
+		firmenumzug: 'Firmenumzug',
+		seniorenumzug: 'Seniorenumzug',
+		umzugshelfer: 'Umzugshelfer',
+		montage: 'Montage',
+		haushaltsaufloesung: 'Haushaltsaufloesung',
+		entruempelung: 'Entruempelung',
+		lagerung: 'Lagerung',
+	};
+
+	const SERVICE_OPTIONS = Object.entries(SERVICE_TYPE_LABELS) as [string, string][];
+
+	// Service type
+	let selectedServiceType = $state<string>('privatumzug');
+
+	// Customer type
+	let customerType = $state<'private' | 'business'>('private');
+	let newCustomerCompanyName = $state('');
+
+	// Booking for self vs. someone else (private only)
+	let bookingForSelf = $state(true);
+
+	// Recipient fields (when booking for someone else)
+	let recipientSalutation = $state('');
+	let recipientFirstName = $state('');
+	let recipientLastName = $state('');
+	let recipientPhone = $state('');
+	let recipientEmail = $state('');
+
+	// Billing address (when not auto-derived)
+	let billingStreet = $state('');
+	let billingNumber = $state('');
+	let billingPostal = $state('');
+	let billingCity = $state('');
+	let showBilling = $state(false);
+
+
 	const floorOptions = ['EG', '1. OG', '2. OG', '3. OG', '4. OG', '5. OG', 'DG', 'UG'];
 
 	let customerSearchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -167,6 +205,19 @@
 		newCustomerEmail = '';
 		newCustomerName = '';
 		newCustomerPhone = '';
+		newCustomerCompanyName = '';
+		customerType = 'private';
+		bookingForSelf = true;
+		recipientSalutation = '';
+		recipientFirstName = '';
+		recipientLastName = '';
+		recipientPhone = '';
+		recipientEmail = '';
+		billingStreet = '';
+		billingNumber = '';
+		billingPostal = '';
+		billingCity = '';
+		showBilling = false;
 	}
 
 	/**
@@ -240,6 +291,8 @@
 					email: newCustomerEmail.trim(),
 					name: newCustomerName.trim() || null,
 					phone: newCustomerPhone.trim() || null,
+					customer_type: customerType || null,
+					company_name: customerType === 'business' ? newCustomerCompanyName.trim() || null : null,
 				});
 				customerId = newCustomer.id;
 			} else {
@@ -248,6 +301,8 @@
 
 			const body: Record<string, unknown> = {
 				customer_id: customerId,
+				service_type: selectedServiceType,
+				submission_mode: volumeMode === 'photos' ? 'foto' : volumeMode === 'video' ? 'video' : 'manuell',
 				origin: {
 					street: originStreet.trim(),
 					city: originCity.trim(),
@@ -262,10 +317,32 @@
 					floor: destFloor || null,
 					elevator: destElevator || null
 				},
-				notes: buildNotes() || null
+				notes: buildNotes() || null,
+				customer_type: customerType,
 			};
 
 			if (preferredDate) body.scheduled_date = preferredDate;
+			if (customerType === 'business' && newCustomerCompanyName.trim()) {
+				body.company_name = newCustomerCompanyName.trim();
+			}
+			if (!bookingForSelf && recipientLastName.trim()) {
+				// TODO: create recipient customer via POST /admin/customers, then set body.recipient_id
+				body.recipient_notes = JSON.stringify({
+					salutation: recipientSalutation,
+					first_name: recipientFirstName.trim(),
+					last_name: recipientLastName.trim(),
+					phone: recipientPhone.trim(),
+					email: recipientEmail.trim(),
+				});
+			}
+			if (showBilling && billingStreet.trim() && billingCity.trim()) {
+				body.billing_address = {
+					street: billingStreet.trim(),
+				house_number: billingNumber.trim() || null,
+					postal_code: billingPostal.trim() || null,
+					city: billingCity.trim(),
+				};
+			}
 			if (distanceKm) body.distance_km = parseFloat(distanceKm);
 
 			// Only include manual volume data in manual mode
@@ -309,6 +386,23 @@
 </script>
 
 <div class="create-section">
+	<!-- 0. Auftragsart -->
+	<div class="create-section__group">
+		<h3>Auftragsart</h3>
+		<div class="svc-type-grid">
+			{#each SERVICE_OPTIONS as [id, label]}
+				<button
+					type="button"
+					class="svc-type-btn"
+					class:selected={selectedServiceType === id}
+					onclick={() => { selectedServiceType = id; }}
+				>")
+					{label}")
+				</button>")
+			{/each}")
+		</div>")
+	</div>")
+
 	<!-- 1. Kunde -->
 	<div class="create-section__group">
 		<h3>Kunde</h3>
@@ -357,9 +451,44 @@
 			{/if}
 		{:else}
 			<div class="new-customer-form">
+				<div class="type-toggle" role="group" aria-label="Kundentyp">
+					<button type="button" class="type-btn" class:active={customerType === 'private'}
+						onclick={() => customerType = 'private'}>Privat</button>
+					<button type="button" class="type-btn" class:active={customerType === 'business'}
+						onclick={() => customerType = 'business'}>Gewerbe</button>
+				</div>
+				{#if customerType === 'business'}
+					<input type="text" placeholder="Firmenname *" bind:value={newCustomerCompanyName} class="form-input" />
+				{/if}
 				<input type="email" placeholder="E-Mail *" bind:value={newCustomerEmail} class="form-input" />
 				<input type="text" placeholder="Name" bind:value={newCustomerName} class="form-input" />
 				<input type="tel" placeholder="Telefon" bind:value={newCustomerPhone} class="form-input" />
+
+				{#if customerType === 'private'}
+					<div class="booking-for-toggle" role="group" aria-label="Für wen buchen Sie?">
+						<button type="button" class="type-btn" class:active={bookingForSelf}
+							onclick={() => bookingForSelf = true}>Für mich selbst</button>
+						<button type="button" class="type-btn" class:active={!bookingForSelf}
+							onclick={() => bookingForSelf = false}>Für jemand anderen</button>
+					</div>
+					{#if !bookingForSelf}
+						<div class="recipient-fields">
+							<h4>Leistungsempfänger</h4>
+							<div class="address-row">
+								<select bind:value={recipientSalutation} class="form-select">
+									<option value="">Anrede</option>
+									<option>Herr</option><option>Frau</option><option>Divers</option>
+								</select>
+								<input type="text" placeholder="Vorname" bind:value={recipientFirstName} class="form-input" />
+								<input type="text" placeholder="Nachname *" bind:value={recipientLastName} class="form-input" />
+							</div>
+							<div class="address-row">
+								<input type="tel" placeholder="Telefon" bind:value={recipientPhone} class="form-input" />
+								<input type="email" placeholder="E-Mail" bind:value={recipientEmail} class="form-input" />
+							</div>
+						</div>
+					{/if}
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -415,6 +544,30 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Billing address (when not auto-derived from origin/destination) -->
+	{#if customerType === 'business' || !bookingForSelf}
+	<div class="create-section__group">
+");
+		<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+			<h3 style="margin:0;">Rechnungsadresse</h3>
+			<button type="button" class="toggle-btn" style="font-size:0.75rem;padding:0.2rem 0.5rem;"
+				onclick={() => showBilling = !showBilling}>{showBilling ? 'Ausblenden' : 'Abweichend'}</button>
+		</div>
+		{#if !showBilling}
+			<p class="form-hint">{customerType === 'business' ? 'Firmensitz wird als Rechnungsadresse verwendet.' : 'Auszugsadresse wird als Rechnungsadresse verwendet.'}</p>
+		{:else}
+			<div class="address-row">
+				<input type="text" placeholder="Straße" bind:value={billingStreet} class="form-input" style="flex:1;" />
+				<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" style="max-width:80px;" />
+			</div>
+			<div class="address-row">
+				<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" style="max-width:100px;" />
+				<input type="text" placeholder="Stadt" bind:value={billingCity} class="form-input" style="flex:1;" />
+			</div>
+		{/if}
+	</div>
+	{/if}
 
 	<!-- 3. Umzugsgut -->
 	<div class="create-section__group">
@@ -873,5 +1026,84 @@
 		.details-row {
 			flex-direction: column;
 		}
+	}
+	.svc-type-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.svc-type-btn {
+		padding: 0.35rem 0.65rem;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: 6px;
+		background: var(--dt-surface-container-lowest);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: all 0.12s;
+	}
+
+	.svc-type-btn:hover {
+		border-color: var(--dt-primary);
+		color: var(--dt-primary);
+	}
+
+	.svc-type-btn.selected {
+		background: var(--dt-primary);
+		border-color: var(--dt-primary);
+		color: #fff;
+	}
+
+	.type-toggle {
+		display: inline-flex;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: 6px;
+		overflow: hidden;
+		margin-bottom: 0.6rem;
+	}
+
+	.type-btn {
+		padding: 0.35rem 0.85rem;
+		border: none;
+		background: var(--dt-surface-container-lowest);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: all 0.12s;
+	}
+
+	.type-btn:not(:first-child) { border-left: 1.5px solid var(--dt-outline-variant); }
+	.type-btn.active { background: var(--dt-primary); color: #fff; }
+
+	.booking-for-toggle {
+		display: inline-flex;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: 6px;
+		overflow: hidden;
+		margin-top: 0.5rem;
+		margin-bottom: 0.6rem;
+	}
+
+	.recipient-fields {
+		background: var(--dt-surface-container);
+		border-radius: 8px;
+		padding: 0.75rem;
+		margin-top: 0.5rem;
+	}
+
+	.recipient-fields h4 {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--dt-primary);
+		margin: 0 0 0.5rem;
+	}
+
+	.form-hint {
+		font-size: 0.78rem;
+		color: var(--dt-on-surface-variant);
+		margin: 0;
 	}
 </style>

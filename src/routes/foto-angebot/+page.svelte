@@ -99,6 +99,10 @@
 
 	// TODO: wire up — read $page.url.searchParams.get('service') on mount
 	let selectedServiceId = $state<string | null>(null);
+	$effect(() => {
+		const param = $page.url.searchParams.get('service');
+		if (param) selectedServiceId = param;
+	});
 
 	const selectedService = $derived<ServiceConfig | null>(
 		selectedServiceId ? (SERVICE_BY_ID.get(selectedServiceId) ?? null) : null
@@ -360,6 +364,281 @@
 	async function handleSubmit() {
 		if (!detailsValid) return;
 		isSubmitting = true;
+		submitError = '';
+		submitStatus = 'Anfrage wird gesendet…';
+
+		try {
+			// 1. Create or find customer
+			const custBody: Record<string, unknown> = {
+				email: contact.email.trim(),
+				first_name: contact.first_name.trim() || null,
+				last_name: contact.last_name.trim(),
+				salutation: contact.salutation || null,
+				phone: contact.phone.trim() || null,
+				customer_type: customerType,
+			};
+			if (customerType === 'business') custBody.company_name = contact.company_name.trim() || null;
+
+			// Customer upsert happens server-side during submission
+
+			if (activeMode === 'termin') {
+				// ── Termin mode: POST to PHP handler (same as the old form path) ──
+				const fd = new FormData();
+
+				// Contact
+				fd.append('email', contact.email);
+				fd.append('name', `${contact.first_name} ${contact.last_name}`.trim());
+				fd.append('phone', contact.phone);
+				if (contact.salutation) fd.append('anrede', contact.salutation);
+				if (contact.date) fd.append('wunschtermin', contact.date);
+				if (contact.message) fd.append('nachricht', contact.message);
+
+				// Service
+				fd.append('service_type', selectedServiceId ?? 'privatumzug');
+				fd.append('customer_type', customerType);
+				if (customerType === 'business') fd.append('company_name', contact.company_name);
+
+				// Recipient (when booking for someone else)
+				if (!bookingForSelf && recipient.last_name) {
+					fd.append('recipient_salutation', recipient.salutation);
+					fd.append('recipient_first_name', recipient.first_name);
+					fd.append('recipient_last_name', recipient.last_name);
+					fd.append('recipient_phone', recipient.phone);
+					fd.append('recipient_email', recipient.email);
+					// Payer address
+				fd.append('payer_street', payerAddress.street);
+					fd.append('payer_number', payerAddress.number);
+					fd.append('payer_zip', payerAddress.zip);
+					fd.append('payer_city', payerAddress.city);
+				}
+
+				// Addresses
+				if (originAddress.street) {
+					fd.append('startStrasse', `${originAddress.street} ${originAddress.number}`.trim());
+					fd.append('startPlz', originAddress.zip);
+					fd.append('startOrt', originAddress.city);
+					fd.append('startEtage', originAddress.floor);
+					if (originAddress.elevator) fd.append('aufzugAuszug', '1');
+					if (originAddress.parking_ban) fd.append('halteverbotAuszug', '1');
+				}
+				if (destinationAddress.street) {
+					fd.append('endStrasse', `${destinationAddress.street} ${destinationAddress.number}`.trim());
+					fd.append('endPlz', destinationAddress.zip);
+					fd.append('endOrt', destinationAddress.city);
+					fd.append('endEtage', destinationAddress.floor);
+					if (destinationAddress.elevator) fd.append('aufzugEinzug', '1');
+					if (destinationAddress.parking_ban) fd.append('halteverbotEinzug', '1');
+				}
+				if (showIntermediate && intermediateAddress.street) {
+					fd.append('zwischenstopStrasse', intermediateAddress.street);
+					fd.append('zwischenstopPlz', intermediateAddress.zip);
+					fd.append('zwischenstopOrt', intermediateAddress.city);
+				}
+				if (showBilling && billingAddress.street) {
+					fd.append('billing_street', billingAddress.street);
+					fd.append('billing_zip', billingAddress.zip);
+					fd.append('billing_city', billingAddress.city);
+				}
+
+				// Manual volume
+				if (activeMode === 'manuell' && volumeM3 > 0) {
+					fd.append('volumen', volumeM3.toFixed(1));
+					if (itemSummary) fd.append('umzugsgut', itemSummary);
+				}
+
+				// Add-ons
+				for (const addonId of selectedAddons) fd.append('services[]', addonId);
+
+				// Custom fields
+				for (const [k, v] of Object.entries(customFieldValues)) {
+					fd.append(`custom_${k}`, String(v));
+				}
+
+				const resp = await fetch(PHP_URL, { method: 'POST', body: fd });
+				if (!resp.ok) throw new Error('Anfrage konnte nicht gesendet werden.');
+				submitSuccess = true;
+
+			} else if (activeMode === 'foto') {
+				// ── Foto mode: POST multipart to /api/v1/submit/photo ──
+				submitStatus = 'Fotos werden hochgeladen…';
+				const fd = new FormData();
+
+				// Photos
+				for (const file of attachments) fd.append('images', file);
+
+				// Contact
+				fd.append('email', contact.email);
+				fd.append('name', `${contact.first_name} ${contact.last_name}`.trim());
+				if (contact.phone) fd.append('phone', contact.phone);
+				if (contact.salutation) fd.append('salutation', contact.salutation);
+				if (contact.first_name) fd.append('first_name', contact.first_name);
+				if (contact.last_name) fd.append('last_name', contact.last_name);
+
+				// Service context
+				fd.append('service_type', selectedServiceId ?? 'privatumzug');
+				fd.append('submission_mode', 'foto');
+				fd.append('customer_type', customerType);
+				if (customerType === 'business') fd.append('company_name', contact.company_name);
+
+				// Recipient
+				if (!bookingForSelf && recipient.last_name) {
+					fd.append('recipient_first_name', recipient.first_name);
+					fd.append('recipient_last_name', recipient.last_name);
+					fd.append('recipient_phone', recipient.phone);
+					fd.append('recipient_email', recipient.email);
+				}
+
+				//Addresses
+				if (originAddress.street) {
+					fd.append('departure_address', [originAddress.street, originAddress.number].filter(Boolean).join(' '));
+					fd.append('departure_floor', originAddress.floor);
+					fd.append('departure_elevator', originAddress.elevator ? 'true' : 'false');
+					fd.append('departure_parking_ban', originAddress.parking_ban ? 'true' : 'false');
+				}
+				if (destinationAddress.street) {
+					fd.append('arrival_address', [destinationAddress.street, destinationAddress.number].filter(Boolean).join(' '));
+					fd.append('arrival_floor', destinationAddress.floor);
+					fd.append('arrival_elevator', destinationAddress.elevator ? 'true' : 'false');
+					fd.append('arrival_parking_ban', destinationAddress.parking_ban ? 'true' : 'false');
+				}
+				if (contact.date) fd.append('scheduled_date', contact.date);
+				if (contact.message) fd.append('message', contact.message);
+
+				// Add-ons
+				for (const addonId of selectedAddons) fd.append('services[]', addonId);
+				// Custom fields
+				for (const [k, v] of Object.entries(customFieldValues)) fd.append(`custom_${k}`, String(v));
+				// Manual volume (if filled alongside fotos)
+				if (volumeM3 > 0) fd.append('volume_m3', volumeM3.toFixed(1));
+				if (itemSummary) fd.append('items_list', itemSummary);
+
+				const resp = await fetch(PHOTO_API_URL, { method: 'POST', body: fd });
+				if (!resp.ok) {
+					const errText = await resp.text().catch(() => '');
+					throw new Error(errText || 'Foto-Anfrage konnte nicht gesendet werden.');
+				}
+				submitSuccess = true;
+
+			} else if (activeMode === 'video') {
+				// ── Video mode: POST multipart to /api/v1/submit/video ──
+				submitStatus = 'Video wird hochgeladen…';
+				const fd = new FormData();
+
+				for (const file of attachments) fd.append('video', file);
+
+				// Contact
+				fd.append('email', contact.email);
+				fd.append('name', `${contact.first_name} ${contact.last_name}`.trim());
+				if (contact.phone) fd.append('phone', contact.phone);
+				if (contact.salutation) fd.append('salutation', contact.salutation);
+				if (contact.first_name) fd.append('first_name', contact.first_name);
+				if (contact.last_name) fd.append('last_name', contact.last_name);
+
+				// Service context
+				fd.append('service_type', selectedServiceId ?? 'privatumzug');
+				fd.append('submission_mode', 'video');
+				fd.append('customer_type', customerType);
+				if (customerType === 'business') fd.append('company_name', contact.company_name);
+
+				// Recipient
+				if (!bookingForSelf && recipient.last_name) {
+					fd.append('recipient_first_name', recipient.first_name);
+					fd.append('recipient_last_name', recipient.last_name);
+					fd.append('recipient_phone', recipient.phone);
+					fd.append('recipient_email', recipient.email);
+				}
+
+				// Addresses
+				if (originAddress.street) {
+					fd.append('departure_address', [originAddress.street, originAddress.number].filter(Boolean).join(' '));
+					fd.append('departure_floor', originAddress.floor);
+					fd.append('departure_elevator', originAddress.elevator ? 'true' : 'false');
+					fd.append('departure_parking_ban', originAddress.parking_ban ? 'true' : 'false');
+				}
+				if (destinationAddress.street) {
+					fd.append('arrival_address', [destinationAddress.street, destinationAddress.number].filter(Boolean).join(' '));
+					fd.append('arrival_floor', destinationAddress.floor);
+					fd.append('arrival_elevator', destinationAddress.elevator ? 'true' : 'false');
+					fd.append('arrival_parking_ban', destinationAddress.parking_ban ? 'true' : 'false');
+				}
+				if (contact.date) fd.append('scheduled_date', contact.date);
+				if (contact.message) fd.append('message', contact.message);
+
+				for (const addonId of selectedAddons) fd.append('services[]', addonId);
+				for (const [k, v] of Object.entries(customFieldValues)) fd.append(`custom_${k}`, String(v));
+
+				const resp = await fetch(VIDEO_API_URL, { method: 'POST', body: fd });
+				if (!resp.ok) {
+					const errText = await resp.text().catch(() => '');
+					throw new Error(errText || 'Video-Anfrage konnte nicht gesendet werden.');
+				}
+				submitSuccess = true;
+
+			} else {
+				// manuell mode: same as termin but without the PHP handler — use the Rust API
+				submitStatus = 'Anfrage wird erstellt…';
+
+				// Create customer first
+				const custResp = await fetch('/api/v1/admin/customers', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						email: contact.email,
+						first_name: contact.first_name || null,
+						last_name: contact.last_name || null,
+						phone: contact.phone || null,
+						customer_type: customerType,
+						company_name: customerType === 'business' ? contact.company_name || null : null,
+					}),
+				});
+				if (!custResp.ok) throw new Error('Kunde konnte nicht erstellt werden.');
+				const { id: customerId } = await custResp.json();
+
+				// Create inquiry
+				const inqBody: Record<string, unknown> = {
+					customer_id: customerId,
+					service_type: selectedServiceId,
+					submission_mode: 'manuell',
+					notes: contact.message || null,
+				};
+				if (originAddress.street) inqBody.origin = {
+					street: [originAddress.street, originAddress.number].filter(Boolean).join(' '),
+					city: originAddress.city,
+					postal_code: originAddress.zip || null,
+					floor: originAddress.floor || null,
+					elevator: originAddress.elevator || null,
+				};
+				if (destinationAddress.street) inqBody.destination = {
+					street: [destinationAddress.street, destinationAddress.number].filter(Boolean).join(' '),
+					city: destinationAddress.city,
+					postal_code: destinationAddress.zip || null,
+					floor: destinationAddress.floor || null,
+					elevator: destinationAddress.elevator || null,
+				};
+				if (contact.date) inqBody.scheduled_date = contact.date;
+				if (volumeM3 > 0) inqBody.estimated_volume_m3 = volumeM3;
+				if (itemSummary) inqBody.items_list = itemSummary;
+				const addons = selectedAddons.length > 0 ? selectedAddons : undefined;
+				if (addons) inqBody.services = { custom_addons: addons };
+				if (Object.keys(customFieldValues).length > 0) inqBody.custom_fields = customFieldValues;
+
+				const inqResp = await fetch('/api/v1/inquiries', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(inqBody),
+				});
+				if (!inqResp.ok) {
+					const errText = await inqResp.text().catch(() => '');
+					throw new Error(errText || 'Anfrage konnte nicht erstellt werden.');
+				}
+				submitSuccess = true;
+			}
+		} catch (e) {
+			submitError = (e instanceof Error ? e.message : null) || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+		} finally {
+			isSubmitting = false;
+			submitStatus = '';
+		}
 	}
 </script>
 

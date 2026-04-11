@@ -299,17 +299,18 @@
 					city: originCity.trim(),
 					postal_code: originPostal.trim() || null,
 					floor: originFloor || null,
-					elevator: originElevator || null
+					elevator: originElevator || null,
+					parking_ban: originHalteverbot || null,
 				},
 				destination: {
 					street: destStreet.trim(),
 					city: destCity.trim(),
 					postal_code: destPostal.trim() || null,
 					floor: destFloor || null,
-					elevator: destElevator || null
+					elevator: destElevator || null,
+					parking_ban: destHalteverbot || null,
 				},
 				notes: buildNotes() || null,
-				customer_type: customerType,
 			};
 
 			if (preferredDate) body.scheduled_date = preferredDate;

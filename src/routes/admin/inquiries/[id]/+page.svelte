@@ -340,7 +340,7 @@
 	function addLineItem() {
 		editLineItems = [
 			...editLineItems,
-			mkLineItem(31, "Demontage", 1, 5000),
+			mkLineItem(0, '', 1, 0),
 		];
 	}
 
@@ -915,7 +915,13 @@
 	 */
 	async function deleteInquiry() {
 		if (!data) return;
-		if (!confirm("Anfrage unwiderruflich loeschen?")) return;
+		const status = data.status ?? 'unbekannt';
+		const hasOffer = !!data.offer;
+		let msg = `Anfrage unwiderruflich loeschen?`;
+		if (hasOffer) msg = `Diese Anfrage hat ein Angebot. ` + msg;
+		if (!['new', 'pending', 'rejected', 'expired', 'cancelled'].includes(status))
+			msg = `Status: ${status}. ` + msg;
+		if (!confirm(msg)) return;
 		try {
 			await apiDelete(`/api/v1/inquiries/${data.id}`);
 			showToast("Anfrage geloescht", "success");

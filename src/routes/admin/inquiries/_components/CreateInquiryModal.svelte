@@ -317,19 +317,20 @@
 				body.company_name = newCustomerCompanyName.trim();
 			}
 			if (!bookingForSelf && recipientLastName.trim()) {
-				// TODO: create recipient customer via POST /admin/customers, then set body.recipient_id
-				body.recipient_notes = JSON.stringify({
-					salutation: recipientSalutation,
-					first_name: recipientFirstName.trim(),
+				// Create a recipient customer record, then set recipient_id
+				const recipientRes = await apiPost<{ id: string }>('/api/v1/admin/customers', {
+					email: recipientEmail.trim() || `recipient-${Date.now()}@aufraeumhelden.com`,
+					first_name: recipientFirstName.trim() || null,
 					last_name: recipientLastName.trim(),
-					phone: recipientPhone.trim(),
-					email: recipientEmail.trim(),
+					phone: recipientPhone.trim() || null,
+					salutation: recipientSalutation || null,
 				});
+				body.recipient_id = recipientRes.id;
 			}
 			if (showBilling && billingStreet.trim() && billingCity.trim()) {
 				body.billing_address = {
 					street: billingStreet.trim(),
-				house_number: billingNumber.trim() || null,
+					house_number: billingNumber.trim() || null,
 					postal_code: billingPostal.trim() || null,
 					city: billingCity.trim(),
 				};

@@ -623,6 +623,12 @@
 
 				// Add-ons (comma-separated as backend expects)
 				if (selectedAddons.length > 0) fd.append('services', selectedAddons.join(','));
+
+				// Manual volume
+				if (volumeM3 > 0) {
+					fd.append('volumen', volumeM3.toFixed(1));
+					if (itemSummary) fd.append('umzugsgut', itemSummary);
+				}
 				// Custom fields
 				for (const [k, v] of Object.entries(customFieldValues)) {
 					fd.append(`custom_${k}`, String(v));

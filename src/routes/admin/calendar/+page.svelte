@@ -431,6 +431,46 @@
 		);
 	}
 
+	/**
+	 * Returns an ordered list of multi-day event IDs for a given week (7 dates).
+	 * Events are ordered by ID for determinism; the same order is used for all
+	 * 7 days so each event stays pinned to its lane even on days it is absent.
+	 */
+	function getWeekLanes(weekDates: string[]): string[] {
+		const seen = new Set<string>();
+		const lanes: string[] = [];
+		for (const dateStr of weekDates) {
+			const entries = buildDayEntries(dateStr);
+			type MDEntry = { type: 'inquiry'; item: InquiryItem } | { type: 'schedule-termin'; item: ScheduleCalendarItem };
+		const md = (entries
+				.filter(e =>
+					(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) ||
+					(e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1)
+				) as MDEntry[])
+				.sort((a, b) => {
+					const idA = a.type === 'inquiry' ? a.item.inquiry_id : a.item.calendar_item_id;
+					const idB = b.type === 'inquiry' ? b.item.inquiry_id : b.item.calendar_item_id;
+					return idA.localeCompare(idB);
+				});
+			for (const entry of md) {
+				const id = entry.type === 'inquiry' ? entry.item.inquiry_id : entry.item.calendar_item_id;
+				if (!seen.has(id)) { seen.add(id); lanes.push(id); }
+			}
+		}
+		return lanes;
+	}
+
+	/** Maps every dateStr in the current calendar to its week's stable lane order. */
+	let dayLaneMap = $derived.by(() => {
+		const map = new Map<string, string[]>();
+		for (let i = 0; i < calendarDays.length; i += 7) {
+			const week = calendarDays.slice(i, i + 7);
+			const lanes = getWeekLanes(week.map(d => d.dateStr));
+			for (const d of week) map.set(d.dateStr, lanes);
+		}
+		return map;
+	});
+
 	// ─── Schedule loading ────────────────────────────────────────────────────────
 
 	$effect(() => {
@@ -1006,6 +1046,10 @@
 							{@const overbooked = booked > capacity}
 							{@const publicHol = publicHolidayMap.get(dateStr)}
 							{@const schoolHol = schoolHolidayMap.get(dateStr)}
+							{@const mdEntries = allEntries.filter(e => (e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) || (e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1))}
+							{@const sdEntries = allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) && !(e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1))}
+							{@const lanes = dayLaneMap.get(dateStr) ?? []}
+							{@const sdCap = Math.max(2, 4 - lanes.length)}
 							<button
 								class="cal-cell"
 								class:overflow={day.isOverflow}
@@ -1026,32 +1070,35 @@
 									{#if publicHol}<span class="holiday-badge">🎉 {publicHol}</span>{/if}
 								</div>
 								{#if schoolHol}<div class="school-holiday-label">{schoolHol}</div>{/if}
-										{#each [{ mdEntries: allEntries.filter(e => (e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) || (e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1)).sort((a, b) => { const idA = a.type === 'inquiry' ? a.item.inquiry_id : a.item.calendar_item_id; const idB = b.type === 'inquiry' ? b.item.inquiry_id : b.item.calendar_item_id; return idA.localeCompare(idB); }), sdEntries: allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) && !(e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1)) }] as { mdEntries, sdEntries }}
-									{@const sdCap = Math.max(2, 4 - mdEntries.length)}
-									{#each mdEntries as entry}
-										{@const dayNum = entry.item.day_number ?? 1}
-										{@const totalDays = entry.item.total_days ?? 1}
-										{@const dow = new Date(dateStr + 'T00:00:00').getDay()}
-										{@const isVisualStart = dayNum === 1 || dow === 1}
-										{@const isVisualEnd = dayNum === totalDays || dow === 0}
-										{@const isMultiDayInquiry = entry.type === 'inquiry'}
-										{@const barColor = isMultiDayInquiry ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.item.category)}
-										<!-- svelte-ignore a11y_no_static_element_interactions -->
-										<div
-											class="md-bar {barColor}"
-											class:md-bar-start={isVisualStart}
-											class:md-bar-end={isVisualEnd}
-											title="{isMultiDayInquiry ? (entry.item.customer_name ?? '') : entry.item.title} · Tag {dayNum}/{totalDays}"
-											draggable="true"
-											ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr)}
-											onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
-											role="button"
-											tabindex="0"
-											onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
-										>
-											{#if isVisualStart}<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>{/if}
-										</div>
-									{/each}
+					{#each lanes as laneId}
+						{@const entry = mdEntries.find(e => e.type === 'inquiry' ? e.item.inquiry_id === laneId : ('calendar_item_id' in e.item && e.item.calendar_item_id === laneId))}
+						{#if entry}
+							{@const dayNum = entry.item.day_number ?? 1}
+							{@const totalDays = entry.item.total_days ?? 1}
+							{@const dow = new Date(dateStr + 'T00:00:00').getDay()}
+							{@const isVisualStart = dayNum === 1 || dow === 1}
+							{@const isVisualEnd = dayNum === totalDays || dow === 0}
+							{@const isMultiDayInquiry = entry.type === 'inquiry'}
+							{@const barColor = isMultiDayInquiry ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.item.category)}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div
+								class="md-bar {barColor}"
+								class:md-bar-start={isVisualStart}
+								class:md-bar-end={isVisualEnd}
+								title="{isMultiDayInquiry ? (entry.item.customer_name ?? '') : entry.item.title} · Tag {dayNum}/{totalDays}"
+								draggable="true"
+								ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr)}
+								onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
+							>
+								{#if isVisualStart}<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>{/if}
+							</div>
+						{:else}
+							<div class="md-bar-spacer"></div>
+						{/if}
+					{/each}
 									<div class="cal-entries">
 										{#each sdEntries.slice(0, sdCap) as entry}
 										{#if entry.type === 'inquiry'}
@@ -1103,7 +1150,6 @@
 										<span class="cal-more">+{sdEntries.length - sdCap} mehr</span>
 									{/if}
 								</div>
-								{/each}
 							</button>
 					{/each}
 				</div>
@@ -1740,8 +1786,8 @@
 		white-space: nowrap;
 		overflow: hidden;
 		cursor: pointer;
-		/* extend through cell padding to fill edge-to-edge, bridging the border */
-		margin: 1px -0.25rem 1px -0.375rem;
+		/* extend through cell padding AND the 1px cell border to fill edge-to-edge */
+		margin: 1px calc(-0.25rem - 1px) 1px -0.375rem;
 		border-radius: 0;
 		min-height: 14px;
 		transition: opacity var(--dt-transition);
@@ -1762,6 +1808,7 @@
 		border-radius: 3px;
 	}
 	.md-bar-text { padding-left: 5px; }
+	.md-bar-spacer { display: block; min-height: 14px; margin: 1px calc(-0.25rem - 1px) 1px -0.375rem; }
 
 	/* ─── Week view grid ───────────────────────────────────────────────────────── */
 	.week-grid {

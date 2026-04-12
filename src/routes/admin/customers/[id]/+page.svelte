@@ -286,40 +286,42 @@
 
 			<!-- Billing Address (customer-level default) -->
 			<div class="card">
-				<div class="card-header">
+				<div class="card-header card-header--action">
 					<h2>Rechnungsadresse (Standard)</h2>
-					<button class="btn btn-sm" onclick={() => showBillingEdit = !showBillingEdit}>
-						{showBillingEdit ? 'Schliessen' : 'Bearbeiten'}
+					<button class="btn-edit" onclick={() => showBillingEdit = !showBillingEdit}>
+						{showBillingEdit ? 'Schließen' : 'Bearbeiten'}
 					</button>
 				</div>
-				{#if data.billing_address_id}
-					<p class="form-hint" style="margin:0;">Ist als Standard-Rechnungsadresse für alle Anfragen dieses Kunden hinterlegt.</p>
-				{:else}
-					<p class="form-hint" style="margin:0;">Keine hinterlegt. Für B2B-Kunden kann hier eine abweichende Rechnungsadresse (z.B. Hauptsitz) gespeichert werden.</p>
-				{/if}
-				{#if showBillingEdit}
-					<div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
-						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem;">
-							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input" />
-							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" />
-						</div>
-						<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
-							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" />
-							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input" />
-						</div>
-						<div style="display: flex; gap: 0.5rem;">
-							<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
-								{billingSaving ? 'Speichert…' : 'Speichern'}
-							</button>
-							{#if data.billing_address_id}
-								<button class="btn btn-sm" onclick={clearBillingAddress} disabled={billingSaving} style="color: #dc2626;">
-									Zurücksetzen
+				<div class="card-body">
+					<p class="form-hint">
+						{#if data.billing_address_id}
+							Abweichende Rechnungsadresse ist hinterlegt.
+						{:else}
+							Keine hinterlegt. Für B2B-Kunden kann hier eine abweichende Rechnungsadresse (z.B. Hauptsitz) gespeichert werden.
+						{/if}
+					</p>
+					{#if showBillingEdit}
+						<div class="billing-form">
+							<div class="billing-form__row billing-form__row--street">
+								<input type="text" placeholder="Straße" bind:value={billingStreet} class="billing-form__input" />
+								<input type="text" placeholder="Nr." bind:value={billingNumber} class="billing-form__input billing-form__input--short" />
+							</div>
+							<div class="billing-form__row">
+								<input type="text" placeholder="PLZ" bind:value={billingPostal} class="billing-form__input billing-form__input--short" />
+								<input type="text" placeholder="Ort" bind:value={billingCity} class="billing-form__input" />
+							</div>
+							<div class="billing-form__actions">
+								<button class="btn-save" onclick={saveBillingAddress} disabled={billingSaving}>
+									{billingSaving ? 'Speichert…' : 'Speichern'}
 								</button>
-							{/if}
-							<button class="btn btn-sm" onclick={() => showBillingEdit = false}>Abbrechen</button>
+								{#if data.billing_address_id}
+									<button class="btn-danger" onclick={clearBillingAddress} disabled={billingSaving}>Zurücksetzen</button>
+								{/if}
+								<button class="btn-cancel" onclick={() => showBillingEdit = false}>Abbrechen</button>
+							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</div>
 			</div>
 
 			<div class="card">
@@ -457,6 +459,77 @@
 		font-size: 0.9375rem;
 		font-weight: 600;
 		color: var(--dt-on-surface);
+	}
+	.card-header--action {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.btn-edit {
+		padding: 0.25rem 0.75rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--dt-primary);
+		background: transparent;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		cursor: pointer;
+		transition: all 0.12s;
+		white-space: nowrap;
+	}
+	.btn-edit:hover { border-color: var(--dt-primary); background: rgba(var(--dt-primary-rgb, 2,36,72), 0.05); }
+
+	.billing-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+	.billing-form__row { display: grid; gap: 0.5rem; }
+	.billing-form__row--street { grid-template-columns: 2fr 1fr; }
+	.billing-form__row:not(.billing-form__row--street) { grid-template-columns: 1fr 2fr; }
+	.billing-form__input {
+		width: 100%;
+		padding: 0.45rem 0.65rem;
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-bottom: 2px solid transparent;
+		border-radius: var(--dt-radius-sm);
+		color: var(--dt-on-surface);
+		font-size: 0.875rem;
+		outline: none;
+		box-sizing: border-box;
+		transition: border-color 0.12s;
+	}
+	.billing-form__input:focus { border-bottom-color: var(--dt-primary); }
+	.billing-form__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+	.btn-save {
+		padding: 0.4rem 1rem;
+		background: var(--dt-primary);
+		color: #fff;
+		border: none;
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+	.btn-danger {
+		padding: 0.4rem 0.85rem;
+		background: transparent;
+		color: #dc2626;
+		border: 1.5px solid #dc2626;
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+	}
+	.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+	.btn-cancel {
+		padding: 0.4rem 0.85rem;
+		background: transparent;
+		color: var(--dt-on-surface-variant);
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.8rem;
+		cursor: pointer;
 	}
 
 	.card-body { padding: 1.25rem; }

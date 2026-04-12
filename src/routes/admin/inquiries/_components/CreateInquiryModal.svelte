@@ -119,10 +119,10 @@
 
 
 	// Derived address config for current service type
-	$derived addrCfg = SERVICE_ADDRESS_CONFIG[selectedServiceType] ?? SERVICE_ADDRESS_CONFIG['privatumzug'];
+	let addrCfg = $derived(SERVICE_ADDRESS_CONFIG[selectedServiceType] ?? SERVICE_ADDRESS_CONFIG['privatumzug']);
 
 	// Billing address visibility: show if service wants it, OR if business/recipient
-	$derived showBillingSection = addrCfg.showBilling || customerType === 'business' || !bookingForSelf;
+	let showBillingSection = $derived(addrCfg.showBilling || customerType === 'business' || !bookingForSelf);
 
 	const floorOptions = ['EG', '1. OG', '2. OG', '3. OG', '4. OG', '5. OG', 'DG', 'UG'];
 
@@ -399,12 +399,12 @@
 					class="svc-type-btn"
 					class:selected={selectedServiceType === id}
 					onclick={() => { selectedServiceType = id; }}
-				>")
-					{label}")
-				</button>")
-			{/each}")
-		</div>")
-	</div>")
+				>
+					{label}
+				</button>
+			{/each}
+		</div>
+	</div>
 
 	<!-- 1. Kunde -->
 	<div class="create-section__group">
@@ -1076,6 +1076,7 @@
 
 	.type-toggle {
 		display: inline-flex;
+		align-self: flex-start;
 		border: 1.5px solid var(--dt-outline-variant);
 		border-radius: 6px;
 		overflow: hidden;

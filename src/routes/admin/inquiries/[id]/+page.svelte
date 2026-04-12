@@ -217,6 +217,11 @@
 	let editDistance = $state(0);
 	let editNotes = $state("");
 	let editDate = $state("");
+	let editStartTime = $state("");
+	let editEndTime = $state("");
+
+	const LOCKED_STATUSES = new Set(['offer_ready', 'offer_sent', 'accepted', 'scheduled', 'completed', 'invoiced', 'paid']);
+	let isLocked = $derived(data ? LOCKED_STATUSES.has(data.status) : false);
 
 	// Pricing fields
 	let editPersons = $state(2);
@@ -644,6 +649,8 @@
 			editDistance = data.distance_km ?? 0;
 			editNotes = data.notes || "";
 			editDate = data.scheduled_date || "";
+			editStartTime = data.start_time ? data.start_time.slice(0, 5) : '';
+			editEndTime = data.end_time ? data.end_time.slice(0, 5) : '';
 			computePricingDefaults();
 
 			// Load emails non-blocking so the inquiry renders first
@@ -696,10 +703,15 @@
 	async function persistInquiry() {
 		if (!data) return;
 		await apiPatch(`/api/v1/inquiries/${data.id}`, {
-			estimated_volume_m3: editVolume,
-			distance_km: editDistance,
+			// Volume, distance and services are locked once an offer exists
+			...(!isLocked && {
+				estimated_volume_m3: editVolume,
+				distance_km: editDistance,
+			}),
 			notes: editNotes || null,
 			scheduled_date: editDate || null,
+			start_time: editStartTime ? editStartTime + ':00' : undefined,
+			end_time: editEndTime ? editEndTime + ':00' : undefined,
 		});
 	}
 
@@ -2005,21 +2017,23 @@
 				</div>
 				<div class="form-grid">
 					<div class="field">
-						<label for="volume">Volumen (m3)</label>
+						<label for="volume">Volumen (m3){isLocked ? ' 🔒' : ''}</label>
 						<input
 							id="volume"
 							type="number"
 							step="0.1"
 							bind:value={editVolume}
+							disabled={isLocked}
 						/>
 					</div>
 					<div class="field">
-						<label for="distance">Entfernung (km)</label>
+						<label for="distance">Entfernung (km){isLocked ? ' 🔒' : ''}</label>
 						<input
 							id="distance"
 							type="number"
 							step="0.1"
 							bind:value={editDistance}
+							disabled={isLocked}
 						/>
 					</div>
 					<div class="field">
@@ -2029,6 +2043,14 @@
 							type="date"
 							bind:value={editDate}
 						/>
+					</div>
+					<div class="field">
+						<label for="start-time">Startzeit</label>
+						<input id="start-time" type="time" bind:value={editStartTime} />
+					</div>
+					<div class="field">
+						<label for="end-time">Endzeit</label>
+						<input id="end-time" type="time" bind:value={editEndTime} />
 					</div>
 					<div class="field full-width">
 						<label for="notes">Notizen / Services</label>

@@ -86,3 +86,15 @@ Manually maintained at `static/sitemap.xml`. Add new pages there. Exclude `/foto
 ## Deployment
 
 Part of `deploy-full.py` — builds, inlines CSS, uploads to KAS via FTP. **Deploy only when asked.**
+## ⚠️ Connected Changes
+
+| If you change... | ...also verify |
+|---|---|
+| Page URL or slug | `static/sitemap.xml`, `.htaccess` 301 redirects, backend `submissions.rs` form action URLs |
+| SEO meta tags or structured data | `StructuredData.svelte` schema type, Google Search Console indexing, `sitemap.xml` |
+| Form field names | Backend `submissions.rs` multipart parser (`parse_address()`, `merge_address_parts()`, `parse_services_string()`) must match exact field names |
+| `serviceConfig.ts` service list | Backend `Services` struct flags, offer `build_line_items()`, XLSX template |
+| CSS or layout | Mobile breakpoints (375px, 768px, 1024px), Lighthouse scores, CLS (no layout shifts) |
+| Images or assets | `width`/`height` attributes for CLS prevention, `alt` tags for accessibility, `loading="lazy"` |
+| Contact form or phone number | Backend email agent parsing, `send-mail.php` endpoint, WhatsApp button link |
+| Deployment | `deploy-full.py` uploads everything in `build/` — stale files stay until manually removed |

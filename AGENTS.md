@@ -61,3 +61,15 @@ python3 deploy-full.py  # FTP entire build/ to KAS (requires FTP_PASS in .env)
 `svelte.config.js`: `adapter-static`, `fallback: 'admin.html'` (SPA fallback for `/admin/*` and `/worker/*`).
 
 Root layout `+layout.svelte`: `prerender = true`. Conditionally skips Navbar/Footer for `/admin` routes.
+## ⚠️ Connected Changes
+
+| If you change... | ...also verify |
+|---|---|
+| API endpoint URL or response shape | `api.svelte.ts` fetch functions, all admin pages calling that endpoint, backend route handler |
+| `INQUIRY_STATUS_LABELS` or `CUSTOMER_TYPE_LABELS` | Backend `InquiryStatus.as_str()` values, admin status badges, calendar status colors |
+| Admin page layout or component | Shared components in `$lib/components/admin/` (used across multiple pages) |
+| Volume calculator form | Backend `submissions.rs` `handle_submission()`, `serviceConfig.ts` in foto-angebot |
+| CSS variables or design tokens | `admin.css` centrally, all admin pages that use the same classes |
+| Employee assignment panel | Used in both inquiry detail and calendar side panel — changes affect both |
+| Cookie consent or analytics | `ConsentManager.svelte` gates all tracking — must work before any GA fires |
+| `/foto-angebot` form fields | Backend `submissions.rs` multipart parser must match form field names exactly |

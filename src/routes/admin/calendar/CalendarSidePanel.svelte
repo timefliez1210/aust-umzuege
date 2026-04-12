@@ -51,6 +51,20 @@
 		customer_name?: string | null;
 	}
 
+	interface ScheduleCalendarItem {
+		calendar_item_id: string;
+		title: string;
+		category: string;
+		location: string | null;
+		start_time: string | null;
+		end_time: string | null;
+		employees_assigned: number;
+		employee_names: string | null;
+		day_number?: number | null;
+		total_days?: number | null;
+		day_notes?: string | null;
+	}
+
 	interface DaySchedule {
 		date: string;
 		available: boolean;
@@ -58,6 +72,7 @@
 		booked: number;
 		remaining: number;
 		inquiries: InquiryItem[];
+		calendar_items: ScheduleCalendarItem[];
 	}
 
 	interface DayEmployee {
@@ -769,7 +784,20 @@
 			{#if panelSelection.kind === 'day'}
 				{@const ds = panelSelection.schedule}
 				{@const dayPanelDate = panelSelection.date}
-				{@const dayTermine = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dayPanelDate))}
+				{@const dayTermine = ds.calendar_items.map(ci => ({
+					id: ci.calendar_item_id,
+					title: ci.title,
+					category: ci.category,
+					location: ci.location,
+					description: null as string | null,
+					scheduled_date: ds.date.split('T')[0],
+					start_time: ci.start_time ?? '',
+					end_time: ci.end_time,
+					duration_hours: 0,
+					status: 'scheduled' as const,
+					customer_id: null as string | null,
+					customer_name: null as string | null,
+				}))}
 
 				<div class="panel-section">
 					<div class="panel-kv">

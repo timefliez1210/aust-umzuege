@@ -1301,7 +1301,7 @@
 				<!-- ─── Day timeline view ──────────────────────────────────────────── -->
 				{@const daySched = schedule.find(s => s.date === dayViewDate || s.date.startsWith(dayViewDate))}
 				{@const dayAllEntries = buildDayEntries(dayViewDate)}
-				{@const dayTermineList = calendarItems.filter(ci => ci.scheduled_date?.startsWith(dayViewDate))}
+				{@const dayTermineList = (schedule.find(s => s.date === dayViewDate)?.calendar_items ?? []).filter(ci => ci.category !== 'internal')}
 				<div class="day-timeline">
 					<div class="day-tl-header">
 						<div class="day-tl-meta">

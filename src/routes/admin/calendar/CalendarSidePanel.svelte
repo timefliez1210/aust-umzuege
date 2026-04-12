@@ -467,7 +467,7 @@
 		const cur = new Date(origin);
 		let num = 1;
 		while (cur <= until) {
-			const iso = cur.toISOString().slice(0, 10);
+			const iso = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
 			const prev = existing.get(iso);
 			days.push({
 				day_date:   iso,
@@ -567,7 +567,7 @@
 		const cur = new Date(origin);
 		let num = 1;
 		while (cur <= until) {
-			const iso = cur.toISOString().slice(0, 10);
+			const iso = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
 			const prev = existing.get(iso);
 			days.push({
 				day_date:   iso,

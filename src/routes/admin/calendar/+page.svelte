@@ -301,7 +301,7 @@
 			const start = new Date(h.startDate + 'T00:00:00');
 			const end = new Date(h.endDate + 'T00:00:00');
 			for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-				map.set(d.toISOString().slice(0, 10), name);
+				map.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, name);
 			}
 		}
 		return map;

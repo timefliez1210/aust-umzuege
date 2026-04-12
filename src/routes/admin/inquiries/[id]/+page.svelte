@@ -1927,7 +1927,7 @@
 			{/if}
 
 			<!-- Billing Address (editable) -->
-			<div class="card">
+			<div class="card card--compact">
 				<div class="card-header">
 					<h3>Rechnungsadresse</h3>
 					<button class="btn btn-sm" onclick={() => showBillingEdit = !showBillingEdit}>
@@ -1936,18 +1936,12 @@
 				</div>
 
 				{#if data.billing_address}
-					<div class="info-grid">
-						<div class="info-item">
-							<span class="info-label">Strasse</span>
-							<span class="info-value">{data.billing_address.street}{data.billing_address.house_number ? ` ${data.billing_address.house_number}` : ''}</span>
-						</div>
-						<div class="info-item">
-							<span class="info-label">Ort</span>
-							<span class="info-value">{data.billing_address.postal_code ? `${data.billing_address.postal_code} ` : ''}{data.billing_address.city}</span>
-						</div>
+					<div class="billing-addr-display">
+						<span>{data.billing_address.street}{data.billing_address.house_number ? ` ${data.billing_address.house_number}` : ''}</span>
+						<span>{data.billing_address.postal_code ? `${data.billing_address.postal_code} ` : ''}{data.billing_address.city}</span>
 					</div>
 				{:else}
-					<p class="form-hint" style="margin:0;">
+					<p class="billing-addr-hint">
 						{data.status === 'completed' || data.status === 'invoiced' || data.status === 'paid'
 							? 'Einzugsadresse wird verwendet (Einzug abgeschlossen).'
 							: 'Auszugsadresse wird verwendet (Standardeinstellung).'}
@@ -1955,16 +1949,16 @@
 				{/if}
 
 				{#if showBillingEdit}
-					<div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
-						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem;">
-							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input" />
-							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" />
+					<div class="billing-addr-form">
+						<div class="billing-addr-row">
+							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input" style="flex:2;" />
+							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" style="flex:0 0 80px;" />
 						</div>
-						<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
-							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" />
-							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input" />
+						<div class="billing-addr-row">
+							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" style="flex:0 0 100px;" />
+							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input" style="flex:2;" />
 						</div>
-						<div style="display: flex; gap: 0.5rem;">
+						<div class="billing-addr-actions">
 							<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
 								{billingSaving ? 'Speichert…' : 'Speichern'}
 							</button>
@@ -2767,6 +2761,47 @@
 
 	.card.full-width {
 		grid-column: 1 / -1;
+	}
+
+	.card--compact {
+		padding: 0.75rem 1rem;
+		border-left: 3px solid var(--dt-primary);
+	}
+
+	/* Billing address display / edit */
+	.billing-addr-display {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface);
+		line-height: 1.4;
+	}
+
+	.billing-addr-hint {
+		font-size: 0.78rem;
+		color: var(--dt-on-surface-variant);
+		margin: 0;
+		font-style: italic;
+	}
+
+	.billing-addr-form {
+		margin-top: 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.billing-addr-row {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.billing-addr-actions {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
 	}
 
 	.card h3 {

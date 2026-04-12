@@ -6,7 +6,7 @@
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { X, Camera, List, Upload, Video } from 'lucide-svelte';
-	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
+	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
 
 	/**
 	 * Props for the create-inquiry modal/form.
@@ -117,6 +117,12 @@
 	let billingCity = $state('');
 	let showBilling = $state(false);
 
+
+	// Derived address config for current service type
+	$derived addrCfg = SERVICE_ADDRESS_CONFIG[selectedServiceType] ?? SERVICE_ADDRESS_CONFIG['privatumzug'];
+
+	// Billing address visibility: show if service wants it, OR if business/recipient
+	$derived showBillingSection = addrCfg.showBilling || customerType === 'business' || !bookingForSelf;
 
 	const floorOptions = ['EG', '1. OG', '2. OG', '3. OG', '4. OG', '5. OG', 'DG', 'UG'];
 
@@ -258,12 +264,12 @@
 			createError = 'E-Mail-Adresse ist erforderlich';
 			return;
 		}
-		if (!originStreet.trim() || !originCity.trim()) {
-			createError = 'Auszugsadresse (Straße, Stadt) ist erforderlich';
+		if (addrCfg.showOrigin && (!originStreet.trim() || !originCity.trim())) {
+			createError = `${addrCfg.originLabel} (Straße, Stadt) ist erforderlich`;
 			return;
 		}
-		if (!destStreet.trim() || !destCity.trim()) {
-			createError = 'Einzugsadresse (Straße, Stadt) ist erforderlich';
+		if (addrCfg.showDestination && (!destStreet.trim() || !destCity.trim())) {
+			createError = `${addrCfg.destinationLabel} (Straße, Stadt) ist erforderlich`;
 			return;
 		}
 		if (volumeMode === 'photos' && photoFiles.length === 0) {
@@ -294,22 +300,26 @@
 				customer_id: customerId,
 				service_type: selectedServiceType,
 				submission_mode: volumeMode === 'photos' ? 'foto' : volumeMode === 'video' ? 'video' : 'manuell',
-				origin: {
-					street: originStreet.trim(),
-					city: originCity.trim(),
-					postal_code: originPostal.trim() || null,
-					floor: originFloor || null,
-					elevator: originElevator || null,
-					parking_ban: originHalteverbot || null,
-				},
-				destination: {
-					street: destStreet.trim(),
-					city: destCity.trim(),
-					postal_code: destPostal.trim() || null,
-					floor: destFloor || null,
-					elevator: destElevator || null,
-					parking_ban: destHalteverbot || null,
-				},
+				...(addrCfg.showOrigin ? {
+					origin: {
+						street: originStreet.trim(),
+						city: originCity.trim(),
+						postal_code: originPostal.trim() || null,
+						floor: originFloor || null,
+						elevator: originElevator || null,
+						parking_ban: originHalteverbot || null,
+					},
+				} : {}),
+				...(addrCfg.showDestination ? {
+					destination: {
+						street: destStreet.trim(),
+						city: destCity.trim(),
+						postal_code: destPostal.trim() || null,
+						floor: destFloor || null,
+						elevator: destElevator || null,
+						parking_ban: destHalteverbot || null,
+					},
+				} : {}),
 				notes: buildNotes() || null,
 			};
 
@@ -489,52 +499,56 @@
 	<!-- 2. Adressen -->
 	<div class="create-section__group">
 		<h3>Adressen</h3>
-		<div class="address-grid">
-			<div class="address-col">
-				<h4>Von (Auszug)</h4>
-				<input type="text" placeholder="Straße *" bind:value={originStreet} class="form-input" />
-				<div class="address-row">
-					<input type="text" placeholder="PLZ" bind:value={originPostal} class="form-input form-input--short" />
-					<input type="text" placeholder="Stadt *" bind:value={originCity} class="form-input" />
+		<div class="address-grid" class:address-grid--single={!addrCfg.showDestination}>
+			{#if addrCfg.showOrigin}
+				<div class="address-col">
+					<h4>{addrCfg.originLabel}</h4>
+					<input type="text" placeholder="Straße *" bind:value={originStreet} class="form-input" />
+					<div class="address-row">
+						<input type="text" placeholder="PLZ" bind:value={originPostal} class="form-input form-input--short" />
+						<input type="text" placeholder="Stadt *" bind:value={originCity} class="form-input" />
+					</div>
+					<div class="address-row">
+						<select bind:value={originFloor} class="form-select">
+							<option value="">Stockwerk</option>
+							{#each floorOptions as f}<option value={f}>{f}</option>{/each}
+						</select>
+						<label class="form-checkbox">
+							<input type="checkbox" bind:checked={originElevator} />
+							Aufzug
+						</label>
+						<label class="form-checkbox">
+							<input type="checkbox" bind:checked={originHalteverbot} />
+							Halteverbot
+						</label>
+					</div>
 				</div>
-				<div class="address-row">
-					<select bind:value={originFloor} class="form-select">
-						<option value="">Stockwerk</option>
-						{#each floorOptions as f}<option value={f}>{f}</option>{/each}
-					</select>
-					<label class="form-checkbox">
-						<input type="checkbox" bind:checked={originElevator} />
-						Aufzug
-					</label>
-					<label class="form-checkbox">
-						<input type="checkbox" bind:checked={originHalteverbot} />
-						Halteverbot
-					</label>
-				</div>
-			</div>
+			{/if}
 
-			<div class="address-col">
-				<h4>Nach (Einzug)</h4>
-				<input type="text" placeholder="Straße *" bind:value={destStreet} class="form-input" />
-				<div class="address-row">
-					<input type="text" placeholder="PLZ" bind:value={destPostal} class="form-input form-input--short" />
-					<input type="text" placeholder="Stadt *" bind:value={destCity} class="form-input" />
+			{#if addrCfg.showDestination}
+				<div class="address-col">
+					<h4>{addrCfg.destinationLabel}</h4>
+					<input type="text" placeholder="Straße *" bind:value={destStreet} class="form-input" />
+					<div class="address-row">
+						<input type="text" placeholder="PLZ" bind:value={destPostal} class="form-input form-input--short" />
+						<input type="text" placeholder="Stadt *" bind:value={destCity} class="form-input" />
+					</div>
+					<div class="address-row">
+						<select bind:value={destFloor} class="form-select">
+							<option value="">Stockwerk</option>
+							{#each floorOptions as f}<option value={f}>{f}</option>{/each}
+						</select>
+						<label class="form-checkbox">
+							<input type="checkbox" bind:checked={destElevator} />
+							Aufzug
+						</label>
+						<label class="form-checkbox">
+							<input type="checkbox" bind:checked={destHalteverbot} />
+							Halteverbot
+						</label>
+					</div>
 				</div>
-				<div class="address-row">
-					<select bind:value={destFloor} class="form-select">
-						<option value="">Stockwerk</option>
-						{#each floorOptions as f}<option value={f}>{f}</option>{/each}
-					</select>
-					<label class="form-checkbox">
-						<input type="checkbox" bind:checked={destElevator} />
-						Aufzug
-					</label>
-					<label class="form-checkbox">
-						<input type="checkbox" bind:checked={destHalteverbot} />
-						Halteverbot
-					</label>
-				</div>
-			</div>
+			{/if}
 		</div>
 	</div>
 
@@ -700,6 +714,13 @@
 
 	.create-section__group {
 		margin-bottom: 1.25rem;
+	}
+
+	.create-section__group--subtle {
+		background: var(--dt-surface-container);
+		border-radius: 8px;
+		padding: 0.75rem;
+		margin-bottom: 1rem;
 	}
 
 	.create-section__group h3 {
@@ -899,6 +920,10 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1.5rem;
+	}
+
+	.address-grid--single {
+		grid-template-columns: 1fr;
 	}
 
 	.address-col {

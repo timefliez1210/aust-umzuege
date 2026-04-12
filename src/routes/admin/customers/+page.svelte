@@ -32,9 +32,13 @@
 
 	// Create form state
 	let showCreateForm = $state(false);
-	let createName = $state('');
+	let createSalutation = $state('');
+	let createFirstName = $state('');
+	let createLastName = $state('');
 	let createEmail = $state('');
 	let createPhone = $state('');
+	let createCustomerType = $state('private');
+	let createCompanyName = $state('');
 	let createError = $state('');
 	let createLoading = $state(false);
 
@@ -110,10 +114,18 @@
 		createError = '';
 		createLoading = true;
 		try {
+			const firstName = createFirstName.trim();
+			const lastName = createLastName.trim();
+			const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
 			const res = await apiPost<Customer>('/api/v1/admin/customers', {
 				email: createEmail.trim(),
-				name: createName.trim() || null,
+				name: fullName,
+				first_name: firstName || null,
+				last_name: lastName || null,
+				salutation: createSalutation || null,
 				phone: createPhone.trim() || null,
+				customer_type: createCustomerType || null,
+				company_name: createCustomerType === 'business' ? (createCompanyName.trim() || null) : null,
 			});
 			goto(`/admin/customers/${res.id}`);
 		} catch (e: any) {
@@ -138,32 +150,27 @@
 
 	{#if showCreateForm}
 		<div class="create-form">
-			<div class="create-form__fields">
-				<input
-					type="text"
-					placeholder="Name"
-					bind:value={createName}
-					class="create-form__input"
-				/>
-				<input
-					type="email"
-					placeholder="E-Mail *"
-					bind:value={createEmail}
-					class="create-form__input"
-					onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }}
-				/>
-				<input
-					type="tel"
-					placeholder="Telefon"
-					bind:value={createPhone}
-					class="create-form__input"
-					onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }}
-				/>
-				<button
-					class="create-form__submit"
-					onclick={handleCreateCustomer}
-					disabled={createLoading}
-				>
+			<div class="create-form__row">
+				<select bind:value={createSalutation} class="create-form__input create-form__select">
+					<option value="">Anrede</option>
+					<option value="Herr">Herr</option>
+					<option value="Frau">Frau</option>
+					<option value="D">Divers</option>
+				</select>
+				<input type="text" placeholder="Vorname" bind:value={createFirstName} class="create-form__input" />
+				<input type="text" placeholder="Nachname" bind:value={createLastName} class="create-form__input" />
+				<input type="email" placeholder="E-Mail *" bind:value={createEmail} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
+				<input type="tel" placeholder="Telefon" bind:value={createPhone} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
+			</div>
+			<div class="create-form__row">
+				<div class="type-toggle">
+					<button type="button" class="type-btn" class:active={createCustomerType === 'private'} onclick={() => createCustomerType = 'private'}>Privat</button>
+					<button type="button" class="type-btn" class:active={createCustomerType === 'business'} onclick={() => createCustomerType = 'business'}>Gewerbe</button>
+				</div>
+				{#if createCustomerType === 'business'}
+					<input type="text" placeholder="Firmenname" bind:value={createCompanyName} class="create-form__input" />
+				{/if}
+				<button class="create-form__submit" onclick={handleCreateCustomer} disabled={createLoading}>
 					{createLoading ? 'Erstelle...' : 'Erstellen'}
 				</button>
 			</div>
@@ -240,12 +247,14 @@
 		margin-bottom: 1rem;
 	}
 
-	.create-form__fields {
+	.create-form__row {
 		display: flex;
 		gap: 0.75rem;
 		align-items: center;
 		flex-wrap: wrap;
+		margin-bottom: 0.5rem;
 	}
+	.create-form__row:last-of-type { margin-bottom: 0; }
 
 	.create-form__input {
 		flex: 1;
@@ -291,11 +300,32 @@
 		cursor: not-allowed;
 	}
 
+	.create-form__select {
+		max-width: 120px;
+	}
 	.create-form__error {
 		margin: 0.5rem 0 0;
 		font-size: 0.8125rem;
 		color: var(--dt-secondary);
 	}
+	.type-toggle {
+		display: inline-flex;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.type-btn {
+		padding: 0.35rem 0.85rem;
+		border: none;
+		background: var(--dt-surface-container-lowest);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: all 0.12s;
+	}
+	.type-btn:not(:first-child) { border-left: 1.5px solid var(--dt-outline-variant); }
+	.type-btn.active { background: var(--dt-primary); color: #fff; }
 
 	.cust-type-badge {
 		display: inline-block;

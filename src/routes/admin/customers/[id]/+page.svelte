@@ -33,6 +33,9 @@
 	let showDeleteDialog = $state(false);
 	let editCustomerType = $state<string>('private');
 	let editCompanyName = $state('');
+	let editSalutation = $state('');
+	let editFirstName = $state('');
+	let editLastName = $state('');
 	let editName = $state('');
 	let editPhone = $state('');
 	let editEmail = $state('');
@@ -58,6 +61,9 @@
 			data = await apiGet<CustomerDetail>(`/api/v1/admin/customers/${$page.params.id}`);
 			editCustomerType = data.customer_type ?? 'private';
 			editCompanyName = data.company_name || '';
+			editSalutation = data.salutation || '';
+			editFirstName = data.first_name || '';
+			editLastName = data.last_name || '';
 			editName = data.name || '';
 			editPhone = data.phone || '';
 			editEmail = data.email;
@@ -82,12 +88,18 @@
 		saving = true;
 		message = null;
 		try {
+			const firstName = editFirstName.trim();
+			const lastName = editLastName.trim();
+			const derivedName = [firstName, lastName].filter(Boolean).join(' ') || editName.trim() || null;
 			await apiPatch(`/api/v1/admin/customers/${$page.params.id}`, {
-				name: editName || null,
+				name: derivedName,
+				first_name: firstName || null,
+				last_name: lastName || null,
+				salutation: editSalutation || null,
 				phone: editPhone || null,
 				email: editEmail,
 				customer_type: editCustomerType || null,
-				company_name: editCompanyName || null,
+				company_name: editCustomerType === 'business' ? (editCompanyName.trim() || null) : null,
 			});
 			message = { type: 'success', text: 'Kunde gespeichert' };
 			await loadCustomer();
@@ -167,8 +179,23 @@
 				<div class="card-header"><h2>Kundendaten</h2></div>
 				<div class="card-body">
 					<div class="form-group">
-						<label for="name">Name</label>
-						<input id="name" type="text" bind:value={editName} placeholder="Vollstaendiger Name" />
+						<label for="salutation">Anrede</label>
+						<select id="salutation" bind:value={editSalutation}>
+							<option value="">—</option>
+							<option value="Herr">Herr</option>
+							<option value="Frau">Frau</option>
+							<option value="D">Divers</option>
+						</select>
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="first_name">Vorname</label>
+							<input id="first_name" type="text" bind:value={editFirstName} placeholder="Vorname" />
+						</div>
+						<div class="form-group">
+							<label for="last_name">Nachname</label>
+							<input id="last_name" type="text" bind:value={editLastName} placeholder="Nachname" />
+						</div>
 					</div>
 					<div class="form-group">
 						<label for="email">E-Mail</label>
@@ -349,7 +376,13 @@
 		color: var(--dt-on-surface-variant);
 		margin-bottom: 0.375rem;
 	}
-	.form-group input {
+	.form-row {
+		display: flex;
+		gap: 0.75rem;
+	}
+	.form-row .form-group { flex: 1; }
+	.form-group input,
+	.form-group select {
 		width: 100%;
 		padding: 0.5rem 0.75rem;
 		background: var(--dt-surface-container-high);
@@ -362,7 +395,8 @@
 		transition: background var(--dt-transition), border-color var(--dt-transition);
 		box-sizing: border-box;
 	}
-	.form-group input:focus {
+	.form-group input:focus,
+	.form-group select:focus {
 		background: var(--dt-surface-container-lowest);
 		border-bottom-color: var(--dt-primary);
 	}

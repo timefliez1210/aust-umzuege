@@ -20,6 +20,7 @@
 		phone: string | null;
 		customer_type: string | null;
 		company_name: string | null;
+		billing_address_id: string | null;
 		created_at: string;
 		quotes: { id: string; status: string; estimated_volume_m3: number | null; scheduled_date: string | null; created_at: string }[];
 		offers: { id: string; quote_id: string; price_cents: number; status: string; created_at: string; sent_at: string | null }[];
@@ -33,6 +34,14 @@
 	let showDeleteDialog = $state(false);
 	let editCustomerType = $state<string>('private');
 	let editCompanyName = $state('');
+
+	// Billing address editor state
+	let showBillingEdit = $state(false);
+	let billingStreet = $state('');
+	let billingNumber = $state('');
+	let billingPostal = $state('');
+	let billingCity = $state('');
+	let billingSaving = $state(false);
 	let editSalutation = $state('');
 	let editFirstName = $state('');
 	let editLastName = $state('');
@@ -100,6 +109,14 @@
 				email: editEmail,
 				customer_type: editCustomerType || null,
 				company_name: editCustomerType === 'business' ? (editCompanyName.trim() || null) : null,
+				...(showBillingEdit && (billingStreet.trim() || billingCity.trim()) ? {
+					billing_address: {
+						street: billingStreet.trim() || null,
+						house_number: billingNumber.trim() || null,
+						postal_code: billingPostal.trim() || null,
+						city: billingCity.trim() || null,
+					}
+				} : {}),
 			});
 			message = { type: 'success', text: 'Kunde gespeichert' };
 			await loadCustomer();
@@ -138,6 +155,45 @@
 			showToast((e as Error).message, 'error');
 		} finally {
 			deleting = false;
+		}
+	}
+
+	/** Save the customer's default billing address. */
+	async function saveBillingAddress() {
+		billingSaving = true;
+		try {
+			await apiPatch(`/api/v1/admin/customers/${$page.params.id}`, {
+				billing_address: {
+					street: billingStreet.trim() || null,
+					house_number: billingNumber.trim() || null,
+					postal_code: billingPostal.trim() || null,
+					city: billingCity.trim() || null,
+				},
+			});
+			showBillingEdit = false;
+			message = { type: 'success', text: 'Rechnungsadresse gespeichert' };
+			await loadCustomer();
+		} catch (e) {
+			message = { type: 'error', text: (e as Error).message };
+		} finally {
+			billingSaving = false;
+		}
+	}
+
+	/** Clear the customer's default billing address. */
+	async function clearBillingAddress() {
+		billingSaving = true;
+		try {
+			await apiPatch(`/api/v1/admin/customers/${$page.params.id}`, {
+				clear_billing_address: true,
+			});
+			showBillingEdit = false;
+			message = { type: 'success', text: 'Rechnungsadresse zurückgesetzt' };
+			await loadCustomer();
+		} catch (e) {
+			message = { type: 'error', text: (e as Error).message };
+		} finally {
+			billingSaving = false;
 		}
 	}
 </script>
@@ -226,6 +282,44 @@
 						<Save size={16} /> Speichern
 					</LoadingButton>
 				</div>
+			</div>
+
+			<!-- Billing Address (customer-level default) -->
+			<div class="card">
+				<div class="card-header">
+					<h2>Rechnungsadresse (Standard)</h2>
+					<button class="btn btn-sm" onclick={() => showBillingEdit = !showBillingEdit}>
+						{showBillingEdit ? 'Schliessen' : 'Bearbeiten'}
+					</button>
+				</div>
+				{#if data.billing_address_id}
+					<p class="form-hint" style="margin:0;">Ist als Standard-Rechnungsadresse für alle Anfragen dieses Kunden hinterlegt.</p>
+				{:else}
+					<p class="form-hint" style="margin:0;">Keine hinterlegt. Für B2B-Kunden kann hier eine abweichende Rechnungsadresse (z.B. Hauptsitz) gespeichert werden.</p>
+				{/if}
+				{#if showBillingEdit}
+					<div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem;">
+							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input" />
+							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" />
+						</div>
+						<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
+							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" />
+							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input" />
+						</div>
+						<div style="display: flex; gap: 0.5rem;">
+							<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
+								{billingSaving ? 'Speichert…' : 'Speichern'}
+							</button>
+							{#if data.billing_address_id}
+								<button class="btn btn-sm" onclick={clearBillingAddress} disabled={billingSaving} style="color: #dc2626;">
+									Zurücksetzen
+								</button>
+							{/if}
+							<button class="btn btn-sm" onclick={() => showBillingEdit = false}>Abbrechen</button>
+						</div>
+					</div>
+				{/if}
 			</div>
 
 			<div class="card">

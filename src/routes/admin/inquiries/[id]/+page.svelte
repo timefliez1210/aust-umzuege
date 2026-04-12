@@ -186,6 +186,29 @@
 	let loading = $state(true);
 	let saving = $state(false);
 
+	// Billing address editor state
+	let showBillingEdit = $state(false);
+	let billingSaving = $state(false);
+	let billingStreet = $state('');
+	let billingNumber = $state('');
+	let billingPostal = $state('');
+	let billingCity = $state('');
+
+	// Pre-fill billing fields when opening editor
+	$effect(() => {
+		if (showBillingEdit && data.billing_address) {
+			billingStreet = data.billing_address.street || '';
+			billingNumber = data.billing_address.house_number || '';
+			billingPostal = data.billing_address.postal_code || '';
+			billingCity = data.billing_address.city || '';
+		} else if (showBillingEdit && !data.billing_address) {
+			billingStreet = '';
+			billingNumber = '';
+			billingPostal = '';
+			billingCity = '';
+		}
+	});
+
 	// Route map coordinates
 	let routeCoordinates = $state<[number, number][] | null>(null);
 
@@ -700,6 +723,49 @@
 			showToast((e as Error).message, "error");
 		} finally {
 			saving = false;
+		}
+	}
+
+	/** Save or update the billing address for this inquiry. */
+	async function saveBillingAddress() {
+		if (!data) return;
+		billingSaving = true;
+		try {
+			const patch: Record<string, unknown> = {};
+			if (billingStreet.trim() || billingCity.trim()) {
+				patch.billing_address = {
+					street: billingStreet.trim() || null,
+					house_number: billingNumber.trim() || null,
+					postal_code: billingPostal.trim() || null,
+					city: billingCity.trim() || null,
+				};
+			} else {
+				patch.clear_billing_address = true;
+			}
+			await apiPatch(`/api/v1/inquiries/${data.id}`, patch);
+			showBillingEdit = false;
+			showToast("Rechnungsadresse gespeichert", "success");
+			await loadInquiry();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			billingSaving = false;
+		}
+	}
+
+	/** Clear the billing address override (fall back to auto-resolution). */
+	async function clearBillingAddress() {
+		if (!data) return;
+		billingSaving = true;
+		try {
+			await apiPatch(`/api/v1/inquiries/${data.id}`, { clear_billing_address: true });
+			showBillingEdit = false;
+			showToast("Rechnungsadresse zurückgesetzt", "success");
+			await loadInquiry();
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		} finally {
+			billingSaving = false;
 		}
 	}
 
@@ -1860,11 +1926,16 @@
 				</div>
 			{/if}
 
-			{#if data.billing_address}
-				<div class="card">
-					<div class="card-header">
-						<h3>Rechnungsadresse</h3>
-					</div>
+			<!-- Billing Address (editable) -->
+			<div class="card">
+				<div class="card-header">
+					<h3>Rechnungsadresse</h3>
+					<button class="btn btn-sm" onclick={() => showBillingEdit = !showBillingEdit}>
+						{showBillingEdit ? 'Schliessen' : 'Bearbeiten'}
+					</button>
+				</div>
+
+				{#if data.billing_address}
 					<div class="info-grid">
 						<div class="info-item">
 							<span class="info-label">Strasse</span>
@@ -1875,8 +1946,38 @@
 							<span class="info-value">{data.billing_address.postal_code ? `${data.billing_address.postal_code} ` : ''}{data.billing_address.city}</span>
 						</div>
 					</div>
-				</div>
-			{/if}
+				{:else}
+					<p class="form-hint" style="margin:0;">
+						{data.status === 'completed' || data.status === 'invoiced' || data.status === 'paid'
+							? 'Einzugsadresse wird verwendet (Einzug abgeschlossen).'
+							: 'Auszugsadresse wird verwendet (Standardeinstellung).'}
+					</p>
+				{/if}
+
+				{#if showBillingEdit}
+					<div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+						<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem;">
+							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input" />
+							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" />
+						</div>
+						<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
+							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" />
+							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input" />
+						</div>
+						<div style="display: flex; gap: 0.5rem;">
+							<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
+								{billingSaving ? 'Speichert…' : 'Speichern'}
+							</button>
+							{#if data.billing_address}
+								<button class="btn btn-sm" onclick={clearBillingAddress} disabled={billingSaving} style="color: #dc2626;">
+									Zurücksetzen
+								</button>
+							{/if}
+							<button class="btn btn-sm" onclick={() => showBillingEdit = false}>Abbrechen</button>
+						</div>
+					</div>
+				{/if}
+			</div>
 
 			<!-- Service info -->
 			{#if data.service_type}

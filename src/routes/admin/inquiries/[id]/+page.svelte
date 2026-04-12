@@ -196,12 +196,12 @@
 
 	// Pre-fill billing fields when opening editor
 	$effect(() => {
-		if (showBillingEdit && data.billing_address) {
+		if (showBillingEdit && data?.billing_address) {
 			billingStreet = data.billing_address.street || '';
 			billingNumber = data.billing_address.house_number || '';
 			billingPostal = data.billing_address.postal_code || '';
 			billingCity = data.billing_address.city || '';
-		} else if (showBillingEdit && !data.billing_address) {
+		} else if (showBillingEdit && !data?.billing_address) {
 			billingStreet = '';
 			billingNumber = '';
 			billingPostal = '';

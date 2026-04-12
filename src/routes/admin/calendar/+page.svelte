@@ -626,7 +626,7 @@
 			? `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
 			: null);
 		if (!dateStr) return;
-		const schedule = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1 };
+		const schedule = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1, calendar_items: [] };
 		panelSelection = { kind: 'day', date: dateStr, schedule };
 	}
 

@@ -72,7 +72,7 @@
 		booked: number;
 		remaining: number;
 		inquiries: InquiryItem[];
-		calendar_items: ScheduleCalendarItem[];
+		calendar_items?: ScheduleCalendarItem[];
 	}
 
 	interface DayEmployee {
@@ -784,7 +784,7 @@
 			{#if panelSelection.kind === 'day'}
 				{@const ds = panelSelection.schedule}
 				{@const dayPanelDate = panelSelection.date}
-				{@const dayTermine = ds.calendar_items.map(ci => ({
+				{@const dayTermine = (ds.calendar_items ?? []).map(ci => ({
 					id: ci.calendar_item_id,
 					title: ci.title,
 					category: ci.category,

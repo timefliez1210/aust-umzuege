@@ -1,53 +1,63 @@
-# frontend — SvelteKit Admin Dashboard
+# frontend — SvelteKit Umzugsplattform
 
 Git submodule → `git@github.com:timefliez1210/aust-umzuege.git`
 
-## Stack
+**One build, three audiences, three architectures.** Changes to public pages go live immediately on deploy — treat with care.
 
-- SvelteKit (Svelte 5, runes mode)
-- Tailwind CSS
-- `@sveltejs/adapter-static` — builds to static HTML
-- No server-side rendering — all data fetched from the Rust API
+## The Three Audiences
 
-## Directory Layout
+| Area | Routes | Auth | Rendering | Deploy Impact |
+|------|--------|------|-----------|---------------|
+| **Marketing** | `/`, `/leistungen`, `/ratgeber`, `/kontakt`, `/kostenloses-angebot`, `/impressum`, `/datenschutz`, `/agb`, `/cookie-einstellungen` | None | `prerender: true` — static HTML at build time | **High** — public-facing, SEO-critical, indexed by Google |
+| **Admin** | `/admin/*` | JWT (admin role) | `ssr: false`, `prerender: false` — client SPA | Medium — internal, Alex-only |
+| **Worker** | `/worker/*` | JWT (employee role) | `ssr: false`, `prerender: false` — client SPA | Medium — internal, employees only |
 
-```
-src/routes/
-  admin/
-    calendar/         — Calendar page + CalendarSidePanel component
-    calendar-items/   — Calendar item CRUD
-    customers/        — Customer list + detail
-    employees/       — Employee list + detail + document upload
-    inquiries/        — Inquiry list, detail, estimations, offer, assignments
-  f/
-    foto-angebot/     — Photo upload form (public, no auth)
-  kostenloses-angebot/ — Contact form (public, no auth)
-  worker/            — Employee self-clock (auth required)
+---
 
-src/lib/
-  components/admin/   — Shared admin components (EmployeeAssignmentPanel, etc.)
-  stores/             — Svelte stores (auth, inquiries, calendar, etc.)
-  utils/              — helpers, format.ts, constants.ts
-  data/               — Static data (status labels, etc.)
-```
+## If You're Working On…
 
-## API Integration
+### 🌐 Public Marketing Website → [MARKETING.md](MARKETING.md)
 
-All API calls go through `src/lib/api.svelte.ts`. The base URL comes from `$env/static/public` or defaults to `/api/v1`.
+SEO-optimized, prerendered static pages. **Changes go live immediately on deploy.** Read this before touching any page under `/routes/` (except `admin/` and `worker/`).
 
-Auth: JWT stored in `localStorage`, refreshed automatically. All admin routes require admin role.
+### 🖥️ Admin Dashboard → [src/routes/admin/AGENTS.md](src/routes/admin/AGENTS.md)
 
-## Key Patterns
+Internal SPA, JWT auth, REST API backend. Read this before touching anything under `/routes/admin/`.
 
-- **Status labels**: `INQUIRY_STATUS_LABELS` and `CUSTOMER_TYPE_LABELS` in `lib/utils/constants.ts`
-- **Floor parsing**: `lib/utils/floor.ts` — German floor labels (Erdgeschoss, 3. Stock, etc.)
-- **Component duplication debt**: 6,405-line inquiry detail page needs extraction (see root TODO)
+### 👷 Worker Self-Service → No deep doc yet
 
-## Running
+Employee clock-in/out, hours, profile. 4 pages: login, hours, schedule, profile. Uses `$lib/stores/worker.svelte.ts`.
+
+---
+
+## Shared Infrastructure
+
+| File/dir | Used by |
+|----------|----------|
+| `$lib/utils/api.svelte.ts` | Admin + Worker (JWT auth, fetch wrapper) |
+| `$lib/utils/format.ts` | All three (formatEuro, formatDate) |
+| `$lib/utils/constants.ts` | Admin (INQUIRY_STATUS_LABELS, CUSTOMER_TYPE_LABELS) |
+| `$lib/utils/floor.ts` | Marketing + Admin (German floor parsing) |
+| `$lib/stores/auth.svelte.ts` | Admin |
+| `$lib/stores/worker.svelte.ts` | Worker |
+| `$lib/stores/cookieConsent.ts` | Marketing |
+| `$lib/components/` (top-level) | Marketing (Navbar, Footer, Hero, CTA, etc.) |
+| `$lib/components/admin/` | Admin only |
+| `$lib/components/MediaDropzone.svelte` | Marketing (foto-angebot) + Admin (estimation upload) |
+| `$lib/components/VolumeCalculator.svelte` | Marketing (kostenloses-angebot) |
+
+## Build & Deploy
 
 ```bash
-cd frontend
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # Static HTML to build/
+npm run build        # SvelteKit static build → build/
+python3 inline-css.py   # Post-build: inline CSS <link> as <style> (eliminates render-blocking)
+python3 deploy-full.py  # FTP entire build/ to KAS (requires FTP_PASS in .env)
 ```
+
+**Do NOT deploy without being asked.** The public site is live at `www.aust-umzuege.de`.
+
+### SvelteKit Config
+
+`svelte.config.js`: `adapter-static`, `fallback: 'admin.html'` (SPA fallback for `/admin/*` and `/worker/*`).
+
+Root layout `+layout.svelte`: `prerender = true`. Conditionally skips Navbar/Footer for `/admin` routes.

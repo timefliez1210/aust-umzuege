@@ -1,11 +1,12 @@
-# frontend — SvelteKit Admin Dashboard
+# frontend — SvelteKit Umzugsplattform
 
 > **Full context**: [AGENTS.md](AGENTS.md)
 
-SvelteKit + Tailwind, `adapter-static`, JWT auth against Rust API. Admin SPA at `/admin/*`.
+One SvelteKit build, three audiences:
+- **Marketing website** → [MARKETING.md](MARKETING.md) — SEO, prerendered, public
+- **Admin dashboard** → [src/routes/admin/AGENTS.md](src/routes/admin/AGENTS.md) — JWT SPA, internal
+- **Worker self-service** — `/worker/*` — JWT SPA, employee clock-in/out
 
-**Key**: All API calls via `$lib/utils/api.svelte.ts`. Money in cents → `formatEuro()`. German locale. Svelte 5 runes.
+Stack: SvelteKit 5 + Tailwind + adapter-static. German for all user-facing strings.
 
-See [AGENTS.md](AGENTS.md) for: directory layout, API integration, key patterns, running instructions.
-
-For admin module specifics, see [src/routes/admin/AGENTS.md](src/routes/admin/AGENTS.md).
+See [AGENTS.md](AGENTS.md) for directory layout, shared infrastructure, and deployment.

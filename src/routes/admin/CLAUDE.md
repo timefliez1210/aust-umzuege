@@ -5,3 +5,5 @@
 Client-side SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 
 Pages, components, auth flow, API client, shared constants — all documented in [AGENTS.md](AGENTS.md).
+
+For the public marketing website, see [../../MARKETING.md](../../MARKETING.md).

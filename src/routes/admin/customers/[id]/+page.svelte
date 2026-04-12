@@ -179,6 +179,19 @@
 						<input id="phone" type="tel" bind:value={editPhone} placeholder="+49 ..." />
 					</div>
 					<div class="form-group">
+						<span class="form-label">Kundentyp</span>
+						<div class="type-toggle">
+							<button type="button" class="type-btn" class:active={editCustomerType === 'private'} onclick={() => editCustomerType = 'private'}>Privat</button>
+							<button type="button" class="type-btn" class:active={editCustomerType === 'business'} onclick={() => editCustomerType = 'business'}>Gewerbe</button>
+						</div>
+					</div>
+					{#if editCustomerType === 'business'}
+					<div class="form-group">
+						<label for="company_name">Firmenname</label>
+						<input id="company_name" type="text" bind:value={editCompanyName} placeholder="Firmenname" />
+					</div>
+					{/if}
+					<div class="form-group">
 						<span class="form-label">Erstellt</span>
 						<span class="form-value">{formatDate(data.created_at)}</span>
 					</div>

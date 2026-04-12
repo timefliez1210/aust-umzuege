@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
+	import { CUSTOMER_TYPE_LABELS } from '$lib/utils/constants';
 	import { Search, Plus } from 'lucide-svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';

@@ -105,10 +105,13 @@
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
 
 	const CATEGORY_LABELS: Record<string, string> = {
-		internal: 'Intern',
-		maintenance: 'Wartung',
-		training: 'Schulung',
-		other: 'Sonstiges'
+		intern: 'Intern',
+		umzug: 'Umzug',
+		entruempelung: 'Entrümpelung',
+		montage: 'Montage',
+		streichen: 'Streichen',
+		kartons_auslieferung: 'Kartons Auslieferung',
+		kartons_abholung: 'Kartons Abholung'
 	};
 
 	// ─── Helper functions ────────────────────────────────────────────────────────
@@ -137,10 +140,13 @@
 	 */
 	function termineEntryClass(category: string): string {
 		const map: Record<string, string> = {
-			internal: 'entry-violet',
-			maintenance: 'entry-orange',
-			training: 'entry-blue',
-			other: 'entry-pink'
+			intern: 'entry-violet',
+			umzug: 'entry-green',
+			entruempelung: 'entry-orange',
+			montage: 'entry-blue',
+			streichen: 'entry-pink',
+			kartons_auslieferung: 'entry-yellow',
+			kartons_abholung: 'entry-yellow'
 		};
 		return map[category] ?? 'entry-violet';
 	}
@@ -256,7 +262,7 @@
 
 	// Quick-termin form fields
 	let qtTitle = $state('');
-	let qtCategory = $state('internal');
+	let qtCategory = $state('intern');
 	let qtLocation = $state('');
 	let qtDuration = $state(8);
 	let qtCustomerMode = $state<'none' | 'existing' | 'new'>('none');
@@ -824,7 +830,7 @@
 		qiOriginStreet = ''; qiOriginCity = ''; qiOriginPostal = '';
 		qiDestStreet = ''; qiDestCity = ''; qiDestPostal = '';
 		qiNotes = '';
-		qtTitle = ''; qtCategory = 'internal'; qtLocation = ''; qtDuration = 8;
+		qtTitle = ''; qtCategory = 'intern'; qtLocation = ''; qtDuration = 8;
 		qtStartTime = '09:00'; qtEndTime = '';
 		qtCustomerMode = 'none'; qtCustomerSearch = ''; qtCustomerResults = []; qtCustomerId = null; qtCustomerLabel = '';
 		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = '';
@@ -1331,7 +1337,7 @@
 										{@const endH = parseInt((entry.item.end_time || (String(startH + 1).padStart(2, '0') + ':00')).slice(0, 2))}
 										{#if startH === hour}
 											<button
-												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'inquiry' ? 'other' : (entry.item.category || 'other'))}"
+												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'inquiry' ? 'intern' : (entry.item.category || 'intern'))}"
 												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.type === 'schedule-termin' ? { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' } : entry.item)}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
@@ -1524,10 +1530,13 @@
 				<div class="qc-field">
 					<label for="qt-cat">Kategorie</label>
 					<select id="qt-cat" bind:value={qtCategory}>
-						<option value="internal">Intern</option>
-						<option value="maintenance">Wartung</option>
-						<option value="training">Schulung</option>
-						<option value="other">Sonstiges</option>
+						<option value="intern">Intern</option>
+							<option value="umzug">Umzug</option>
+							<option value="entruempelung">Entrümpelung</option>
+							<option value="montage">Montage</option>
+							<option value="streichen">Streichen</option>
+							<option value="kartons_auslieferung">Kartons Auslieferung</option>
+							<option value="kartons_abholung">Kartons Abholung</option>
 					</select>
 				</div>
 				<div class="qc-field">

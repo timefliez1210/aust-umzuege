@@ -46,7 +46,7 @@
 
 	// Edit fields
 	let editTitle = $state('');
-	let editCategory = $state('internal');
+	let editCategory = $state('intern');
 	let editDate = $state('');
 	let editDuration = $state('0');
 	let editLocation = $state('');
@@ -263,10 +263,13 @@
 				<div class="field">
 					<label for="e-cat">Kategorie</label>
 					<select id="e-cat" bind:value={editCategory}>
-						<option value="internal">Intern</option>
-						<option value="maintenance">Wartung</option>
-						<option value="training">Schulung</option>
-						<option value="other">Sonstiges</option>
+						<option value="intern">Intern</option>
+							<option value="umzug">Umzug</option>
+							<option value="entruempelung">Entrümpelung</option>
+							<option value="montage">Montage</option>
+							<option value="streichen">Streichen</option>
+							<option value="kartons_auslieferung">Kartons Auslieferung</option>
+							<option value="kartons_abholung">Kartons Abholung</option>
 					</select>
 				</div>
 				<div class="field">

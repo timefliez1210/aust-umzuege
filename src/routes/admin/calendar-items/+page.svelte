@@ -19,10 +19,13 @@
 	}
 
 	const CATEGORY_LABELS: Record<string, string> = {
-		internal: 'Intern',
-		maintenance: 'Wartung',
-		training: 'Schulung',
-		other: 'Sonstiges'
+		intern: 'Intern',
+		umzug: 'Umzug',
+		entruempelung: 'Entrümpelung',
+		montage: 'Montage',
+		streichen: 'Streichen',
+		kartons_auslieferung: 'Kartons Auslieferung',
+		kartons_abholung: 'Kartons Abholung'
 	};
 
 	let selectedMonth = $state(new Date().toISOString().slice(0, 7));
@@ -32,7 +35,7 @@
 	// Create form
 	let showCreate = $state(false);
 	let createTitle = $state('');
-	let createCategory = $state('internal');
+	let createCategory = $state('intern');
 	let createDate = $state('');
 	let createDuration = $state('0');
 	let createLocation = $state('');
@@ -94,7 +97,7 @@
 			showToast('Termin erstellt', 'success');
 			showCreate = false;
 			createTitle = '';
-			createCategory = 'internal';
+			createCategory = 'intern';
 			createDate = '';
 			createDuration = '0';
 			createLocation = '';
@@ -188,10 +191,13 @@
 					<div class="field">
 						<label for="c-cat">Kategorie</label>
 						<select id="c-cat" bind:value={createCategory}>
-							<option value="internal">Intern</option>
-							<option value="maintenance">Wartung</option>
-							<option value="training">Schulung</option>
-							<option value="other">Sonstiges</option>
+							<option value="intern">Intern</option>
+							<option value="umzug">Umzug</option>
+							<option value="entruempelung">Entrümpelung</option>
+							<option value="montage">Montage</option>
+							<option value="streichen">Streichen</option>
+							<option value="kartons_auslieferung">Kartons Auslieferung</option>
+							<option value="kartons_abholung">Kartons Abholung</option>
 						</select>
 					</div>
 					<div class="field">

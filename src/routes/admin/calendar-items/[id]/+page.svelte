@@ -27,7 +27,7 @@
 	interface CustomerOption {
 		id: string;
 		name: string | null;
-		email: string;
+		email: string | null;
 	}
 
 	interface EmployeeAssignment {
@@ -194,11 +194,11 @@
 	 * Purpose: Allows Alex to register a new customer directly from the Termin detail page.
 	 */
 	async function createAndAssignCustomer() {
-		if (!newCustEmail.trim()) { showToast('E-Mail ist erforderlich', 'error'); return; }
+		if (!newCustName.trim() && !newCustEmail.trim() && !newCustPhone.trim()) { showToast('Bitte mindestens Name, E-Mail oder Telefon angeben', 'error'); return; }
 		savingCustomer = true;
 		try {
 			const c = await apiPost<{ id: string }>('/api/v1/admin/customers', {
-				email: newCustEmail.trim(),
+				email: newCustEmail.trim() || null,
 				name: newCustName.trim() || null,
 				phone: newCustPhone.trim() || null,
 			});
@@ -264,12 +264,12 @@
 					<label for="e-cat">Kategorie</label>
 					<select id="e-cat" bind:value={editCategory}>
 						<option value="intern">Intern</option>
-							<option value="umzug">Umzug</option>
-							<option value="entruempelung">Entrümpelung</option>
-							<option value="montage">Montage</option>
-							<option value="streichen">Streichen</option>
-							<option value="kartons_auslieferung">Kartons Auslieferung</option>
-							<option value="kartons_abholung">Kartons Abholung</option>
+						<option value="umzug">Umzug</option>
+						<option value="entruempelung">Entrümpelung</option>
+						<option value="montage">Montage</option>
+						<option value="streichen">Streichen</option>
+						<option value="kartons_auslieferung">Kartons Auslieferung</option>
+						<option value="kartons_abholung">Kartons Abholung</option>
 					</select>
 				</div>
 				<div class="field">
@@ -347,8 +347,8 @@
 							<div class="customer-results">
 								{#each customerResults as c}
 									<button class="customer-result-item" onclick={() => assignCustomer(c.id)} disabled={savingCustomer}>
-										<span class="cr-name">{c.name ?? c.email}</span>
-										{#if c.name}<span class="cr-email">{c.email}</span>{/if}
+										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
+										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
 									</button>
 								{/each}
 							</div>
@@ -357,7 +357,7 @@
 				{:else}
 					<div class="customer-create">
 						<div class="field">
-							<label for="nc-email">E-Mail *</label>
+							<label for="nc-email">E-Mail</label>
 							<input id="nc-email" type="email" bind:value={newCustEmail} placeholder="kunde@example.com" />
 						</div>
 						<div class="field">

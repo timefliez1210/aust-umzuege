@@ -81,6 +81,8 @@
 		last_name: string;
 		planned_hours: number | null;
 		notes: string | null;
+		start_time: string | null;
+		end_time: string | null;
 	}
 
 	interface InquiryDay {
@@ -190,6 +192,8 @@
 	let addEmpDayTarget = $state<string | null>(null); // e.g. "inq-0" or "term-2"
 	let addEmpId = $state('');
 	let addEmpHours = $state('');
+	let addEmpStart = $state('');
+	let addEmpEnd = $state('');
 
 	// Inquiry days (multi-day editor)
 	let inqDays = $state<InquiryDay[]>([]);
@@ -298,10 +302,11 @@
 	async function ensureEmployeesLoaded() {
 		if (allEmployeesLoaded) return;
 		try {
-			const res = await apiGet<{ id: string; first_name: string; last_name: string; active: boolean }[]>(
+			const res = await apiGet<{ employees: { id: string; first_name: string; last_name: string; active: boolean }[] }>(
 				'/api/v1/admin/employees'
 			);
-			allEmployees = (Array.isArray(res) ? res : []).filter(e => e.active !== false);
+			const list = Array.isArray(res) ? res : (res?.employees ?? []);
+			allEmployees = list.filter(e => e.active !== false);
 			allEmployeesLoaded = true;
 		} catch {
 			// Non-fatal — dropdowns just stay empty
@@ -316,10 +321,12 @@
 	 *
 	 * @param target - Identifier string like "inq-0" or "term-2"
 	 */
-	function openAddEmp(target: string) {
+	function openAddEmp(target: string, defaultStart?: string, defaultEnd?: string) {
 		addEmpDayTarget = target;
 		addEmpId = '';
 		addEmpHours = '';
+		addEmpStart = defaultStart ?? '';
+		addEmpEnd = defaultEnd ?? '';
 	}
 
 	/**
@@ -342,6 +349,8 @@
 				last_name: emp.last_name,
 				planned_hours: addEmpHours ? parseFloat(addEmpHours) : null,
 				notes: null,
+				start_time: addEmpStart || null,
+				end_time: addEmpEnd || null,
 			},
 		];
 		addEmpDayTarget = null;
@@ -382,6 +391,8 @@
 				last_name: emp.last_name,
 				planned_hours: addEmpHours ? parseFloat(addEmpHours) : null,
 				notes: null,
+				start_time: addEmpStart || null,
+				end_time: addEmpEnd || null,
 			},
 		];
 		addEmpDayTarget = null;
@@ -435,7 +446,11 @@
 				...d,
 				start_time: d.start_time ? d.start_time.slice(0, 5) : null,
 				end_time:   d.end_time   ? d.end_time.slice(0, 5)   : null,
-				employees: d.employees ?? [],
+				employees: (d.employees ?? []).map((e: DayEmployee) => ({
+					...e,
+					start_time: e.start_time ? e.start_time.slice(0, 5) : null,
+					end_time:   e.end_time   ? e.end_time.slice(0, 5)   : null,
+				})),
 			}));
 			inqUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
 		} catch {
@@ -506,6 +521,8 @@
 					employee_id:   e.employee_id,
 					planned_hours: e.planned_hours ?? null,
 					notes:         e.notes ?? null,
+					start_time:    e.start_time ? (e.start_time.length === 5 ? e.start_time + ':00' : e.start_time) : null,
+					end_time:      e.end_time   ? (e.end_time.length   === 5 ? e.end_time   + ':00' : e.end_time)   : null,
 				})),
 			}));
 			await apiPut(`/api/v1/inquiries/${inqId}/days`, { days: payload });
@@ -537,7 +554,11 @@
 				...d,
 				start_time: d.start_time ? d.start_time.slice(0, 5) : null,
 				end_time:   d.end_time   ? d.end_time.slice(0, 5)   : null,
-				employees:  d.employees ?? [],
+				employees: (d.employees ?? []).map((e: DayEmployee) => ({
+					...e,
+					start_time: e.start_time ? e.start_time.slice(0, 5) : null,
+					end_time:   e.end_time   ? e.end_time.slice(0, 5)   : null,
+				})),
 			}));
 			termUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
 		} catch {
@@ -606,6 +627,8 @@
 					employee_id:   e.employee_id,
 					planned_hours: e.planned_hours ?? null,
 					notes:         e.notes ?? null,
+					start_time:    e.start_time ? (e.start_time.length === 5 ? e.start_time + ':00' : e.start_time) : null,
+					end_time:      e.end_time   ? (e.end_time.length   === 5 ? e.end_time   + ':00' : e.end_time)   : null,
 				})),
 			}));
 			await apiPut(`/api/v1/admin/calendar-items/${itemId}/days`, { days: payload });
@@ -982,11 +1005,14 @@
 										</div>
 										{#if day.employees.length > 0}
 											<div class="day-emp-list">
-												{#each day.employees as emp}
-													<span class="day-emp-chip">
-														{emp.first_name} {emp.last_name[0]}.
+												{#each day.employees as emp, ei}
+													<div class="day-emp-row">
+														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
+														<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].start_time} />
+														<span class="time-sep">–</span>
+														<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].end_time} />
 														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
-													</span>
+													</div>
 												{/each}
 											</div>
 										{/if}
@@ -998,12 +1024,14 @@
 														<option value={e.id}>{e.first_name} {e.last_name}</option>
 													{/each}
 												</select>
-												<input type="number" step="0.5" min="0" max="24" class="neu-input hours-input" placeholder="h" bind:value={addEmpHours} />
+												<input type="text" inputmode="decimal" placeholder="Start" maxlength="5" class="neu-input time-mini" bind:value={addEmpStart} />
+												<span class="time-sep">–</span>
+												<input type="text" inputmode="decimal" placeholder="Ende" maxlength="5" class="neu-input time-mini" bind:value={addEmpEnd} />
 												<button class="btn btn-primary btn-sm" onclick={() => confirmAddInqDayEmployee(i)} disabled={!addEmpId}><Check size={12} /></button>
 												<button class="btn btn-ghost btn-sm" onclick={() => addEmpDayTarget = null}>×</button>
 											</div>
 										{:else}
-											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`inq-${i}`)}>
+											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`inq-${i}`, day.start_time ?? '', day.end_time ?? '')}>
 												<Plus size={11} /> Mitarbeiter
 											</button>
 										{/if}
@@ -1148,11 +1176,14 @@
 										</div>
 										{#if day.employees.length > 0}
 											<div class="day-emp-list">
-												{#each day.employees as emp}
-													<span class="day-emp-chip">
-														{emp.first_name} {emp.last_name[0]}.
+												{#each day.employees as emp, ei}
+													<div class="day-emp-row">
+														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
+														<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].start_time} />
+														<span class="time-sep">–</span>
+														<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].end_time} />
 														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
-													</span>
+													</div>
 												{/each}
 											</div>
 										{/if}
@@ -1164,12 +1195,14 @@
 														<option value={e.id}>{e.first_name} {e.last_name}</option>
 													{/each}
 												</select>
-												<input type="number" step="0.5" min="0" max="24" class="neu-input hours-input" placeholder="h" bind:value={addEmpHours} />
+												<input type="text" inputmode="decimal" placeholder="Start" maxlength="5" class="neu-input time-mini" bind:value={addEmpStart} />
+												<span class="time-sep">–</span>
+												<input type="text" inputmode="decimal" placeholder="Ende" maxlength="5" class="neu-input time-mini" bind:value={addEmpEnd} />
 												<button class="btn btn-primary btn-sm" onclick={() => confirmAddTermDayEmployee(i)} disabled={!addEmpId}><Check size={12} /></button>
 												<button class="btn btn-ghost btn-sm" onclick={() => addEmpDayTarget = null}>×</button>
 											</div>
 										{:else}
-											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`term-${i}`)}>
+											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`term-${i}`, day.start_time ?? '', day.end_time ?? '')}>
 												<Plus size={11} /> Mitarbeiter
 											</button>
 										{/if}
@@ -1463,13 +1496,16 @@
 	.day-row { background: var(--dt-surface-variant); border-radius: 8px; padding: 0.5rem 0.625rem; }
 	.day-row-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.375rem; }
 	.day-label { font-size: 0.8125rem; font-weight: 600; color: var(--dt-on-surface); }
-	.day-emp-list { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
-	.day-emp-chip { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--dt-surface); border: 1px solid var(--dt-outline-variant); border-radius: 12px; padding: 0.125rem 0.5rem; font-size: 0.75rem; color: var(--dt-on-surface); }
-	.day-emp-remove { background: none; border: none; cursor: pointer; color: var(--dt-on-surface-variant); padding: 0 0.125rem; line-height: 1; display: flex; align-items: center; }
+	.day-emp-list { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.375rem; }
+	.day-emp-row { display: flex; align-items: center; gap: 0.375rem; }
+	.day-emp-name { font-size: 0.75rem; color: var(--dt-on-surface); min-width: 4rem; flex-shrink: 0; }
+	.day-emp-remove { background: none; border: none; cursor: pointer; color: var(--dt-on-surface-variant); padding: 0 0.125rem; line-height: 1; display: flex; align-items: center; margin-left: auto; }
 	.day-emp-remove:hover { color: var(--dt-error, #b91c1c); }
 	.day-emp-add-row { margin-top: 0.375rem; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
 	.day-add-emp-btn { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--dt-surface); border: 1px dashed var(--dt-outline-variant); border-radius: 8px; cursor: pointer; color: var(--dt-on-surface-variant); }
 	.day-add-emp-btn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }
+	.time-mini { width: 3.75rem !important; padding: 0.2rem 0.25rem; font-size: 0.75rem; text-align: center; }
+	.time-sep { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
 	.hours-input { width: 4.5rem; padding: 0.2rem 0.375rem; font-size: 0.75rem; border: 1px solid var(--dt-outline-variant); border-radius: 6px; background: var(--dt-surface); color: var(--dt-on-surface); }
 
 	/* ─── Mobile: bottom sheet handle ─────────────────────────────────────────── */

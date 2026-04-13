@@ -12,7 +12,7 @@
 
 	interface CustomerDetail {
 		id: string;
-		email: string;
+		email: string | null;
 		name: string | null;
 		salutation: string | null;
 		first_name: string | null;
@@ -106,7 +106,7 @@
 				last_name: lastName || null,
 				salutation: editSalutation || null,
 				phone: editPhone || null,
-				email: editEmail,
+				email: editEmail || null,
 				customer_type: editCustomerType || null,
 				company_name: editCustomerType === 'business' ? (editCompanyName.trim() || null) : null,
 				...(showBillingEdit && (billingStreet.trim() || billingCity.trim()) ? {
@@ -213,7 +213,7 @@
 				{:else}
 					<span class="cust-type-badge" data-type="private">Privat</span>
 				{/if}
-				{data.name || data.email}
+				{data.name || data.email || 'Kunde'}
 				{#if data.company_name}<span style="color: var(--dt-on-surface-variant); font-weight: 400; font-size: 0.9em;"> ({data.company_name})</span>{/if}
 			</h1>
 			{#if auth.user?.role === 'admin'}
@@ -389,7 +389,7 @@
 <ConfirmationDialog
 	bind:open={showDeleteDialog}
 	title="Kunde löschen"
-	message={data ? `Kunde „${data.name || data.email}" und alle zugehörigen Daten unwiderruflich löschen?` : ''}
+	message={data ? `Kunde „${data.name || data.email || 'Kunde'}" und alle zugehörigen Daten unwiderruflich löschen?` : ''}
 	confirmLabel="Löschen"
 	loading={deleting}
 	onConfirm={deleteCustomer}

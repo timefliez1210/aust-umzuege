@@ -27,7 +27,7 @@
 
 	interface CustomerMatch {
 		id: string;
-		email: string;
+		email: string | null;
 		name: string | null;
 		phone: string | null;
 	}
@@ -183,7 +183,7 @@
 	 */
 	function selectCustomer(c: CustomerMatch) {
 		selectedCustomer = c;
-		customerSearch = c.name || c.email;
+		customerSearch = c.name || c.email || 'Kunde';
 		showCustomerDropdown = false;
 	}
 
@@ -260,8 +260,8 @@
 			createError = 'Bitte Kunde auswählen';
 			return;
 		}
-		if (customerMode === 'new' && !newCustomerEmail.trim()) {
-			createError = 'E-Mail-Adresse ist erforderlich';
+		if (customerMode === 'new' && !newCustomerEmail.trim() && !newCustomerName.trim() && !newCustomerPhone.trim()) {
+			createError = 'Bitte mindestens Name, E-Mail oder Telefon angeben';
 			return;
 		}
 		if (addrCfg.showOrigin && (!originStreet.trim() || !originCity.trim())) {
@@ -285,7 +285,7 @@
 			let customerId: string;
 			if (customerMode === 'new') {
 				const newCustomer = await apiPost<{ id: string }>('/api/v1/admin/customers', {
-					email: newCustomerEmail.trim(),
+					email: newCustomerEmail.trim() || null,
 					name: newCustomerName.trim() || null,
 					phone: newCustomerPhone.trim() || null,
 					customer_type: customerType || null,
@@ -425,8 +425,8 @@
 		{#if customerMode === 'existing'}
 			{#if selectedCustomer}
 				<div class="selected-customer">
-					<span>{selectedCustomer.name || selectedCustomer.email}</span>
-					{#if selectedCustomer.name}<span class="selected-customer__email">{selectedCustomer.email}</span>{/if}
+					<span>{selectedCustomer.name || selectedCustomer.email || 'Kunde'}</span>
+					{#if selectedCustomer.name && selectedCustomer.email}<span class="selected-customer__email">{selectedCustomer.email}</span>{/if}
 					<button class="selected-customer__clear" onclick={clearCustomer}><X size={14} /></button>
 				</div>
 			{:else}
@@ -444,8 +444,8 @@
 						<div class="customer-dropdown">
 							{#each customerResults as c}
 								<button class="customer-dropdown__item" onmousedown={() => selectCustomer(c)}>
-									<span class="customer-dropdown__name">{c.name || c.email}</span>
-									{#if c.name}<span class="customer-dropdown__email">{c.email}</span>{/if}
+									<span class="customer-dropdown__name">{c.name || c.email || 'Kunde'}</span>
+									{#if c.name && c.email}<span class="customer-dropdown__email">{c.email}</span>{/if}
 								</button>
 							{/each}
 						</div>
@@ -463,7 +463,7 @@
 				{#if customerType === 'business'}
 					<input type="text" placeholder="Firmenname *" bind:value={newCustomerCompanyName} class="form-input" />
 				{/if}
-				<input type="email" placeholder="E-Mail *" bind:value={newCustomerEmail} class="form-input" />
+				<input type="email" placeholder="E-Mail" bind:value={newCustomerEmail} class="form-input" />
 				<input type="text" placeholder="Name" bind:value={newCustomerName} class="form-input" />
 				<input type="tel" placeholder="Telefon" bind:value={newCustomerPhone} class="form-input" />
 

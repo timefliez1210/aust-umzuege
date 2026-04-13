@@ -8,7 +8,7 @@
 
 	interface Customer {
 		id: string;
-		email: string;
+		email: string | null;
 		name: string | null;
 		salutation: string | null;
 		phone: string | null;
@@ -107,10 +107,7 @@
 	 * @returns void
 	 */
 	async function handleCreateCustomer() {
-		if (!createEmail.trim()) {
-			createError = 'E-Mail ist erforderlich';
-			return;
-		}
+		// Email is optional — elderly customers may not have email
 		createError = '';
 		createLoading = true;
 		try {
@@ -118,7 +115,7 @@
 			const lastName = createLastName.trim();
 			const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
 			const res = await apiPost<Customer>('/api/v1/admin/customers', {
-				email: createEmail.trim(),
+				email: createEmail.trim() || null,
 				name: fullName,
 				first_name: firstName || null,
 				last_name: lastName || null,
@@ -159,7 +156,7 @@
 				</select>
 				<input type="text" placeholder="Vorname" bind:value={createFirstName} class="create-form__input" />
 				<input type="text" placeholder="Nachname" bind:value={createLastName} class="create-form__input" />
-				<input type="email" placeholder="E-Mail *" bind:value={createEmail} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
+				<input type="email" placeholder="E-Mail" bind:value={createEmail} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
 				<input type="tel" placeholder="Telefon" bind:value={createPhone} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
 			</div>
 			<div class="create-form__row">
@@ -212,7 +209,7 @@
 			{#if c.salutation}<span class="sal-badge">{c.salutation === 'D' ? 'Div.' : c.salutation}</span>{/if}{c.name || '—'}
 			{#if c.company_name}<span class="cell-company">({c.company_name})</span>{/if}
 		</td>
-			<td>{c.email}</td>
+			<td>{c.email ?? '—'}</td>
 			<td class="text-muted">{c.phone || '—'}</td>
 			<td class="text-muted">{formatDate(c.created_at)}</td>
 		{/snippet}

@@ -239,7 +239,7 @@
 	// Quick-inquiry form fields
 	let qiCustomerMode = $state<'existing' | 'new'>('existing');
 	let qiCustomerSearch = $state('');
-	let qiCustomerResults = $state<{ id: string; name: string | null; email: string }[]>([]);
+	let qiCustomerResults = $state<{ id: string; name: string | null; email: string | null }[]>([]);
 	let qiCustomerSearching = $state(false);
 	let qiCustomerId = $state<string | null>(null);
 	let qiCustomerLabel = $state('');
@@ -261,7 +261,7 @@
 	let qtDuration = $state(8);
 	let qtCustomerMode = $state<'none' | 'existing' | 'new'>('none');
 	let qtCustomerSearch = $state('');
-	let qtCustomerResults = $state<{ id: string; name: string | null; email: string }[]>([]);
+	let qtCustomerResults = $state<{ id: string; name: string | null; email: string | null }[]>([]);
 	let qtCustomerSearching = $state(false);
 	let qtCustomerId = $state<string | null>(null);
 	let qtCustomerLabel = $state('');
@@ -842,7 +842,7 @@
 		if (q.trim().length < 2) { qiCustomerResults = []; return; }
 		qiCustomerSearching = true;
 		try {
-			const res = await apiGet<{ customers: { id: string; name: string | null; email: string }[] }>(`/api/v1/admin/customers?search=${encodeURIComponent(q)}&limit=8`);
+			const res = await apiGet<{ customers: { id: string; name: string | null; email: string | null }[] }>(`/api/v1/admin/customers?search=${encodeURIComponent(q)}&limit=8`);
 			qiCustomerResults = res.customers;
 		} catch { qiCustomerResults = []; }
 		finally { qiCustomerSearching = false; }
@@ -858,14 +858,14 @@
 		if (!qiOriginStreet.trim() || !qiOriginCity.trim()) { quickCreateError = 'Auszugsadresse (Straße, Stadt) erforderlich'; return; }
 		if (!qiDestStreet.trim() || !qiDestCity.trim()) { quickCreateError = 'Einzugsadresse (Straße, Stadt) erforderlich'; return; }
 		if (qiCustomerMode === 'existing' && !qiCustomerId) { quickCreateError = 'Bitte einen Kunden auswählen'; return; }
-		if (qiCustomerMode === 'new' && !qiEmail.trim()) { quickCreateError = 'E-Mail ist erforderlich'; return; }
+		if (qiCustomerMode === 'new' && !qiName.trim() && !qiEmail.trim() && !qiPhone.trim()) { quickCreateError = 'Bitte mindestens Name, E-Mail oder Telefon angeben'; return; }
 		quickCreateError = '';
 		quickCreateLoading = true;
 		try {
 			let customerId = qiCustomerId;
 			if (qiCustomerMode === 'new') {
 				const c = await apiPost<{ id: string }>('/api/v1/admin/customers', {
-					email: qiEmail.trim(),
+					email: qiEmail.trim() || null,
 					name: qiName.trim() || null,
 					phone: qiPhone.trim() || null,
 				});
@@ -908,7 +908,7 @@
 		if (q.trim().length < 2) { qtCustomerResults = []; return; }
 		qtCustomerSearching = true;
 		try {
-			const res = await apiGet<{ customers: { id: string; name: string | null; email: string }[] }>(`/api/v1/admin/customers?search=${encodeURIComponent(q)}&limit=8`);
+			const res = await apiGet<{ customers: { id: string; name: string | null; email: string | null }[] }>(`/api/v1/admin/customers?search=${encodeURIComponent(q)}&limit=8`);
 			qtCustomerResults = res.customers;
 		} catch { qtCustomerResults = []; }
 		finally { qtCustomerSearching = false; }
@@ -928,9 +928,9 @@
 		try {
 			let customerId: string | null = qtCustomerId;
 			if (qtCustomerMode === 'new') {
-				if (!qtNewCustEmail.trim()) { quickCreateError = 'E-Mail ist erforderlich'; return; }
+				if (!qtNewCustName.trim() && !qtNewCustEmail.trim() && !qtNewCustPhone.trim()) { quickCreateError = 'Bitte mindestens Name, E-Mail oder Telefon angeben'; return; }
 				const c = await apiPost<{ id: string }>('/api/v1/admin/customers', {
-					email: qtNewCustEmail.trim(),
+					email: qtNewCustEmail.trim() || null,
 					name: qtNewCustName.trim() || null,
 					phone: qtNewCustPhone.trim() || null,
 				});
@@ -1430,9 +1430,9 @@
 						{#if qiCustomerResults.length > 0}
 							<div class="qt-results">
 								{#each qiCustomerResults as c}
-									<button class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email; qiCustomerResults = []; }}>
-										<span class="cr-name">{c.name ?? c.email}</span>
-										{#if c.name}<span class="cr-email">{c.email}</span>{/if}
+									<button class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email ?? 'Kunde'; qiCustomerResults = []; }}></button>
+										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
+										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
 									</button>
 								{/each}
 							</div>
@@ -1441,7 +1441,7 @@
 				{:else}
 					<div class="qc-row">
 						<div class="qc-field qc-field-grow">
-							<label for="qi-email">E-Mail *</label>
+							<label for="qi-email">E-Mail</label>
 							<input id="qi-email" type="email" bind:value={qiEmail} placeholder="kunde@example.com" />
 						</div>
 					</div>
@@ -1571,9 +1571,9 @@
 						{#if qtCustomerResults.length > 0}
 							<div class="qt-results">
 								{#each qtCustomerResults as c}
-									<button class="qt-result-item" onclick={() => { qtCustomerId = c.id; qtCustomerLabel = c.name ?? c.email; qtCustomerResults = []; }}>
-										<span class="cr-name">{c.name ?? c.email}</span>
-										{#if c.name}<span class="cr-email">{c.email}</span>{/if}
+									<button class="qt-result-item" onclick={() => { qtCustomerId = c.id; qtCustomerLabel = c.name ?? c.email ?? 'Kunde'; qtCustomerResults = []; }}></button>
+										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
+										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
 									</button>
 								{/each}
 							</div>
@@ -1582,7 +1582,7 @@
 				{:else if qtCustomerMode === 'new'}
 					<div class="qc-row">
 						<div class="qc-field qc-field-grow">
-							<label for="qtc-email">E-Mail *</label>
+							<label for="qtc-email">E-Mail</label>
 							<input id="qtc-email" type="email" bind:value={qtNewCustEmail} placeholder="kunde@example.com" />
 						</div>
 					</div>

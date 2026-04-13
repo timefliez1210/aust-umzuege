@@ -18,8 +18,7 @@
 
 	/**
 	 * An employee assignment as returned by the API.
-	 * `clock_in`, `clock_out` and employee self-reported fields are only
-	 * present for inquiry assignments (entityType === 'inquiry').
+	 * Time fields are HH:MM:SS strings (not ISO timestamps) after the unified-time migration.
 	 */
 	interface EmployeeAssignment {
 		employee_id: string;
@@ -28,9 +27,13 @@
 		planned_hours: number;
 		actual_hours: number | null;
 		notes: string | null;
-		// Inquiry-only fields:
-		clock_in?: string | null;
-		clock_out?: string | null;
+		// Unified time fields (all entity types):
+		start_time?: string | null;      // planned start HH:MM:SS
+		end_time?: string | null;        // planned end HH:MM:SS
+		clock_in?: string | null;        // actual clock-in HH:MM:SS
+		clock_out?: string | null;       // actual clock-out HH:MM:SS
+		break_minutes?: number;          // break deduction in minutes
+		// Worker self-reported (inquiry only, read-only):
 		employee_clock_in?: string | null;
 		employee_clock_out?: string | null;
 		employee_actual_hours?: number | null;
@@ -96,7 +99,12 @@
 	let adding = $state(false);
 
 	// Per-row inline edit state (calendar_item mode)
-	let editingEmp = $state<Record<string, { planned: string; actual: string; notes: string }>>({});
+	let editingEmp = $state<Record<string, {
+		planned: string; actual: string; notes: string;
+		startTime: string; endTime: string;
+		clockIn: string; clockOut: string;
+		breakMin: string;
+	}>>({});
 	let savingEmp = $state<Record<string, boolean>>({});
 
 	// Per-row saving for inquiry mode (blur-to-save)
@@ -141,7 +149,12 @@
 					state[e.employee_id] = {
 						planned: String(e.planned_hours),
 						actual: e.actual_hours != null ? String(e.actual_hours) : '',
-						notes: e.notes ?? ''
+						notes: e.notes ?? '',
+						startTime: fmtTime(e.start_time),
+						endTime: fmtTime(e.end_time),
+						clockIn: fmtTime(e.clock_in),
+						clockOut: fmtTime(e.clock_out),
+						breakMin: String(e.break_minutes ?? 0),
 					};
 				}
 				editingEmp = state;
@@ -262,25 +275,37 @@
 	}
 
 	/**
-	 * PATCHes clock_in or clock_out for an inquiry assignment on input blur.
+	 * PATCHes a time field for an inquiry assignment on input blur.
 	 *
-	 * Called by: Template (clock-time inputs onblur, inquiry mode only).
-	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id} with ISO timestamp.
-	 *
-	 * Math: builds ISO from scheduled_date (YYYY-MM-DD) + HH:MM user input →
-	 *       new Date(`${date}T${time}:00`).toISOString()
+	 * Called by: Template (time inputs onblur, inquiry mode).
+	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id} with HH:MM:SS value.
 	 *
 	 * @param empId - Employee UUID.
-	 * @param field - 'clock_in' or 'clock_out'.
-	 * @param time  - HH:MM string from the time input.
+	 * @param field - One of start_time | end_time | clock_in | clock_out.
+	 * @param time  - HH:MM string from the input (seconds appended automatically).
 	 */
-	async function updateClock(empId: string, field: 'clock_in' | 'clock_out', time: string) {
-		if (!time) return;
-		const date = preferredDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
-		const iso = new Date(`${date}T${time}:00`).toISOString();
+	async function updateTimeField(empId: string, field: string, time: string) {
 		inquerySaving = empId;
 		try {
-			const updated = await apiPatch<EmployeeAssignment>(`${baseUrl}/${empId}`, { [field]: iso });
+			const value = time ? time + ':00' : null;
+			const updated = await apiPatch<EmployeeAssignment>(`${baseUrl}/${empId}`, { [field]: value });
+			const idx = assignments.findIndex((e) => e.employee_id === empId);
+			if (idx !== -1) assignments[idx] = { ...assignments[idx], ...updated };
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			inquerySaving = null;
+		}
+	}
+
+	/**
+	 * PATCHes break_minutes or actual_hours for an inquiry assignment on input blur.
+	 */
+	async function updateNumericField(empId: string, field: 'break_minutes' | 'actual_hours', value: string) {
+		inquerySaving = empId;
+		try {
+			const num = field === 'break_minutes' ? (parseInt(value) || 0) : (value !== '' ? parseFloat(value) : null);
+			const updated = await apiPatch<EmployeeAssignment>(`${baseUrl}/${empId}`, { [field]: num });
 			const idx = assignments.findIndex((e) => e.employee_id === empId);
 			if (idx !== -1) assignments[idx] = { ...assignments[idx], ...updated };
 		} catch (e: unknown) {
@@ -310,7 +335,12 @@
 			await apiPatch(`${baseUrl}/${empId}`, {
 				planned_hours: parseFloat(s.planned) || 0,
 				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
-				notes: s.notes || null
+				notes: s.notes || null,
+				start_time: s.startTime ? s.startTime + ':00' : null,
+				end_time: s.endTime ? s.endTime + ':00' : null,
+				clock_in: s.clockIn ? s.clockIn + ':00' : null,
+				clock_out: s.clockOut ? s.clockOut + ':00' : null,
+				break_minutes: parseInt(s.breakMin) || 0,
 			});
 			await loadAssignments();
 			showToast('Gespeichert', 'success');
@@ -371,18 +401,29 @@
 	// ---------------------------------------------------------------------------
 
 	/**
-	 * Converts a UTC ISO timestamp to a local HH:MM string for time inputs.
+	 * Formats a TIME field (HH:MM:SS) to HH:MM for display in inputs.
 	 *
-	 * Called by: Template (clock_in / clock_out input values, inquiry mode).
-	 * Purpose: Display times in local timezone instead of raw UTC.
+	 * Called by: Template (time inputs), loadAssignments state seeding.
+	 * Purpose: Strip seconds from the API's HH:MM:SS format for compact display.
 	 *
-	 * @param iso - ISO 8601 timestamp or null/undefined.
-	 * @returns HH:MM string, or empty string if iso is falsy.
+	 * @param t - HH:MM:SS string or null/undefined.
+	 * @returns HH:MM string, or empty string if t is falsy.
 	 */
-	function isoToLocalTime(iso: string | null | undefined): string {
-		if (!iso) return '';
-		const d = new Date(iso);
-		return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+	function fmtTime(t: string | null | undefined): string {
+		if (!t) return '';
+		return t.slice(0, 5);
+	}
+
+	/**
+	 * Derives actual_hours from clock_in, clock_out and break_minutes for display badge.
+	 * Returns null if either time is missing.
+	 */
+	function deriveActualHours(clockIn: string | null | undefined, clockOut: string | null | undefined, breakMin: number): number | null {
+		if (!clockIn || !clockOut) return null;
+		const [ih, im] = clockIn.split(':').map(Number);
+		const [oh, om] = clockOut.split(':').map(Number);
+		const totalMin = (oh * 60 + om) - (ih * 60 + im) - breakMin;
+		return totalMin > 0 ? Math.round(totalMin) / 60 : null;
 	}
 
 	/**
@@ -423,16 +464,20 @@
 	{:else if assignments.length === 0}
 		<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
 	{:else if entityType === 'inquiry'}
-		<!-- ── Inquiry mode: compact single-row per employee ── -->
+		<!-- ── Inquiry mode: compact rows with planned + actual times ── -->
 		<div class="inq-emp-list">
 			<div class="inq-emp-header">
 				<span>Name</span>
-				<span>Beginn – Ende</span>
+				<span>Geplant</span>
+				<span>Ist</span>
+				<span>P.</span>
 				<span></span>
 			</div>
 			{#each assignments as emp}
+				{@const derived = deriveActualHours(emp.clock_in, emp.clock_out, emp.break_minutes ?? 0)}
 				<div class="inq-emp-row" class:saving-row={inquerySaving === emp.employee_id}>
 					<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
+					<!-- Planned start–end -->
 					<div class="inq-times">
 						<input
 							class="inq-input inq-time"
@@ -440,8 +485,8 @@
 							inputmode="decimal"
 							placeholder="--:--"
 							maxlength="5"
-							value={isoToLocalTime(emp.clock_in)}
-							onblur={(e) => updateClock(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
+							value={fmtTime(emp.start_time)}
+							onblur={(e) => updateTimeField(emp.employee_id, 'start_time', (e.target as HTMLInputElement).value)}
 						/>
 						<span class="inq-sep">–</span>
 						<input
@@ -450,13 +495,47 @@
 							inputmode="decimal"
 							placeholder="--:--"
 							maxlength="5"
-							value={isoToLocalTime(emp.clock_out)}
-							onblur={(e) => updateClock(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
+							value={fmtTime(emp.end_time)}
+							onblur={(e) => updateTimeField(emp.employee_id, 'end_time', (e.target as HTMLInputElement).value)}
+						/>
+					</div>
+					<!-- Actual clock_in–clock_out -->
+					<div class="inq-times">
+						<input
+							class="inq-input inq-time"
+							type="text"
+							inputmode="decimal"
+							placeholder="--:--"
+							maxlength="5"
+							value={fmtTime(emp.clock_in)}
+							onblur={(e) => updateTimeField(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
+						/>
+						<span class="inq-sep">–</span>
+						<input
+							class="inq-input inq-time"
+							type="text"
+							inputmode="decimal"
+							placeholder="--:--"
+							maxlength="5"
+							value={fmtTime(emp.clock_out)}
+							onblur={(e) => updateTimeField(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
 						/>
 						{#if emp.actual_hours != null}
 							<span class="hours-badge">{fmtHours(emp.actual_hours)}</span>
+						{:else if derived != null}
+							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
 						{/if}
 					</div>
+					<!-- Break minutes -->
+					<input
+						class="inq-input inq-break"
+						type="text"
+						inputmode="numeric"
+						placeholder="0"
+						maxlength="3"
+						value={emp.break_minutes ?? 0}
+						onblur={(e) => updateNumericField(emp.employee_id, 'break_minutes', (e.target as HTMLInputElement).value)}
+					/>
 					<button
 						class="btn-icon danger"
 						title="Entfernen"
@@ -467,8 +546,13 @@
 				</div>
 			{/each}
 			<div class="inq-total">
-				{#if assignments.some((e) => e.actual_hours != null)}
-					<span class="hours-badge">{fmtHours(assignments.reduce((s, e) => s + (e.actual_hours ?? 0), 0))} Ist</span>
+				{#if assignments.some((e) => e.actual_hours != null || (e.clock_in && e.clock_out))}
+					{@const totalH = assignments.reduce((s, e) => {
+						if (e.actual_hours != null) return s + e.actual_hours;
+						const d = deriveActualHours(e.clock_in, e.clock_out, e.break_minutes ?? 0);
+						return s + (d ?? 0);
+					}, 0)}
+					<span class="hours-badge">{fmtHours(totalH)} Ist</span>
 				{:else}
 					{assignments.length} Mitarbeiter zugewiesen
 				{/if}
@@ -478,29 +562,42 @@
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
 		<div class="emp-list">
 			{#each assignments as emp}
-				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '' }}
+				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', startTime: '', endTime: '', clockIn: '', clockOut: '', breakMin: '0' }}
+				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, parseInt(s.breakMin) || 0)}
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 					<div class="emp-fields">
-						<label class="tiny-label">Ist (h)</label>
-						<input
-							class="hour-input"
-							type="number"
-							step="0.5"
-							min="0"
-							placeholder="—"
-							value={s.actual}
-							oninput={(e) => {
-								editingEmp = {
-									...editingEmp,
-									[emp.employee_id]: {
-										...s,
-										actual: (e.target as HTMLInputElement).value
-									}
-								};
-							}}
+						<label class="tiny-label">Geplant</label>
+						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
+							value={s.startTime}
+							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, startTime: (e.target as HTMLInputElement).value } }; }}
 						/>
-						<label class="tiny-label">Notiz</label>
+						<span class="sep">–</span>
+						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
+							value={s.endTime}
+							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, endTime: (e.target as HTMLInputElement).value } }; }}
+						/>
+						<label class="tiny-label" style="margin-left:0.5rem">Ist</label>
+						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
+							value={s.clockIn}
+							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockIn: (e.target as HTMLInputElement).value } }; }}
+						/>
+						<span class="sep">–</span>
+						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
+							value={s.clockOut}
+							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockOut: (e.target as HTMLInputElement).value } }; }}
+						/>
+						{#if s.actual !== ''}
+							<span class="hours-badge">{fmtHours(parseFloat(s.actual))}</span>
+						{:else if derived != null}
+							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
+						{/if}
+						<label class="tiny-label" style="margin-left:0.5rem">P.min</label>
+						<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="3"
+							value={s.breakMin}
+							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, breakMin: (e.target as HTMLInputElement).value } }; }}
+						/>
+						<label class="tiny-label" style="margin-left:0.5rem">Notiz</label>
 						<input
 							class="notes-input"
 							type="text"
@@ -775,10 +872,10 @@
 
 	.inq-emp-header {
 		display: grid;
-		grid-template-columns: 1fr 1fr 24px;
-		gap: 0.375rem;
+		grid-template-columns: minmax(60px, 1fr) 1fr 1fr 36px 24px;
+		gap: 0.25rem;
 		padding: 0.25rem 0.5rem;
-		font-size: 0.75rem;
+		font-size: 0.7rem;
 		font-weight: 600;
 		color: var(--dt-on-surface-variant);
 		border-bottom: 1px solid var(--dt-outline-variant);
@@ -787,8 +884,8 @@
 
 	.inq-emp-row {
 		display: grid;
-		grid-template-columns: 1fr 1fr 24px;
-		gap: 0.375rem;
+		grid-template-columns: minmax(60px, 1fr) 1fr 1fr 36px 24px;
+		gap: 0.25rem;
 		align-items: center;
 		padding: 0.3rem 0.5rem;
 		border-radius: var(--dt-radius-sm);
@@ -843,11 +940,62 @@
 		flex-shrink: 0;
 	}
 
+	.inq-break {
+		width: 36px;
+		text-align: center;
+	}
+
 	.inq-total {
 		padding: 0.375rem 0.5rem;
 		font-size: 0.75rem;
 		color: var(--dt-on-surface-variant);
 		border-top: 1px solid var(--dt-outline-variant);
 		margin-top: 0.25rem;
+	}
+
+	/* Calendar-item mode: additional time inputs */
+	.time-input {
+		width: 52px;
+		padding: 0.2rem 0.25rem;
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-bottom: 2px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.8125rem;
+		outline: none;
+		text-align: center;
+		transition: border-color var(--dt-transition);
+	}
+
+	.time-input:focus {
+		border-bottom-color: var(--dt-primary);
+	}
+
+	.break-input {
+		width: 40px;
+		padding: 0.2rem 0.25rem;
+		background: var(--dt-surface-container-high);
+		border: none;
+		border-bottom: 2px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.8125rem;
+		outline: none;
+		text-align: center;
+		transition: border-color var(--dt-transition);
+	}
+
+	.break-input:focus {
+		border-bottom-color: var(--dt-primary);
+	}
+
+	.sep {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		flex-shrink: 0;
+	}
+
+	.hours-badge--derived {
+		background: #f0fdf4;
+		color: #15803d;
 	}
 </style>

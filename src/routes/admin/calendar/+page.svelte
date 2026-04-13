@@ -1430,7 +1430,7 @@
 						{#if qiCustomerResults.length > 0}
 							<div class="qt-results">
 								{#each qiCustomerResults as c}
-									<button class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email ?? 'Kunde'; qiCustomerResults = []; }}></button>
+									<button class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email ?? 'Kunde'; qiCustomerResults = []; }}>
 										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
 										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
 									</button>
@@ -1571,7 +1571,7 @@
 						{#if qtCustomerResults.length > 0}
 							<div class="qt-results">
 								{#each qtCustomerResults as c}
-									<button class="qt-result-item" onclick={() => { qtCustomerId = c.id; qtCustomerLabel = c.name ?? c.email ?? 'Kunde'; qtCustomerResults = []; }}></button>
+									<button class="qt-result-item" onclick={() => { qtCustomerId = c.id; qtCustomerLabel = c.name ?? c.email ?? 'Kunde'; qtCustomerResults = []; }}>
 										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
 										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
 									</button>

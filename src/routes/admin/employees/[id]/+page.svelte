@@ -32,6 +32,11 @@
 		booking_date: string | null;
 		planned_hours: number;
 		actual_hours: number | null;
+		clock_in: string | null;
+		clock_out: string | null;
+		break_minutes: number;
+		start_time: string | null;
+		end_time: string | null;
 		notes: string | null;
 		status: string;
 	}
@@ -44,7 +49,19 @@
 		scheduled_date: string | null;
 		planned_hours: number;
 		actual_hours: number | null;
+		clock_in: string | null;
+		clock_out: string | null;
+		break_minutes: number;
+		start_time: string | null;
+		end_time: string | null;
 		status: string;
+	}
+
+	interface TimeDraft {
+		clock_in: string;
+		clock_out: string;
+		break_minutes: number;
+		saving: boolean;
 	}
 
 	interface HoursSummary {
@@ -65,6 +82,7 @@
 	let pendingDocType = $state<string | null>(null);
 	let showDocDeleteDialog = $state(false);
 	let hoursSummary = $state<HoursSummary | null>(null);
+	let timeDrafts = $state<Record<string, TimeDraft>>({});
 
 	// Editable fields
 	let editSalutation = $state('');
@@ -142,8 +160,70 @@
 				url = `/api/v1/admin/employees/${id}/hours?month=${selectedMonth}`;
 			}
 			hoursSummary = await apiGet<HoursSummary>(url);
+
+			// Initialise inline-edit drafts from server values
+			const drafts: Record<string, TimeDraft> = {};
+			for (const a of hoursSummary.assignments ?? []) {
+				drafts[`inq:${a.inquiry_id}`] = {
+					clock_in: a.clock_in ? a.clock_in.slice(0, 5) : '',
+					clock_out: a.clock_out ? a.clock_out.slice(0, 5) : '',
+					break_minutes: a.break_minutes ?? 0,
+					saving: false
+				};
+			}
+			for (const ci of hoursSummary.calendar_items ?? []) {
+				drafts[`ci:${ci.calendar_item_id}`] = {
+					clock_in: ci.clock_in ? ci.clock_in.slice(0, 5) : '',
+					clock_out: ci.clock_out ? ci.clock_out.slice(0, 5) : '',
+					break_minutes: ci.break_minutes ?? 0,
+					saving: false
+				};
+			}
+			timeDrafts = drafts;
 		} catch {
 			hoursSummary = null;
+			timeDrafts = {};
+		}
+	}
+
+	/** Converts "HH:MM" (from <input type="time">) to "HH:MM:SS" for the API, or null if empty. */
+	function toTimeStr(val: string): string | null {
+		if (!val) return null;
+		return val.length === 5 ? `${val}:00` : val;
+	}
+
+	/**
+	 * Saves clock_in / clock_out / break_minutes for one assignment row via PATCH.
+	 *
+	 * Called by: onblur on any time/break input in the assignments table.
+	 * Purpose: Persists per-day time tracking without a dedicated save button.
+	 *
+	 * @param key - "inq:{inquiry_id}" or "ci:{calendar_item_id}"
+	 */
+	async function saveTime(key: string) {
+		if (!data) return;
+		const draft = timeDrafts[key];
+		if (!draft || draft.saving) return;
+		draft.saving = true;
+		try {
+			const [type, id] = key.split(':');
+			const payload = {
+				clock_in: toTimeStr(draft.clock_in),
+				clock_out: toTimeStr(draft.clock_out),
+				break_minutes: draft.break_minutes
+			};
+			if (type === 'inq') {
+				await apiPatch(`/api/v1/inquiries/${id}/employees/${data.id}`, payload);
+			} else {
+				await apiPatch(`/api/v1/admin/calendar-items/${id}/employees/${data.id}`, payload);
+			}
+			// Reload to refresh the computed actual_hours column
+			await loadHours(data.id);
+			showToast('Gespeichert', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Speichern', 'error');
+		} finally {
+			draft.saving = false;
 		}
 	}
 
@@ -620,12 +700,17 @@
 							<th>Beschreibung</th>
 							<th>Details</th>
 							<th class="num">Geplant (h)</th>
+							<th class="time-col">Von</th>
+							<th class="time-col">Bis</th>
+							<th class="time-col">Pause (Min.)</th>
 							<th class="num">Ist (h)</th>
 							<th>Status</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each hoursSummary.assignments as a}
+							{@const key = `inq:${a.inquiry_id}`}
+							{@const draft = timeDrafts[key]}
 							<tr
 								class="clickable-row"
 								onclick={() => { if (a.inquiry_id) goto(`/admin/inquiries/${a.inquiry_id}`); }}
@@ -640,11 +725,48 @@
 									{/if}
 								</td>
 								<td class="num">{a.planned_hours.toFixed(1)}</td>
+								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+									{#if draft}
+										<input
+											type="time"
+											class="time-input"
+											class:saving={draft.saving}
+											bind:value={draft.clock_in}
+											onblur={() => saveTime(key)}
+										/>
+									{/if}
+								</td>
+								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+									{#if draft}
+										<input
+											type="time"
+											class="time-input"
+											class:saving={draft.saving}
+											bind:value={draft.clock_out}
+											onblur={() => saveTime(key)}
+										/>
+									{/if}
+								</td>
+								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+									{#if draft}
+										<input
+											type="number"
+											class="break-input"
+											class:saving={draft.saving}
+											min="0"
+											step="5"
+											bind:value={draft.break_minutes}
+											onblur={() => saveTime(key)}
+										/>
+									{/if}
+								</td>
 								<td class="num">{a.actual_hours?.toFixed(1) ?? '—'}</td>
 								<td><StatusBadge status={a.status} /></td>
 							</tr>
 						{/each}
 						{#each (hoursSummary.calendar_items ?? []) as ci}
+							{@const key = `ci:${ci.calendar_item_id}`}
+							{@const draft = timeDrafts[key]}
 							<tr
 								class="clickable-row item-row"
 								onclick={() => goto(`/admin/calendar-items/${ci.calendar_item_id}`)}
@@ -656,6 +778,41 @@
 								</td>
 								<td>{ci.location ?? '—'}</td>
 								<td class="num">{ci.planned_hours.toFixed(1)}</td>
+								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+									{#if draft}
+										<input
+											type="time"
+											class="time-input"
+											class:saving={draft.saving}
+											bind:value={draft.clock_in}
+											onblur={() => saveTime(key)}
+										/>
+									{/if}
+								</td>
+								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+									{#if draft}
+										<input
+											type="time"
+											class="time-input"
+											class:saving={draft.saving}
+											bind:value={draft.clock_out}
+											onblur={() => saveTime(key)}
+										/>
+									{/if}
+								</td>
+								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+									{#if draft}
+										<input
+											type="number"
+											class="break-input"
+											class:saving={draft.saving}
+											min="0"
+											step="5"
+											bind:value={draft.break_minutes}
+											onblur={() => saveTime(key)}
+										/>
+									{/if}
+								</td>
 								<td class="num">{ci.actual_hours?.toFixed(1) ?? '—'}</td>
 								<td><StatusBadge status={ci.status} /></td>
 							</tr>
@@ -895,6 +1052,45 @@
 		border-radius: var(--dt-radius-sm);
 		margin-right: 0.35rem;
 		vertical-align: middle;
+	}
+
+	.time-col {
+		text-align: center;
+		white-space: nowrap;
+	}
+
+	.time-cell {
+		padding: 0.25rem 0.5rem;
+	}
+
+	.time-input,
+	.break-input {
+		padding: 0.25rem 0.375rem;
+		font-size: 0.8125rem;
+		background: var(--dt-surface-container-high);
+		border: 1px solid transparent;
+		border-radius: var(--dt-radius-sm);
+		color: var(--dt-on-surface);
+		outline: none;
+		width: 100%;
+		min-width: 0;
+		font-variant-numeric: tabular-nums;
+		transition: border-color var(--dt-transition), opacity var(--dt-transition);
+	}
+
+	.time-input:focus,
+	.break-input:focus {
+		border-color: var(--dt-primary);
+		background: var(--dt-surface-container);
+	}
+
+	.time-input.saving,
+	.break-input.saving {
+		opacity: 0.5;
+	}
+
+	.break-input {
+		width: 5rem;
 	}
 
 	.loading,

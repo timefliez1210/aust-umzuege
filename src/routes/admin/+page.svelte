@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { apiGet, formatDateTime } from '$lib/utils/api.svelte';
-	import { FileText, CalendarDays, Users, ArrowRight, AlertTriangle } from 'lucide-svelte';
+	import { apiGet, apiPost, formatDateTime } from '$lib/utils/api.svelte';
+	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import { FileText, CalendarDays, Users, ArrowRight, AlertTriangle, Star } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
 	interface ConflictDate {
@@ -17,6 +18,13 @@
 		status: string | null;
 	}
 
+	interface ReviewReminder {
+		inquiry_id: string;
+		remind_after: string;
+		customer_name: string | null;
+		customer_email: string | null;
+	}
+
 	interface DashboardData {
 		open_quotes: number;
 		pending_offers: number;
@@ -24,6 +32,28 @@
 		total_customers: number;
 		recent_activity: ActivityItem[];
 		conflict_dates: ConflictDate[];
+		pending_review_count: number;
+	}
+
+	let reviewReminders = $state<ReviewReminder[]>([]);
+
+	async function loadReviewReminders() {
+		try {
+			reviewReminders = await apiGet<ReviewReminder[]>('/api/v1/admin/review-reminders');
+		} catch {
+			reviewReminders = [];
+		}
+	}
+
+	async function sendReviewNow(inquiryId: string) {
+		try {
+			await apiPost(`/api/v1/admin/inquiries/${inquiryId}/review-request`, { action: 'now' });
+			showToast('Bewertungsanfrage gesendet', 'success');
+			await loadReviewReminders();
+			if (data) data.pending_review_count = reviewReminders.length;
+		} catch (e) {
+			showToast((e as Error).message ?? 'Fehler', 'error');
+		}
 	}
 
 	/**
@@ -66,6 +96,7 @@
 
 	$effect(() => {
 		loadDashboard();
+		loadReviewReminders();
 	});
 
 	/**
@@ -90,7 +121,8 @@
 				todays_bookings: 0,
 				total_customers: 0,
 				recent_activity: [],
-				conflict_dates: []
+				conflict_dates: [],
+				pending_review_count: 0
 			};
 		}
 	}
@@ -142,6 +174,29 @@
 						<span class="conflict-date">{new Date(conflict.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
 						<span class="conflict-count">{conflict.booked}/{conflict.capacity} gebucht</span>
 					</a>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if reviewReminders.length > 0}
+		<div class="section-card review-card">
+			<div class="section-header">
+				<h2><Star size={16} /> Bewertungsanfragen fällig ({reviewReminders.length})</h2>
+			</div>
+			<div class="review-list">
+				{#each reviewReminders as r}
+					<div class="review-item">
+						<div class="review-info">
+							<a href="/admin/inquiries/{r.inquiry_id}" class="review-name">
+								{r.customer_name ?? 'Unbekannt'}
+							</a>
+							<span class="review-date">fällig seit {new Date(r.remind_after).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>
+						</div>
+						<button class="btn btn-sm btn-primary" onclick={() => sendReviewNow(r.inquiry_id)}>
+							Jetzt senden
+						</button>
+					</div>
 				{/each}
 			</div>
 		</div>
@@ -398,6 +453,58 @@
 		background: var(--dt-secondary-container);
 		padding: 0.125rem 0.5rem;
 		border-radius: var(--dt-radius-sm);
+	}
+
+	.review-card {
+		margin-bottom: 1.5rem;
+	}
+
+	.review-card .section-header h2 {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--dt-primary);
+	}
+
+	.review-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.review-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.625rem 1.25rem;
+		gap: 0.75rem;
+	}
+
+	.review-item:nth-child(even) {
+		background: var(--dt-surface-container-low);
+	}
+
+	.review-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.review-name {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--dt-on-surface);
+		text-decoration: none;
+	}
+
+	.review-name:hover {
+		text-decoration: underline;
+	}
+
+	.review-date {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
 	}
 
 	@media (max-width: 768px) {

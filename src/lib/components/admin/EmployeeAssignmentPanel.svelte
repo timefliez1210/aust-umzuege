@@ -327,7 +327,7 @@
 	 *
 	 * @param empId - Employee UUID whose assignment to update.
 	 */
-	async function handleSaveEmp(empId: string) {
+	async function handleSaveEmp(empId: string, silent = false) {
 		const s = editingEmp[empId];
 		if (!s) return;
 		savingEmp = { ...savingEmp, [empId]: true };
@@ -342,13 +342,36 @@
 				clock_out: s.clockOut ? s.clockOut + ':00' : null,
 				break_minutes: parseInt(s.breakMin) || 0,
 			});
-			await loadAssignments();
-			showToast('Gespeichert', 'success');
+			if (!silent) {
+				await loadAssignments();
+				showToast('Gespeichert', 'success');
+			}
 			onUpdated?.();
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		} finally {
 			savingEmp = { ...savingEmp, [empId]: false };
+		}
+	}
+
+	/**
+	 * Saves all employee assignments in calendar-item mode in parallel.
+	 *
+	 * Called by: Template ("Alle speichern" button, calendar_item mode only).
+	 * Purpose: Lets admins fill all rows at once and save with a single click
+	 *          instead of clicking the per-row save icon for each employee.
+	 */
+	let savingAll = $state(false);
+	async function handleSaveAll() {
+		if (savingAll) return;
+		savingAll = true;
+		try {
+			await Promise.all(assignments.map(e => handleSaveEmp(e.employee_id, true)));
+			await loadAssignments();
+			showToast('Alle gespeichert', 'success');
+			onUpdated?.();
+		} finally {
+			savingAll = false;
 		}
 	}
 
@@ -635,6 +658,13 @@
 				</div>
 			{/each}
 		</div>
+		{#if assignments.length > 1}
+			<div class="save-all-row">
+				<button class="btn btn-sm btn-primary" onclick={handleSaveAll} disabled={savingAll}>
+					{savingAll ? '...' : 'Alle speichern'}
+				</button>
+			</div>
+		{/if}
 	{/if}
 
 	<!-- Add employee form (modal overlay) -->
@@ -847,6 +877,12 @@
 	.emp-actions {
 		display: flex;
 		gap: 0.25rem;
+	}
+
+	.save-all-row {
+		display: flex;
+		justify-content: flex-end;
+		padding: 0.5rem 0.75rem 0.75rem;
 	}
 
 	/* ── Spinner ── */

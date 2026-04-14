@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, formatDateTime } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { FileText, CalendarDays, Users, ArrowRight, AlertTriangle, Star, CheckCircle, Receipt, MessageSquare } from 'lucide-svelte';
+	import { FileText, CalendarDays, Users, ArrowRight, AlertTriangle, Star, CheckCircle, Receipt, MessageSquare, Bell } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
 	interface ConflictDate {
@@ -50,6 +50,17 @@
 		customer_email: string | null;
 	}
 
+	interface InvoiceReminder {
+		id: string;
+		invoice_id: string;
+		inquiry_id: string;
+		invoice_number: string;
+		level: number;
+		remind_after: string;
+		customer_name: string | null;
+		customer_email: string | null;
+	}
+
 	interface DashboardData {
 		open_quotes: number;
 		pending_offers: number;
@@ -67,6 +78,50 @@
 			reviewReminders = await apiGet<ReviewReminder[]>('/api/v1/admin/review-reminders');
 		} catch {
 			reviewReminders = [];
+		}
+	}
+
+	// --- Invoice reminder state ---
+
+	let invoiceReminders = $state<InvoiceReminder[]>([]);
+	let invoiceSnoozedays = $state<Record<string, number>>({});
+	let invoiceReminderSending = $state<Record<string, boolean>>({});
+
+	const DUNNING_LABELS: Record<number, string> = {
+		1: 'Zahlungserinnerung',
+		2: '1. Mahnung',
+		3: '2. Mahnung',
+	};
+
+	async function loadInvoiceReminders() {
+		try {
+			invoiceReminders = await apiGet<InvoiceReminder[]>('/api/v1/admin/invoice-reminders');
+			// Seed default snooze days
+			for (const r of invoiceReminders) {
+				if (!(r.id in invoiceSnoozedays)) {
+					invoiceSnoozedays[r.id] = 7;
+				}
+			}
+		} catch {
+			invoiceReminders = [];
+		}
+	}
+
+	async function doInvoiceAction(id: string, action: 'send' | 'later' | 'paid') {
+		if (invoiceReminderSending[id]) return;
+		invoiceReminderSending[id] = true;
+		try {
+			const body: Record<string, unknown> = { action };
+			if (action === 'later') body.days = invoiceSnoozedays[id] ?? 7;
+			await apiPost(`/api/v1/admin/invoice-reminders/${id}/action`, body);
+			await loadInvoiceReminders();
+			if (action === 'send') showToast('Mahnung gesendet', 'success');
+			else if (action === 'later') showToast('Erinnerung verschoben', 'success');
+			else showToast('Als bezahlt markiert', 'success');
+		} catch (e) {
+			showToast((e as Error).message ?? 'Fehler', 'error');
+		} finally {
+			invoiceReminderSending[id] = false;
 		}
 	}
 
@@ -260,6 +315,7 @@
 	$effect(() => {
 		loadDashboard();
 		loadReviewReminders();
+		loadInvoiceReminders();
 		loadMorningWorkflow();
 	});
 
@@ -360,6 +416,62 @@
 						<button class="btn btn-sm btn-primary" onclick={() => sendReviewNow(r.inquiry_id)}>
 							Jetzt senden
 						</button>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if invoiceReminders.length > 0}
+		<div class="section-card invoice-reminder-card">
+			<div class="section-header invoice-reminder-header">
+				<h2><Bell size={16} /> Rechnungserinnerungen fällig ({invoiceReminders.length})</h2>
+			</div>
+			<div class="ir-list">
+				{#each invoiceReminders as r}
+					{@const label = DUNNING_LABELS[r.level] ?? `Level ${r.level}`}
+					{@const sending = invoiceReminderSending[r.id] ?? false}
+					<div class="ir-item">
+						<div class="ir-info">
+							<a href="/admin/inquiries/{r.inquiry_id}" class="ir-name">
+								{r.customer_name ?? 'Unbekannt'}
+							</a>
+							<span class="ir-meta">
+								Rechnung {r.invoice_number} ·
+								<span class="ir-level-badge" data-level={r.level}>{label}</span>
+								· fällig seit {new Date(r.remind_after).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}
+							</span>
+						</div>
+						<div class="ir-actions">
+							<button
+								class="btn btn-sm btn-primary"
+								disabled={sending}
+								onclick={() => doInvoiceAction(r.id, 'send')}
+							>
+								Mahnung schreiben
+							</button>
+							<button
+								class="btn btn-sm ir-later-btn"
+								disabled={sending}
+								onclick={() => doInvoiceAction(r.id, 'later')}
+							>
+								Später (<input
+									type="number"
+									class="ir-days-input"
+									min="1"
+									max="90"
+									bind:value={invoiceSnoozedays[r.id]}
+									onclick={(e) => e.stopPropagation()}
+								/>d)
+							</button>
+							<button
+								class="btn btn-sm ir-paid-btn"
+								disabled={sending}
+								onclick={() => doInvoiceAction(r.id, 'paid')}
+							>
+								Bezahlt
+							</button>
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -777,6 +889,115 @@
 	.review-date {
 		font-size: 0.75rem;
 		color: var(--dt-on-surface-variant);
+	}
+
+	/* === Invoice reminders card === */
+
+	.invoice-reminder-card {
+		margin-bottom: 1.5rem;
+	}
+
+	.invoice-reminder-header {
+		background: rgba(234, 160, 0, 0.07);
+	}
+
+	.invoice-reminder-header h2 {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: #c97700;
+	}
+
+	.ir-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.ir-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1.25rem;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.ir-item:nth-child(even) {
+		background: var(--dt-surface-container-low);
+	}
+
+	.ir-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.ir-name {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--dt-on-surface);
+		text-decoration: none;
+	}
+
+	.ir-name:hover {
+		text-decoration: underline;
+	}
+
+	.ir-meta {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		flex-wrap: wrap;
+	}
+
+	.ir-level-badge {
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		padding: 0.1rem 0.4rem;
+		border-radius: var(--dt-radius-sm);
+		background: var(--dt-secondary-container);
+		color: var(--dt-on-secondary-container);
+	}
+
+	.ir-level-badge[data-level="2"],
+	.ir-level-badge[data-level="3"] {
+		background: rgba(234, 88, 12, 0.15);
+		color: #c2410c;
+	}
+
+	.ir-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		flex-shrink: 0;
+	}
+
+	.ir-later-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+	}
+
+	.ir-days-input {
+		width: 2.75rem;
+		padding: 0 0.2rem;
+		background: var(--dt-surface-container-high);
+		border: 1px solid transparent;
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface);
+		text-align: center;
+		outline: none;
+	}
+
+	.ir-paid-btn {
+		color: #16a34a;
 	}
 
 	/* === Morning workflow dialog === */

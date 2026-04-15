@@ -949,6 +949,37 @@
 
 	let changingStatus = $state(false);
 
+	// --- Review request popup ---
+	let showReviewPopup = $state(false);
+	let reviewReminderDays = $state(3);
+	let sendingReview = $state(false);
+
+	/**
+	 * Submits the review request action chosen by Alex in the popup.
+	 *
+	 * Called by: Template (popup buttons: Jetzt / Später / Nicht)
+	 * Purpose: POSTs to /api/v1/admin/inquiries/{id}/review-request with action + optional days.
+	 *
+	 * @param action - "now" | "later" | "skip"
+	 */
+	async function submitReviewAction(action: 'now' | 'later' | 'skip') {
+		if (!data) return;
+		sendingReview = true;
+		try {
+			await apiPost(`/api/v1/admin/inquiries/${data.id}/review-request`, {
+				action,
+				...(action === 'later' ? { remind_after_days: reviewReminderDays } : {}),
+			});
+			showReviewPopup = false;
+			if (action === 'now') showToast('Bewertungsanfrage gesendet', 'success');
+			else if (action === 'later') showToast(`Erinnerung in ${reviewReminderDays} Tagen`, 'success');
+		} catch (e) {
+			showToast((e as Error).message ?? 'Fehler', 'error');
+		} finally {
+			sendingReview = false;
+		}
+	}
+
 	/**
 	 * Updates the inquiry's workflow status via the API using the status dropdown.
 	 *
@@ -974,6 +1005,10 @@
 				newStatus;
 			showToast(`Status: ${label}`, "success");
 			await loadInquiry();
+			// After marking as completed, ask Alex whether to send a review request
+			if (newStatus === 'completed') {
+				showReviewPopup = true;
+			}
 		} catch (e) {
 			showToast((e as Error).message, "error");
 		} finally {
@@ -2715,6 +2750,52 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!-- Review request popup — shown after marking an inquiry as "Erledigt" -->
+{#if showReviewPopup}
+	<div class="review-overlay" onclick={() => (showReviewPopup = false)}>
+		<div class="review-dialog" onclick={(e) => e.stopPropagation()}>
+			<h3>Bewertungsanfrage senden?</h3>
+			<p>
+				Möchten Sie dem Kunden jetzt eine E-Mail mit der Bitte um eine Google-Bewertung schicken?
+			</p>
+			<div class="review-later-row">
+				<label for="review-days">Bei „Später" erinnern in</label>
+				<input
+					id="review-days"
+					type="number"
+					min="1"
+					max="30"
+					bind:value={reviewReminderDays}
+				/>
+				<span>Tagen</span>
+			</div>
+			<div class="review-actions">
+				<button
+					class="btn btn-primary"
+					disabled={sendingReview}
+					onclick={() => submitReviewAction('now')}
+				>
+					Jetzt senden
+				</button>
+				<button
+					class="btn"
+					disabled={sendingReview}
+					onclick={() => submitReviewAction('later')}
+				>
+					Später ({reviewReminderDays}d)
+				</button>
+				<button
+					class="btn btn-muted"
+					disabled={sendingReview}
+					onclick={() => submitReviewAction('skip')}
+				>
+					Nicht
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 <style>
 	.page {
 		max-width: 1200px;
@@ -3883,5 +3964,71 @@
 		}
 	}
 
+	/* === Review request popup === */
+
+	.review-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.45);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.review-dialog {
+		background: var(--dt-surface);
+		border-radius: var(--dt-radius-lg);
+		padding: 1.75rem 2rem;
+		width: min(420px, calc(100vw - 2rem));
+		box-shadow: var(--dt-shadow-lg, 0 8px 32px rgba(0,0,0,.18));
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.review-dialog h3 {
+		font-size: 1rem;
+		font-weight: 700;
+		margin: 0;
+		color: var(--dt-on-surface);
+	}
+
+	.review-dialog p {
+		font-size: 0.875rem;
+		color: var(--dt-on-surface-variant);
+		margin: 0;
+	}
+
+	.review-later-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+		color: var(--dt-on-surface-variant);
+	}
+
+	.review-later-row input[type="number"] {
+		width: 4rem;
+		padding: 0.25rem 0.375rem;
+		background: var(--dt-surface-container-high);
+		border: 1px solid transparent;
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.875rem;
+		color: var(--dt-on-surface);
+		outline: none;
+	}
+
+	.review-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.review-actions .btn {
+		flex: 1;
+		min-width: 7rem;
+		justify-content: center;
+	}
 
 </style>

@@ -101,7 +101,6 @@
 	// Per-row inline edit state (calendar_item mode)
 	let editingEmp = $state<Record<string, {
 		planned: string; actual: string; notes: string;
-		startTime: string; endTime: string;
 		clockIn: string; clockOut: string;
 		breakMin: string;
 	}>>({});
@@ -150,8 +149,6 @@
 						planned: String(e.planned_hours),
 						actual: e.actual_hours != null ? String(e.actual_hours) : '',
 						notes: e.notes ?? '',
-						startTime: fmtTime(e.start_time),
-						endTime: fmtTime(e.end_time),
 						clockIn: fmtTime(e.clock_in),
 						clockOut: fmtTime(e.clock_out),
 						breakMin: String(e.break_minutes ?? 0),
@@ -336,8 +333,6 @@
 				planned_hours: parseFloat(s.planned) || 0,
 				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
 				notes: s.notes || null,
-				start_time: s.startTime ? s.startTime + ':00' : null,
-				end_time: s.endTime ? s.endTime + ':00' : null,
 				clock_in: s.clockIn ? s.clockIn + ':00' : null,
 				clock_out: s.clockOut ? s.clockOut + ':00' : null,
 				break_minutes: parseInt(s.breakMin) || 0,
@@ -491,8 +486,7 @@
 		<div class="inq-emp-list">
 			<div class="inq-emp-header">
 				<span>Name</span>
-				<span>Geplant</span>
-				<span>Ist</span>
+				<span>Von–Bis</span>
 				<span>P.</span>
 				<span></span>
 			</div>
@@ -500,29 +494,7 @@
 				{@const derived = deriveActualHours(emp.clock_in, emp.clock_out, emp.break_minutes ?? 0)}
 				<div class="inq-emp-row" class:saving-row={inquerySaving === emp.employee_id}>
 					<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
-					<!-- Planned start–end -->
-					<div class="inq-times">
-						<input
-							class="inq-input inq-time"
-							type="text"
-							inputmode="decimal"
-							placeholder="--:--"
-							maxlength="5"
-							value={fmtTime(emp.start_time)}
-							onblur={(e) => updateTimeField(emp.employee_id, 'start_time', (e.target as HTMLInputElement).value)}
-						/>
-						<span class="inq-sep">–</span>
-						<input
-							class="inq-input inq-time"
-							type="text"
-							inputmode="decimal"
-							placeholder="--:--"
-							maxlength="5"
-							value={fmtTime(emp.end_time)}
-							onblur={(e) => updateTimeField(emp.employee_id, 'end_time', (e.target as HTMLInputElement).value)}
-						/>
-					</div>
-					<!-- Actual clock_in–clock_out -->
+					<!-- Von–Bis (clock_in/clock_out) -->
 					<div class="inq-times">
 						<input
 							class="inq-input inq-time"
@@ -585,27 +557,18 @@
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
 		<div class="emp-list">
 			{#each assignments as emp}
-				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', startTime: '', endTime: '', clockIn: '', clockOut: '', breakMin: '0' }}
+				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0' }}
 				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, parseInt(s.breakMin) || 0)}
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 					<div class="emp-fields">
-						<label class="tiny-label">Geplant</label>
-						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
-							value={s.startTime}
-							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, startTime: (e.target as HTMLInputElement).value } }; }}
-						/>
-						<span class="sep">–</span>
-						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
-							value={s.endTime}
-							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, endTime: (e.target as HTMLInputElement).value } }; }}
-						/>
-						<label class="tiny-label" style="margin-left:0.5rem">Ist</label>
+						<label class="tiny-label">Von</label>
 						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
 							value={s.clockIn}
 							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockIn: (e.target as HTMLInputElement).value } }; }}
 						/>
 						<span class="sep">–</span>
+						<label class="tiny-label">Bis</label>
 						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
 							value={s.clockOut}
 							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockOut: (e.target as HTMLInputElement).value } }; }}
@@ -908,7 +871,7 @@
 
 	.inq-emp-header {
 		display: grid;
-		grid-template-columns: minmax(60px, 1fr) 1fr 1fr 36px 24px;
+		grid-template-columns: minmax(60px, 1fr) 1fr 36px 24px;
 		gap: 0.25rem;
 		padding: 0.25rem 0.5rem;
 		font-size: 0.7rem;
@@ -920,7 +883,7 @@
 
 	.inq-emp-row {
 		display: grid;
-		grid-template-columns: minmax(60px, 1fr) 1fr 1fr 36px 24px;
+		grid-template-columns: minmax(60px, 1fr) 1fr 36px 24px;
 		gap: 0.25rem;
 		align-items: center;
 		padding: 0.3rem 0.5rem;

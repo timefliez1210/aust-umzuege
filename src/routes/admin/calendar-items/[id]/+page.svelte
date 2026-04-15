@@ -21,6 +21,7 @@
 		created_at: string;
 		customer_id: string | null;
 		customer_name: string | null;
+		employee_notes: string | null;
 		employees: EmployeeAssignment[];
 	}
 
@@ -53,6 +54,7 @@
 	let editDescription = $state('');
 	let editStartTime = $state('09:00');
 	let editEndTime = $state('');
+	let editEmployeeNotes = $state('');
 	let editStatus = $state('scheduled');
 
 	// Customer assignment
@@ -90,6 +92,7 @@
 			editLocation = res.location ?? '';
 			editDescription = res.description ?? '';
 			editStatus = res.status;
+			editEmployeeNotes = res.employee_notes ?? '';
 		} catch {
 			showToast('Termin nicht gefunden', 'error');
 			goto('/admin/calendar-items');
@@ -117,7 +120,8 @@
 				duration_hours: parseFloat(editDuration) || 0,
 				location: editLocation || null,
 				description: editDescription || null,
-				status: editStatus
+				status: editStatus,
+				employee_notes: editEmployeeNotes || null
 			});
 			data = { ...data, ...updated };
 			showToast('Gespeichert', 'success');
@@ -382,6 +386,16 @@
 				entityId={data.id}
 				entityType="calendar_item"
 			/>
+			<div class="emp-notes-field">
+				<label for="emp-notes-ci" class="emp-notes-label">Hinweis für Mitarbeiter</label>
+				<textarea
+					id="emp-notes-ci"
+					rows={3}
+					placeholder="Sichtbar für alle zugewiesenen Mitarbeiter im Mitarbeiterportal…"
+					bind:value={editEmployeeNotes}
+					onblur={handleSave}
+				></textarea>
+			</div>
 		</div>
 	</div>
 {/if}
@@ -517,6 +531,38 @@
 
 	/* Employee card spans full width like the details card */
 	.emp-card { grid-column: span 2; }
+
+	.emp-notes-field {
+		padding: 0.75rem 1.25rem 1rem;
+		border-top: 1px solid var(--dt-outline-variant);
+		margin-top: 0.75rem;
+	}
+
+	.emp-notes-label {
+		display: block;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--dt-on-surface-variant);
+		margin-bottom: 0.375rem;
+	}
+
+	.emp-notes-field textarea {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 0.5rem 0.625rem;
+		background: var(--dt-surface-container-high);
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.875rem;
+		color: var(--dt-on-surface);
+		resize: vertical;
+		outline: none;
+		transition: border-color var(--dt-transition);
+	}
+
+	.emp-notes-field textarea:focus {
+		border-color: var(--dt-primary);
+	}
 
 	.card-header {
 		display: flex;

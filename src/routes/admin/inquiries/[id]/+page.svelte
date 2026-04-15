@@ -216,6 +216,7 @@
 	let editVolume = $state<number | null>(null);
 	let editDistance = $state(0);
 	let editNotes = $state("");
+	let editEmployeeNotes = $state("");
 	let editDate = $state("");
 	let editStartTime = $state("");
 	let editEndTime = $state("");
@@ -648,6 +649,7 @@
 			editVolume = data.volume_m3;
 			editDistance = data.distance_km ?? 0;
 			editNotes = data.notes || "";
+			editEmployeeNotes = (data as any).employee_notes || "";
 			editDate = data.scheduled_date || "";
 			editStartTime = data.start_time ? data.start_time.slice(0, 5) : '';
 			editEndTime = data.end_time ? data.end_time.slice(0, 5) : '';
@@ -709,6 +711,7 @@
 				distance_km: editDistance,
 			}),
 			notes: editNotes || null,
+			employee_notes: editEmployeeNotes || null,
 			scheduled_date: editDate || null,
 			start_time: editStartTime ? editStartTime + ':00' : undefined,
 			end_time: editEndTime ? editEndTime + ':00' : undefined,
@@ -2385,6 +2388,16 @@
 				entityType="inquiry"
 				preferredDate={data.scheduled_date}
 			/>
+			<div class="emp-notes-field">
+				<label for="emp-notes-inq" class="emp-notes-label">Hinweis für Mitarbeiter</label>
+				<textarea
+					id="emp-notes-inq"
+					rows={3}
+					placeholder="Sichtbar für alle zugewiesenen Mitarbeiter im Mitarbeiterportal…"
+					bind:value={editEmployeeNotes}
+					onblur={persistInquiry}
+				></textarea>
+			</div>
 		</div>
 	</div>
 {/if}
@@ -3486,6 +3499,38 @@
 
 	.employees-section {
 		margin-bottom: 1.5rem;
+	}
+
+	.emp-notes-field {
+		padding: 0.75rem 0.75rem 0;
+		border-top: 1px solid var(--dt-outline-variant);
+		margin-top: 0.75rem;
+	}
+
+	.emp-notes-label {
+		display: block;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--dt-on-surface-variant);
+		margin-bottom: 0.375rem;
+	}
+
+	.emp-notes-field textarea {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 0.5rem 0.625rem;
+		background: var(--dt-surface-container-high);
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.875rem;
+		color: var(--dt-on-surface);
+		resize: vertical;
+		outline: none;
+		transition: border-color var(--dt-transition);
+	}
+
+	.emp-notes-field textarea:focus {
+		border-color: var(--dt-primary);
 	}
 
 	.emp-time {

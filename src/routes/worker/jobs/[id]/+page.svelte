@@ -30,6 +30,7 @@
 		customer_phone: string | null;
 		planned_hours: number;
 		notes: string | null;
+		employee_notes: string | null;
 		employee_clock_in: string | null;
 		employee_clock_out: string | null;
 		employee_actual_hours: number | null;
@@ -303,6 +304,13 @@
 		{#if job.notes}
 			<p class="notes">{job.notes}</p>
 		{/if}
+
+		{#if job.employee_notes}
+			<div class="employee-notes-box">
+				<div class="employee-notes-label">Hinweise vom Büro</div>
+				<p class="employee-notes-text">{job.employee_notes}</p>
+			</div>
+		{/if}
 	</div>
 {/if}
 
@@ -539,4 +547,28 @@
 	}
 
 	.back-row { margin-bottom: 0; }
+
+	.employee-notes-box {
+		margin-top: 1rem;
+		padding: 0.75rem 1rem;
+		background: #fefce8;
+		border-left: 3px solid #ca8a04;
+		border-radius: 0 0.375rem 0.375rem 0;
+	}
+
+	.employee-notes-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: #92400e;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: 0.375rem;
+	}
+
+	.employee-notes-text {
+		font-size: 0.9375rem;
+		color: #1e293b;
+		margin: 0;
+		white-space: pre-wrap;
+	}
 </style>

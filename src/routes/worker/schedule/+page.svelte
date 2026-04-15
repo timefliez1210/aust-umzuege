@@ -21,6 +21,7 @@
 		title: string | null;
 		location: string | null;
 		category: string | null;
+		employee_notes: string | null;
 	}
 
 	let selectedMonth = $state(new Date().toISOString().slice(0, 7));
@@ -130,6 +131,9 @@
 							<span>{job.location}</span>
 						</div>
 					{/if}
+					{#if job.employee_notes}
+						<p class="sched-notes">{job.employee_notes}</p>
+					{/if}
 				</div>
 			{:else}
 				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}`)}>
@@ -164,6 +168,10 @@
 							</span>
 						{/if}
 					</div>
+
+					{#if job.employee_notes}
+						<p class="sched-notes">{job.employee_notes}</p>
+					{/if}
 
 					<ChevronRight size={16} class="chevron" />
 				</button>
@@ -305,5 +313,16 @@
 		padding: 3rem 1rem;
 		color: #94a3b8;
 		font-size: 0.9375rem;
+	}
+
+	.sched-notes {
+		margin: 0.5rem 0 0;
+		font-size: 0.8125rem;
+		color: #92400e;
+		background: #fefce8;
+		border-left: 2px solid #ca8a04;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0 3px 3px 0;
+		white-space: pre-wrap;
 	}
 </style>

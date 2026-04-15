@@ -317,19 +317,18 @@
 	}
 
 	.close-btn {
-		background: none;
-		border: none;
+		background: var(--dt-surface-container-high);
+		border: 1px solid var(--dt-outline-variant);
 		cursor: pointer;
-		color: var(--dt-on-surface-variant);
-		padding: 0.25rem;
+		color: var(--dt-on-surface);
+		padding: 0.3rem;
 		border-radius: var(--dt-radius-sm);
 		display: flex;
 		align-items: center;
 	}
 
 	.close-btn:hover {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface);
+		background: var(--dt-surface-container-highest, #ddd);
 	}
 
 	.modal-body {

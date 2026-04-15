@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { apiGet, apiPost, apiPatch } from '$lib/utils/api.svelte';
+	import { apiPost, apiPatch, apiDownload } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { X, Plus, Trash2 } from 'lucide-svelte';
+	import { X, Plus, Trash2, Download } from 'lucide-svelte';
 
 	interface Props {
 		inquiryId: string;
@@ -63,6 +63,22 @@
 	let invoice: InvoiceResponse | null = $state(null);
 	let emailSubject = $state('');
 	let emailBody = $state('');
+	let downloadingPdf = $state(false);
+
+	async function downloadPdf() {
+		if (!invoice) return;
+		downloadingPdf = true;
+		try {
+			await apiDownload(
+				`/api/v1/inquiries/${inquiryId}/invoices/${invoice.id}/pdf`,
+				`Rechnung_${invoice.invoice_number}.pdf`
+			);
+		} catch (e) {
+			showToast((e as Error).message ?? 'Download fehlgeschlagen', 'error');
+		} finally {
+			downloadingPdf = false;
+		}
+	}
 
 	function defaultSubject(num: string) {
 		return `Ihre Rechnung Nr. ${num} — Aust Umzüge & Haushaltsauflösungen`;
@@ -221,7 +237,18 @@
 				{#if invoice}
 					<div class="invoice-summary">
 						<span class="inv-num">Rechnung {invoice.invoice_number}</span>
-						<span class="inv-total">{formatEuro(invoice.total_brutto_cents)}</span>
+						<div class="inv-right">
+							<span class="inv-total">{formatEuro(invoice.total_brutto_cents)}</span>
+							<button
+								class="btn-download"
+								onclick={downloadPdf}
+								disabled={downloadingPdf}
+								title="PDF herunterladen"
+							>
+								<Download size={15} />
+								{downloadingPdf ? '…' : 'PDF'}
+							</button>
+						</div>
 					</div>
 				{/if}
 
@@ -444,6 +471,36 @@
 		padding: 0.625rem 0.875rem;
 		background: var(--dt-surface-container-low);
 		border-radius: var(--dt-radius-sm);
+	}
+
+	.inv-right {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+	}
+
+	.btn-download {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 0.2rem 0.6rem;
+		border-radius: var(--dt-radius-sm);
+		border: 1px solid var(--dt-outline-variant);
+		background: var(--dt-surface-container);
+		color: var(--dt-on-surface);
+		cursor: pointer;
+		transition: background var(--dt-transition);
+	}
+
+	.btn-download:hover:not(:disabled) {
+		background: var(--dt-surface-container-high);
+	}
+
+	.btn-download:disabled {
+		opacity: 0.5;
+		cursor: default;
 	}
 
 	.inv-num {

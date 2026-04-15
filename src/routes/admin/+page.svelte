@@ -3,6 +3,7 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { FileText, CalendarDays, Users, ArrowRight, AlertTriangle, Star, CheckCircle, Receipt, MessageSquare, Bell } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+	import InvoiceSendModal from '$lib/components/admin/InvoiceSendModal.svelte';
 
 	interface ConflictDate {
 		date: string;
@@ -208,32 +209,19 @@
 		}
 	}
 
-	async function doSendInvoice(job: MorningJob) {
-		if (job.kind !== 'inquiry' || sendingStep) return;
-		sendingStep = true;
-		try {
-			const inq = job.data;
-			let invoiceId = inq.invoice_id;
-			// Create invoice if none exists yet
-			if (!invoiceId || !['ready', 'draft'].includes(inq.invoice_status ?? '')) {
-				const created = await apiPost<{ id: string }[]>(
-					`/api/v1/inquiries/${inq.id}/invoices`,
-					{ invoice_type: 'full' }
-				);
-				invoiceId = created[0].id;
-				inq.invoice_id = invoiceId;
-				inq.invoice_status = 'ready';
-			}
-			// Send the invoice
-			await apiPost(`/api/v1/inquiries/${inq.id}/invoices/${invoiceId}/send`, {});
-			inq.invoice_status = 'sent';
-			markStep(job, 'invoice');
-			showToast('Rechnung gesendet', 'success');
-		} catch (e) {
-			showToast((e as Error).message ?? 'Fehler beim Senden der Rechnung', 'error');
-		} finally {
-			sendingStep = false;
-		}
+	// Invoice send modal state
+	let invoiceModalJob = $state<MorningJob | null>(null);
+
+	function openInvoiceModal(job: MorningJob) {
+		if (job.kind !== 'inquiry') return;
+		invoiceModalJob = job;
+	}
+
+	function onInvoiceSent() {
+		if (!invoiceModalJob || invoiceModalJob.kind !== 'inquiry') return;
+		invoiceModalJob.data.invoice_status = 'sent';
+		markStep(invoiceModalJob, 'invoice');
+		invoiceModalJob = null;
 	}
 
 	async function doReviewAction(job: MorningJob, action: 'now' | 'later' | 'skip') {
@@ -573,16 +561,14 @@
 							<Receipt size={18} />
 						</div>
 						<div class="mw-step-body">
-							<span class="mw-step-label">
-								{invoiceReady ? 'Rechnung senden' : 'Rechnung erstellen & senden'}
-							</span>
+							<span class="mw-step-label">Rechnung vorbereiten & senden</span>
 							{#if !isStepDone(job, 'invoice')}
 								<button
 									class="btn btn-primary btn-sm"
-									disabled={sendingStep || !prevDone}
-									onclick={() => doSendInvoice(job)}
+									disabled={!prevDone}
+									onclick={() => openInvoiceModal(job)}
 								>
-									{invoiceReady ? 'Senden' : 'Erstellen & senden'}
+									Rechnung &rarr;
 								</button>
 							{:else}
 								<span class="mw-done-badge">✓ Gesendet</span>
@@ -627,6 +613,16 @@
 			</div>
 		</div>
 	</div>
+{/if}
+
+{#if invoiceModalJob && invoiceModalJob.kind === 'inquiry'}
+	<InvoiceSendModal
+		inquiryId={invoiceModalJob.data.id}
+		inquiryStatus={invoiceModalJob.data.status}
+		customerName={invoiceModalJob.data.customer_name}
+		onSent={onInvoiceSent}
+		onClose={() => invoiceModalJob = null}
+	/>
 {/if}
 
 <style>

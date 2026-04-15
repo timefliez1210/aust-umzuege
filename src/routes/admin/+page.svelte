@@ -527,7 +527,10 @@
 		<div class="mw-dialog">
 			<div class="mw-header">
 				<span class="mw-greeting">Guten Morgen — {morningJobs.length} {morningJobs.length === 1 ? 'Job' : 'Jobs'} zum Abschliessen</span>
-				<span class="mw-counter">{morningIndex + 1} / {morningJobs.length}</span>
+				<div class="mw-header-right">
+					<span class="mw-counter">{morningIndex + 1} / {morningJobs.length}</span>
+					<button class="mw-close" onclick={() => morningVisible = false} title="Alle überspringen">✕</button>
+				</div>
 			</div>
 
 			<div class="mw-job-title">
@@ -1035,9 +1038,32 @@
 		font-weight: 500;
 	}
 
+	.mw-header-right {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
 	.mw-counter {
 		font-size: 0.75rem;
 		color: var(--dt-on-surface-variant);
+	}
+
+	.mw-close {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: var(--dt-on-surface-variant);
+		font-size: 1rem;
+		line-height: 1;
+		padding: 0.125rem 0.25rem;
+		border-radius: var(--dt-radius-sm);
+		transition: color var(--dt-transition), background var(--dt-transition);
+	}
+
+	.mw-close:hover {
+		color: var(--dt-on-surface);
+		background: var(--dt-surface-container-high);
 	}
 
 	.mw-job-title {

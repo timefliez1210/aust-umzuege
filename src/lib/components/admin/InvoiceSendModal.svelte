@@ -7,12 +7,14 @@
 		inquiryId: string;
 		inquiryStatus: string;
 		customerName: string | null;
+		/** Offer netto price in cents from the active offer, or null if no offer exists. */
+		offerPriceCents: number | null;
 		/** Called after the invoice has been sent successfully. */
 		onSent: () => void;
 		onClose: () => void;
 	}
 
-	let { inquiryId, inquiryStatus, customerName, onSent, onClose }: Props = $props();
+	let { inquiryId, inquiryStatus, customerName, offerPriceCents, onSent, onClose }: Props = $props();
 
 	// ── Types ────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,15 @@
 	type Step = 'extras' | 'email';
 	let step = $state<Step>('extras');
 	let busy = $state(false);
+
+	// ── Manual amount (used when no active offer exists) ─────────────────────
+
+	/** Brutto EUR string for manual price entry (pre-filled from offer if available). */
+	let manualBruttoEur = $state(
+		offerPriceCents != null
+			? ((offerPriceCents * 1.19) / 100).toFixed(2).replace('.', ',')
+			: ''
+	);
 
 	// ── Step 1: extras ────────────────────────────────────────────────────────
 
@@ -102,6 +113,16 @@
 	// ── Transitions ───────────────────────────────────────────────────────────
 
 	async function goToEmail() {
+		// Guard: when no offer exists, manual brutto is required up front so we don't
+		// flip the inquiry to "completed" only to have invoice creation fail server-side.
+		if (offerPriceCents == null) {
+			const cents = bruttoToNettoCents(manualBruttoEur);
+			if (cents <= 0) {
+				alert('Bitte einen Rechnungsbetrag (Brutto) eingeben.');
+				return;
+			}
+		}
+
 		busy = true;
 		try {
 			// 1. Mark inquiry as completed if needed
@@ -110,10 +131,14 @@
 				inquiryStatus = 'completed';
 			}
 
-			// 2. Create invoice (full)
+			// 2. Create invoice (full) — pass manual price when no offer exists
+			const createBody: Record<string, unknown> = { invoice_type: 'full' };
+			if (offerPriceCents == null) {
+				createBody.price_cents_netto = bruttoToNettoCents(manualBruttoEur);
+			}
 			const created = await apiPost<InvoiceResponse[]>(
 				`/api/v1/inquiries/${inquiryId}/invoices`,
-				{ invoice_type: 'full' }
+				createBody
 			);
 			invoice = created[0];
 
@@ -183,6 +208,22 @@
 		{#if step === 'extras'}
 			<!-- ── Step 1: Extra services ── -->
 			<div class="modal-body">
+				{#if offerPriceCents == null}
+					<div class="manual-amount-row">
+						<label class="field-label" for="manual-brutto">Rechnungsbetrag (Brutto) <span class="required">*</span></label>
+						<div class="extra-price-wrap">
+							<input
+								id="manual-brutto"
+								class="extra-price manual-price"
+								type="text"
+								inputmode="decimal"
+								placeholder="0,00"
+								bind:value={manualBruttoEur}
+							/>
+							<span class="extra-currency">€ brutto</span>
+						</div>
+					</div>
+				{/if}
 				<p class="hint">Zusatzleistungen oder Gutschriften hinzufügen, die auf der Rechnung erscheinen sollen. Preise als Brutto eingeben.</p>
 
 				<div class="presets">
@@ -451,6 +492,29 @@
 	.del-btn:hover {
 		color: var(--dt-secondary);
 		background: var(--dt-surface-container-high);
+	}
+
+	.manual-amount-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		background: var(--dt-surface-container-low);
+		border-radius: var(--dt-radius-sm);
+		border: 1px solid var(--dt-outline-variant);
+	}
+
+	.manual-amount-row .field-label {
+		margin: 0;
+		flex-shrink: 0;
+	}
+
+	.manual-price {
+		width: 7rem;
+	}
+
+	.required {
+		color: var(--dt-error, #b3261e);
 	}
 
 	.add-btn {

@@ -31,6 +31,7 @@
 		invoice_id: string | null;
 		invoice_type: string | null;
 		has_review_request: boolean;
+		offer_price_cents: number | null;
 	}
 
 	interface MorningCalendarItem {
@@ -620,6 +621,7 @@
 		inquiryId={invoiceModalJob.data.id}
 		inquiryStatus={invoiceModalJob.data.status}
 		customerName={invoiceModalJob.data.customer_name}
+		offerPriceCents={invoiceModalJob.data.offer_price_cents}
 		onSent={onInvoiceSent}
 		onClose={() => invoiceModalJob = null}
 	/>

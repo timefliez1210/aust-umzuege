@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { apiPost, apiPatch, apiDownload } from '$lib/utils/api.svelte';
+	import { apiGet, apiPost, apiPatch, apiDownload } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { X, Plus, Trash2, Download } from 'lucide-svelte';
 
@@ -18,22 +18,25 @@
 
 	// ── Types ────────────────────────────────────────────────────────────────
 
-	interface ExtraLine {
+	interface LineItem {
 		description: string;
-		/** Brutto in euros (user input) — converted to netto cents on submit */
+		/** Brutto in euros (user input, may be negative for Gutschrift) — converted to netto cents on submit */
 		brutto_eur: string;
 	}
 
 	interface InvoiceResponse {
 		id: string;
 		invoice_number: string;
+		invoice_type: string;
+		partial_percent: number | null;
+		extra_services: { description: string; price_cents: number }[];
 		total_brutto_cents: number;
 	}
 
-	// ── Step machine: 'extras' → 'email' → 'done' ────────────────────────────
+	// ── Step machine: 'type' → 'lineitems' → 'email' ─────────────────────────
 
-	type Step = 'extras' | 'email';
-	let step = $state<Step>('extras');
+	type Step = 'type' | 'lineitems' | 'email';
+	let step = $state<Step>('type');
 	let busy = $state(false);
 
 	// ── Manual amount (used when no active offer exists) ─────────────────────
@@ -45,9 +48,28 @@
 			: ''
 	);
 
-	// ── Step 1: extras ────────────────────────────────────────────────────────
+	// ── Step 1: invoice type ──────────────────────────────────────────────────
 
-	const PRESETS: ExtraLine[] = [
+	/** 'full' or 'partial' */
+	let invoiceType = $state<'full' | 'partial'>('full');
+	/** Anzahlung percent for partial invoices (1–99). */
+	let partialPercent = $state(30);
+
+	/** Offer brutto in euros (derived from offerPriceCents or manualBruttoEur). */
+	const baseBruttoEur = $derived.by((): number => {
+		if (offerPriceCents != null) {
+			return (offerPriceCents * 1.19) / 100;
+		}
+		const v = parseFloat(manualBruttoEur.replace(',', '.'));
+		return isNaN(v) ? 0 : v;
+	});
+
+	const anzahlungEur = $derived(Math.round(baseBruttoEur * partialPercent / 100 * 100) / 100);
+	const schlussEur = $derived(Math.round((baseBruttoEur - anzahlungEur) * 100) / 100);
+
+	// ── Step 2: line items ────────────────────────────────────────────────────
+
+	const PRESETS: LineItem[] = [
 		{ description: 'Halteverbotszone (Auszug)', brutto_eur: '59.50' },
 		{ description: 'Halteverbotszone (Einzug)', brutto_eur: '59.50' },
 		{ description: 'Möbelmontage', brutto_eur: '95.20' },
@@ -55,21 +77,104 @@
 		{ description: 'Entsorgung', brutto_eur: '59.50' },
 	];
 
-	let extras = $state<ExtraLine[]>([]);
+	let lineItems = $state<LineItem[]>([]);
 
-	function addPreset(p: ExtraLine) {
-		extras = [...extras, { ...p }];
+	/**
+	 * Format signed netto cents back into a brutto-EUR string for the form.
+	 * Uses a comma decimal separator so it round-trips through `bruttoToNettoCents`.
+	 */
+	function nettoCentsToBruttoStr(cents: number): string {
+		const brutto = (cents * 1.19) / 100;
+		return brutto.toFixed(2).replace('.', ',');
 	}
 
-	function addBlank() {
-		extras = [...extras, { description: '', brutto_eur: '' }];
+	/**
+	 * On open: fetch existing invoices and seed the modal state so re-editing
+	 * preserves prior extras instead of wiping them via a blank PATCH.
+	 */
+	$effect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const list = await apiGet<InvoiceResponse[]>(
+					`/api/v1/inquiries/${inquiryId}/invoices`
+				);
+				if (cancelled || !list || list.length === 0) return;
+
+				// Pick the main editable invoice: full or partial_final (never partial_first).
+				const main =
+					list.find((i) => i.invoice_type === 'partial_final') ??
+					list.find((i) => i.invoice_type === 'full');
+				if (!main) return;
+
+				// Reflect the stored invoice type + percent so the type step isn't misleading.
+				if (main.invoice_type === 'partial_final') {
+					invoiceType = 'partial';
+					const pct = list.find((i) => i.invoice_type === 'partial_first')?.partial_percent
+						?? main.partial_percent;
+					if (pct != null) partialPercent = pct;
+				} else {
+					invoiceType = 'full';
+				}
+
+				// Seed line items from the stored extras.
+				lineItems = main.extra_services.map((e) => ({
+					description: e.description,
+					brutto_eur: nettoCentsToBruttoStr(e.price_cents),
+				}));
+			} catch {
+				// Non-fatal — modal still works in create-new mode.
+			}
+		})();
+		return () => { cancelled = true; };
+	});
+
+	function addPreset(p: LineItem) {
+		lineItems = [...lineItems, { ...p }];
 	}
 
-	function removeExtra(i: number) {
-		extras = extras.filter((_, idx) => idx !== i);
+	function addZusatz() {
+		lineItems = [...lineItems, { description: '', brutto_eur: '' }];
 	}
 
-	// ── Step 2: email ─────────────────────────────────────────────────────────
+	function addGutschrift() {
+		lineItems = [...lineItems, { description: '', brutto_eur: '-' }];
+	}
+
+	function removeItem(i: number) {
+		lineItems = lineItems.filter((_, idx) => idx !== i);
+	}
+
+	// ── Live totals ───────────────────────────────────────────────────────────
+
+	/** Netto cents from a brutto-EUR string (÷ 1.19, rounded). Allows signed values. */
+	function bruttoToNettoCents(eur: string): number {
+		const val = parseFloat(eur.replace(',', '.'));
+		if (isNaN(val) || val === 0) return 0;
+		return Math.round((val / 1.19) * 100);
+	}
+
+	function formatEuro(cents: number): string {
+		return (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+	}
+
+	/** Sum of all valid line item netto cents (signed). */
+	const extraNettoCents = $derived.by((): number => {
+		return lineItems.reduce((sum, item) => {
+			if (!item.description.trim() || !item.brutto_eur || item.brutto_eur === '-') return sum;
+			return sum + bruttoToNettoCents(item.brutto_eur);
+		}, 0);
+	});
+
+	/** Base netto cents (full or partial-final base). */
+	const baseNettoCents = $derived(offerPriceCents != null ? offerPriceCents : bruttoToNettoCents(manualBruttoEur));
+
+	/** Total netto for the "main" invoice (full or Schlussrechnung). */
+	const totalNettoCents = $derived(baseNettoCents + extraNettoCents);
+	const totalMwstCents = $derived(Math.round(totalNettoCents * 0.19));
+	const totalBruttoCents = $derived(Math.round(totalNettoCents * 1.19));
+
+	// ── Step 3: email ─────────────────────────────────────────────────────────
 
 	let invoice: InvoiceResponse | null = $state(null);
 	let emailSubject = $state('');
@@ -99,22 +204,9 @@
 		return `Sehr geehrte/r ${name},\n\nim Anhang finden Sie Ihre Rechnung Nr. ${num}.\n\nBitte überweisen Sie den Rechnungsbetrag innerhalb von 7 Tagen unter Angabe der Rechnungsnummer auf unser Konto.\n\nMit freundlichen Grüßen\nAust Umzüge & Haushaltsauflösungen`;
 	}
 
-	/** Netto cents from a brutto-EUR string (÷ 1.19, rounded). */
-	function bruttoToNettoCents(eur: string): number {
-		const val = parseFloat(eur.replace(',', '.'));
-		if (isNaN(val) || val <= 0) return 0;
-		return Math.round((val / 1.19) * 100);
-	}
-
-	function formatEuro(cents: number): string {
-		return (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-	}
-
 	// ── Transitions ───────────────────────────────────────────────────────────
 
-	async function goToEmail() {
-		// Guard: when no offer exists, manual brutto is required up front so we don't
-		// flip the inquiry to "completed" only to have invoice creation fail server-side.
+	function goToLineitems() {
 		if (offerPriceCents == null) {
 			const cents = bruttoToNettoCents(manualBruttoEur);
 			if (cents <= 0) {
@@ -122,7 +214,14 @@
 				return;
 			}
 		}
+		if (invoiceType === 'partial' && (partialPercent < 1 || partialPercent > 99)) {
+			alert('Prozentwert muss zwischen 1 und 99 liegen.');
+			return;
+		}
+		step = 'lineitems';
+	}
 
+	async function goToEmail() {
 		busy = true;
 		try {
 			// 1. Mark inquiry as completed if needed
@@ -131,8 +230,11 @@
 				inquiryStatus = 'completed';
 			}
 
-			// 2. Create invoice (full) — pass manual price when no offer exists
-			const createBody: Record<string, unknown> = { invoice_type: 'full' };
+			// 2. Create invoice — pass manual price when no offer exists
+			const createBody: Record<string, unknown> = { invoice_type: invoiceType };
+			if (invoiceType === 'partial') {
+				createBody.partial_percent = partialPercent;
+			}
 			if (offerPriceCents == null) {
 				createBody.price_cents_netto = bruttoToNettoCents(manualBruttoEur);
 			}
@@ -140,20 +242,26 @@
 				`/api/v1/inquiries/${inquiryId}/invoices`,
 				createBody
 			);
-			invoice = created[0];
 
-			// 3. Apply extras if any
-			const validExtras = extras
-				.filter(e => e.description.trim() && e.brutto_eur)
-				.map(e => ({
-					description: e.description.trim(),
-					price_cents: bruttoToNettoCents(e.brutto_eur),
-				}));
+			// For partial: created[0] = partial_first, created[1] = partial_final
+			// Extras go on the final (or the only invoice for full).
+			// We send the email for the "main" invoice: partial_final or full.
+			const mainInvoice = invoiceType === 'partial' ? created[1] : created[0];
+			invoice = mainInvoice;
 
-			if (validExtras.length > 0) {
+			// 3. Apply line items if any
+			const validItems = lineItems
+				.filter(item => item.description.trim() && item.brutto_eur && item.brutto_eur !== '-')
+				.map(item => ({
+					description: item.description.trim(),
+					price_cents: bruttoToNettoCents(item.brutto_eur),
+				}))
+				.filter(item => item.price_cents !== 0);
+
+			if (validItems.length > 0) {
 				const updated = await apiPatch<InvoiceResponse>(
 					`/api/v1/inquiries/${inquiryId}/invoices/${invoice.id}`,
-					{ extra_services: validExtras }
+					{ extra_services: validItems }
 				);
 				invoice = updated;
 			}
@@ -187,6 +295,14 @@
 			busy = false;
 		}
 	}
+
+	// ── Step title ────────────────────────────────────────────────────────────
+
+	const stepTitle = $derived.by((): string => {
+		if (step === 'type') return 'Rechnungstyp wählen';
+		if (step === 'lineitems') return 'Positionen bearbeiten';
+		return 'E-Mail prüfen & senden';
+	});
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
@@ -195,18 +311,12 @@
 	<div class="modal" onclick={(e) => e.stopPropagation()}>
 
 		<div class="modal-header">
-			<h2>
-				{#if step === 'extras'}
-					Rechnung vorbereiten
-				{:else}
-					E-Mail prüfen & senden
-				{/if}
-			</h2>
+			<h2>{stepTitle}</h2>
 			<button class="close-btn" onclick={onClose} title="Abbrechen"><X size={18} /></button>
 		</div>
 
-		{#if step === 'extras'}
-			<!-- ── Step 1: Extra services ── -->
+		{#if step === 'type'}
+			<!-- ── Step 1: Rechnungstyp ── -->
 			<div class="modal-body">
 				{#if offerPriceCents == null}
 					<div class="manual-amount-row">
@@ -224,7 +334,76 @@
 						</div>
 					</div>
 				{/if}
-				<p class="hint">Zusatzleistungen oder Gutschriften hinzufügen, die auf der Rechnung erscheinen sollen. Preise als Brutto eingeben.</p>
+
+				<p class="hint">Wählen Sie, ob eine Vollrechnung oder eine Teilrechnung (Anzahlung + Schlussrechnung) erstellt werden soll.</p>
+
+				<div class="type-selector">
+					<label class="type-option" class:selected={invoiceType === 'full'}>
+						<input type="radio" name="invoice-type" value="full" bind:group={invoiceType} />
+						<div class="type-content">
+							<span class="type-label">Vollrechnung</span>
+							<span class="type-desc">Einmalige Rechnung über den Gesamtbetrag</span>
+						</div>
+					</label>
+					<label class="type-option" class:selected={invoiceType === 'partial'}>
+						<input type="radio" name="invoice-type" value="partial" bind:group={invoiceType} />
+						<div class="type-content">
+							<span class="type-label">Teilrechnung</span>
+							<span class="type-desc">Anzahlung + Schlussrechnung</span>
+						</div>
+					</label>
+				</div>
+
+				{#if invoiceType === 'partial'}
+					<div class="partial-config">
+						<div class="partial-row">
+							<label class="field-label" for="partial-percent">Anzahlungsprozentsatz</label>
+							<div class="partial-input-wrap">
+								<input
+									id="partial-percent"
+									class="percent-input"
+									type="number"
+									min="1"
+									max="99"
+									bind:value={partialPercent}
+								/>
+								<span class="extra-currency">%</span>
+							</div>
+						</div>
+						{#if baseBruttoEur > 0}
+							<div class="partial-preview">
+								<div class="preview-row">
+									<span class="preview-label">Anzahlung ({partialPercent}%):</span>
+									<span class="preview-value">{anzahlungEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € brutto</span>
+								</div>
+								<div class="preview-row">
+									<span class="preview-label">Schlussrechnung ({100 - partialPercent}%):</span>
+									<span class="preview-value">{schlussEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € brutto</span>
+								</div>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			<div class="modal-footer">
+				<button class="btn" onclick={onClose} disabled={busy}>Abbrechen</button>
+				<button class="btn btn-primary" onclick={goToLineitems}>
+					Weiter →
+				</button>
+			</div>
+
+		{:else if step === 'lineitems'}
+			<!-- ── Step 2: Positionen ── -->
+			<div class="modal-body">
+				<p class="hint">
+					{#if invoiceType === 'partial'}
+						Zusatzleistungen und Gutschriften erscheinen auf der <strong>Schlussrechnung</strong>.
+					{:else}
+						Zusatzleistungen oder Gutschriften hinzufügen, die auf der Rechnung erscheinen sollen.
+					{/if}
+					Preise als Brutto eingeben.
+				</p>
 
 				<div class="presets">
 					{#each PRESETS as p}
@@ -232,27 +411,27 @@
 					{/each}
 				</div>
 
-				{#if extras.length > 0}
+				{#if lineItems.length > 0}
 					<div class="extras-list">
-						{#each extras as ex, i}
-							<div class="extra-row">
+						{#each lineItems as item, i}
+							<div class="extra-row" class:negative={item.brutto_eur.startsWith('-')}>
 								<input
 									class="extra-desc"
 									type="text"
 									placeholder="Beschreibung"
-									bind:value={ex.description}
+									bind:value={item.description}
 								/>
 								<div class="extra-price-wrap">
 									<input
 										class="extra-price"
 										type="text"
 										inputmode="decimal"
-										placeholder="0,00"
-										bind:value={ex.brutto_eur}
+										placeholder={item.brutto_eur.startsWith('-') ? '-0,00' : '0,00'}
+										bind:value={item.brutto_eur}
 									/>
 									<span class="extra-currency">€ brutto</span>
 								</div>
-								<button class="del-btn" onclick={() => removeExtra(i)} title="Entfernen">
+								<button class="del-btn" onclick={() => removeItem(i)} title="Entfernen">
 									<Trash2 size={14} />
 								</button>
 							</div>
@@ -260,20 +439,49 @@
 					</div>
 				{/if}
 
-				<button class="btn-link add-btn" onclick={addBlank}>
-					<Plus size={14} /> Zeile hinzufügen
-				</button>
+				<div class="add-row">
+					<button class="btn-link add-btn" onclick={addZusatz}>
+						<Plus size={14} /> Zusatzleistung
+					</button>
+					<button class="btn-link add-btn gutschrift-btn" onclick={addGutschrift}>
+						<Plus size={14} /> Gutschrift
+					</button>
+				</div>
+
+				<!-- Live totals -->
+				<div class="totals-box">
+					{#if invoiceType === 'partial'}
+						<div class="totals-row totals-muted">
+							<span>Anzahlung ({partialPercent}%)</span>
+							<span>{formatEuro(Math.round(baseBruttoEur * partialPercent / 100 * 100))}</span>
+						</div>
+						<div class="totals-divider"></div>
+						<p class="totals-section-label">Schlussrechnung</p>
+					{/if}
+					<div class="totals-row">
+						<span>Netto</span>
+						<span>{formatEuro(totalNettoCents)}</span>
+					</div>
+					<div class="totals-row">
+						<span>MwSt. (19%)</span>
+						<span>{formatEuro(totalMwstCents)}</span>
+					</div>
+					<div class="totals-row totals-total">
+						<span>Gesamt (Brutto)</span>
+						<span>{formatEuro(totalBruttoCents)}</span>
+					</div>
+				</div>
 			</div>
 
 			<div class="modal-footer">
-				<button class="btn" onclick={onClose} disabled={busy}>Abbrechen</button>
+				<button class="btn" onclick={() => step = 'type'} disabled={busy}>← Zurück</button>
 				<button class="btn btn-primary" onclick={goToEmail} disabled={busy}>
-					{busy ? 'Erstelle Rechnung…' : 'Weiter →'}
+					{busy ? 'Erstelle Rechnung…' : 'Rechnung erstellen →'}
 				</button>
 			</div>
 
 		{:else}
-			<!-- ── Step 2: Email review ── -->
+			<!-- ── Step 3: Email review ── -->
 			<div class="modal-body">
 				{#if invoice}
 					<div class="invoice-summary">
@@ -396,6 +604,124 @@
 		margin: 0;
 	}
 
+	/* Type selector */
+
+	.type-selector {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.type-option {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		cursor: pointer;
+		transition: background var(--dt-transition), border-color var(--dt-transition);
+	}
+
+	.type-option:hover {
+		background: var(--dt-surface-container-low);
+	}
+
+	.type-option.selected {
+		border-color: var(--dt-primary);
+		background: color-mix(in srgb, var(--dt-primary) 8%, transparent);
+	}
+
+	.type-option input[type="radio"] {
+		margin-top: 0.15rem;
+		accent-color: var(--dt-primary);
+		flex-shrink: 0;
+	}
+
+	.type-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.type-label {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--dt-on-surface);
+	}
+
+	.type-desc {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+	}
+
+	/* Partial config */
+
+	.partial-config {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 0.875rem 1rem;
+		background: var(--dt-surface-container-low);
+		border-radius: var(--dt-radius-sm);
+		border: 1px solid var(--dt-outline-variant);
+	}
+
+	.partial-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.partial-row .field-label {
+		margin: 0;
+		flex-shrink: 0;
+	}
+
+	.partial-input-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.percent-input {
+		width: 4rem;
+		padding: 0.375rem 0.5rem;
+		background: var(--dt-surface-container-low);
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.875rem;
+		color: var(--dt-on-surface);
+		text-align: right;
+		outline: none;
+	}
+
+	.percent-input:focus {
+		border-color: var(--dt-primary);
+	}
+
+	.partial-preview {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.preview-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 0.8125rem;
+	}
+
+	.preview-label {
+		color: var(--dt-on-surface-variant);
+	}
+
+	.preview-value {
+		font-weight: 600;
+		color: var(--dt-on-surface);
+	}
+
 	/* Presets */
 
 	.presets {
@@ -433,6 +759,14 @@
 		gap: 0.5rem;
 	}
 
+	.extra-row.negative .extra-desc {
+		border-color: color-mix(in srgb, var(--dt-secondary, #e65) 40%, var(--dt-outline-variant));
+	}
+
+	.extra-row.negative .extra-price {
+		color: var(--dt-secondary, #c0392b);
+	}
+
 	.extra-desc {
 		flex: 1;
 		padding: 0.375rem 0.625rem;
@@ -456,7 +790,7 @@
 	}
 
 	.extra-price {
-		width: 5rem;
+		width: 5.5rem;
 		padding: 0.375rem 0.5rem;
 		background: var(--dt-surface-container-low);
 		border: 1px solid var(--dt-outline-variant);
@@ -494,6 +828,74 @@
 		background: var(--dt-surface-container-high);
 	}
 
+	.add-row {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+	}
+
+	.add-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.8125rem;
+	}
+
+	.gutschrift-btn {
+		color: var(--dt-secondary, #c0392b);
+	}
+
+	/* Totals box */
+
+	.totals-box {
+		margin-top: 0.25rem;
+		padding: 0.75rem 1rem;
+		background: var(--dt-surface-container-low);
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+	}
+
+	.totals-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface-variant);
+	}
+
+	.totals-row.totals-total {
+		font-size: 0.9375rem;
+		font-weight: 700;
+		color: var(--dt-on-surface);
+		padding-top: 0.375rem;
+		border-top: 1px solid var(--dt-outline-variant);
+		margin-top: 0.125rem;
+	}
+
+	.totals-row.totals-muted {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		opacity: 0.75;
+	}
+
+	.totals-divider {
+		height: 1px;
+		background: var(--dt-outline-variant);
+		margin: 0.25rem 0;
+	}
+
+	.totals-section-label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--dt-on-surface-variant);
+		margin: 0;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
 	.manual-amount-row {
 		display: flex;
 		align-items: center;
@@ -515,14 +917,6 @@
 
 	.required {
 		color: var(--dt-error, #b3261e);
-	}
-
-	.add-btn {
-		align-self: flex-start;
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.8125rem;
 	}
 
 	/* Email step */

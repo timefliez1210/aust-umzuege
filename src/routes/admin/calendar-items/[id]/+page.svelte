@@ -290,11 +290,11 @@
 				</div>
 				<div class="field">
 					<label for="e-start">Startzeit *</label>
-					<input id="e-start" type="time" bind:value={editStartTime} />
+					<input id="e-start" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editStartTime} />
 				</div>
 				<div class="field">
 					<label for="e-end">Endzeit</label>
-					<input id="e-end" type="time" bind:value={editEndTime} />
+					<input id="e-end" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editEndTime} />
 				</div>
 				<div class="field">
 					<label for="e-dur">Dauer (h)</label>

@@ -201,6 +201,48 @@
 	let addEmpStart = $state('');
 	let addEmpEnd = $state('');
 
+	/**
+	 * Compute net planned hours and mandatory break minutes from a start/end time pair.
+	 *
+	 * German law (ArbZG §4): shifts >6h require 30min break, >9h require 45min break.
+	 * We apply the stricter 30min threshold at 8h so an 09:00-17:00 day yields 7.5h + 30m.
+	 *
+	 * Returns null planned_hours when inputs are missing or invalid so callers can keep the
+	 * employee's existing values. break_minutes is only suggested; it never downgrades a
+	 * value the user already raised above the legal minimum.
+	 */
+	function computeHoursAndBreak(
+		start: string | null | undefined,
+		end: string | null | undefined,
+		currentBreak: number | null | undefined,
+	): { planned_hours: number | null; break_minutes: number } {
+		const parse = (t: string | null | undefined) => {
+			if (!t) return null;
+			const [hh, mm] = t.split(':').map(Number);
+			if (isNaN(hh) || isNaN(mm)) return null;
+			return hh + mm / 60;
+		};
+		const s = parse(start);
+		const e = parse(end);
+		if (s == null || e == null || e <= s) {
+			return { planned_hours: null, break_minutes: currentBreak ?? 0 };
+		}
+		const gross = e - s;
+		const legalBreak = gross > 9 ? 45 : gross > 6 ? 30 : 0;
+		const breakMin = Math.max(currentBreak ?? 0, legalBreak);
+		const planned = Math.max(0, gross - breakMin / 60);
+		return { planned_hours: Math.round(planned * 100) / 100, break_minutes: breakMin };
+	}
+
+	/** Recompute a row's planned_hours + break_minutes from its start/end (called on blur). */
+	function recomputeRow(row: { start_time: string | null; end_time: string | null; planned_hours: number | null; break_minutes: number }) {
+		const c = computeHoursAndBreak(row.start_time, row.end_time, row.break_minutes);
+		if (c.planned_hours != null) {
+			row.planned_hours = c.planned_hours;
+			row.break_minutes = c.break_minutes;
+		}
+	}
+
 	// Inquiry days (multi-day editor)
 	let inqDays = $state<InquiryDay[]>([]);
 	let inqDaysLoading = $state(false);
@@ -347,19 +389,21 @@
 		if (!addEmpId) return;
 		const emp = allEmployees.find(e => e.id === addEmpId);
 		if (!emp) return;
+		const computed = computeHoursAndBreak(addEmpStart, addEmpEnd, 0);
+		const planned = addEmpHours ? parseFloat(addEmpHours) : computed.planned_hours;
 		inqDays[dayIndex].employees = [
 			...inqDays[dayIndex].employees,
 			{
 				employee_id: emp.id,
 				first_name: emp.first_name,
 				last_name: emp.last_name,
-				planned_hours: addEmpHours ? parseFloat(addEmpHours) : null,
+				planned_hours: planned,
 				notes: null,
 				start_time: addEmpStart || null,
 				end_time: addEmpEnd || null,
 				clock_in: null,
 				clock_out: null,
-				break_minutes: 0,
+				break_minutes: computed.break_minutes,
 			},
 		];
 		addEmpDayTarget = null;
@@ -392,19 +436,21 @@
 		if (!addEmpId) return;
 		const emp = allEmployees.find(e => e.id === addEmpId);
 		if (!emp) return;
+		const computed = computeHoursAndBreak(addEmpStart, addEmpEnd, 0);
+		const planned = addEmpHours ? parseFloat(addEmpHours) : computed.planned_hours;
 		termDays[dayIndex].employees = [
 			...termDays[dayIndex].employees,
 			{
 				employee_id: emp.id,
 				first_name: emp.first_name,
 				last_name: emp.last_name,
-				planned_hours: addEmpHours ? parseFloat(addEmpHours) : null,
+				planned_hours: planned,
 				notes: null,
 				start_time: addEmpStart || null,
 				end_time: addEmpEnd || null,
 				clock_in: null,
 				clock_out: null,
-				break_minutes: 0,
+				break_minutes: computed.break_minutes,
 			},
 		];
 		addEmpDayTarget = null;
@@ -1034,9 +1080,9 @@
 														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
 														<span class="day-time-group">
 															<span class="day-time-label">Pl.</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].start_time} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].start_time} onblur={() => recomputeRow(inqDays[i].employees[ei])} />
 															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].end_time} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].end_time} onblur={() => recomputeRow(inqDays[i].employees[ei])} />
 														</span>
 														<span class="day-time-group">
 															<span class="day-time-label">Ist</span>
@@ -1219,9 +1265,9 @@
 														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
 														<span class="day-time-group">
 															<span class="day-time-label">Pl.</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].start_time} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].start_time} onblur={() => recomputeRow(termDays[i].employees[ei])} />
 															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].end_time} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].end_time} onblur={() => recomputeRow(termDays[i].employees[ei])} />
 														</span>
 														<span class="day-time-group">
 															<span class="day-time-label">Ist</span>

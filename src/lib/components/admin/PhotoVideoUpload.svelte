@@ -692,6 +692,24 @@
 />
 
 <style>
+	/* Card header — ensures headings are visible in this component's card slots */
+	.card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.75rem;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.card-header h3 {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--dt-on-surface);
+		letter-spacing: -0.01em;
+		margin: 0;
+	}
+
 	.photo-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

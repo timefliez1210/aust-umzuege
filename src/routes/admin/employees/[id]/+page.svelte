@@ -162,19 +162,22 @@
 			hoursSummary = await apiGet<HoursSummary>(url);
 
 			// Initialise inline-edit drafts from server values
+			// Pre-fill Von/Bis from the planned start/end so admins only edit when reality differs.
+			// Key includes booking_date / scheduled_date so multi-day rows don't overwrite each other.
 			const drafts: Record<string, TimeDraft> = {};
+			const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '');
 			for (const a of hoursSummary.assignments ?? []) {
-				drafts[`inq:${a.inquiry_id}`] = {
-					clock_in: a.clock_in ? a.clock_in.slice(0, 5) : '',
-					clock_out: a.clock_out ? a.clock_out.slice(0, 5) : '',
+				drafts[`inq:${a.inquiry_id}:${a.booking_date ?? ''}`] = {
+					clock_in: hhmm(a.clock_in ?? a.start_time),
+					clock_out: hhmm(a.clock_out ?? a.end_time),
 					break_minutes: a.break_minutes ?? 0,
 					saving: false
 				};
 			}
 			for (const ci of hoursSummary.calendar_items ?? []) {
-				drafts[`ci:${ci.calendar_item_id}`] = {
-					clock_in: ci.clock_in ? ci.clock_in.slice(0, 5) : '',
-					clock_out: ci.clock_out ? ci.clock_out.slice(0, 5) : '',
+				drafts[`ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`] = {
+					clock_in: hhmm(ci.clock_in ?? ci.start_time),
+					clock_out: hhmm(ci.clock_out ?? ci.end_time),
 					break_minutes: ci.break_minutes ?? 0,
 					saving: false
 				};
@@ -206,12 +209,13 @@
 		if (!draft || draft.saving) return;
 		draft.saving = true;
 		try {
-			const [type, id] = key.split(':');
-			const payload = {
+			const [type, id, dayDate] = key.split(':');
+			const payload: Record<string, unknown> = {
 				clock_in: toTimeStr(draft.clock_in),
 				clock_out: toTimeStr(draft.clock_out),
 				break_minutes: draft.break_minutes
 			};
+			if (dayDate) payload.day_date = dayDate;
 			if (type === 'inq') {
 				await apiPatch(`/api/v1/inquiries/${id}/employees/${data.id}`, payload);
 			} else {
@@ -709,7 +713,7 @@
 					</thead>
 					<tbody>
 						{#each hoursSummary.assignments as a}
-							{@const key = `inq:${a.inquiry_id}`}
+							{@const key = `inq:${a.inquiry_id}:${a.booking_date ?? ''}`}
 							{@const draft = timeDrafts[key]}
 							<tr
 								class="clickable-row"
@@ -728,7 +732,11 @@
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if draft}
 										<input
-											type="time"
+											type="text"
+											inputmode="numeric"
+											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+											placeholder="HH:MM"
+											maxlength="5"
 											class="time-input"
 											class:saving={draft.saving}
 											bind:value={draft.clock_in}
@@ -739,7 +747,11 @@
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if draft}
 										<input
-											type="time"
+											type="text"
+											inputmode="numeric"
+											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+											placeholder="HH:MM"
+											maxlength="5"
 											class="time-input"
 											class:saving={draft.saving}
 											bind:value={draft.clock_out}
@@ -765,7 +777,7 @@
 							</tr>
 						{/each}
 						{#each (hoursSummary.calendar_items ?? []) as ci}
-							{@const key = `ci:${ci.calendar_item_id}`}
+							{@const key = `ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`}
 							{@const draft = timeDrafts[key]}
 							<tr
 								class="clickable-row item-row"
@@ -781,7 +793,11 @@
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if draft}
 										<input
-											type="time"
+											type="text"
+											inputmode="numeric"
+											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+											placeholder="HH:MM"
+											maxlength="5"
 											class="time-input"
 											class:saving={draft.saving}
 											bind:value={draft.clock_in}
@@ -792,7 +808,11 @@
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if draft}
 										<input
-											type="time"
+											type="text"
+											inputmode="numeric"
+											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+											placeholder="HH:MM"
+											maxlength="5"
 											class="time-input"
 											class:saving={draft.saving}
 											bind:value={draft.clock_out}

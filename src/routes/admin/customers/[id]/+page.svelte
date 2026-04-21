@@ -21,6 +21,12 @@
 		customer_type: string | null;
 		company_name: string | null;
 		billing_address_id: string | null;
+		billing_address: {
+			street: string | null;
+			house_number: string | null;
+			postal_code: string | null;
+			city: string | null;
+		} | null;
 		created_at: string;
 		quotes: { id: string; status: string; estimated_volume_m3: number | null; scheduled_date: string | null; created_at: string }[];
 		offers: { id: string; quote_id: string; price_cents: number; status: string; created_at: string; sent_at: string | null }[];
@@ -76,6 +82,10 @@
 			editName = data.name || '';
 			editPhone = data.phone || '';
 			editEmail = data.email;
+			billingStreet = data.billing_address?.street ?? '';
+			billingNumber = data.billing_address?.house_number ?? '';
+			billingPostal = data.billing_address?.postal_code ?? '';
+			billingCity = data.billing_address?.city ?? '';
 		} catch (e) {
 			message = { type: 'error', text: (e as Error).message };
 		} finally {
@@ -293,13 +303,16 @@
 					</button>
 				</div>
 				<div class="card-body">
-					<p class="form-hint">
-						{#if data.billing_address_id}
-							Abweichende Rechnungsadresse ist hinterlegt.
-						{:else}
+					{#if data.billing_address_id && data.billing_address}
+						<div class="billing-display">
+							<div>{data.billing_address.street ?? ''} {data.billing_address.house_number ?? ''}</div>
+							<div>{data.billing_address.postal_code ?? ''} {data.billing_address.city ?? ''}</div>
+						</div>
+					{:else}
+						<p class="form-hint">
 							Keine hinterlegt. Für B2B-Kunden kann hier eine abweichende Rechnungsadresse (z.B. Hauptsitz) gespeichert werden.
-						{/if}
-					</p>
+						</p>
+					{/if}
 					{#if showBillingEdit}
 						<div class="billing-form">
 							<div class="billing-form__row billing-form__row--street">

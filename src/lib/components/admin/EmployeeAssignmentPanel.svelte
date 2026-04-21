@@ -94,7 +94,7 @@
 	// Add-employee form
 	let showAddForm = $state(false);
 	let addEmployeeId = $state('');
-	let addPlannedHours = $state('4');
+	let addPlannedHours = $state('');
 	let addNotes = $state('');
 	let adding = $state(false);
 
@@ -210,7 +210,7 @@
 	function openAddForm() {
 		const available = unassigned();
 		addEmployeeId = available[0]?.id ?? '';
-		addPlannedHours = '4';
+		addPlannedHours = '';
 		addNotes = '';
 		showAddForm = true;
 	}

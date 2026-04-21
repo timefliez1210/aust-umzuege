@@ -266,6 +266,31 @@
 	box-shadow: var(--dt-shadow-ambient);
 }
 
+/* Headline md (18px 600) for card section headers — overrides global.css
+ * which sets h1-h6 to var(--color-text) = #fafafa (marketing site dark theme).
+ * These rules ensure all admin card headers are legible on white cards. */
+.card h2,
+.card h3,
+.card h4,
+.card-header h2,
+.card-header h3,
+.card-header h4 {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: var(--dt-on-surface);
+	letter-spacing: -0.01em;
+	margin: 0;
+}
+
+.card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.75rem;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
 /* ─── Modal ──────────────────────────────────────────────────── */
 
 .modal-backdrop,

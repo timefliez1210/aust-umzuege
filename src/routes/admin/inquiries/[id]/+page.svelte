@@ -147,6 +147,7 @@
 		submission_mode: string | null;
 		recipient: CustomerSnapshot | null;
 		billing_address: AddressSnapshot | null;
+		effective_billing_address: AddressSnapshot | null;
 
 		customer: CustomerSnapshot | null;
 		origin_address: AddressSnapshot | null;
@@ -188,6 +189,7 @@
 
 	// Billing address editor state
 	let billingSaving = $state(false);
+	let billingEditing = $state(false);
 	let billingStreet = $state('');
 	let billingNumber = $state('');
 	let billingPostal = $state('');
@@ -1826,6 +1828,12 @@
 			<div class="header-left">
 				<h1>Anfrage</h1>
 				<StatusBadge status={data.status} />
+				{#if data.service_type}
+					<span class="svc-badge" data-type={data.service_type}>{SERVICE_TYPE_LABELS[data.service_type] ?? data.service_type}</span>
+				{/if}
+				{#if data.submission_mode && data.submission_mode !== 'termin'}
+					<span class="svc-badge svc-badge--mode">{data.submission_mode}</span>
+				{/if}
 			</div>
 			<div class="header-actions">
 				{#if latestOffer}
@@ -1976,51 +1984,56 @@
 				</div>
 			{/if}
 
-			<!-- Billing Address (always editable) -->
+			<!-- Billing Address -->
 			<div class="card card--compact">
-				<div class="card-header">
+				<div class="card-header card-header--action">
 					<h3>Rechnungsadresse</h3>
+					<button class="btn-edit" onclick={() => billingEditing = !billingEditing}>
+						{billingEditing ? 'Schließen' : 'Bearbeiten'}
+					</button>
 				</div>
 
-				{#if !data.billing_address}
-					<p class="billing-addr-hint">
-						{data.status === 'completed' || data.status === 'invoiced' || data.status === 'paid'
-							? 'Aktuell wird die Einzugsadresse verwendet (Einzug abgeschlossen). Hier eintragen, um zu überschreiben.'
-							: 'Aktuell wird die Auszugsadresse verwendet (Standardeinstellung). Hier eintragen, um zu überschreiben.'}
-					</p>
-				{/if}
-
-				<div class="billing-addr-form">
-					<div class="billing-addr-row">
-						<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input" style="flex:2;" />
-						<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" style="flex:0 0 80px;" />
-					</div>
-					<div class="billing-addr-row">
-						<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" style="flex:0 0 100px;" />
-						<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input" style="flex:2;" />
-					</div>
-					<div class="billing-addr-actions">
-						<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
-							{billingSaving ? 'Speichert…' : 'Speichern'}
-						</button>
-						{#if data.billing_address}
-							<button class="btn btn-sm" onclick={clearBillingAddress} disabled={billingSaving} style="color: #dc2626;">
-								Zurücksetzen
-							</button>
+				{#if data.effective_billing_address}
+					<div class="billing-addr-display">
+						<div>{data.effective_billing_address.street ?? ''} {data.effective_billing_address.house_number ?? ''}</div>
+						<div>{data.effective_billing_address.postal_code ?? ''} {data.effective_billing_address.city ?? ''}</div>
+						{#if !data.billing_address}
+							<div class="billing-addr-source">
+								{data.status === 'completed' || data.status === 'invoiced' || data.status === 'paid'
+									? 'Einzugsadresse (Standard nach Umzug)'
+									: 'Auszugsadresse (Standard)'}
+							</div>
+						{:else}
+							<div class="billing-addr-source">Abweichende Rechnungsadresse</div>
 						{/if}
 					</div>
-				</div>
-			</div>
+				{:else}
+					<p class="billing-addr-hint">Keine Adresse verfügbar.</p>
+				{/if}
 
-			<!-- Service info -->
-			{#if data.service_type}
-				<div class="card" style="padding: 0.75rem 1rem;">
-					<span class="svc-badge" data-type={data.service_type}>{SERVICE_TYPE_LABELS[data.service_type] ?? data.service_type}</span>
-					{#if data.submission_mode && data.submission_mode !== 'termin'}
-						<span class="svc-badge" style="margin-left: 0.5rem; background: #f3f4f6; color: #6b7280;">{data.submission_mode}</span>
-					{/if}
-				</div>
-			{/if}
+				{#if billingEditing}
+					<div class="billing-addr-form">
+						<div class="billing-addr-row">
+							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input billing-input--street" />
+							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input billing-input--nr" />
+						</div>
+						<div class="billing-addr-row">
+							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input billing-input--plz" />
+							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input billing-input--city" />
+						</div>
+						<div class="billing-addr-actions">
+							<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
+								{billingSaving ? 'Speichert…' : 'Speichern'}
+							</button>
+							{#if data.billing_address}
+								<button class="btn btn-sm btn-tertiary" onclick={clearBillingAddress} disabled={billingSaving}>
+									Zurücksetzen
+								</button>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</div>
 
 			<!-- Addresses -->
 			<AddressEditor
@@ -2073,11 +2086,11 @@
 					</div>
 					<div class="field">
 						<label for="start-time">Startzeit</label>
-						<input id="start-time" type="time" bind:value={editStartTime} />
+						<input id="start-time" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editStartTime} />
 					</div>
 					<div class="field">
 						<label for="end-time">Endzeit</label>
-						<input id="end-time" type="time" bind:value={editEndTime} />
+						<input id="end-time" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editEndTime} />
 					</div>
 					<div class="field full-width">
 						<label for="notes">Notizen / Services</label>
@@ -2869,8 +2882,25 @@
 	}
 
 	.card--compact {
-		padding: 0.75rem 1rem;
-		border-left: 3px solid var(--dt-primary);
+		padding: var(--dt-space-4);
+	}
+
+	/* Billing address: display saved address */
+	.billing-addr-display {
+		padding: var(--dt-space-3) var(--dt-space-4);
+		background: var(--dt-surface-container-low);
+		border-radius: var(--dt-radius-md);
+		font-size: 0.9375rem;
+		color: var(--dt-on-surface);
+		line-height: 1.5;
+		margin-bottom: var(--dt-space-3);
+	}
+	.billing-addr-source {
+		margin-top: var(--dt-space-2);
+		font-size: 0.75rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--dt-on-surface-variant);
 	}
 
 	.billing-addr-hint {
@@ -2899,10 +2929,54 @@
 		align-items: center;
 	}
 
-	.card h3 {
-		font-size: 0.875rem;
-		font-weight: 600;
+	/* Billing address input sizing — replaces inline flex styles */
+	.billing-input--street { flex: 2; }
+	.billing-input--nr     { flex: 0 0 80px; }
+	.billing-input--plz    { flex: 0 0 100px; }
+	.billing-input--city   { flex: 2; }
+
+	/* Service-info chip card — compact, no heading needed */
+	.card--svc-info {
+		padding: var(--dt-space-3) var(--dt-space-4);
+		display: flex;
+		align-items: center;
+		gap: var(--dt-space-2);
+		flex-wrap: wrap;
+	}
+
+	/* Mode badge variant */
+	.svc-badge--mode {
+		background: var(--dt-surface-container);
 		color: var(--dt-on-surface-variant);
+	}
+
+	/* Tertiary button — amber text-only per design spec */
+	.btn-tertiary {
+		background: none;
+		border: none;
+		color: var(--dt-secondary);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		padding: 0.375rem 0.625rem;
+		border-radius: var(--dt-radius-md);
+		cursor: pointer;
+		transition: background var(--dt-transition);
+	}
+
+	.btn-tertiary:hover:not(:disabled) {
+		background: var(--dt-surface-container-low);
+	}
+
+	.btn-tertiary:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.card h3 {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--dt-on-surface);
+		letter-spacing: -0.01em;
 		margin-bottom: 0.75rem;
 	}
 
@@ -3024,7 +3098,8 @@
 	}
 
 	.field input,
-	.field textarea {
+	.field textarea,
+	.form-input {
 		background: var(--dt-surface-container-high);
 		border: none;
 		border-bottom: 2px solid transparent;
@@ -3035,10 +3110,13 @@
 		outline: none;
 		transition: background var(--dt-transition), border-bottom var(--dt-transition);
 		font-family: inherit;
+		box-sizing: border-box;
+		min-width: 0;
 	}
 
 	.field input:focus,
-	.field textarea:focus {
+	.field textarea:focus,
+	.form-input:focus {
 		background: var(--dt-surface-container-lowest);
 		border-bottom: 2px solid var(--dt-primary);
 	}
@@ -3499,17 +3577,20 @@
 		box-sizing: border-box;
 		padding: 0.5rem 0.625rem;
 		background: var(--dt-surface-container-high);
-		border: 1px solid var(--dt-outline-variant);
+		border: none;
+		border-bottom: 2px solid transparent;
 		border-radius: var(--dt-radius-sm);
 		font-size: 0.875rem;
 		color: var(--dt-on-surface);
 		resize: vertical;
 		outline: none;
-		transition: border-color var(--dt-transition);
+		font-family: inherit;
+		transition: background var(--dt-transition), border-bottom var(--dt-transition);
 	}
 
 	.emp-notes-field textarea:focus {
-		border-color: var(--dt-primary);
+		background: var(--dt-surface-container-lowest);
+		border-bottom: 2px solid var(--dt-primary);
 	}
 
 	.emp-time {
@@ -3676,16 +3757,18 @@
 
 	.inv-status {
 		display: inline-block;
-		padding: 0.2rem 0.6rem;
-		border-radius: 999px;
-		font-size: 0.75rem;
-		font-weight: 600;
+		padding: 0.25rem 0.5rem;
+		border-radius: var(--dt-radius-sm);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	.inv-status--grey   { background: var(--dt-surface-container); color: var(--dt-on-surface-variant); }
 	.inv-status--orange { background: var(--dt-surface-container-high); color: var(--dt-secondary); }
-	.inv-status--blue   { background: var(--dt-surface-container); color: var(--dt-primary); }
-	.inv-status--green  { background: var(--dt-surface-container); color: var(--dt-primary); }
+	.inv-status--blue   { background: var(--dt-info-bg); color: var(--dt-info-text); }
+	.inv-status--green  { background: var(--dt-success-bg); color: var(--dt-success-text); }
 
 	.extras-section {
 		margin-top: 0.75rem;

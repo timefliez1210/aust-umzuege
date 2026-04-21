@@ -206,11 +206,11 @@
 					</div>
 					<div class="field">
 						<label for="c-start">Startzeit *</label>
-						<input id="c-start" type="time" bind:value={createStartTime} required />
+						<input id="c-start" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={createStartTime} required />
 					</div>
 					<div class="field">
 						<label for="c-end">Endzeit</label>
-						<input id="c-end" type="time" bind:value={createEndTime} />
+						<input id="c-end" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={createEndTime} />
 					</div>
 					<div class="field">
 						<label for="c-dur">Dauer (h)</label>

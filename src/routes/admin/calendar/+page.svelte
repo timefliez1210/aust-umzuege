@@ -8,6 +8,7 @@
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
+	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
 
 	// ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -243,6 +244,9 @@
 	let quickCreateError = $state('');
 
 	// Quick-inquiry form fields
+	let qiServiceType = $state<string>('privatumzug');
+	const QI_SERVICE_OPTIONS = Object.entries(SERVICE_TYPE_LABELS) as [string, string][];
+	let qiAddrCfg = $derived(SERVICE_ADDRESS_CONFIG[qiServiceType] ?? SERVICE_ADDRESS_CONFIG['privatumzug']);
 	let qiCustomerMode = $state<'existing' | 'new'>('existing');
 	let qiCustomerSearch = $state('');
 	let qiCustomerResults = $state<{ id: string; name: string | null; email: string | null }[]>([]);
@@ -825,6 +829,7 @@
 		contextMenu = null;
 		quickCreateMode = mode;
 		quickCreateError = '';
+		qiServiceType = 'privatumzug';
 		qiCustomerMode = 'existing'; qiCustomerSearch = ''; qiCustomerResults = []; qiCustomerId = null; qiCustomerLabel = '';
 		qiEmail = ''; qiName = ''; qiPhone = '';
 		qiOriginStreet = ''; qiOriginCity = ''; qiOriginPostal = '';
@@ -861,8 +866,8 @@
 	 * Purpose: Allows Alex to quickly schedule a new inquiry directly from the calendar.
 	 */
 	async function submitQuickInquiry() {
-		if (!qiOriginStreet.trim() || !qiOriginCity.trim()) { quickCreateError = 'Auszugsadresse (Straße, Stadt) erforderlich'; return; }
-		if (!qiDestStreet.trim() || !qiDestCity.trim()) { quickCreateError = 'Einzugsadresse (Straße, Stadt) erforderlich'; return; }
+		if (qiAddrCfg.showOrigin && (!qiOriginStreet.trim() || !qiOriginCity.trim())) { quickCreateError = `${qiAddrCfg.originLabel} (Straße, Stadt) erforderlich`; return; }
+		if (qiAddrCfg.showDestination && (!qiDestStreet.trim() || !qiDestCity.trim())) { quickCreateError = `${qiAddrCfg.destinationLabel} (Straße, Stadt) erforderlich`; return; }
 		if (qiCustomerMode === 'existing' && !qiCustomerId) { quickCreateError = 'Bitte einen Kunden auswählen'; return; }
 		if (qiCustomerMode === 'new' && !qiName.trim() && !qiEmail.trim() && !qiPhone.trim()) { quickCreateError = 'Bitte mindestens Name, E-Mail oder Telefon angeben'; return; }
 		quickCreateError = '';
@@ -877,21 +882,27 @@
 				});
 				customerId = c.id;
 			}
-			await apiPost('/api/v1/inquiries', {
+			const body: Record<string, unknown> = {
 				customer_id: customerId,
+				service_type: qiServiceType,
 				scheduled_date: quickCreateDate,
-				origin: {
+				notes: qiNotes.trim() || null,
+			};
+			if (qiAddrCfg.showOrigin) {
+				body.origin = {
 					street: qiOriginStreet.trim(),
 					city: qiOriginCity.trim(),
 					postal_code: qiOriginPostal.trim() || null,
-				},
-				destination: {
+				};
+			}
+			if (qiAddrCfg.showDestination) {
+				body.destination = {
 					street: qiDestStreet.trim(),
 					city: qiDestCity.trim(),
 					postal_code: qiDestPostal.trim() || null,
-				},
-				notes: qiNotes.trim() || null,
-			});
+				};
+			}
+			await apiPost('/api/v1/inquiries', body);
 			showToast('Anfrage erstellt', 'success');
 			quickCreateMode = null;
 			await loadSchedule();
@@ -1418,6 +1429,13 @@
 		<div class="modal modal-wide" use:draggable>
 			<h3>Neue Anfrage — {quickCreateDate}</h3>
 
+			<div class="qc-section-label">Auftragsart *</div>
+			<div class="qi-svc-grid">
+				{#each QI_SERVICE_OPTIONS as [id, label]}
+					<button type="button" class="qi-svc-btn" class:selected={qiServiceType === id} onclick={() => qiServiceType = id}>{label}</button>
+				{/each}
+			</div>
+
 			<div class="qc-section-label">Kunde *</div>
 			{#if qiCustomerId}
 				<div class="qt-customer-badge">
@@ -1431,17 +1449,20 @@
 				</div>
 				{#if qiCustomerMode === 'existing'}
 					<div class="qc-row" style="flex-direction:column;gap:0.25rem">
-						<input type="text" bind:value={qiCustomerSearch} oninput={(e) => searchQiCustomers((e.target as HTMLInputElement).value)} placeholder="Name oder E-Mail..." />
-						{#if qiCustomerSearching}<span style="font-size:0.75rem;color:#94a3b8">Suche...</span>{/if}
-						{#if qiCustomerResults.length > 0}
+						<input type="text" bind:value={qiCustomerSearch} oninput={(e) => searchQiCustomers((e.target as HTMLInputElement).value)} placeholder="Name oder E-Mail (mind. 2 Zeichen)..." />
+						{#if qiCustomerSearching}
+							<span style="font-size:0.75rem;color:var(--dt-on-surface-variant)">Suche...</span>
+						{:else if qiCustomerResults.length > 0}
 							<div class="qt-results">
 								{#each qiCustomerResults as c}
-									<button class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email ?? 'Kunde'; qiCustomerResults = []; }}>
+									<button type="button" class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email ?? 'Kunde'; qiCustomerResults = []; qiCustomerSearch = ''; }}>
 										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
 										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
 									</button>
 								{/each}
 							</div>
+						{:else if qiCustomerSearch.trim().length >= 2}
+							<span style="font-size:0.75rem;color:var(--dt-on-surface-variant)">Keine Treffer</span>
 						{/if}
 					</div>
 				{:else}
@@ -1464,37 +1485,41 @@
 				{/if}
 			{/if}
 
-			<div class="qc-section-label">Auszug *</div>
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qi-os">Straße</label>
-					<input id="qi-os" type="text" bind:value={qiOriginStreet} placeholder="Musterstraße 1" />
+			{#if qiAddrCfg.showOrigin}
+				<div class="qc-section-label">{qiAddrCfg.originLabel} *</div>
+				<div class="qc-row">
+					<div class="qc-field qc-field-grow">
+						<label for="qi-os">Straße</label>
+						<input id="qi-os" type="text" bind:value={qiOriginStreet} placeholder="Musterstraße 1" />
+					</div>
+					<div class="qc-field">
+						<label for="qi-op">PLZ</label>
+						<input id="qi-op" type="text" bind:value={qiOriginPostal} placeholder="31134" style="width:90px" />
+					</div>
+					<div class="qc-field qc-field-grow">
+						<label for="qi-oc">Stadt</label>
+						<input id="qi-oc" type="text" bind:value={qiOriginCity} placeholder="Hildesheim" />
+					</div>
 				</div>
-				<div class="qc-field">
-					<label for="qi-op">PLZ</label>
-					<input id="qi-op" type="text" bind:value={qiOriginPostal} placeholder="31134" style="width:90px" />
-				</div>
-				<div class="qc-field qc-field-grow">
-					<label for="qi-oc">Stadt</label>
-					<input id="qi-oc" type="text" bind:value={qiOriginCity} placeholder="Hildesheim" />
-				</div>
-			</div>
+			{/if}
 
-			<div class="qc-section-label">Einzug *</div>
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qi-ds">Straße</label>
-					<input id="qi-ds" type="text" bind:value={qiDestStreet} placeholder="Zielstraße 2" />
+			{#if qiAddrCfg.showDestination}
+				<div class="qc-section-label">{qiAddrCfg.destinationLabel} *</div>
+				<div class="qc-row">
+					<div class="qc-field qc-field-grow">
+						<label for="qi-ds">Straße</label>
+						<input id="qi-ds" type="text" bind:value={qiDestStreet} placeholder="Zielstraße 2" />
+					</div>
+					<div class="qc-field">
+						<label for="qi-dp">PLZ</label>
+						<input id="qi-dp" type="text" bind:value={qiDestPostal} placeholder="31134" style="width:90px" />
+					</div>
+					<div class="qc-field qc-field-grow">
+						<label for="qi-dc">Stadt</label>
+						<input id="qi-dc" type="text" bind:value={qiDestCity} placeholder="Hannover" />
+					</div>
 				</div>
-				<div class="qc-field">
-					<label for="qi-dp">PLZ</label>
-					<input id="qi-dp" type="text" bind:value={qiDestPostal} placeholder="31134" style="width:90px" />
-				</div>
-				<div class="qc-field qc-field-grow">
-					<label for="qi-dc">Stadt</label>
-					<input id="qi-dc" type="text" bind:value={qiDestCity} placeholder="Hannover" />
-				</div>
-			</div>
+			{/if}
 
 			<div class="qc-row">
 				<div class="qc-field qc-field-grow">
@@ -2076,6 +2101,20 @@
 		letter-spacing: 0.05em;
 	}
 	.qc-section-label:first-of-type { margin-top: 0; }
+	.qi-svc-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+	.qi-svc-btn {
+		padding: 0.3rem 0.6rem;
+		border: 1.5px solid var(--dt-outline-variant);
+		border-radius: 6px;
+		background: var(--dt-surface-container-lowest);
+		font-size: 0.78rem;
+		font-weight: 500;
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: all 0.12s;
+	}
+	.qi-svc-btn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }
+	.qi-svc-btn.selected { background: var(--dt-primary); border-color: var(--dt-primary); color: #fff; }
 	.qc-row { display: flex; gap: 0.5rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
 	.qc-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 	.qc-field-grow { flex: 1; }
@@ -2129,6 +2168,9 @@
 		text-align: left;
 		transition: background var(--dt-transition);
 		color: var(--dt-on-surface);
+		background: transparent;
+		border: none;
+		cursor: pointer;
 	}
 	.qt-result-item + .qt-result-item { border-top: 1px solid var(--dt-surface-container); }
 	.qt-result-item:hover { background: var(--dt-surface-container-low); }

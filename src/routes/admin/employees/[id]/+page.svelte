@@ -306,6 +306,7 @@
 	}
 
 	let exportingXlsx = $state(false);
+	let exportingPdf = $state(false);
 
 	/**
 	 * Downloads the employee's Stundenzettel as an XLSX file for the selected month.
@@ -326,6 +327,22 @@
 			showToast(e instanceof Error ? e.message : 'Export fehlgeschlagen', 'error');
 		} finally {
 			exportingXlsx = false;
+		}
+	}
+
+	async function exportStundenzettelPdf() {
+		if (!data) return;
+		exportingPdf = true;
+		try {
+			const filename = `Stundenzettel_${data.last_name}_${data.first_name}_${selectedMonth}.pdf`;
+			await apiDownload(
+				`/api/v1/admin/employees/${data.id}/hours/export?month=${selectedMonth}&format=pdf`,
+				filename
+			);
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'PDF-Export fehlgeschlagen', 'error');
+		} finally {
+			exportingPdf = false;
 		}
 	}
 
@@ -580,6 +597,18 @@
 								…
 							{:else}
 								<FileSpreadsheet size={14} />
+							{/if}
+						</button>
+						<button
+							class="btn btn-sm export-btn"
+							onclick={exportStundenzettelPdf}
+							disabled={exportingPdf}
+							title="Stundenzettel als PDF herunterladen"
+						>
+							{#if exportingPdf}
+								…
+							{:else}
+								<FileText size={14} />
 							{/if}
 						</button>
 					{/if}

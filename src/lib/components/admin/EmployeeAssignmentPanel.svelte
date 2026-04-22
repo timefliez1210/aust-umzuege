@@ -521,7 +521,6 @@
 					<span>Name</span>
 					<span>Tage</span>
 					<span>Stunden Ist</span>
-					<span></span>
 				</div>
 				{#each employeeSummaries() as emp}
 					<div class="inq-summary-row">
@@ -534,13 +533,6 @@
 								<span class="inq-muted">—</span>
 							{/if}
 						</span>
-						<button
-							class="btn-icon danger"
-							title="Entfernen"
-							onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
-						>
-							<Trash2 size={13} />
-						</button>
 					</div>
 				{/each}
 				<div class="inq-total">
@@ -550,6 +542,7 @@
 						{employeeSummaries().length} Mitarbeiter · {assignments.length} Einträge
 					{/if}
 				</div>
+				<p class="inq-multiday-hint">Mehrtägig — Zuweisung über den Kalender bearbeiten</p>
 			</div>
 		{:else}
 		<!-- ── Inquiry mode: compact rows with planned + actual times ── -->
@@ -1018,7 +1011,7 @@
 	/* ── Inquiry multi-day summary ── */
 	.inq-summary-header {
 		display: grid;
-		grid-template-columns: 1fr 2.5rem 5rem 24px;
+		grid-template-columns: 1fr 2.5rem 5rem;
 		gap: 0.25rem;
 		padding: 0.25rem 0.5rem;
 		font-size: 0.7rem;
@@ -1030,11 +1023,18 @@
 
 	.inq-summary-row {
 		display: grid;
-		grid-template-columns: 1fr 2.5rem 5rem 24px;
+		grid-template-columns: 1fr 2.5rem 5rem;
 		gap: 0.25rem;
 		align-items: center;
 		padding: 0.3rem 0.5rem;
 		border-radius: var(--dt-radius-sm);
+	}
+
+	.inq-multiday-hint {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+		padding: 0.375rem 0.5rem 0;
+		margin: 0;
 	}
 
 	.inq-summary-row:hover {

@@ -23,6 +23,7 @@
 		volume_m3: number | null;
 		status: string;
 		notes: string | null;
+		employee_notes: string | null;
 		offer_price_cents: number | null;
 		service_type: string | null;
 		start_time: string;
@@ -183,6 +184,7 @@
 	// Inquiry panel edit state
 	let inqEditStatus = $state('');
 	let inqEditNotes = $state('');
+	let inqEditEmployeeNotes = $state('');
 	let inqEditPreferredDate = $state('');
 	let inqEditStartTime = $state('');
 	let inqEditEndTime = $state('');
@@ -305,6 +307,7 @@
 		if (sel.kind === 'inquiry') {
 			inqEditStatus = sel.item.status;
 			inqEditNotes = sel.item.notes ?? '';
+			inqEditEmployeeNotes = sel.item.employee_notes ?? '';
 			inqEditPreferredDate = sel.item.scheduled_date?.slice(0, 10) ?? '';
 			inqEditStartTime = formatTime(sel.item.start_time);
 			inqEditEndTime = formatTime(sel.item.end_time);
@@ -401,8 +404,8 @@
 				notes: null,
 				start_time: addEmpStart || null,
 				end_time: addEmpEnd || null,
-				clock_in: null,
-				clock_out: null,
+				clock_in: addEmpStart || null,
+				clock_out: addEmpEnd || null,
 				break_minutes: computed.break_minutes,
 			},
 		];
@@ -448,8 +451,8 @@
 				notes: null,
 				start_time: addEmpStart || null,
 				end_time: addEmpEnd || null,
-				clock_in: null,
-				clock_out: null,
+				clock_in: addEmpStart || null,
+				clock_out: addEmpEnd || null,
 				break_minutes: computed.break_minutes,
 			},
 		];
@@ -491,29 +494,55 @@
 	 *
 	 * Called by: $effect (when panelSelection changes to kind='inquiry')
 	 * Purpose: Populates inqDays (with per-day times and employees) for the multi-day editor.
+	 * Uses flat GET /employees endpoint and groups by job_date.
 	 *
 	 * @param inqId - UUID of the inquiry
 	 */
 	async function loadInquiryDays(inqId: string) {
 		inqDaysLoading = true;
 		try {
-			const res = await apiGet<InquiryDay[]>(`/api/v1/inquiries/${inqId}/days`);
-			const days = Array.isArray(res) ? res : [];
-			// Normalise time strings to HH:MM (API may return HH:MM:SS)
-			inqDays = days.map(d => ({
-				...d,
-				start_time: d.start_time ? d.start_time.slice(0, 5) : null,
-				end_time:   d.end_time   ? d.end_time.slice(0, 5)   : null,
-				employees: (d.employees ?? []).map((e: DayEmployee) => ({
+			const flat = await apiGet<Array<DayEmployee & { job_date: string }>>(`/api/v1/inquiries/${inqId}/employees`);
+			const rows = Array.isArray(flat) ? flat : [];
+			// Group flat rows by date, preserving order
+			const byDate = new Map<string, DayEmployee[]>();
+			for (const r of rows) {
+				const emp: DayEmployee = {
+					employee_id:   r.employee_id,
+					first_name:    r.first_name,
+					last_name:     r.last_name,
+					planned_hours: r.planned_hours ?? null,
+					notes:         r.notes ?? null,
+					start_time:    r.start_time ? r.start_time.slice(0, 5) : null,
+					end_time:      r.end_time   ? r.end_time.slice(0, 5)   : null,
+					clock_in:      r.clock_in   ? r.clock_in.slice(0, 5)   : null,
+					clock_out:     r.clock_out  ? r.clock_out.slice(0, 5)  : null,
+					break_minutes: r.break_minutes ?? 0,
+				};
+				const list = byDate.get(r.job_date) ?? [];
+				list.push(emp);
+				byDate.set(r.job_date, list);
+			}
+			const fillEmp = (e: DayEmployee): DayEmployee => {
+				const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
+				return {
 					...e,
-					start_time:    e.start_time    ? e.start_time.slice(0, 5)    : null,
-					end_time:      e.end_time      ? e.end_time.slice(0, 5)      : null,
-					clock_in:      e.clock_in      ? e.clock_in.slice(0, 5)      : null,
-					clock_out:     e.clock_out     ? e.clock_out.slice(0, 5)     : null,
-					break_minutes: e.break_minutes ?? 0,
-				})),
+					clock_in:      e.clock_in  ?? e.start_time,
+					clock_out:     e.clock_out ?? e.end_time,
+					planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
+					break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
+				};
+			};
+			const sortedDates = Array.from(byDate.keys()).sort();
+			const originStr = panelSelection?.kind === 'inquiry' ? (panelSelection.item.scheduled_date?.slice(0, 10) ?? '') : '';
+			inqDays = sortedDates.map((date, i) => ({
+				day_date:   date,
+				day_number: i + 1,
+				notes:      null,
+				start_time: null,
+				end_time:   null,
+				employees:  (byDate.get(date) ?? []).map(fillEmp),
 			}));
-			inqUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
+			inqUntilDate = sortedDates.length > 1 ? sortedDates[sortedDates.length - 1] : (originStr ?? '');
 		} catch {
 			inqDays = [];
 		} finally {
@@ -536,8 +565,32 @@
 		const until  = new Date(inqUntilDate + 'T00:00:00');
 		if (until < origin) return;
 
+		const defaultStart = formatTime(panelSelection.item.start_time) || null;
+		const defaultEnd   = formatTime(panelSelection.item.end_time)   || null;
+
 		// Build a lookup of existing day data keyed by date string
 		const existing = new Map(inqDays.map(d => [d.day_date, d]));
+		const templateEmps = (inqDays[0]?.employees ?? []).map(e => {
+			const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
+			return {
+				...e,
+				clock_in: e.start_time,
+				clock_out: e.end_time,
+				planned_hours: computed.planned_hours ?? e.planned_hours,
+				break_minutes: computed.break_minutes,
+			};
+		});
+
+		const fillEmp = (e: DayEmployee): DayEmployee => {
+			const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
+			return {
+				...e,
+				clock_in:      e.clock_in  ?? e.start_time,
+				clock_out:     e.clock_out ?? e.end_time,
+				planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
+				break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
+			};
+		};
 
 		const days: InquiryDay[] = [];
 		const cur = new Date(origin);
@@ -549,9 +602,9 @@
 				day_date:   iso,
 				day_number: num++,
 				notes:      prev?.notes      ?? null,
-				start_time: prev?.start_time ?? null,
-				end_time:   prev?.end_time   ?? null,
-				employees:  prev?.employees  ?? [],
+				start_time: prev?.start_time ?? defaultStart,
+				end_time:   prev?.end_time   ?? defaultEnd,
+				employees:  prev ? prev.employees.map(fillEmp) : templateEmps.map(e => ({ ...e })),
 			});
 			cur.setDate(cur.getDate() + 1);
 		}
@@ -559,11 +612,11 @@
 	}
 
 	/**
-	 * Persists the current inquiry day list via PUT /api/v1/inquiries/{id}/days.
+	 * Persists the current inquiry day list via PATCH (end_date) + PUT /employees (flat array).
 	 *
 	 * Called by: Template (Zeitraum speichern button in inquiry panel)
-	 * Purpose: Full-replace semantics — sends the complete day list (with per-day
-	 *          times and employees) to the API, then reloads the schedule.
+	 * Purpose: Full-replace semantics — sets end_date on the inquiry then replaces all
+	 *          employee assignment rows with one row per (employee, job_date).
 	 */
 	async function saveInquiryDays() {
 		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
@@ -572,14 +625,17 @@
 		const inqId = panelSelection.item.inquiry_id;
 		inqDaysSaving = true;
 		try {
-			const payload = inqDays.map(d => ({
-				day_date:   d.day_date,
-				day_number: d.day_number,
-				notes:      d.notes || null,
-				start_time: d.start_time ? (d.start_time.length === 5 ? d.start_time + ':00' : d.start_time) : null,
-				end_time:   d.end_time   ? (d.end_time.length   === 5 ? d.end_time   + ':00' : d.end_time)   : null,
-				employees:  d.employees.map(e => ({
+			const isMultiDay = inqDays.length > 1;
+			// Update end_date on the inquiry
+			await apiPatch(`/api/v1/inquiries/${inqId}`, isMultiDay
+				? { end_date: inqDays[inqDays.length - 1].day_date }
+				: { clear_end_date: true });
+
+			// Build flat assignment array: one entry per (employee, job_date)
+			const flatAssignments = inqDays.flatMap(d =>
+				d.employees.map(e => ({
 					employee_id:   e.employee_id,
+					job_date:      d.day_date,
 					planned_hours: e.planned_hours ?? null,
 					notes:         e.notes ?? null,
 					start_time:    e.start_time  ? (e.start_time.length  === 5 ? e.start_time  + ':00' : e.start_time)  : null,
@@ -587,9 +643,9 @@
 					clock_in:      e.clock_in    ? (e.clock_in.length    === 5 ? e.clock_in    + ':00' : e.clock_in)    : null,
 					clock_out:     e.clock_out   ? (e.clock_out.length   === 5 ? e.clock_out   + ':00' : e.clock_out)   : null,
 					break_minutes: e.break_minutes ?? 0,
-				})),
-			}));
-			await apiPut(`/api/v1/inquiries/${inqId}/days`, { days: payload });
+				}))
+			);
+			await apiPut(`/api/v1/inquiries/${inqId}/employees`, flatAssignments);
 			showToast('Tage gespeichert', 'success');
 			await onLoadSchedule();
 		} catch (e: unknown) {
@@ -605,29 +661,53 @@
 	 * Loads scheduled days for the currently selected calendar item (Termin).
 	 *
 	 * Called by: $effect (when panelSelection changes to kind='termin')
-	 * Purpose: Populates termDays (with per-day times and employees) for the multi-day editor.
+	 * Purpose: Populates termDays grouped by date from the flat /employees endpoint.
 	 *
 	 * @param itemId - UUID of the calendar item
 	 */
 	async function loadTerminDays(itemId: string) {
 		termDaysLoading = true;
 		try {
-			const res = await apiGet<TerminDay[]>(`/api/v1/admin/calendar-items/${itemId}/days`);
-			const days = Array.isArray(res) ? res : [];
-			termDays = days.map(d => ({
-				...d,
-				start_time: d.start_time ? d.start_time.slice(0, 5) : null,
-				end_time:   d.end_time   ? d.end_time.slice(0, 5)   : null,
-				employees: (d.employees ?? []).map((e: DayEmployee) => ({
+			const flat = await apiGet<Array<DayEmployee & { job_date: string }>>(`/api/v1/admin/calendar-items/${itemId}/employees`);
+			const rows = Array.isArray(flat) ? flat : [];
+			const byDate = new Map<string, DayEmployee[]>();
+			for (const r of rows) {
+				const emp: DayEmployee = {
+					employee_id:   r.employee_id,
+					first_name:    r.first_name,
+					last_name:     r.last_name,
+					planned_hours: r.planned_hours ?? null,
+					notes:         r.notes ?? null,
+					start_time:    r.start_time ? r.start_time.slice(0, 5) : null,
+					end_time:      r.end_time   ? r.end_time.slice(0, 5)   : null,
+					clock_in:      r.clock_in   ? r.clock_in.slice(0, 5)   : null,
+					clock_out:     r.clock_out  ? r.clock_out.slice(0, 5)  : null,
+					break_minutes: r.break_minutes ?? 0,
+				};
+				const list = byDate.get(r.job_date) ?? [];
+				list.push(emp);
+				byDate.set(r.job_date, list);
+			}
+			const fillEmp = (e: DayEmployee): DayEmployee => {
+				const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
+				return {
 					...e,
-					start_time:    e.start_time    ? e.start_time.slice(0, 5)    : null,
-					end_time:      e.end_time      ? e.end_time.slice(0, 5)      : null,
-					clock_in:      e.clock_in      ? e.clock_in.slice(0, 5)      : null,
-					clock_out:     e.clock_out     ? e.clock_out.slice(0, 5)     : null,
-					break_minutes: e.break_minutes ?? 0,
-				})),
+					clock_in:      e.clock_in  ?? e.start_time,
+					clock_out:     e.clock_out ?? e.end_time,
+					planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
+					break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
+				};
+			};
+			const sortedDates = Array.from(byDate.keys()).sort();
+			termDays = sortedDates.map((date, i) => ({
+				day_date:   date,
+				day_number: i + 1,
+				notes:      null,
+				start_time: null,
+				end_time:   null,
+				employees:  (byDate.get(date) ?? []).map(fillEmp),
 			}));
-			termUntilDate = days.length > 1 ? days[days.length - 1].day_date : '';
+			termUntilDate = sortedDates.length > 1 ? sortedDates[sortedDates.length - 1] : '';
 		} catch {
 			termDays = [];
 		} finally {
@@ -649,7 +729,31 @@
 		const until  = new Date(termUntilDate + 'T00:00:00');
 		if (until < origin) return;
 
+		const defaultStart = formatTime(panelSelection.item.start_time) || null;
+		const defaultEnd   = formatTime(panelSelection.item.end_time)   || null;
+
 		const existing = new Map(termDays.map(d => [d.day_date, d]));
+		const templateEmps = (termDays[0]?.employees ?? []).map(e => {
+			const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
+			return {
+				...e,
+				clock_in: e.start_time,
+				clock_out: e.end_time,
+				planned_hours: computed.planned_hours ?? e.planned_hours,
+				break_minutes: computed.break_minutes,
+			};
+		});
+
+		const fillEmp = (e: DayEmployee): DayEmployee => {
+			const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
+			return {
+				...e,
+				clock_in:      e.clock_in  ?? e.start_time,
+				clock_out:     e.clock_out ?? e.end_time,
+				planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
+				break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
+			};
+		};
 
 		const days: TerminDay[] = [];
 		const cur = new Date(origin);
@@ -661,9 +765,9 @@
 				day_date:   iso,
 				day_number: num++,
 				notes:      prev?.notes      ?? null,
-				start_time: prev?.start_time ?? null,
-				end_time:   prev?.end_time   ?? null,
-				employees:  prev?.employees  ?? [],
+				start_time: prev?.start_time ?? defaultStart,
+				end_time:   prev?.end_time   ?? defaultEnd,
+				employees:  prev ? prev.employees.map(fillEmp) : templateEmps.map(e => ({ ...e })),
 			});
 			cur.setDate(cur.getDate() + 1);
 		}
@@ -684,14 +788,17 @@
 		const itemId = panelSelection.item.id;
 		termDaysSaving = true;
 		try {
-			const payload = termDays.map(d => ({
-				day_date:   d.day_date,
-				day_number: d.day_number,
-				notes:      d.notes || null,
-				start_time: d.start_time ? (d.start_time.length === 5 ? d.start_time + ':00' : d.start_time) : null,
-				end_time:   d.end_time   ? (d.end_time.length   === 5 ? d.end_time   + ':00' : d.end_time)   : null,
-				employees:  d.employees.map(e => ({
+			const isMultiDay = termDays.length > 1;
+			// Update end_date on the calendar item
+			await apiPatch(`/api/v1/admin/calendar-items/${itemId}`, isMultiDay
+				? { end_date: termDays[termDays.length - 1].day_date }
+				: { end_date: null });
+
+			// Build flat assignment array
+			const flatAssignments = termDays.flatMap(d =>
+				d.employees.map(e => ({
 					employee_id:   e.employee_id,
+					job_date:      d.day_date,
 					planned_hours: e.planned_hours ?? null,
 					notes:         e.notes ?? null,
 					start_time:    e.start_time  ? (e.start_time.length  === 5 ? e.start_time  + ':00' : e.start_time)  : null,
@@ -699,9 +806,9 @@
 					clock_in:      e.clock_in    ? (e.clock_in.length    === 5 ? e.clock_in    + ':00' : e.clock_in)    : null,
 					clock_out:     e.clock_out   ? (e.clock_out.length   === 5 ? e.clock_out   + ':00' : e.clock_out)   : null,
 					break_minutes: e.break_minutes ?? 0,
-				})),
-			}));
-			await apiPut(`/api/v1/admin/calendar-items/${itemId}/days`, { days: payload });
+				}))
+			);
+			await apiPut(`/api/v1/admin/calendar-items/${itemId}/employees`, flatAssignments);
 			showToast('Tage gespeichert', 'success');
 			await onLoadSchedule();
 		} catch (e: unknown) {
@@ -728,6 +835,7 @@
 			await apiPatch(`/api/v1/inquiries/${inq.inquiry_id}`, {
 				status: inqEditStatus || undefined,
 				notes: inqEditNotes || null,
+				employee_notes: inqEditEmployeeNotes || null,
 				scheduled_date: inqEditPreferredDate || null,
 				start_time: inqEditStartTime ? (inqEditStartTime.length === 5 ? inqEditStartTime + ':00' : inqEditStartTime) : undefined,
 				end_time: inqEditEndTime ? (inqEditEndTime.length === 5 ? inqEditEndTime + ':00' : inqEditEndTime) : null,
@@ -1012,8 +1120,12 @@
 						</div>
 					</div>
 					<div class="field">
-						<label for="inq-notes">Notizen</label>
-						<textarea id="inq-notes" rows={3} class="neu-input" bind:value={inqEditNotes}></textarea>
+						<label for="inq-notes">Notizen (intern)</label>
+						<textarea id="inq-notes" rows={2} class="neu-input" bind:value={inqEditNotes}></textarea>
+					</div>
+					<div class="field">
+						<label for="inq-employee-notes">Hinweise für Mitarbeiter</label>
+						<textarea id="inq-employee-notes" rows={2} class="neu-input" bind:value={inqEditEmployeeNotes}></textarea>
 					</div>
 					<div class="panel-actions">
 						<button class="btn btn-primary btn-sm" onclick={saveInquiry} disabled={savingInquiry}>
@@ -1029,15 +1141,20 @@
 					</div>
 				</div>
 
-				<!-- Employee assignments -->
+				<!-- Employee assignments (single-day only; multi-day uses per-day editors below) -->
+				{#if inqDays.length <= 1}
 				<div class="panel-section">
 					<EmployeeAssignmentPanel
 						entityId={panelSelection.item.inquiry_id}
 						entityType="inquiry"
 						preferredDate={panelSelection.item.scheduled_date}
-						onUpdated={() => onLoadSchedule()}
+						onUpdated={async () => {
+							await onLoadSchedule();
+							if (panelSelection?.kind === 'inquiry') loadInquiryDays(panelSelection.item.inquiry_id);
+						}}
 					/>
 				</div>
+				{/if}
 
 				<!-- Multi-day scheduling section -->
 				<div class="panel-section">

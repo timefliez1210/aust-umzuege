@@ -24,6 +24,7 @@
 		employee_id: string;
 		first_name: string;
 		last_name: string;
+		job_date?: string | null;
 		planned_hours: number;
 		actual_hours: number | null;
 		notes: string | null;
@@ -37,6 +38,14 @@
 		employee_clock_in?: string | null;
 		employee_clock_out?: string | null;
 		employee_actual_hours?: number | null;
+	}
+
+	interface EmployeeSummary {
+		employee_id: string;
+		first_name: string;
+		last_name: string;
+		total_hours: number | null;
+		day_count: number;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -195,6 +204,29 @@
 	const unassigned = $derived(() => {
 		const assigned = new Set(assignments.map((a) => a.employee_id));
 		return allEmployees.filter((e) => !assigned.has(e.id));
+	});
+
+	// Grouped summary for inquiry multi-day mode
+	const isMultiDay = $derived(
+		entityType === 'inquiry' &&
+		new Set(assignments.map(a => a.job_date).filter(Boolean)).size > 1
+	);
+
+	const employeeSummaries = $derived((): EmployeeSummary[] => {
+		const map = new Map<string, EmployeeSummary>();
+		for (const a of assignments) {
+			let s = map.get(a.employee_id);
+			if (!s) {
+				s = { employee_id: a.employee_id, first_name: a.first_name, last_name: a.last_name, total_hours: null, day_count: 0 };
+				map.set(a.employee_id, s);
+			}
+			s.day_count++;
+			const hours = a.actual_hours ?? deriveActualHours(a.clock_in, a.clock_out, a.break_minutes ?? 0);
+			if (hours != null) {
+				s.total_hours = (s.total_hours ?? 0) + hours;
+			}
+		}
+		return Array.from(map.values());
 	});
 
 	// ---------------------------------------------------------------------------
@@ -482,6 +514,44 @@
 	{:else if assignments.length === 0}
 		<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
 	{:else if entityType === 'inquiry'}
+		{#if isMultiDay}
+			<!-- ── Inquiry multi-day mode: one summary row per employee ── -->
+			<div class="inq-emp-list">
+				<div class="inq-summary-header">
+					<span>Name</span>
+					<span>Tage</span>
+					<span>Stunden Ist</span>
+					<span></span>
+				</div>
+				{#each employeeSummaries() as emp}
+					<div class="inq-summary-row">
+						<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
+						<span class="inq-days">{emp.day_count}</span>
+						<span class="inq-hours">
+							{#if emp.total_hours != null}
+								<span class="hours-badge">{fmtHours(emp.total_hours)}</span>
+							{:else}
+								<span class="inq-muted">—</span>
+							{/if}
+						</span>
+						<button
+							class="btn-icon danger"
+							title="Entfernen"
+							onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
+						>
+							<Trash2 size={13} />
+						</button>
+					</div>
+				{/each}
+				<div class="inq-total">
+					{#if employeeSummaries().some(e => e.total_hours != null)}
+						<span class="hours-badge">{fmtHours(employeeSummaries().reduce((s, e) => s + (e.total_hours ?? 0), 0))} Ist gesamt</span>
+					{:else}
+						{employeeSummaries().length} Mitarbeiter · {assignments.length} Einträge
+					{/if}
+				</div>
+			</div>
+		{:else}
 		<!-- ── Inquiry mode: compact rows with planned + actual times ── -->
 		<div class="inq-emp-list">
 			<div class="inq-emp-header">
@@ -553,6 +623,7 @@
 				{/if}
 			</div>
 		</div>
+		{/if}
 	{:else}
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
 		<div class="emp-list">
@@ -942,6 +1013,48 @@
 	.inq-break {
 		width: 36px;
 		text-align: center;
+	}
+
+	/* ── Inquiry multi-day summary ── */
+	.inq-summary-header {
+		display: grid;
+		grid-template-columns: 1fr 2.5rem 5rem 24px;
+		gap: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--dt-on-surface-variant);
+		border-bottom: 1px solid var(--dt-outline-variant);
+		margin-bottom: 0.25rem;
+	}
+
+	.inq-summary-row {
+		display: grid;
+		grid-template-columns: 1fr 2.5rem 5rem 24px;
+		gap: 0.25rem;
+		align-items: center;
+		padding: 0.3rem 0.5rem;
+		border-radius: var(--dt-radius-sm);
+	}
+
+	.inq-summary-row:hover {
+		background: var(--dt-surface-container-low);
+	}
+
+	.inq-days {
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface-variant);
+		text-align: center;
+	}
+
+	.inq-hours {
+		display: flex;
+		align-items: center;
+	}
+
+	.inq-muted {
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface-variant);
 	}
 
 	.inq-total {

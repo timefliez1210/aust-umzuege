@@ -939,17 +939,19 @@
 
 	const statusOptions: { value: string; label: string }[] = [
 		{ value: "pending", label: "Ausstehend" },
-		{ value: "estimating", label: "Schaetzung" },
-		{ value: "estimated", label: "Volumen" },
-		{ value: "offer_ready", label: "Angebot" },
-		{ value: "sent", label: "Gesendet" },
-		{ value: "accepted", label: "Akzeptiert" },
+		{ value: "info_requested", label: "Info angefragt" },
+		{ value: "estimating", label: "Schätzung" },
+		{ value: "estimated", label: "Geschätzt" },
+		{ value: "offer_ready", label: "Angebot bereit" },
+		{ value: "offer_sent", label: "Angebot gesendet" },
+		{ value: "accepted", label: "Angenommen" },
+		{ value: "rejected", label: "Abgelehnt" },
+		{ value: "expired", label: "Abgelaufen" },
+		{ value: "cancelled", label: "Storniert" },
 		{ value: "scheduled", label: "Geplant" },
 		{ value: "completed", label: "Erledigt" },
 		{ value: "invoiced", label: "Fakturiert" },
 		{ value: "paid", label: "Bezahlt" },
-		{ value: "rejected", label: "Abgelehnt" },
-		{ value: "cancelled", label: "Storniert" },
 	];
 
 	let changingStatus = $state(false);

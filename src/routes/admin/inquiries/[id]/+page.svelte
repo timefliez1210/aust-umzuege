@@ -2418,6 +2418,13 @@
 				</button>
 			{/if}
 		</div>
+	{:else}
+		<div class="loading" style="color: var(--dt-secondary)">
+			<p>Anfrage konnte nicht geladen werden.</p>
+			<p style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--dt-on-surface-variant)">
+				Bitte überprüfe die Browser-Konsole oder lade die Seite neu.
+			</p>
+		</div>
 	{/if}
 </div>
 

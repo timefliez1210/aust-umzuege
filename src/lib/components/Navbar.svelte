@@ -82,6 +82,14 @@
                         label: "Seriöse Umzugsfirma erkennen",
                         href: "/ratgeber/seriose-umzugsfirma",
                     },
+                    {
+                        label: "Messie-Wohnung entrümpeln",
+                        href: "/ratgeber/messie-wohnung-raeumen",
+                    },
+                    {
+                        label: "Möbel einlagern",
+                        href: "/ratgeber/moebel-einlagern",
+                    },
                 ],
             },
             { label: "Kontakt", href: "/kontakt" },

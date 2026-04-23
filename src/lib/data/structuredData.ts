@@ -524,6 +524,35 @@ export const articles = {
 			"@id": "https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen"
 		},
 		articleSection: "Ratgeber"
+	},
+	moebelEinlagern: {
+		"@type": "Article",
+		headline: "Möbel einlagern – Kosten, Optionen und was Sie wissen müssen",
+		description:
+			"Möbel einlagern ab ca. 12 Euro/m²: Welche Lageroptionen es gibt, was sie pro Quadratmeter kosten und wie Sie Ihre Möbel richtig vorbereiten. Praktischer Ratgeber mit Preisübersicht.",
+		author: {
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
+		},
+		publisher: {
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge & Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
+		},
+		datePublished: "2026-04-23",
+		dateModified: "2026-04-23",
+		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		url: "https://www.aust-umzuege.de/ratgeber/moebel-einlagern",
+		mainEntityOfPage: {
+			"@type": "WebPage",
+			"@id": "https://www.aust-umzuege.de/ratgeber/moebel-einlagern"
+		},
+		articleSection: "Ratgeber"
 	}
 };
 
@@ -856,6 +885,39 @@ export const howToMessieWohnung = {
 			"@type": "HowToStep",
 			name: "Grundreinigung und Belüftung",
 			text: "Leere Räume gründlich saugen und mit Soda-Lösung oder essigbasiertem Reiniger wischen. Intensiv lüften. Bei hartnäckigen Gerüchen nicht mit starken Chemikalien arbeiten. Besenreine Übergabe für Vermieter dokumentieren."
+		}
+	]
+};
+
+export const howToMoebelEinlagern = {
+	"@type": "HowTo",
+	name: "Möbel richtig einlagern: Schritt-für-Schritt-Anleitung",
+	description: "Praktischer Leitfaden zur sicheren Zwischenlagerung von Möbeln – von der Auswahl der richtigen Lageroption bis zur Schadensfreien Entnahme.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Lagervolumen ermitteln und Lösung wählen",
+			text: "Inhalt einer Zweiraumwohnung entspricht ca. 8–10 m² Lagerfläche. Preise pro Quadratmeter variieren stark: bei kurzfristiger Lagerung oft 22–28 Euro/m², bei Jahresbindung teilweise unter 15 Euro/m². Für wertvolle Möbel oder Lagerdauer über 6 Monate ist eine klimatisierte Lösung empfehlenswert."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Möbel reinigen und vollständig trocknen",
+			text: "Alle Möbelstücke vor dem Transport gründlich reinigen und mindestens 24 Stunden trocknen lassen. Niemals feuchte oder verschmutzte Möbel einlagern – das zieht Schimmel an. Polstermöbel professionell reinigen lassen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Demontieren, verpacken und kennzeichnen",
+			text: "Alles zerlegen, was demontierbar ist. Schrauben in beschriftete Beutel packen und am Möbelstück befestigen. Empfindliche Kanten mit Luftpolsterfolie schützen, Oberflächen mit Möbeldecken umwickeln. Nie Plastik direkt auf Lack oder Leder legen – Feuchtigkeit wird eingeschlossen. Jedes Teil und jede Kiste beschriften."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Lagerbedingungen optimieren",
+			text: "Möbel nicht direkt an Außenwände stellen – mindestens 10 cm Abstand für Luftzirkulation. Paletten verwenden, um den Bodenkontakt zu vermeiden. Luftentfeuchter aufstellen bei nicht klimatisierten Räumen. Matratzen flach lagern, niemals auf die Kante stellen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Versicherung klären und Vertrag prüfen",
+			text: "Hausratversicherung deckt externe Lager meist nicht ab – Einlagerungsversicherung beim Anbieter abschließen oder bei Versicherer nachfragen. Vertrag auf Mindestlaufzeit, Kündigungsfrist und Preisanpassungsklauseln prüfen. Gesamtpreis über die geplante Lagerdauer berechnen."
 		}
 	]
 };

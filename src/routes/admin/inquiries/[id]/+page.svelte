@@ -159,6 +159,9 @@
 		items: ItemSnapshot[];
 		offer: OfferSnapshot | null;
 		employees?: EmployeeAssignment[];
+		end_date?: string | null;
+		is_multi_day?: boolean;
+		has_pauschale?: boolean;
 	}
 
 	interface EmployeeAssignment {
@@ -173,6 +176,11 @@
 		employee_clock_out: string | null;
 		employee_actual_hours: number | null;
 		notes: string | null;
+		job_date?: string | null;
+		transport_mode?: string | null;
+		travel_costs_cents?: number | null;
+		accommodation_cents?: number | null;
+		meal_deduction?: string | null;
 	}
 
 	interface EmployeeOption {
@@ -219,6 +227,7 @@
 	let editDate = $state("");
 	let editStartTime = $state("");
 	let editEndTime = $state("");
+	let editHasPauschale = $state(false);
 
 	const LOCKED_STATUSES = new Set(['offer_ready', 'offer_sent', 'accepted', 'scheduled', 'completed', 'invoiced', 'paid']);
 	let isLocked = $derived(data ? LOCKED_STATUSES.has(data.status) : false);
@@ -488,6 +497,31 @@
 		}
 	}
 
+	// Travel expense download state
+	let downloadingTravelExpense = $state(false);
+
+	/**
+	 * Downloads the travel-expense XLSX for the first assigned employee.
+	 *
+	 * Called by: Template (download button in pauschale section).
+	 * Purpose: Calls GET /api/v1/inquiries/{id}/employees/{emp_id}/travel-expenses
+	 *          and triggers a browser file download.
+	 */
+	async function downloadTravelExpense(empId: string) {
+		if (!data) return;
+		downloadingTravelExpense = true;
+		try {
+			await apiDownload(
+				`/api/v1/inquiries/${data.id}/employees/${empId}/travel-expenses`,
+				`Reisekosten_${data.id.slice(0, 8)}.xlsx`,
+			);
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			downloadingTravelExpense = false;
+		}
+	}
+
 	// Photo filter: click a photo to filter items table
 	let filterPhotoIndex = $state<number | null>(null);
 
@@ -651,6 +685,7 @@
 			editNotes = data.notes || "";
 			editEmployeeNotes = (data as any).employee_notes || "";
 			editDate = data.scheduled_date || "";
+			editHasPauschale = (data as any).has_pauschale || false;
 			editStartTime = data.start_time ? data.start_time.slice(0, 5) : '';
 			editEndTime = data.end_time ? data.end_time.slice(0, 5) : '';
 			computePricingDefaults();
@@ -715,6 +750,7 @@
 			scheduled_date: editDate || null,
 			start_time: editStartTime ? editStartTime + ':00' : undefined,
 			end_time: editEndTime ? editEndTime + ':00' : undefined,
+			has_pauschale: editHasPauschale,
 		});
 	}
 
@@ -2393,7 +2429,30 @@
 				entityId={data.id}
 				entityType="inquiry"
 				preferredDate={data.scheduled_date}
+				hasPauschale={editHasPauschale}
 			/>
+			{#if data.is_multi_day}
+				<div class="pauschale-toggle">
+					<label class="form-checkbox" style="margin-top: 0.75rem;">
+						<input
+							type="checkbox"
+							bind:checked={editHasPauschale}
+							onchange={persistInquiry}
+						/>
+						Verpflegungspauschale (Reisekosten)
+					</label>
+					{#if editHasPauschale && data.employees && data.employees.length > 0}
+						<button
+							class="btn btn-sm"
+							style="margin-top: 0.5rem;"
+							onclick={() => downloadTravelExpense(data.employees![0].employee_id)}
+							disabled={downloadingTravelExpense}
+						>
+							{downloadingTravelExpense ? 'Laden...' : 'Reisekosten herunterladen'}
+						</button>
+					{/if}
+				</div>
+			{/if}
 			<div class="emp-notes-field">
 				<label for="emp-notes-inq" class="emp-notes-label">Hinweis für Mitarbeiter</label>
 				<textarea

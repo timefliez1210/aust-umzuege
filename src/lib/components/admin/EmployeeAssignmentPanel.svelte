@@ -28,16 +28,18 @@
 		planned_hours: number;
 		actual_hours: number | null;
 		notes: string | null;
-		// Unified time fields (all entity types):
-		start_time?: string | null;      // planned start HH:MM:SS
-		end_time?: string | null;        // planned end HH:MM:SS
-		clock_in?: string | null;        // actual clock-in HH:MM:SS
-		clock_out?: string | null;       // actual clock-out HH:MM:SS
-		break_minutes?: number;          // break deduction in minutes
-		// Worker self-reported (inquiry only, read-only):
+		start_time?: string | null;
+		end_time?: string | null;
+		clock_in?: string | null;
+		clock_out?: string | null;
+		break_minutes?: number;
 		employee_clock_in?: string | null;
 		employee_clock_out?: string | null;
 		employee_actual_hours?: number | null;
+		transport_mode?: string | null;
+		travel_costs_cents?: number | null;
+		accommodation_cents?: number | null;
+		meal_deduction?: string | null;
 	}
 
 	interface EmployeeSummary {
@@ -68,11 +70,13 @@
 		entityId,
 		entityType,
 		preferredDate = undefined,
+		hasPauschale = false,
 		onUpdated = undefined
 	}: {
 		entityId: string;
 		entityType: 'inquiry' | 'calendar_item';
 		preferredDate?: string | null;
+		hasPauschale?: boolean;
 		onUpdated?: () => void;
 	} = $props();
 
@@ -112,6 +116,10 @@
 		planned: string; actual: string; notes: string;
 		clockIn: string; clockOut: string;
 		breakMin: string;
+		transportMode: string;
+		travelCosts: string;
+		accommodation: string;
+		mealDeduction: string;
 	}>>({});
 	let savingEmp = $state<Record<string, boolean>>({});
 
@@ -161,6 +169,10 @@
 						clockIn: fmtTime(e.clock_in),
 						clockOut: fmtTime(e.clock_out),
 						breakMin: String(e.break_minutes ?? 0),
+						transportMode: e.transport_mode ?? '',
+						travelCosts: e.travel_costs_cents != null ? String(e.travel_costs_cents) : '',
+						accommodation: e.accommodation_cents != null ? String(e.accommodation_cents) : '',
+						mealDeduction: e.meal_deduction ?? '',
 					};
 				}
 				editingEmp = state;
@@ -368,6 +380,10 @@
 				clock_in: s.clockIn ? s.clockIn + ':00' : null,
 				clock_out: s.clockOut ? s.clockOut + ':00' : null,
 				break_minutes: parseInt(s.breakMin) || 0,
+				transport_mode: s.transportMode || null,
+				travel_costs_cents: s.travelCosts !== '' ? parseInt(s.travelCosts) : null,
+				accommodation_cents: s.accommodation !== '' ? parseInt(s.accommodation) : null,
+				meal_deduction: s.mealDeduction || null,
 			});
 			if (!silent) {
 				await loadAssignments();
@@ -621,7 +637,7 @@
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
 		<div class="emp-list">
 			{#each assignments as emp}
-				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0' }}
+				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', mealDeduction: '' }}
 				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, parseInt(s.breakMin) || 0)}
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
@@ -662,6 +678,48 @@
 								};
 							}}
 						/>
+						{#if hasPauschale}
+							<label class="tiny-label" style="margin-left:0.5rem">Transport</label>
+							<select
+								class="break-input"
+								style="width:80px"
+								value={s.transportMode}
+								onchange={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, transportMode: (e.target as HTMLSelectElement).value } }; }}
+							>
+								<option value="">—</option>
+								<option value="PKW">PKW</option>
+								<option value="Bahn">Bahn</option>
+								<option value="Flugzeug">Flugzeug</option>
+								<option value="Taxi">Taxi</option>
+								<option value="Sonstiges">Sonstiges</option>
+							</select>
+							<label class="tiny-label" style="margin-left:0.5rem">Fahrtk. (€)</label>
+							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
+								value={s.travelCosts}
+								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, travelCosts: (e.target as HTMLInputElement).value } }; }}
+							/>
+							<label class="tiny-label" style="margin-left:0.5rem">Übern. (€)</label>
+							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
+								value={s.accommodation}
+								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, accommodation: (e.target as HTMLInputElement).value } }; }}
+							/>
+							<label class="tiny-label" style="margin-left:0.5rem">Abzug</label>
+							<select
+								class="break-input"
+								style="width:90px"
+								value={s.mealDeduction}
+								onchange={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, mealDeduction: (e.target as HTMLSelectElement).value } }; }}
+							>
+								<option value="">—</option>
+								<option value="breakfast">Frühstück</option>
+								<option value="lunch">Mittag</option>
+								<option value="dinner">Abend</option>
+								<option value="breakfast_lunch">Frühstück + Mittag</option>
+								<option value="breakfast_dinner">Frühstück + Abend</option>
+								<option value="lunch_dinner">Mittag + Abend</option>
+								<option value="all">Alle</option>
+							</select>
+						{/if}
 					</div>
 					<div class="emp-actions">
 						<button

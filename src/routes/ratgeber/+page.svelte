@@ -41,6 +41,13 @@
             icon: Home,
             link: "/ratgeber/messie-wohnung-raeumen",
         },
+        {
+            title: "Möbel einlagern – Kosten, Optionen \u0026 Vorbereitung",
+            description:
+                "Welche Lageroptionen es gibt, was sie pro Quadratmeter kosten und wie Sie Möbel vor dem Einlagern richtig vorbereiten.",
+            icon: Package,
+            link: "/ratgeber/moebel-einlagern",
+        },
     ];
 
     const breadcrumbs = createBreadcrumbs([

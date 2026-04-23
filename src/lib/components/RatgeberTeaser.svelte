@@ -30,6 +30,12 @@
 			href: "/ratgeber/messie-wohnung-raeumen",
 			linkText: "Ratgeber Messie-Wohnung",
 		},
+		{
+			title: "Möbel einlagern",
+			description: "Kosten pro Quadratmeter, Lageroptionen und Vorbereitung: Welche Einlagerungsarten es gibt und wie Sie Möbel schadensfrei lagern.",
+			href: "/ratgeber/moebel-einlagern",
+			linkText: "Ratgeber Einlagerung",
+		},
 	];
 </script>
 

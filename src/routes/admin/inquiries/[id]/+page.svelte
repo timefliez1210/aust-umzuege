@@ -2448,15 +2448,18 @@
 						/>
 						Verpflegungspauschale (Reisekosten)
 					</label>
-					{#if editHasPauschale && data.employees && data.employees.length > 0}
-						<button
-							class="btn btn-sm"
-							style="margin-top: 0.5rem;"
-							onclick={() => downloadTravelExpense(data.employees![0].employee_id)}
-							disabled={downloadingTravelExpense}
-						>
-							{downloadingTravelExpense ? 'Laden...' : 'Reisekosten herunterladen'}
-						</button>
+					{#if editHasPauschale}
+						<div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem;">
+							{#each (data.employees ?? []) as emp}
+								<button
+									class="btn btn-sm"
+									onclick={() => downloadTravelExpense(emp.employee_id)}
+									disabled={downloadingTravelExpense}
+								>
+									{downloadingTravelExpense ? 'Laden...' : `Reisekosten: ${emp.first_name} ${emp.last_name[0]}.`}
+								</button>
+							{/each}
+						</div>
 					{/if}
 				</div>
 			{/if}

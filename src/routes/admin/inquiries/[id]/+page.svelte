@@ -180,6 +180,7 @@
 		transport_mode?: string | null;
 		travel_costs_cents?: number | null;
 		accommodation_cents?: number | null;
+		misc_costs_cents?: number | null;
 		meal_deduction?: string | null;
 	}
 

@@ -39,6 +39,7 @@
 		transport_mode?: string | null;
 		travel_costs_cents?: number | null;
 		accommodation_cents?: number | null;
+		misc_costs_cents?: number | null;
 		meal_deduction?: string | null;
 	}
 
@@ -119,6 +120,7 @@
 		transportMode: string;
 		travelCosts: string;
 		accommodation: string;
+		miscCosts: string;
 		mealDeduction: string;
 	}>>({});
 	let savingEmp = $state<Record<string, boolean>>({});
@@ -172,6 +174,7 @@
 						transportMode: e.transport_mode ?? '',
 						travelCosts: e.travel_costs_cents != null ? String(e.travel_costs_cents) : '',
 						accommodation: e.accommodation_cents != null ? String(e.accommodation_cents) : '',
+						miscCosts: e.misc_costs_cents != null ? String(e.misc_costs_cents) : '',
 						mealDeduction: e.meal_deduction ?? '',
 					};
 				}
@@ -383,6 +386,7 @@
 				transport_mode: s.transportMode || null,
 				travel_costs_cents: s.travelCosts !== '' ? parseInt(s.travelCosts) : null,
 				accommodation_cents: s.accommodation !== '' ? parseInt(s.accommodation) : null,
+				misc_costs_cents: s.miscCosts !== '' ? parseInt(s.miscCosts) : null,
 				meal_deduction: s.mealDeduction || null,
 			});
 			if (!silent) {
@@ -637,7 +641,7 @@
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
 		<div class="emp-list">
 			{#each assignments as emp}
-				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', mealDeduction: '' }}
+				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', miscCosts: '', mealDeduction: '' }}
 				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, parseInt(s.breakMin) || 0)}
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
@@ -702,6 +706,11 @@
 							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
 								value={s.accommodation}
 								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, accommodation: (e.target as HTMLInputElement).value } }; }}
+							/>
+							<label class="tiny-label" style="margin-left:0.5rem">Sonst. (€)</label>
+							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
+								value={s.miscCosts}
+								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, miscCosts: (e.target as HTMLInputElement).value } }; }}
 							/>
 							<label class="tiny-label" style="margin-left:0.5rem">Abzug</label>
 							<select

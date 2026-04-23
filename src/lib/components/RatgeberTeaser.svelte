@@ -31,6 +31,12 @@
 			linkText: "Ratgeber Messie-Wohnung",
 		},
 		{
+			title: "Umzug mit Kindern",
+			description: "Altergerechte Vorbereitung, Abschiedsrituale und Tipps für den Schulwechsel in Hildesheim.",
+			href: "/ratgeber/umzug-mit-kindern",
+			linkText: "Ratgeber Umzug mit Kindern",
+		},
+		{
 			title: "Möbel einlagern",
 			description: "Kosten pro Quadratmeter, Lageroptionen und Vorbereitung: Welche Einlagerungsarten es gibt und wie Sie Möbel schadensfrei lagern.",
 			href: "/ratgeber/moebel-einlagern",

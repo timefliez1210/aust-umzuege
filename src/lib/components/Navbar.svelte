@@ -87,6 +87,10 @@
                         href: "/ratgeber/messie-wohnung-raeumen",
                     },
                     {
+                        label: "Umzug mit Kindern",
+                        href: "/ratgeber/umzug-mit-kindern",
+                    },
+                    {
                         label: "Möbel einlagern",
                         href: "/ratgeber/moebel-einlagern",
                     },

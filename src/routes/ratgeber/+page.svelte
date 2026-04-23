@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight } from "lucide-svelte";
+    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
@@ -40,6 +40,13 @@
                 "Praktischer DIY-Ratgeber: Gesundheits-Check, Schutzausrüstung, Sortiersystem und Entsorgungsplan. Wann Sie lieber Profi-Hilfe holen sollten.",
             icon: Home,
             link: "/ratgeber/messie-wohnung-raeumen",
+        },
+        {
+            title: "Umzug mit Kindern – So gelingt der Neuanfang",
+            description:
+                "Altergerechte Vorbereitung, Abschiedsrituale und Tipps für den Schulwechsel. Wie Sie Kinder emotional begleiten und den Umzug zur Familienaufgabe machen.",
+            icon: Users,
+            link: "/ratgeber/umzug-mit-kindern",
         },
         {
             title: "Möbel einlagern – Kosten, Optionen \u0026 Vorbereitung",

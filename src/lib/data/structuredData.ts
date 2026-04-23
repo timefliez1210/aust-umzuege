@@ -553,6 +553,35 @@ export const articles = {
 			"@id": "https://www.aust-umzuege.de/ratgeber/moebel-einlagern"
 		},
 		articleSection: "Ratgeber"
+	},
+	umzugMitKindern: {
+		"@type": "Article",
+		headline: "Umzug mit Kindern – So meistert Ihre Familie den Wohnungswechsel",
+		description:
+			"Umzug mit Kindern richtig planen: Altergerechte Vorbereitung, Abschiedsrituale, Schulwechsel in Hildesheim und Tipps für den emotionalen Neuanfang als Familie.",
+		author: {
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
+		},
+		publisher: {
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge \u0026 Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
+		},
+		datePublished: "2026-04-23",
+		dateModified: "2026-04-23",
+		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		url: "https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern",
+		mainEntityOfPage: {
+			"@type": "WebPage",
+			"@id": "https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern"
+		},
+		articleSection: "Ratgeber"
 	}
 };
 
@@ -918,6 +947,39 @@ export const howToMoebelEinlagern = {
 			"@type": "HowToStep",
 			name: "Versicherung klären und Vertrag prüfen",
 			text: "Hausratversicherung deckt externe Lager meist nicht ab – Einlagerungsversicherung beim Anbieter abschließen oder bei Versicherer nachfragen. Vertrag auf Mindestlaufzeit, Kündigungsfrist und Preisanpassungsklauseln prüfen. Gesamtpreis über die geplante Lagerdauer berechnen."
+		}
+	]
+};
+
+export const howToUmzugMitKindern = {
+	"@type": "HowTo",
+	name: "Kind auf Umzug vorbereiten: Schritt-für-Schritt-Anleitung",
+	description: "Praktischer Leitfaden für Eltern: So bereiten Sie Kinder je nach Alter emotional und organisatorisch auf einen Wohnungswechsel vor – von der Nachricht bis zum ersten Tag in der neuen Stadt.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Kind altersgerecht informieren",
+			text: "Kleinkinder erst eine Woche vorher informieren, Kindergartenkinder drei bis vier Wochen vorher, Grundschulkinder sechs Wochen und Teenager zehn bis zwölf Wochen. Nie als schlechte Nachricht verkaufen – Kinder nehmen die emotionale Bewertung der Eltern als Maßstab."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Kind altersgerecht einbeziehen",
+			text: "Kleinkinder brauchen vertraute Rituale und Plüschtiere, die nie in Kisten verschwinden. Kindergartenkinder bemalen ihren eigenen Umzugskarton. Grundschulkinder planen ihr neues Zimmer und tragen Kartons. Teenager entscheiden über Farbe, Möbel und Internetanschluss – Respekt vor ihrem sozialen Netz ist entscheidend."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Schulwechsel früh klären",
+			text: "Anmeldung beim Schulamt Hildesheim oder direkt an der Wunschschule. Unterlagen vorbereiten: Meldebescheinigung, Zeugnis, Versetzungsbescheinigung, Impfpass. Bei Umzug innerhalb Niedersachsens meist unproblematisch, bei anderem Bundesland können Anpassungsprüfungen nötig sein. Förderbedarf früh beiden Schulen mitteilen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Abschied leben statt verdrängen",
+			text: "Abschiedsrundgang zu Lieblingsorten, Abschiedsfest mit den drei bis vier wichtigsten Freunden, Erinnerungskiste mit Steinen, Zweigen und Fotos. Symbolische Übergaben helfen Kleinkindern. Trauer ernst nehmen – gemeinsames Weinen ist therapeutisch, nicht dramatisch."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Neuanfang strukturiert angehen",
+			text: "Woche 1: Sicherheit durch gleiche Routine. Woche 2: Stadtteil entdecken. Woche 3: Erste soziale Kontakte – Jugendfreizeiteinrichtungen, Vereine, Musikschule. Woche 4: Alte Stadt besuchen, um Brücken zu bauen. Dringend: Kinderzimmer zuerst aufbauen, Erste-Hilfe-Box fürs Kind bereithalten, alte Freundschaften per Videochat pflegen."
 		}
 	]
 };

@@ -13,7 +13,7 @@
 
 <MetaTags
 	title="Messie-Wohnung entrümpeln – Schritt für Schritt | Aust Umzüge"
-	description="Messie-Wohnung selbst entrümpeln: Praktischer DIY-Ratgeber mit Checkliste, Gesundheitsrisiken, Sortiersystem und Entsorgungsplan. Wann Sie lieber Profi-Hilfe holen sollten."
+	description="Messie-Wohnung entrümpeln: DIY-Ratgeber mit Gesundheits-Check, Schutzausrüstung und Sortiersystem. Profis schaffen denselben Umfang in 24–48 Stunden."
 	keywords="Messie Wohnung, Wohnungsverwahrlosung, Entrümpelung Messie, Messie Wohnung räumen, extreme Unordnung, Messie Haushaltsauflösung"
 	canonical="https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen"
 	ogType="article"
@@ -82,7 +82,7 @@
 				</section>
 
 				<section>
-					<h2>Erste Übersicht: Ist die Wohnung selbst räumbar?</h2>
+					<h2>Ist die Messie-Wohnung selbst räumbar? Erste Übersicht</h2>
 					<p>
 						Bevor Sie loslegen, machen Sie einen realistischen Check. Nicht jede
 						vermüllte Wohnung lässt sich ohne Hilfe bewältigen.
@@ -132,7 +132,7 @@
 						<li><strong>Desinfektionsmittel und Kehrschaufel:</strong> Für Zwischenreinigungen</li>
 					</ul>
 					<div class="tip-box">
-						<strong>Ein Tipp aus der Praxis:</strong> Tragen Sie <strong>keine offenen Schuhe oder Shorts</strong>, auch wenn es warm ist. Glasscherben, rostige Nagel oder verborgene Nadeln sind in vermüllten Wohnungen allgegenwärtig. Schutzausrüstung ist keine Übertreibung – sie ist Vernunft.
+						<strong>Ein Tipp aus der Praxis:</strong> Tragen Sie <strong>keine offenen Schuhe oder Shorts</strong>, auch wenn es warm ist. Glasscherben, rostige Nägel oder verborgene Nadeln sind in vermüllten Wohnungen allgegenwärtig. Schutzausrüstung ist keine Übertreibung – sie ist Vernunft.
 					</div>
 				</section>
 
@@ -151,7 +151,7 @@
 					</p>
 					<h3>Schritt 2: Sicherheitszone einrichten</h3>
 					<p>
-						Wählen Sie einen Zimmer oder Bereich als Basecamp, der von Anfang an
+						Wählen Sie ein Zimmer oder einen Bereich als Basecamp, der von Anfang an
 						frei bleibt. Hier lagern Sie Werkzeug, Trinkwasser, Erste-Hilfe-Set
 						und die Schlüssel. So haben Sie jederzeit einen Rückzugsort.
 					</p>
@@ -219,7 +219,7 @@
 		</p>
 					<h3>Scharfkantige Gegenstände</h3>
 					<p>
-						Zerborstene Gläser, rostige Metallteile, Nagel und Schrauben liegen oft
+						Zerborstene Gläser, rostige Metallteile, Nägel und Schrauben liegen oft
 						verborgen unter Papierstapeln. <strong>Nie mit bloßen Händen graben</strong> –
 						immer mit einer Schaufel oder einem Stab vorsichtig lockern und dann
 						ansehen.
@@ -249,7 +249,7 @@
 					</p>
 					<h3>Sozialkaufhäuser und Spenden</h3>
 					<p>
-						Nicht alles muss wegwerfen. Sozialkaufhäuser in und um Hildesheim
+						Nicht alles muss weg. Sozialkaufhäuser in und um Hildesheim
 						nehmen gut erhaltene Möbel, Kleidung und Haushaltsgegenstände an.
 						Rufen Sie vorher an – manche holen auch ab und Sie erhalten eine
 						Spendenbescheinigung.
@@ -257,7 +257,7 @@
 					<h3>Online-Verkauf</h3>
 					<p>
 						Wertvolle Einzelstücke oder funktionierende Elektrogeräte können schnell
-						bei lokalen Verkaufsplattformen oder Kleingedankenanzeigen veräußert
+						über lokale Verkaufsplattformen oder Kleinanzeigen veräußert
 						werden. Das senkt die Entsorgungskosten und hilft anderen.
 					</p>
 					<h3>Sondermüll</h3>
@@ -399,6 +399,14 @@
 						Vermieterwechseln können die Kosten vom Mieter zurückgefordert werden.
 						Bei Behinderung oder Pflegebedürftigkeit gibt es in einigen Fällen
 						Zuschüsse vom Sozialamt – erkundigen Sie sich frühzeitig.
+					</p>
+					<p>
+						Wenn Sie zusätzlich Möbel zwischenlagern müssen, lesen Sie unseren Ratgeber
+						<a href="/ratgeber/moebel-einlagern">Möbel einlagern – Kosten, Optionen und Vorbereitung</a>.
+						Für die Wahl einer verlässlichen Firma helfen unsere
+						<a href="/ratgeber/seriose-umzugsfirma">Tipps zur seriösen Umzugsfirma</a>.
+						Wertvolle Gegenstände, die Sie behalten möchten, schützen Sie am besten mit unseren
+						<a href="/ratgeber/verpackungstipps">Verpackungstipps für Umzug und Einlagerung</a>.
 					</p>
 				</section>
 

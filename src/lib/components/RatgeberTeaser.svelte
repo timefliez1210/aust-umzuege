@@ -24,6 +24,12 @@
 			href: "/ratgeber/seriose-umzugsfirma",
 			linkText: "Ratgeber Umzugsfirmen",
 		},
+		{
+			title: "Messie-Wohnung entrümpeln",
+			description: "DIY-Ratgeber für extreme Unordnung: Gesundheits-Check, Sortiersystem, Schutzausrüstung und Entsorgungsplan.",
+			href: "/ratgeber/messie-wohnung-raeumen",
+			linkText: "Ratgeber Messie-Wohnung",
+		},
 	];
 </script>
 

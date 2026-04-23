@@ -495,6 +495,35 @@ export const articles = {
 			"@id": "https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma"
 		},
 		articleSection: "Ratgeber"
+	},
+	messieWohnung: {
+		"@type": "Article",
+		headline: "Messie-Wohnung entrümpeln – Schritt für Schritt selbst machen",
+		description:
+			"Messie-Wohnung selbst entrümpeln: Praktischer DIY-Ratgeber mit Gesundheits-Check, Sortiersystem, Schutzausrüstung und Entsorgungsplan. Wann Sie lieber Profi-Hilfe holen sollten.",
+		author: {
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
+		},
+		publisher: {
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge \u0026 Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
+		},
+		datePublished: "2026-04-23",
+		dateModified: "2026-04-23",
+		image: "https://www.aust-umzuege.de/Haushaltsaufloesungen-Entruempelungen-carousel-3-800w.webp",
+		url: "https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen",
+		mainEntityOfPage: {
+			"@type": "WebPage",
+			"@id": "https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen"
+		},
+		articleSection: "Ratgeber"
 	}
 };
 
@@ -794,6 +823,39 @@ export const howToSerioseUmzugsfirma = {
 			"@type": "HowToStep",
 			name: "Vertrag sorgfältig prüfen",
 			text: "Vor Unterzeichnung den Vertrag genau lesen: Sind alle Leistungen aufgeführt? Ist der Festpreis eindeutig? Gibt es eine Stornierungsklausel? Sind Versicherungsdetails genannt? Erst unterschreiben, wenn alles klar ist."
+		}
+	]
+};
+
+export const howToMessieWohnung = {
+	"@type": "HowTo",
+	name: "Messie-Wohnung selbst entrümpeln: Schritt-für-Schritt-Anleitung",
+	description: "Praktischer DIY-Leitfaden für die Entrümpelung einer Messie-Wohnung – mit Gesundheits-Check, Schutzausrüstung, Sortiersystem und Entsorgungsplan.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Wohnung auf Machbarkeit prüfen",
+			text: "Vor dem Betreten alle Fenster öffnen und 30 Minuten durchlüften. Auf Schimmel, Fäulnis, Chemikalienlachen oder Tierkot prüfen. Bei Bio- oder Chemiegefahren sofortigen Abbruch des DIY-Vorhabens erwägen und professionelle Hilfe bevorzugen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Schutzausrüstung besorgen und anlegen",
+			text: "FFP2-Maske, Einweg-Overall, Gummihandschuhe, Schutzbrille, feste Arbeitsschuhe und 120-Liter-Müllsäcke beschaffen. Keine bloßen Hände oder offenen Schuhe. Schutzausrüstung ist Pflicht, kein Luxus."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Systematisch nach Vier-Kategorien-System sortieren",
+			text: "Gänge freilegen, dann Raum für Raum arbeiten. Jedes Teil in eine von vier Kategorien einteilen: Behalten, Verkaufen/Verschenken, Recycling/Wertstoffhof, Restmüll. Emotionale Gegenstände in gesonderte Kiste legen – nicht sofort sortieren."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Transport und fachgerechte Entsorgung organisieren",
+			text: "Elektrogeräte, Metalle und Sondermüll getrennt sammeln. Wertstoffhof-Touren planen oder Transporter für 50-80 Euro pro Tag mieten. Sozialkaufhäuser vorher anrufen für Spendenabholung. Farben und Chemikalien nur an zugelassenen Annahmestellen abgeben."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Grundreinigung und Belüftung",
+			text: "Leere Räume gründlich saugen und mit Soda-Lösung oder essigbasiertem Reiniger wischen. Intensiv lüften. Bei hartnäckigen Gerüchen nicht mit starken Chemikalien arbeiten. Besenreine Übergabe für Vermieter dokumentieren."
 		}
 	]
 };

@@ -34,6 +34,13 @@
             icon: ShieldCheck,
             link: "/ratgeber/seriose-umzugsfirma",
         },
+        {
+            title: "Messie-Wohnung entrümpeln – Schritt für Schritt",
+            description:
+                "Praktischer DIY-Ratgeber: Gesundheits-Check, Schutzausrüstung, Sortiersystem und Entsorgungsplan. Wann Sie lieber Profi-Hilfe holen sollten.",
+            icon: Home,
+            link: "/ratgeber/messie-wohnung-raeumen",
+        },
     ];
 
     const breadcrumbs = createBreadcrumbs([

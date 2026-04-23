@@ -127,6 +127,7 @@
 		disposal: boolean;
 		parking_ban_origin: boolean;
 		parking_ban_destination: boolean;
+		transporter: boolean;
 	}
 
 	interface InquiryResponse {
@@ -248,7 +249,8 @@
 			{ row: 32, label: "Montage", defaultCents: 5000, defaultRemark: "" },
 			{ row: 33, label: "Halteverbotszone", defaultCents: 10000, defaultRemark: "" },
 			{ row: 34, label: "Umzugsmaterial", defaultCents: 3000, defaultRemark: "Stretchfolie, Decken, Gurte" },
-			{ row: 35, label: "Möbellift", defaultCents: 0, defaultRemark: "" },
+			{ row: 35, label: "3,5t Transporter m. Koffer", defaultCents: 6000, defaultRemark: "" },
+			{ row: 36, label: "Möbellift", defaultCents: 0, defaultRemark: "" },
 			{ row: 36, label: "Verleih Kleiderboxen", defaultCents: 1000, defaultRemark: "610x520x1370" },
 			{ row: 37, label: "Verkauf Seidenpapier", defaultCents: 500, defaultRemark: "500x750" },
 			{ row: 38, label: "Verkauf U-Karton", defaultCents: 210, defaultRemark: "590x318x328" },

@@ -84,6 +84,7 @@
 	let svcDemontage = $state(false);
 	let svcEinlagerung = $state(false);
 	let svcEntsorgung = $state(false);
+	let svcTransporter = $state(true);
 
 	// Details
 	let preferredDate = $state('');
@@ -237,6 +238,7 @@
 		if (svcDemontage) parts.push('Demontage');
 		if (svcEinlagerung) parts.push('Einlagerung');
 		if (svcEntsorgung) parts.push('Entsorgung');
+		if (svcTransporter) parts.push('3,5t Transporter m. Koffer');
 		if (extraNotes.trim()) parts.push(extraNotes.trim());
 		return parts.join(', ');
 	}
@@ -664,6 +666,7 @@
 			<label class="form-checkbox"><input type="checkbox" bind:checked={svcDemontage} /> Demontage</label>
 			<label class="form-checkbox"><input type="checkbox" bind:checked={svcEinlagerung} /> Einlagerung</label>
 			<label class="form-checkbox"><input type="checkbox" bind:checked={svcEntsorgung} /> Entsorgung</label>
+			<label class="form-checkbox"><input type="checkbox" bind:checked={svcTransporter} /> 3,5t Transporter m. Koffer</label>
 		</div>
 	</div>
 

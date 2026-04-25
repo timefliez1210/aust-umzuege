@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users } from "lucide-svelte";
+    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
@@ -54,6 +54,13 @@
                 "Welche Lageroptionen es gibt, was sie pro Quadratmeter kosten und wie Sie Möbel vor dem Einlagern richtig vorbereiten.",
             icon: Package,
             link: "/ratgeber/moebel-einlagern",
+        },
+        {
+            title: "Küche beim Umzug: Abbau, Transport & Montage",
+            description:
+                "Einbauküche sicher demontieren, Spülmaschine richtig abklemmen, Granit transportieren. Was Sie selbst tun können – und wo Profis Fehler verhindern.",
+            icon: UtensilsCrossed,
+            link: "/ratgeber/kueche-umzug",
         },
     ];
 

@@ -12,9 +12,9 @@
 </script>
 
 <MetaTags
-	title="Messie-Wohnung entrümpeln – Schritt für Schritt | Aust Umzüge"
-	description="Messie-Wohnung entrümpeln: DIY-Ratgeber mit Gesundheits-Check, Schutzausrüstung und Sortiersystem. Profis schaffen denselben Umfang in 24–48 Stunden."
-	keywords="Messie Wohnung, Wohnungsverwahrlosung, Entrümpelung Messie, Messie Wohnung räumen, extreme Unordnung, Messie Haushaltsauflösung"
+	title="Messie-Wohnung entrümpeln – Kosten, Risiken & Schritt für Schritt | Aust Umzüge"
+	description="Messie-Wohnung entrümpeln: DIY-Ratgeber mit Gesundheits-Check, Schutzausrüstung und Sortiersystem. Kosten DIY: 100–300 €, Profi: ab 800 €. Mit Vermieter-Sonderfall."
+	keywords="Messie Wohnung, Messie Syndrom, Wohnungsverwahrlosung, Entrümpelung Messie, Messie Wohnung räumen, extreme Unordnung, Messie Haushaltsauflösung, Messie Wohnung Vermieter, Messie Wohnung Kosten"
 	canonical="https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen"
 	ogType="article"
 />
@@ -65,7 +65,9 @@
 						bezeichnet Menschen, die in einer extrem unordentlichen, oft vermüllten
 						Wohnung leben. Das geht weit über normale Unordnung hinaus: Gänge sind
 						mit Gegenständen verstellt, Räume kaum noch nutzbar, und oft haben sich
-						auch hygienische Probleme entwickelt.
+						auch hygienische Probleme entwickelt. In der Psychologie spricht man vom
+						<strong>Messie-Syndrom</strong> oder der Hortingsstörung (Hoarding Disorder),
+						die in der ICD-11 als eigenständige Diagnose geführt wird.
 					</p>
 					<p>
 						Wichtig zu verstehen: Dahinter steht kein Charakterfehler, sondern meist
@@ -351,6 +353,47 @@
 						hat, vervielfacht die Dauer. Ein professioneller Dienst schafft denselben
 						Umfang oft in 24–48 Stunden.
 					</p>
+				</section>
+
+				<section>
+					<h2>Sonderfall: Messie-Wohnung als Vermieter übernehmen</h2>
+					<p>
+						Vermieter stehen nach dem Auszug eines Messie-Mieters vor besonderen
+						Herausforderungen: Die Wohnung ist vermüllt, möglicherweise beschädigt,
+						und der Mieter ist oft nicht mehr erreichbar. Folgende Schritte helfen:
+					</p>
+					<h3>Beweissicherung sofort</h3>
+					<p>
+						Betreten Sie die Wohnung erst nach Wohnungsübergabe oder Räumungstitel –
+						nicht eigenmächtig während des laufenden Mietverhältnisses, auch wenn der
+						Verdacht besteht. Nach der Schlüsselrückgabe: <strong>vollständige Fotodokumentation</strong>
+						aller Räume und Schäden vor dem ersten Handgriff. Diese Fotos sind die
+						Grundlage für Schadensersatzforderungen.
+					</p>
+					<h3>Rechtliche Einordnung der Kosten</h3>
+					<p>
+						Entrümpelungskosten durch einen Messie-Mieter sind
+						<strong>auf die Kaution und ggf. per Klage anrechenbar</strong>, wenn die
+						Verschmutzung über normale Abnutzung hinausgeht – was bei einer
+						Messie-Wohnung regelmäßig der Fall ist. Dokumentieren Sie den Zustand
+						und beauftragen Sie eine Fachfirma mit schriftlichem Festpreisangebot.
+					</p>
+					<h3>Professionelle Entrümpelung empfohlen</h3>
+					<p>
+						Als Vermieter sollten Sie die Entrümpelung fast immer professionell durchführen
+						lassen – nicht aus Komfort, sondern wegen <strong>Haftung und Zeitdruck</strong>.
+						Die Wohnung steht leer, jeder Monat kostet Mietausfall. Ein professionelles
+						Team räumt eine Drei-Zimmer-Wohnung in ein bis zwei Tagen besenrein,
+						inklusive fachgerechter Entsorgung. Die Rechnung dient gleichzeitig als
+						Nachweis für den Schadensersatzprozess.
+					</p>
+					<div class="tip-box">
+						<strong>Hildesheim-Hinweis:</strong> Bei massiven Schäden (Schimmelbefall,
+						Tierhaltung ohne Erlaubnis, strukturelle Beschädigungen) prüfen Sie, ob
+						neben der Entrümpelung auch eine <strong>professionelle Desinfektion</strong>
+						und Sanierung nötig ist. Beides zusammen in einem Auftrag zu vergeben spart
+						Zeit und schafft klare Verantwortlichkeit.
+					</div>
 				</section>
 
 				<section>

@@ -15,6 +15,10 @@
 
     const faqs = [
         {
+            question: "Kann ich eine Entrümpelung als Vermieter von der Steuer absetzen?",
+            answer: "Ja – und zwar vollständig. Vermieter können Entrümpelungskosten nach einem schwierigen Mieter oder einer Zwangsräumung nach §21 EStG als Werbungskosten aus Vermietung und Verpachtung absetzen. Das gilt für den gesamten Rechnungsbetrag – Transport, Entsorgung, Arbeitszeit – nicht nur den Lohnanteil. Voraussetzung ist ein nachvollziehbarer Zusammenhang mit der Vermietungstätigkeit, was bei einer Wohnung zwischen zwei Mietverhältnissen eindeutig gegeben ist. Wir stellen auf Wunsch einen Entsorgungsnachweis aus, den Ihr Steuerberater zusammen mit der Rechnung direkt verwenden kann."
+        },
+        {
             question: "Was kostet eine Entrümpelung in Hildesheim?",
             answer: "Die Kosten richten sich nach Umfang, Zugänglichkeit und Zustand der Räumlichkeiten. Ein einzelner Keller liegt oft zwischen 200 und 600 Euro, eine vollständige Wohnungsentrümpelung zwischen 800 und 2.500 Euro. Gut erhaltene Gegenstände rechnen wir gegen die Kosten an – das senkt Ihren Preis spürbar. Nach einer kostenlosen Besichtigung erhalten Sie ein verbindliches Festpreisangebot."
         },
@@ -47,7 +51,7 @@
 
 <MetaTags
     title="Entrümpelung Hildesheim – Keller, Dachboden & Messie | Aust Umzüge"
-    description="Entrümpelung in Hildesheim: Keller, Dachboden, Garage oder Messie-Wohnung. Festpreis nach kostenloser Besichtigung. Schnell, diskret, besenrein."
+    description="Entrümpelung als Vermieter nach schwierigem Mieter: Kosten nach §21 EStG als Werbungskosten absetzbar. Hildesheim, Festpreis, Entsorgungsnachweis inklusive."
     keywords="Entrümpelung Hildesheim, Keller entrümpeln, Dachboden entrümpeln, Messie Wohnung, Garage entrümpeln"
     canonical="https://www.aust-umzuege.de/leistungen/entruempelung"
 />
@@ -132,6 +136,19 @@
                 <p>
                     Mit geeignetem Werkzeug, Schutzkleidung und zertifizierten Entsorgungswegen erledigen wir auch herausfordernde Situationen diskret und effizient. Brauchbares trennen wir von Müll und rechnen den Wert verwertbarer Gegenstände transparent gegen die Kosten an.
                 </p>
+
+                <div class="hook-box">
+                    <p class="hook-box__lead">Für Vermieter: Entrümpelungskosten sind als Werbungskosten vollständig absetzbar.</p>
+                    <p>
+                        Wer nach einem schwierigen Mieter oder einer Zwangsräumung entrümpeln lässt,
+                        kann die gesamten Kosten nach <strong>§21 EStG</strong> als Werbungskosten aus
+                        Vermietung und Verpachtung absetzen – Transport, Entsorgung und Arbeitszeit,
+                        nicht nur den Lohnanteil. Der Zusammenhang mit der Vermietungstätigkeit ist
+                        bei einer Wohnung zwischen zwei Mietverhältnissen eindeutig gegeben.
+                        Wir stellen auf Wunsch einen <strong>Entsorgungsnachweis</strong> aus, den Ihr
+                        Steuerberater direkt verwenden kann.
+                    </p>
+                </div>
 
                 <h3 class="highlight-title">Unser Service:</h3>
                 <ul class="feature-list">
@@ -386,5 +403,24 @@
         font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    .hook-box {
+        background-color: #eff6ff;
+        border-left: 4px solid var(--color-nav-accent);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        padding: var(--space-5) var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
+    .hook-box__lead {
+        font-weight: var(--font-semibold);
+        color: var(--color-info-bar);
+        margin-bottom: var(--space-2) !important;
+        font-size: var(--text-base) !important;
+    }
+
+    .hook-box p:last-child {
+        margin-bottom: 0 !important;
     }
 </style>

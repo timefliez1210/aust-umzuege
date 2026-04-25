@@ -12,9 +12,9 @@
 </script>
 
 <MetaTags
-	title="Möbel einlagern: Kosten, Optionen & Tipps | Aust Umzüge"
-	description="Möbel einlagern ab 15 Euro/m²: Self-Storage vs. Full-Service im Vergleich, Kosten pro Quadratmeter und wie Sie Ihre Möbel richtig für die Lagerung vorbereiten."
-	keywords="Möbel einlagern, Möbellagerung, Einlagerung Möbel, Zwischenlagerung Umzug, Self-Storage Hildesheim, Möbel einlagern Kosten, Möbel lagern lassen"
+	title="Möbel einlagern Hildesheim: Kosten, Optionen & Tipps | Aust Umzüge"
+	description="Möbel einlagern in Hildesheim: Self-Storage vs. Full-Service im Vergleich, Kosten ab 15 €/m² (Jahresvertrag) bis 28 €/m² kurzfristig – und wie Möbel die Lagerung unbeschadet überstehen."
+	keywords="Möbel einlagern, Möbellagerung Hildesheim, Einlagerung Möbel, Zwischenlagerung Umzug, Self-Storage Hildesheim, Möbel einlagern Kosten, Möbel lagern lassen, Möbel einlagern zwischen Umzug"
 	canonical="https://www.aust-umzuege.de/ratgeber/moebel-einlagern"
 	ogType="article"
 />
@@ -186,6 +186,29 @@
 						Massivholzmöbel können werfen, Matratzen schimmeln, Polster muffig werden.
 						Nur wählen, wenn der Raum aktiv belüftet und trocken ist – und dann mit
 						<strong>Luftentfeuchter und Paletten</strong> arbeiten.
+					</div>
+				</section>
+
+				<section>
+					<h2>Möbel einlagern zwischen zwei Umzügen – der Sonderfall Lieferlücke</h2>
+					<p>
+						Der häufigste Anlass in der Praxis: Der Mietvertrag der alten Wohnung endet,
+						die neue ist noch nicht bezugsfertig. Sie brauchen eine
+						<strong>Zwischenlagerung für 2–8 Wochen</strong> – nicht mehr, nicht weniger.
+					</p>
+					<p>
+						In dieser Situation lohnt sich ein Full-Service-Anbieter oft mehr als
+						Self-Storage, weil das Umzugsunternehmen die Möbel direkt aus der alten
+						Wohnung in das Lager und anschließend in die neue transportiert.
+						Sie brauchen keinen zweiten Transporter zu organisieren und kein
+						eigenes Ein- und Ausladen.
+					</p>
+					<div class="tip-box">
+						<strong>Kostencheck Lieferlücke:</strong> Bei 4 Wochen Zwischenlagerung
+						und 8–10 m² Lagerfläche fallen typischerweise <strong>250–350 Euro</strong>
+						für die Einlagerung an, zuzüglich des ohnehin anfallenden Umzugspreises.
+						Fragen Sie beim Umzugsangebot explizit, ob eine Zwischenlagerungsoption
+						inklusive Ein- und Auslagerung enthalten ist – oft gibt es Pauschalpreise.
 					</div>
 				</section>
 

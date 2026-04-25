@@ -12,9 +12,9 @@
 </script>
 
 <MetaTags
-	title="Umzug mit Kindern – So gelingt der Neuanfang als Familie | Aust Umzüge"
-	description="Umzug mit Kindern richtig planen: Wie Sie Kinder je nach Alter auf einen Wohnungswechsel vorbereiten, den Schulwechsel meistern und den Abschied von Freunden begleiten."
-	keywords="Umzug mit Kindern, Umzug mit Kleinkind, Schulwechsel Hildesheim, Umzug Kinder beteiligen, Kinder Umzug vorbereiten, Umzug Familie"
+	title="Umzug mit Kindern – Familienumzug richtig planen | Aust Umzüge Hildesheim"
+	description="Umzug mit Kindern & Baby in Hildesheim: Altersgerechte Vorbereitung, Schulwechsel meistern und Abschiedsrituale gestalten – praktische Tipps für jede Altersgruppe."
+	keywords="Umzug mit Kindern, Umzug mit Baby, Umzug mit Kleinkind, Schulwechsel Hildesheim, Umzug Kinder beteiligen, Kinder Umzug vorbereiten, Umzug Familie Hildesheim"
 	canonical="https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern"
 	ogType="article"
 />
@@ -44,7 +44,7 @@
 					</svg>
 				</div>
 				<h1>Umzug mit Kindern – So meistert Ihre Familie den Wohnungswechsel</h1>
-				<p class="subtitle">Altergerechte Vorbereitung, Abschiedsrituale und Tipps für den Schulwechsel in Hildesheim</p>
+				<p class="subtitle">Altersgerechte Vorbereitung, Abschiedsrituale und Tipps für den Schulwechsel in Hildesheim</p>
 				<p class="author-byline">Von Alex Aust, Geschäftsführer und Vater bei Aust Umzüge</p>
 			</header>
 
@@ -123,7 +123,17 @@
 				</section>
 
 				<section>
-					<h2>Altergerechte Vorbereitung: Was bei jedem Stadium hilft</h2>
+					<h2>Altersgerechte Vorbereitung: Was bei jedem Stadium hilft</h2>
+
+					<h3>Babys und Kleinkinder unter 1 Jahr – Routine ist alles</h3>
+					<p>
+						Babys und sehr kleine Kinder bemerken einen Umzug kaum inhaltlich, aber
+						sehr wohl emotional: Eltern sind gestresst, Abläufe verändern sich. Der
+						einzige Schutz für ein Baby im Umzugschaos ist
+						<strong>absolute Konstanz bei Schlaf-, Fütter- und Körperkontaktzeiten</strong>.
+						Das neue Zimmer darf ruhig noch unfertig sein – solange die Routine stimmt,
+						fühlt sich ein Baby sicher.
+					</p>
 
 					<h3>Kleinkinder (1–3 Jahre) – Sicherheit durch Vertrautes</h3>
 					<p>
@@ -401,11 +411,11 @@
 
 					<h3>Wie lange dauert es, bis sich ein Kind eingewöhnt hat?</h3>
 					<p>
-						Regelbasiert: <strong>Ein Monat pro Lebensjahr</strong>. Ein
-						Fünfjähriger braucht etwa fünf Monate, bis er sich wirklich
-						heimisch fühlt. Ein Teenager kann ein bis anderthalb Jahre
-						brauchen. Drängen Sie nicht. Kinder, die sich eingewöhnt
-						fühlen müssen, fühlen sich fremd – länger.
+						Als grobe Faustregel gilt häufig: <strong>Ein Monat pro Lebensjahr</strong>.
+						Ein Fünfjähriger braucht oft fünf bis sechs Monate, bis er sich wirklich
+						heimisch fühlt; ein Teenager kann ein bis anderthalb Jahre brauchen.
+						Diese Zeitspanne variiert stark – drängen Sie nicht. Kinder, die sich
+						eingewöhnt fühlen <em>müssen</em>, fühlen sich fremd – länger.
 					</p>
 				</section>
 

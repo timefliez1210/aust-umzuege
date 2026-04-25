@@ -15,6 +15,10 @@
 
     const faqs = [
         {
+            question: "Kann ich die Kosten einer Haushaltsauflösung im Erbfall steuerlich absetzen?",
+            answer: "Ja – und das ist vielen Erben nicht bekannt. Kosten für die Haushaltsauflösung nach einem Todesfall gelten als Nachlassverbindlichkeit nach §10 Abs. 5 Nr. 3 ErbStG und mindern den steuerpflichtigen Nachlass direkt. Das bedeutet: Je höher die Auflösungskosten, desto geringer die Erbschaftsteuerlast. Voraussetzung ist eine ordentliche Rechnung, die den Leistungsumfang detailliert ausweist. Wir stellen diese Rechnung so aus, dass sie Ihr Steuerberater oder Nachlassverwalter direkt verwenden kann. Sprechen Sie uns bei der Besichtigung darauf an."
+        },
+        {
             question: "Was kostet eine Haushaltsauflösung in Hildesheim?",
             answer: "Die Kosten liegen je nach Wohnungsgröße und Zustand zwischen 20 und 60 Euro pro Quadratmeter. Eine 3-Zimmer-Wohnung kostet erfahrungsgemäß zwischen 1.500 und 3.000 Euro. Gut erhaltene Möbel und Wertsachen rechnen wir gegen die Kosten auf – das senkt Ihren Preis spürbar. Nach einer kostenlosen Besichtigung erhalten Sie ein verbindliches Festpreisangebot."
         },
@@ -51,7 +55,7 @@
 
 <MetaTags
     title="Haushaltsauflösung Hildesheim – Diskret & Festpreis | Aust Umzüge"
-    description="Haushaltsauflösung in Hildesheim – einfühlsam und diskret. Wertgegenstände werden angerechnet, besenreine Übergabe garantiert. Jetzt Termin vereinbaren."
+    description="Haushaltsauflösung im Erbfall: Kosten als Nachlassverbindlichkeit nach §10 ErbStG absetzbar – mindert die Erbschaftsteuer direkt. Hildesheim, Festpreis, diskret."
     keywords="Haushaltsauflösung Hildesheim, Wohnungsauflösung, Nachlassräumung, besenreine Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />
@@ -144,6 +148,18 @@
                 <p>
                     Wir sichern zuerst persönliche Erinnerungsstücke, Dokumente und Wertsachen, sortieren verkaufsfähige Möbel transparent aus und rechnen deren Wert gegen unsere Kosten an. Am Ende übergeben wir das Objekt garantiert besenrein – termingerecht und zum vereinbarten Festpreis.
                 </p>
+
+                <div class="hook-box">
+                    <p class="hook-box__lead">Wichtig im Erbfall: Kosten der Haushaltsauflösung mindern die Erbschaftsteuer.</p>
+                    <p>
+                        Aufwendungen für die Haushaltsauflösung nach einem Todesfall gelten als
+                        <strong>Nachlassverbindlichkeit nach §10 Abs. 5 Nr. 3 ErbStG</strong> und werden
+                        direkt vom steuerpflichtigen Nachlass abgezogen – das reduziert die Erbschaftsteuer.
+                        Voraussetzung ist eine detaillierte Rechnung mit ausgewiesenem Leistungsumfang.
+                        Wir stellen diese so aus, dass Ihr Steuerberater oder Nachlassverwalter sie
+                        direkt verwenden kann.
+                    </p>
+                </div>
 
                 <h3 class="highlight-title">Unser Service:</h3>
                 <ul class="feature-list">
@@ -409,5 +425,24 @@
         font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    .hook-box {
+        background-color: #eff6ff;
+        border-left: 4px solid var(--color-nav-accent);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        padding: var(--space-5) var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
+    .hook-box__lead {
+        font-weight: var(--font-semibold);
+        color: var(--color-info-bar);
+        margin-bottom: var(--space-2) !important;
+        font-size: var(--text-base) !important;
+    }
+
+    .hook-box p:last-child {
+        margin-bottom: 0 !important;
     }
 </style>

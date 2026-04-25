@@ -15,6 +15,14 @@
 
     const faqs = [
         {
+            question: "Kann ich einen Privatumzug von der Steuer absetzen?",
+            answer: "Ja – und zwar deutlich mehr, als die meisten wissen. Nach §35a EStG können Sie 20% der Arbeitskosten eines Umzugsunternehmens direkt von Ihrer Steuerschuld abziehen, nicht nur vom zu versteuernden Einkommen. Das macht einen erheblichen Unterschied: Bei einem Lohnanteil von 2.000 Euro erstattet das Finanzamt 400 Euro direkt. Das Maximum liegt bei 4.000 Euro Steuererstattung pro Jahr. Zwei Voraussetzungen: Die Rechnung muss den Lohnanteil separat ausweisen, und sie muss per Überweisung bezahlt werden – Barzahlung ist ausgeschlossen. Wir stellen unsere Rechnungen so aus, dass Sie den Steuerbonus ohne Rückfragen bei Ihrem Steuerberater geltend machen können."
+        },
+        {
+            question: "Was kann ich absetzen, wenn ich wegen eines neuen Jobs umziehe?",
+            answer: "Bei einem beruflich bedingten Umzug können Sie die gesamten Umzugskosten als Werbungskosten absetzen – nicht nur den Lohnanteil, sondern auch Transport, Verpackungsmaterial und weitere Nebenkosten. Als Vereinfachung akzeptiert das Finanzamt die Umzugskostenpauschale (aktuell 964 Euro für Einzelpersonen, plus 643 Euro für jede weitere mitziehende Person) – ohne Einzelnachweise. Sind Ihre tatsächlichen Kosten höher, lohnt sich der Ansatz der echten Ausgaben mit Belegen. Wichtig: Ein Umzug gilt auch dann als beruflich bedingt, wenn Sie nicht den Job wechseln, aber der Umzug Ihren täglichen Arbeitsweg um mindestens 30 Minuten pro Strecke verkürzt. Das übersehen viele. Wir stellen Ihnen eine detaillierte Rechnung mit allen Einzelpositionen aus, damit Sie nichts verschenken."
+        },
+        {
             question: "Was kostet ein Privatumzug in Hildesheim?",
             answer: "Die Kosten richten sich nach Wohnungsgröße, Etage, Entfernung und gewünschten Leistungen. In Hildesheim liegt ein 2-Zimmer-Umzug erfahrungsgemäß zwischen 400 und 800 Euro, ein 4-Zimmer-Haushalt zwischen 1.200 und 2.500 Euro. Wir erstellen Ihnen nach einer kostenlosen Vor-Ort-Besichtigung ein verbindliches Festpreisangebot – ohne versteckte Kosten. Fordern Sie jetzt Ihr unverbindliches Angebot an."
         },
@@ -35,10 +43,6 @@
             answer: "Ja, Ihr gesamtes Inventar ist während des Transports über unsere Betriebshaftpflicht- und Transportversicherung geschützt. Das ist ein entscheidender Vorteil gegenüber einem Umzug in Eigenregie mit privaten Helfern, bei dem Sie für Schäden selbst haften. Die genauen Konditionen besprechen wir bei der Angebotserstellung."
         },
         {
-            question: "Kann ich Umzugskosten von der Steuer absetzen?",
-            answer: "Ja, bei beruflich bedingten Umzügen können Sie die Kosten als Werbungskosten absetzen. Die Umzugskostenpauschale liegt aktuell bei 964 Euro pro Person. Auch privat veranlasste Umzüge lassen sich teilweise als haushaltsnahe Dienstleistung geltend machen (20% der Arbeitskosten, max. 4.000 Euro). Sie erhalten von uns eine ordnungsgemäße Rechnung."
-        },
-        {
             question: "Welche versteckten Kosten erwarten mich bei einem Umzug?",
             answer: "Bei vielen Umzugsunternehmen entstehen nachträglich Mehrkosten, weil Volumen falsch geschätzt, Fahrstrecken zu knapp kalkuliert oder Zusatzleistungen erst vor Ort in Rechnung gestellt werden. Das Ergebnis: Der Endpreis liegt deutlich über dem, was im Angebot stand. Bei Aust Umzüge funktioniert das anders. Wir besichtigen Ihren Haushalt kostenlos vor Ort, kalkulieren sorgfältig und geben Ihnen ein verbindliches Festpreisangebot – ohne Kleingedrucktes. Was draufsteht, ist auch das, was Sie zahlen. Egal ob der Umzug eine Stunde länger dauert oder eine Etage schwieriger ist als erwartet."
         },
@@ -51,7 +55,7 @@
 
 <MetaTags
     title="Umziehen in Hildesheim – Festpreis, Stressfrei & Zuverlässig"
-    description="Nahezu alle unserer Kunden empfehlen uns uneingeschränkt weiter. Ihr Umzug in Hildesheim – jetzt kostenloses Angebot mit Festpreisgarantie sichern."
+    description="Umzugskosten steuerlich absetzen: bis zu 4.000 € via §35a EStG oder volle Werbungskosten bei beruflichem Umzug. Privatumzug Hildesheim – Festpreis, richtige Rechnung inklusive."
     keywords="Privatumzug Hildesheim, Umzug Privatpersonen, Wohnungsumzug, Umzugsfirma Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />
@@ -152,6 +156,26 @@
                     wird.
                 </p>
 
+                <div class="hook-box">
+                    <p class="hook-box__lead">Umzugskosten von der Steuer absetzen – zwei Wege:</p>
+                    <p>
+                        <strong>Jeder Privatumzug (§35a EStG):</strong> 20% der Arbeitskosten des Umzugsunternehmens
+                        können direkt von Ihrer Steuerschuld abgezogen werden – nicht nur vom zu versteuernden Einkommen.
+                        Bis zu <strong>4.000 Euro</strong> Erstattung pro Jahr. Voraussetzung: Rechnung mit separat
+                        ausgewiesenem Lohnanteil, bezahlt per Überweisung.
+                    </p>
+                    <p>
+                        <strong>Beruflich bedingter Umzug (Werbungskosten):</strong> Wer wegen eines neuen Jobs
+                        oder einer Versetzung umzieht, kann die <em>gesamten</em> Umzugskosten absetzen – Transport,
+                        Verpackung, alle Nebenkosten. Gilt auch, wenn kein Jobwechsel stattfindet, der Umzug aber
+                        den Arbeitsweg um <strong>mindestens 30 Minuten</strong> pro Strecke verkürzt.
+                    </p>
+                    <p>
+                        Wir stellen unsere Rechnungen mit allen Einzelpositionen und ausgewiesenem Lohnanteil aus –
+                        damit Sie beide Möglichkeiten ohne Rückfragen nutzen können.
+                    </p>
+                </div>
+
                 <h3 class="highlight-title">Unsere Leistungen im Detail:</h3>
                 <ul class="feature-list">
                     <li>
@@ -225,6 +249,9 @@
                 </p>
                 <p>
                     Weil wir hier verwurzelt sind, können wir Ihren Umzug besser einschätzen als ein überregionaler Anbieter. Wir wissen, wo es eng wird, wo man aufpassen muss und wo es besonders flott geht. Das spart am Ende Zeit und Geld.
+                </p>
+                <p>
+                    Wir sind nicht nur in Hildesheim aktiv. Regelmäßig arbeiten wir auf der Strecke nach <a href="/umzug-hannover">Hannover</a> und <a href="/umzug-braunschweig">Braunschweig</a> – und fahren auch dorthin zur kostenlosen Besichtigung.
                 </p>
 
                 <h3 class="highlight-title">Häufige Herausforderungen beim Privatumzug</h3>
@@ -468,5 +495,24 @@
         font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    .hook-box {
+        background-color: #eff6ff;
+        border-left: 4px solid var(--color-nav-accent);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        padding: var(--space-5) var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
+    .hook-box__lead {
+        font-weight: var(--font-semibold);
+        color: var(--color-info-bar);
+        margin-bottom: var(--space-2) !important;
+        font-size: var(--text-base) !important;
+    }
+
+    .hook-box p:last-child {
+        margin-bottom: 0 !important;
     }
 </style>

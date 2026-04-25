@@ -11,6 +11,7 @@
         Trash2,
         Archive,
         Warehouse,
+        Stethoscope,
         ArrowRight,
         Mail,
     } from "lucide-svelte";
@@ -96,6 +97,13 @@
                 "Sichere Lagerung für Ihre Möbel – ob kurzfristig beim Umzug oder langfristig.",
             icon: Warehouse,
             link: "/leistungen/lagerung",
+        },
+        {
+            title: "Praxisumzug",
+            description:
+                "Arzt- und Zahnarztpraxen umziehen – sicherer Transport medizinischer Geräte, DSGVO-konformer Aktentransport, Wochenendservice.",
+            icon: Stethoscope,
+            link: "/leistungen/praxisumzug",
         },
     ];
 

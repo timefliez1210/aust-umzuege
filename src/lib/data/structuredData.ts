@@ -138,14 +138,11 @@ export const businessInfo = {
 		longitude: 9.951667
 	},
 	areaServed: [
-		{
-			"@type": "City",
-			name: "Hildesheim"
-		},
-		{
-			"@type": "State",
-			name: "Niedersachsen"
-		}
+		{ "@type": "City", name: "Hildesheim" },
+		{ "@type": "City", name: "Hannover" },
+		{ "@type": "City", name: "Braunschweig" },
+		{ "@type": "City", name: "Wolfsburg" },
+		{ "@type": "State", name: "Niedersachsen" }
 	],
 	priceRange: "€€",
 	openingHoursSpecification: [
@@ -376,6 +373,70 @@ export const services = {
 			"@type": "Offer",
 			priceCurrency: "EUR"
 		}
+	},
+	praxisumzug: {
+		"@type": "Service",
+		serviceType: "Praxisumzug",
+		name: "Praxisumzug Hildesheim – Arzt- und Zahnarztpraxen",
+		description:
+			"Professioneller Praxisumzug in Hildesheim: schonender Transport medizinischer Geräte, DSGVO-konformer Aktentransport, Wochenendservice für minimale Ausfallzeit. Festpreis nach Besichtigung.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/leistungen/praxisumzug",
+		offers: {
+			"@type": "Offer",
+			priceCurrency: "EUR"
+		}
+	},
+	umzugHannover: {
+		"@type": "Service",
+		serviceType: "Privatumzug",
+		name: "Umzugsfirma Hannover – Privatumzug & Wohnungsumzug",
+		description:
+			"Professioneller Umzug in Hannover und der Region: Festpreisgarantie nach kostenloser Besichtigung, Full-Service-Einpacken, Möbelmontage und Halteverbotszone aus einer Hand.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Hannover" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/umzug-hannover",
+		offers: {
+			"@type": "Offer",
+			priceCurrency: "EUR"
+		}
+	},
+	umzugBraunschweig: {
+		"@type": "Service",
+		serviceType: "Privatumzug",
+		name: "Umzugsfirma Braunschweig – Privatumzug & Wohnungsumzug",
+		description:
+			"Zuverlässiger Umzug in Braunschweig: Festpreis nach Vor-Ort-Besichtigung, sorgfältiger Transport, Möbeldemontage und -montage. Für Familien, Singles und Senioren.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Braunschweig" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/umzug-braunschweig",
+		offers: {
+			"@type": "Offer",
+			priceCurrency: "EUR"
+		}
+	},
+	firmenumzugWolfsburg: {
+		"@type": "Service",
+		serviceType: "Firmenumzug",
+		name: "Firmenumzug Wolfsburg – Büro- & Betriebsumzug",
+		description:
+			"Professioneller Firmenumzug in Wolfsburg: minimale Ausfallzeit, sicherer IT-Transport, Wochenendservice und Festpreis für Ihre Budgetplanung. Für Büros, Praxen und Gewerbebetriebe.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Wolfsburg" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/firmenumzug-wolfsburg",
+		offers: {
+			"@type": "Offer",
+			priceCurrency: "EUR"
+		}
 	}
 };
 
@@ -551,6 +612,35 @@ export const articles = {
 		mainEntityOfPage: {
 			"@type": "WebPage",
 			"@id": "https://www.aust-umzuege.de/ratgeber/moebel-einlagern"
+		},
+		articleSection: "Ratgeber"
+	},
+	kuecheUmzug: {
+		"@type": "Article",
+		headline: "Küche beim Umzug: Abbau, Transport und Montage – was Sie wissen müssen",
+		description:
+			"Einbauküche richtig demontieren, Spülmaschine und Waschmaschine sicher abklemmen, Granit transportieren und am neuen Standort fachgerecht montieren.",
+		author: {
+			"@type": "Person",
+			name: "Alex Aust",
+			url: "https://www.aust-umzuege.de/impressum"
+		},
+		publisher: {
+			"@type": "Organization",
+			"@id": "https://www.aust-umzuege.de/#organization",
+			name: "Aust Umzüge & Haushaltsauflösungen",
+			logo: {
+				"@type": "ImageObject",
+				url: "https://www.aust-umzuege.de/LogoName_transparent.webp"
+			}
+		},
+		datePublished: "2026-04-25",
+		dateModified: "2026-04-25",
+		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		url: "https://www.aust-umzuege.de/ratgeber/kueche-umzug",
+		mainEntityOfPage: {
+			"@type": "WebPage",
+			"@id": "https://www.aust-umzuege.de/ratgeber/kueche-umzug"
 		},
 		articleSection: "Ratgeber"
 	},
@@ -980,6 +1070,39 @@ export const howToUmzugMitKindern = {
 			"@type": "HowToStep",
 			name: "Neuanfang strukturiert angehen",
 			text: "Woche 1: Sicherheit durch gleiche Routine. Woche 2: Stadtteil entdecken. Woche 3: Erste soziale Kontakte – Jugendfreizeiteinrichtungen, Vereine, Musikschule. Woche 4: Alte Stadt besuchen, um Brücken zu bauen. Dringend: Kinderzimmer zuerst aufbauen, Erste-Hilfe-Box fürs Kind bereithalten, alte Freundschaften per Videochat pflegen."
+		}
+	]
+};
+
+export const howToKuecheUmzug = {
+	"@type": "HowTo",
+	name: "Küche beim Umzug richtig ab- und aufbauen",
+	description: "Schritt-für-Schritt-Anleitung für den sicheren Küchenumzug: Geräte entleeren, Einbauküche demontieren, sicher transportieren und am neuen Standort fachgerecht montieren.",
+	step: [
+		{
+			"@type": "HowToStep",
+			name: "Wasserführende Geräte entleeren und abklemmen",
+			text: "Spülmaschine: Leergang durchführen, Filtereinsatz herausnehmen, Schläuche senkrecht halten. Waschmaschine: Schleudergang ohne Wäsche, Ablaufschlauch in Eimer führen, Transportsicherungen einsetzen. Gasanschlüsse und 400V-Elektrogeräte vom Fachbetrieb trennen lassen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Küchenfronten und Oberschränke demontieren",
+			text: "Alle Türen und Schubfronten abmontieren und separat in Decken einwickeln. Oberschränke vor Unterschränken abhängen. Dübellöcher und Wandbefestigungen fotografieren. Sockelblenden und Abdeckleisten lösen und beschriften."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Korpusse und Arbeitsplatten verladen",
+			text: "Unterschrankkörpusse flach lagern, Öffnungen nach oben, mit Spanngurten sichern. Laminatarbeitsplatten flach mit Kantenschutz transportieren. Natursteinplatten (Granit, Marmor) ausschließlich hochkant auf Weichschaum – niemals liegend."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Aufbau am neuen Standort vorbereiten",
+			text: "Wand- und Bodenebene mit Wasserwaage prüfen. Wasseranschlüsse und Stromleitungen der neuen Küche prüfen. Zuerst alle Oberschränke hängen, dann Unterschränke ausrichten. Anschlussarbeiten für Wasser und Elektro erst nach vollständiger Korpusmontage durchführen."
+		},
+		{
+			"@type": "HowToStep",
+			name: "Geräte anschließen und Erstbetrieb",
+			text: "Spülmaschine und Waschmaschine vom Fachbetrieb anklemmen lassen. Erstbetrieb aller wasserführenden Geräte im Beisein durchführen – Leckagen sofort erkennen. Elektrogeräte und Herd nach Herstellervorgaben anschließen oder Elektriker beauftragen."
 		}
 	]
 };

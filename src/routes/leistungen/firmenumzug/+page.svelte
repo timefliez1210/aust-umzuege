@@ -15,6 +15,10 @@
 
     const faqs = [
         {
+            question: "Wer haftet, wenn beim Firmenumzug etwas beschädigt wird?",
+            answer: "Die gesetzliche Spediteushaftung ist ohne schriftliche Wertdeklaration stark begrenzt: §431 HGB deckt nur 8,33 Sonderziehungsrechte pro Kilogramm des beschädigten Gutes – das sind etwa 10–12 Euro pro Kilogramm. Ein 3 kg schweres Notebook mit einem Neupreis von 1.500 Euro wäre damit mit rund 35 Euro abgedeckt. Für Server, Spezialtechnik oder hochwertige Büroausstattung ist das ein erhebliches Risiko. Die Lösung: eine schriftliche Wertdeklaration vor dem Umzug, die den tatsächlichen Wert der Güter festhält. Wir klären das mit Ihnen bei der Besichtigung – verbindlich und dokumentiert."
+        },
+        {
             question: "Was kostet ein Firmenumzug in Hildesheim?",
             answer: "Die Kosten richten sich nach Bürogröße, Arbeitsplatzzahl und Zusatzleistungen wie IT-Transport oder Archivierung. Ein kleines Büro (5-10 Arbeitsplätze) liegt zwischen 2.000 und 5.000 Euro, größere Standortwechsel können 10.000 Euro und mehr kosten. Wir erstellen nach einer Besichtigung ein detailliertes Festpreisangebot, das Sie sicher budgetieren können."
         },
@@ -47,7 +51,7 @@
 
 <MetaTags
     title="Firmenumzug Hildesheim – Büro & Gewerbe | Aust Umzüge"
-    description="Professioneller Firmenumzug in Hildesheim und Umgebung. Minimale Ausfallzeit, sicherer IT-Transport und Wochenendservice. Festpreisgarantie nach Besichtigung."
+    description="§431 HGB begrenzt die Spediteushaftung auf 8,33 SDR/kg – ein 3kg-Laptop wäre mit ~35 € versichert. Firmenumzug Hildesheim mit schriftlicher Wertdeklaration und Festpreis."
     keywords="Firmenumzug Hildesheim, Büroumzug, Geschäftsumzug, IT-Umzug, Betriebsumzug"
     canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
 />
@@ -148,6 +152,21 @@
                     Wochenende oder in der Nacht.
                 </p>
 
+                <div class="hook-box">
+                    <p class="hook-box__lead">Wichtig: Die gesetzliche Spediteushaftung ist ohne schriftliche Wertdeklaration stark begrenzt.</p>
+                    <p>
+                        Nach §431 HGB haftet der Spediteur nur für <strong>8,33 Sonderziehungsrechte
+                        pro Kilogramm</strong> – rund 10–12 Euro je Kilo. Ein 3 kg schweres Notebook
+                        mit 1.500 Euro Neupreis wäre damit mit etwa <strong>35 Euro</strong> abgedeckt.
+                        Für Server, Spezialtechnik und hochwertige Ausstattung ist das eine erhebliche Lücke.
+                    </p>
+                    <p>
+                        Eine schriftliche <strong>Wertdeklaration</strong> vor dem Umzug schließt diese Lücke
+                        und hält den tatsächlichen Warenwert verbindlich fest. Wir klären das gemeinsam
+                        bei der Besichtigung – dokumentiert, bevor der erste Karton bewegt wird.
+                    </p>
+                </div>
+
                 <h3 class="highlight-title">Unsere B2B-Leistungen:</h3>
                 <ul class="feature-list">
                     <li>
@@ -227,6 +246,14 @@
                 </p>
                 <p>
                     Und dann gibt es noch die Frage der Ausfallzeit: Wie lange steht der Betrieb still? Unser Ziel ist immer: maximal ein Wochenende. Bei kleineren Büros schaffen wir es oft sogar, den Umzug so zu organisieren, dass am Montag normal weitergearbeitet werden kann.
+                </p>
+
+                <h3 class="highlight-title">Firmenumzüge in der Region</h3>
+                <p>
+                    Wir führen Firmenumzüge nicht nur in Hildesheim durch. Regelmäßig sind wir im Einsatz für Betriebe in der gesamten Region – auch für einen <a href="/firmenumzug-wolfsburg">Firmenumzug in Wolfsburg</a> kommen wir zur kostenlosen Besichtigung.
+                </p>
+                <p>
+                    Betreiben Sie eine Arzt- oder Zahnarztpraxis? Für den Transport medizinischer Geräte und den datenschutzkonformen Umzug von Patientenakten haben wir einen eigenen <a href="/leistungen/praxisumzug">Praxisumzug-Service</a>.
                 </p>
 
                 <h3 class="highlight-title">Verwandte Leistungen</h3>
@@ -453,5 +480,24 @@
         font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    .hook-box {
+        background-color: #eff6ff;
+        border-left: 4px solid var(--color-nav-accent);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        padding: var(--space-5) var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
+    .hook-box__lead {
+        font-weight: var(--font-semibold);
+        color: var(--color-info-bar);
+        margin-bottom: var(--space-2) !important;
+        font-size: var(--text-base) !important;
+    }
+
+    .hook-box p:last-child {
+        margin-bottom: 0 !important;
     }
 </style>

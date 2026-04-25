@@ -14,6 +14,10 @@
 
     const faqs = [
         {
+            question: "Hafte ich, wenn sich ein privater Umzugshelfer bei mir verletzt?",
+            answer: "Ja, das ist ein häufig unterschätztes Risiko. Hilft ein Freund oder Bekannter beim Umzug ohne Entgelt, gilt er rechtlich als sogenannter 'Gefälligkeitshelfer'. Verletzt er sich dabei ernsthaft, greift weder die gesetzliche Unfallversicherung noch Ihre Privathaftpflicht automatisch. Nach §823 BGB können Sie persönlich für Behandlungskosten und Verdienstausfall haftbar gemacht werden. Unsere Mitarbeiter sind über unsere Betriebshaftpflicht vollständig versichert – das Risiko liegt bei uns."
+        },
+        {
             question: "Was kosten Umzugshelfer pro Stunde in Hildesheim?",
             answer: "Unsere professionellen Umzugshelfer kosten zwischen 25 und 35 Euro pro Person und Stunde, inklusive Versicherung und Ausrüstung. Private Helfer sind zwar günstiger (10-15 Euro), arbeiten aber ohne Haftpflichtversicherung und Erfahrung. Für ein konkretes Angebot rufen Sie uns kurz an – wir beraten Sie innerhalb von Minuten."
         },
@@ -45,9 +49,9 @@
 </script>
 
 <MetaTags
-    title="Umzugshelfer in Hildesheim mieten – Versichert | Aust Umzüge"
-    description="Professionelle Umzugshelfer in Hildesheim stundenweise mieten. Versicherte Helfer für Tragen, Beladen und Entladen. Kurzfristig verfügbar – jetzt anfragen."
-    keywords="Umzugshelfer Hildesheim, Möbelpacker, Tragehilfe Umzug, stundenweise Helfer"
+    title="Umzugshelfer in Hildesheim mieten – Versichert & Haftbar | Aust Umzüge"
+    description="Private Helfer beim Umzug: Bei Verletzung haften Sie persönlich nach §823 BGB. Professionelle Umzugshelfer von Aust – versichert, erfahren, kurzfristig buchbar."
+    keywords="Umzugshelfer Hildesheim, Umzugskräfte mieten, Tragehilfe Umzug, stundenweise Helfer"
     canonical="https://www.aust-umzuege.de/leistungen/umzugshelfer"
 />
 
@@ -58,8 +62,8 @@
     "@type": "ImageObject",
     "contentUrl": "https://www.aust-umzuege.de/umzugshelfer-hildesheim-moebelpacker.webp",
     "url": "https://www.aust-umzuege.de/leistungen/umzugshelfer",
-    "name": "Umzugshelfer Hildesheim – Aust Umzüge Möbelpacker im Einsatz",
-    "description": "Professioneller Umzugshelfer von Aust Umzüge Hildesheim beim Möbeltransport. Versicherte Umzugshelfer stundenweise mieten – zuverlässig und kurzfristig verfügbar.",
+    "name": "Umzugshelfer Hildesheim – Aust Umzüge professionelle Umzugskräfte im Einsatz",
+    "description": "Professionelle Umzugshelfer von Aust Umzüge Hildesheim beim Möbeltransport. Versicherte Umzugskräfte stundenweise mieten – zuverlässig und kurzfristig verfügbar.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -99,7 +103,7 @@
                         /umzugshelfer-hildesheim-moebelpacker-800w.webp 800w,
                         /umzugshelfer-hildesheim-moebelpacker.webp 903w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Umzugshelfer von Aust Umzüge Hildesheim – professioneller Möbelpacker im Einsatz"
+                alt="Umzugshelfer von Aust Umzüge Hildesheim – professionelle Umzugskräfte beim Möbeltransport"
                 width="903"
                 height="609"
                 fetchpriority="high"
@@ -121,6 +125,13 @@
                     Mitarbeiter sind körperlich fit, handwerklich geschickt und
                     wissen genau, wie man Möbel sicher bewegt.
                 </p>
+
+                <div class="hook-box">
+                    <p class="hook-box__lead">Wichtig: Wer private Helfer beim Umzug verletzt, haftet persönlich.</p>
+                    <p>
+                        Hilft ein Freund beim Umzug und verletzt sich dabei, besteht in der Regel kein gesetzlicher Versicherungsschutz – weder über die Unfallversicherung noch über Ihre Privathaftpflicht. Als Organisator des Umzugs können Sie nach <strong>§823 BGB</strong> für Behandlungskosten, Verdienstausfall und im schlimmsten Fall Dauerrente haftbar gemacht werden. Unsere Mitarbeiter dagegen sind über unsere <strong>Betriebshaftpflicht</strong> vollständig abgesichert – das Risiko liegt bei uns, nicht bei Ihnen.
+                    </p>
+                </div>
 
                 <h3 class="highlight-title">Unser Helfer-Service:</h3>
                 <ul class="feature-list">
@@ -385,5 +396,30 @@
         font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    .hook-box {
+        background-color: #eff6ff;
+        border-left: 4px solid var(--color-nav-accent);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        padding: var(--space-4) var(--space-5);
+        margin-block: var(--space-6);
+    }
+
+    .hook-box p {
+        color: #1e3a5f;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: var(--space-2);
+    }
+
+    .hook-box p:last-child {
+        margin-bottom: 0;
+    }
+
+    .hook-box__lead {
+        font-weight: 700;
+        font-size: 1.05rem !important;
+        color: #1e3a5f !important;
     }
 </style>

@@ -13,11 +13,14 @@ import {
 
 describe('rowToLabel', () => {
 	it('returns label for known rows', () => {
-		expect(rowToLabel(31)).toBe('De/Montage');
-		expect(rowToLabel(32)).toBe('Halteverbotszone');
-		expect(rowToLabel(33)).toBe('Umzugsmaterial');
-		expect(rowToLabel(39)).toBe('Transporter');
-		expect(rowToLabel(42)).toBe('Anfahrt/Abfahrt');
+		expect(rowToLabel(31)).toBe('Demontage');
+		expect(rowToLabel(32)).toBe('Montage');
+		expect(rowToLabel(33)).toBe('Halteverbotszone');
+		expect(rowToLabel(34)).toBe('Umzugsmaterial');
+		expect(rowToLabel(35)).toBe('Möbellift');
+		expect(rowToLabel(36)).toBe('Verleih Kleiderboxen');
+		expect(rowToLabel(37)).toBe('Verkauf U-Karton');
+		expect(rowToLabel(38)).toBe('Verkauf B-Karton');
 	});
 
 	it('returns Sonstiges for unknown row', () => {

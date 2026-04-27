@@ -606,44 +606,6 @@
 		color: #b93d00;
 	}
 
-	.pros-cons {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: var(--space-6);
-		margin: var(--space-6) 0;
-	}
-
-	.pros,
-	.cons {
-		padding: var(--space-5);
-		border-radius: var(--radius-md);
-		border: 2px solid #e2e8f0;
-	}
-
-	.pros {
-		background-color: #f0fdf4;
-		border-color: #86efac;
-	}
-
-	.cons {
-		background-color: #fef2f2;
-		border-color: #fca5a5;
-	}
-
-	.pros h4 {
-		color: #166534;
-		font-size: 1.125rem;
-		font-weight: 600;
-		margin-bottom: var(--space-3);
-	}
-
-	.cons h4 {
-		color: #991b1b;
-		font-size: 1.125rem;
-		font-weight: 600;
-		margin-bottom: var(--space-3);
-	}
-
 	.tip-box {
 		background-color: #fff7ed;
 		border-left: 4px solid #f59e0b;
@@ -654,11 +616,5 @@
 
 	.tip-box strong {
 		color: #92400e;
-	}
-
-	@media (max-width: 640px) {
-		.pros-cons {
-			grid-template-columns: 1fr;
-		}
 	}
 </style>

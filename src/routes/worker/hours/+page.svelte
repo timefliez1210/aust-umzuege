@@ -357,12 +357,6 @@
 		color: #16a34a;
 	}
 
-	.chevron {
-		position: absolute;
-		right: 0.75rem;
-		color: #cbd5e0;
-	}
-
 	.empty {
 		text-align: center;
 		padding: 3rem 1rem;

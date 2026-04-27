@@ -92,7 +92,7 @@
   --z-tooltip: 700;
 
   /* Container */
-  --container-max: 1280px;
+  --container-max: 1440px;
   --container-padding: var(--space-6);
 }
 

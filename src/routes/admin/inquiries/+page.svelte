@@ -319,7 +319,7 @@
 
 <style>
 	.page {
-		max-width: 1200px;
+		H0%;
 	}
 
 	.page-header {

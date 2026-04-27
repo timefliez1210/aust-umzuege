@@ -2887,7 +2887,7 @@
 
 <style>
 	.page {
-		max-width: 1200px;
+		H0%;
 	}
 
 	.back-link {
@@ -3935,7 +3935,7 @@
 
 	/* ── Email Thread Section ───────────────────────────────────────── */
 	.email-section {
-		max-width: 1200px;
+		H0%;
 		margin-top: 1.5rem;
 	}
 

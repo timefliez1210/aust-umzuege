@@ -86,6 +86,18 @@
 		box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
 	}
 
+	@media (min-width: 640px) {
+		.worker-shell {
+			max-width: 640px;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.worker-shell {
+			max-width: 800px;
+		}
+	}
+
 	.worker-header {
 		display: flex;
 		justify-content: space-between;

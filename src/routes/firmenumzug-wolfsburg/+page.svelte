@@ -261,7 +261,7 @@
 	}
 
 	.service-detail__container {
-		max-width: 1000px;
+		max-width: var(--container-max);
 		margin-inline: auto;
 		padding-inline: var(--container-padding);
 	}

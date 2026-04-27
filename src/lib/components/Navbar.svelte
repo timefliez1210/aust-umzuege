@@ -59,6 +59,14 @@
                         label: "Lagerung & Einlagerung",
                         href: "/leistungen/lagerung",
                     },
+                    {
+                        label: "Praxisumzug",
+                        href: "/leistungen/praxisumzug",
+                    },
+                    {
+                        label: "Archiv-Montage & Demontage",
+                        href: "/leistungen/archiv-montage",
+                    },
                 ],
             },
             {

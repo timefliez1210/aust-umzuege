@@ -180,7 +180,7 @@
 	}
 
 	.cookie-page__container {
-		max-width: 800px;
+		max-width: var(--container-max);
 		margin: 0 auto;
 	}
 

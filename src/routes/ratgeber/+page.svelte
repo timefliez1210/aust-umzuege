@@ -134,7 +134,7 @@
     }
 
     .guides-page__container {
-        max-width: 1200px;
+        max-width: var(--container-max);
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }

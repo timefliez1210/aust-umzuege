@@ -16,6 +16,12 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 | `/admin/customers/[id]` | Customer detail with linked inquiries |
 | `/admin/emails` | Email thread list + compose |
 | `/admin/calendar` | Monthly calendar — bookings, capacity |
+| `/admin/orders` | Orders list |
+| `/admin/reports` | Reports and analytics |
+| `/admin/employees` | Employee list |
+| `/admin/employees/[id]` | Employee detail |
+| `/admin/calendar-items` | Calendar item list |
+| `/admin/calendar-items/[id]` | Calendar item detail |
 | `/admin/settings` | User management |
 
 ## Key Components
@@ -52,7 +58,7 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 
 ## Shared Constants (`$lib/utils/constants.ts`)
 
-- `INQUIRY_STATUS_LABELS` — German status labels for all states
+- `INQUIRY_STATUS_LABELS` — German status labels for all states (from `$lib/utils/status.ts`)
 - `CUSTOMER_TYPE_LABELS` — Privat/Unternehmen labels
 
 ## Multi-Day Scheduling (CalendarSidePanel + EmployeeAssignmentPanel)
@@ -95,8 +101,9 @@ When the flat assignment array contains **more than one distinct `job_date`** (i
 - One row per unique employee
 - **Tage** column = number of days assigned
 - **Stunden Ist** = sum of actual hours across all days (from `actual_hours` or derived from `clock_in`/`clock_out`/`break_minutes`)
-- Remove button deletes all assignments for that employee across all days (backend DELETE removes all job_dates for the (inquiry, employee) pair in one query)
 - Single-day mode keeps the original compact time-input rows unchanged
+
+> **Note**: The multi-day summary view does **not** show a remove button. Employee removal is only available in single-day inquiry mode or calendar-item mode.
 
 ### Status independence
 

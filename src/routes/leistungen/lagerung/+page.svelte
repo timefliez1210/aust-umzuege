@@ -15,7 +15,7 @@
     const faqs = [
         {
             question: "Was kostet die Einlagerung von Möbeln pro Monat?",
-            answer: "Die Kosten richten sich nach dem benötigten Platz. Als Richtwert: Ein 2-Zimmer-Haushalt (ca. 15-20 Kubikmeter) kostet bei uns etwa 150-250 Euro pro Monat. Einzelne Möbelstücke oder Kartons lagern wir ab ca. 50 Euro monatlich ein. Nach einer Besichtigung oder Fotobewertung nennen wir Ihnen den genauen Preis."
+            answer: "Unser Quadratmeterpreis beträgt 19 €/m² monatlich, 15 €/m² bei 6 Monaten Laufzeit und 12 €/m² bei 12 Monaten. Ein 2–3-Zimmer-Haushalt benötigt etwa 10–15 m² – das entspricht 120–285 € pro Monat je nach Tarif. Den genauen Bedarf ermitteln wir kostenlos per Besichtigung oder Fotobewertung."
         },
         {
             question: "Wie sicher ist mein eingelagertes Umzugsgut?",
@@ -23,7 +23,7 @@
         },
         {
             question: "Gibt es eine Mindestmietdauer?",
-            answer: "Nein, wir bieten flexible Laufzeiten ohne lange Vertragsbindung. Sie können monatlich kündigen. Ob Sie nur 2 Wochen während einer Renovierung oder 2 Jahre während eines Auslandsaufenthalts einlagern möchten – wir passen uns Ihrem Bedarf an. Ab 6 Monaten Laufzeit gewähren wir Rabatte."
+            answer: "Nein, wir bieten flexible Laufzeiten ohne lange Vertragsbindung. Sie können monatlich kündigen. Ob Sie nur 2 Wochen während einer Renovierung oder 2 Jahre während eines Auslandsaufenthalts einlagern möchten – wir passen uns Ihrem Bedarf an. Ab 6 Monaten Laufzeit sinkt der Preis auf 15 €/m², ab 12 Monaten auf 12 €/m²."
         },
         {
             question: "Was ist der Unterschied zwischen Ihrem Lagerservice und Selfstorage?",
@@ -147,7 +147,45 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title" style="margin-top: var(--space-16);">So funktioniert unsere Möbellagerung</h2>
+                <h2 class="section-title" style="margin-top: var(--space-10);">Preise & Laufzeitrabatt</h2>
+                <p>Je länger Sie einlagern, desto günstiger wird der monatliche Quadratmeterpreis. Alle Preise verstehen sich netto pro Quadratmeter und Monat:</p>
+
+                <div class="price-table-wrapper">
+                    <table class="price-table">
+                        <thead>
+                            <tr>
+                                <th>Laufzeit</th>
+                                <th>Preis / m² / Monat</th>
+                                <th>Ersparnis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Monatlich (ab 1 Monat)</td>
+                                <td class="price-cell">19,00 €</td>
+                                <td class="savings-cell">–</td>
+                            </tr>
+                            <tr>
+                                <td>6 Monate</td>
+                                <td class="price-cell">15,00 €</td>
+                                <td class="savings-cell">– 4 € / m²</td>
+                            </tr>
+                            <tr class="price-best">
+                                <td>12 Monate</td>
+                                <td class="price-cell">12,00 €</td>
+                                <td class="savings-cell">– 7 € / m²</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="price-example">
+                    <p class="price-example__title">Rechenbeispiel</p>
+                    <p>Ein typischer 2–3-Zimmer-Haushalt benötigt ca. 10–15 m² Lagerfläche. Bei 12 Monaten Laufzeit wären das <strong>120–180 € pro Monat</strong> statt 190–285 € im Monatstarif – Sie sparen bis zu 37&nbsp;%.</p>
+                    <p>Wie viel Platz Sie genau brauchen, ermitteln wir kostenlos per Besichtigung oder Fotobewertung.</p>
+                </div>
+
+                <h2 class="section-title" style="margin-top: var(--space-10);">So funktioniert unsere Möbellagerung</h2>
                 <p>
                     Lagerung ist mehr als nur ein leerer Raum. Bei uns erhalten Sie einen professionellen Service, der Ihre Möbel schützt und Ihnen volle Flexibilität bietet.
                 </p>
@@ -242,7 +280,7 @@
         background-color: #fff;
     }
     .service-detail__container {
-        max-width: 1000px;
+        max-width: var(--container-max);
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
@@ -384,5 +422,96 @@
         font-weight: var(--font-semibold);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    /* Price Table */
+    .price-table-wrapper {
+        overflow-x: auto;
+        margin-block: var(--space-6);
+        border-radius: var(--radius-lg);
+        border: 1px solid #e2e8f0;
+    }
+
+    .price-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1rem;
+    }
+
+    .price-table thead {
+        background-color: var(--color-info-bar);
+        color: #fff;
+    }
+
+    .price-table th {
+        padding: var(--space-3) var(--space-5);
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+    }
+
+    .price-table td {
+        padding: var(--space-3) var(--space-5);
+        color: #1a202c;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .price-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .price-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .price-cell {
+        font-weight: 700;
+        color: var(--color-info-bar) !important;
+        font-size: 1.05rem;
+    }
+
+    .savings-cell {
+        color: #16a34a !important;
+        font-weight: 600;
+    }
+
+    .price-best {
+        background-color: #f0fdf4;
+    }
+
+    .price-best td {
+        color: #166534 !important;
+    }
+
+    .price-best .price-cell {
+        color: #166534 !important;
+    }
+
+    /* Price example box */
+    .price-example {
+        background-color: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-left: 4px solid #0284c7;
+        border-radius: var(--radius-md);
+        padding: var(--space-4) var(--space-5);
+        margin-block: var(--space-6);
+    }
+
+    .price-example__title {
+        font-weight: 700;
+        color: #0c4a6e !important;
+        margin-bottom: var(--space-2) !important;
+        font-size: 1.05rem !important;
+    }
+
+    .price-example p:not(.price-example__title) {
+        color: #075985 !important;
+        font-size: 0.975rem !important;
+        margin-bottom: var(--space-2) !important;
+    }
+
+    .price-example p:last-child {
+        margin-bottom: 0 !important;
     }
 </style>

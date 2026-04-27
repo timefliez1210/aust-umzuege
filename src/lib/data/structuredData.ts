@@ -85,7 +85,15 @@ export const website = {
 	publisher: {
 		"@id": "https://www.aust-umzuege.de/#organization"
 	},
-	inLanguage: "de-DE"
+	inLanguage: "de-DE",
+	potentialAction: {
+		"@type": "SearchAction",
+		target: {
+			"@type": "EntryPoint",
+			urlTemplate: "https://www.aust-umzuege.de/?s={search_term_string}"
+		},
+		"query-input": "required name=search_term_string"
+	}
 };
 
 export const businessInfo = {
@@ -385,6 +393,22 @@ export const services = {
 		},
 		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
 		url: "https://www.aust-umzuege.de/leistungen/praxisumzug",
+		offers: {
+			"@type": "Offer",
+			priceCurrency: "EUR"
+		}
+	},
+	archivMontage: {
+		"@type": "Service",
+		serviceType: "Archiv-Montage und Demontage",
+		name: "Archiv-Montage & Demontage Hildesheim",
+		description:
+			"Fachgerechte Montage, Demontage und Verlagerung von Archivregalen – Standregale, Fachregale und mobile Rollregalsysteme. DGUV 208-043 konform, befähigtes Personal, Abnahmeprotokoll.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/leistungen/archiv-montage",
 		offers: {
 			"@type": "Offer",
 			priceCurrency: "EUR"

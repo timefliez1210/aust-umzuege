@@ -12,7 +12,6 @@
         Archive,
         Warehouse,
         Stethoscope,
-        BookMarked,
         ArrowRight,
         Mail,
     } from "lucide-svelte";
@@ -105,13 +104,6 @@
                 "Arzt- und Zahnarztpraxen umziehen – sicherer Transport medizinischer Geräte, DSGVO-konformer Aktentransport, Wochenendservice.",
             icon: Stethoscope,
             link: "/leistungen/praxisumzug",
-        },
-        {
-            title: "Archiv-Montage & Demontage",
-            description:
-                "Fachgerechter Aufbau, Abbau und Umzug von Archivregalsystemen. DGUV-konform, mit befähigtem Personal und Abnahmeprotokoll.",
-            icon: BookMarked,
-            link: "/leistungen/archiv-montage",
         },
     ];
 

@@ -63,10 +63,6 @@
                         label: "Praxisumzug",
                         href: "/leistungen/praxisumzug",
                     },
-                    {
-                        label: "Archiv-Montage & Demontage",
-                        href: "/leistungen/archiv-montage",
-                    },
                 ],
             },
             {

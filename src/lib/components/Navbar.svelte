@@ -98,6 +98,10 @@
                         label: "Möbel einlagern",
                         href: "/ratgeber/moebel-einlagern",
                     },
+                    {
+                        label: "Umzugskosten von der Steuer absetzen",
+                        href: "/ratgeber/umzugskosten-steuerlich-absetzen",
+                    },
                 ],
             },
             { label: "Kontakt", href: "/kontakt" },

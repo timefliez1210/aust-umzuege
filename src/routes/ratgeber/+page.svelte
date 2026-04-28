@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed } from "lucide-svelte";
+    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed, Receipt } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
@@ -61,6 +61,13 @@
                 "Einbauküche sicher demontieren, Spülmaschine richtig abklemmen, Granit transportieren. Was Sie selbst tun können – und wo Profis Fehler verhindern.",
             icon: UtensilsCrossed,
             link: "/ratgeber/kueche-umzug",
+        },
+        {
+            title: "Umzugskosten steuerlich absetzen",
+            description:
+                "§35a EStG für alle, Werbungskosten für Berufspendler. Pauschale bis 1.928 €, Steuerbonus bis 4.000 €. Alle Regeln für 2026 kompakt erklärt.",
+            icon: Receipt,
+            link: "/ratgeber/umzugskosten-steuerlich-absetzen",
         },
     ];
 

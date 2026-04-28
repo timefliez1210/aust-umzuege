@@ -8,7 +8,6 @@
 		job_date: string | null;
 		origin_city: string | null;
 		destination_city: string | null;
-		planned_hours: number;
 		actual_hours: number | null;
 		status: string;
 		entry_type: string;
@@ -20,7 +19,6 @@
 	interface HoursSummary {
 		month: string;
 		target_hours: number;
-		planned_hours: number;
 		actual_hours: number;
 		assignment_count: number;
 		assignments: HoursEntry[];
@@ -106,24 +104,13 @@
 			<span class="summary-value">{summary.target_hours} h</span>
 		</div>
 		<div class="summary-card">
-			<span class="summary-label">Geplant</span>
-			<span class="summary-value planned">{summary.planned_hours.toFixed(1)} h</span>
-		</div>
-		<div class="summary-card">
 			<span class="summary-label">Ist</span>
 			<span class="summary-value actual">{summary.actual_hours.toFixed(1)} h</span>
 		</div>
 	</div>
 
-	<!-- Progress bars -->
+	<!-- Progress bar -->
 	<div class="bars">
-		<div class="bar-row">
-			<span class="bar-label">Geplant</span>
-			<div class="bar-track">
-				<div class="bar-fill planned" style="width:{pct(summary.planned_hours, summary.target_hours)}%"></div>
-			</div>
-			<span class="bar-pct">{pct(summary.planned_hours, summary.target_hours).toFixed(0)}%</span>
-		</div>
 		<div class="bar-row">
 			<span class="bar-label">Ist</span>
 			<div class="bar-track">
@@ -143,9 +130,10 @@
 						<div class="a-date">{fmtDate(a.job_date)}</div>
 						<div class="a-route">{a.title ?? '—'}</div>
 						<div class="a-hours">
-							<span class="h-planned">{a.planned_hours.toFixed(1)} h</span>
 							{#if a.actual_hours !== null}
-								<span class="h-actual">/ {a.actual_hours.toFixed(1)} h</span>
+								<span class="h-actual">{a.actual_hours.toFixed(1)} h</span>
+							{:else}
+								<span class="h-actual">—</span>
 							{/if}
 						</div>
 					</div>
@@ -160,9 +148,10 @@
 							{/if}
 						</div>
 						<div class="a-hours">
-							<span class="h-planned">{a.planned_hours.toFixed(1)} h</span>
 							{#if a.actual_hours !== null}
-								<span class="h-actual">/ {a.actual_hours.toFixed(1)} h</span>
+								<span class="h-actual">{a.actual_hours.toFixed(1)} h</span>
+							{:else}
+								<span class="h-actual">—</span>
 							{/if}
 						</div>
 						<ChevronRight size={14} class="chevron" />

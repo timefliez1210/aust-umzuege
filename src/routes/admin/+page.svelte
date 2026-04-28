@@ -629,7 +629,7 @@
 
 <style>
 	.dashboard {
-		H0%;
+		height: 100%;
 	}
 
 	.page-header {

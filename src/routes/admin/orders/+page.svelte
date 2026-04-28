@@ -194,7 +194,7 @@
 
 <style>
 	.page {
-		H0%;
+		height: 100%;
 	}
 
 	.page-header h1 {

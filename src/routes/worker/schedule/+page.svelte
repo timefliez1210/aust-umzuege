@@ -14,7 +14,6 @@
 		destination_city: string | null;
 		estimated_volume_m3: number | null;
 		customer_name: string | null;
-		planned_hours: number;
 		colleague_names: string[];
 		entry_type: string;
 		calendar_item_id: string | null;

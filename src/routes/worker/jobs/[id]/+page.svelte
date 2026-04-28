@@ -28,7 +28,6 @@
 		items: ItemInfo[];
 		customer_name: string | null;
 		customer_phone: string | null;
-		planned_hours: number;
 		notes: string | null;
 		employee_notes: string | null;
 		employee_clock_in: string | null;

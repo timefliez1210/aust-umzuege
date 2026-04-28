@@ -42,6 +42,12 @@
 			href: "/ratgeber/moebel-einlagern",
 			linkText: "Ratgeber Einlagerung",
 		},
+		{
+			title: "Umzugskosten steuerlich absetzen",
+			description: "§35a für jeden Umzug (bis 4.000 € Steuerbonus) und Werbungskosten bei beruflichem Anlass. Pauschale, doppelte Haushaltsführung & Formulare kompakt erklärt.",
+			href: "/ratgeber/umzugskosten-steuerlich-absetzen",
+			linkText: "Ratgeber Steuern & Umzug",
+		},
 	];
 </script>
 

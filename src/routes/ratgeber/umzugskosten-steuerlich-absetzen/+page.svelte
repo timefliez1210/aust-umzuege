@@ -109,6 +109,12 @@
                 <p class="author-byline">Von Alexander Aust, Geschäftsführer bei Aust Umzüge · Stand: April 2026</p>
             </header>
 
+            <div class="disclaimer disclaimer--top">
+                <p>
+                    <strong>Rechtlicher Hinweis:</strong> Dieser Ratgeber dient der allgemeinen Information und ersetzt keine steuerliche Beratung. Das Steuerrecht ist komplex und unterliegt regelmäßigen Änderungen. Klären Sie Ihren individuellen Fall mit einem Steuerberater oder einer Steuerberaterin.
+                </p>
+            </div>
+
             <div class="guide-intro">
                 <p>
                     Viele wissen: Wer wegen des Jobs umzieht, kann die Kosten steuerlich absetzen. Was deutlich weniger bekannt ist: Es gibt einen zweiten Weg, der bei <em>jedem</em> Umzug funktioniert – ganz ohne beruflichen Anlass. Das Ergebnis kann sich sehen lassen: bis zu 4.000 € direkter Steuerbonus, der nicht bloß das zu versteuernde Einkommen mindert, sondern direkt von Ihrer Steuerschuld abgezogen wird.
@@ -480,13 +486,6 @@
 
                 <!-- ===== FAQ ===== -->
                 <FAQSection {faqs} title="Häufige Fragen zu Umzugskosten und Steuern" />
-
-                <!-- ===== DISCLAIMER ===== -->
-                <div class="disclaimer">
-                    <p>
-                        <strong>Hinweis:</strong> Dieser Ratgeber dient der allgemeinen Information und ersetzt keine steuerliche Beratung. Das Steuerrecht ist komplex und unterliegt regelmäßigen Änderungen. Klären Sie Ihren individuellen Fall mit einem Steuerberater oder einer Steuerberaterin.
-                    </p>
-                </div>
 
             </div>
 
@@ -990,15 +989,16 @@
 
     /* Disclaimer */
     .disclaimer {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background-color: #fefce8;
+        border: 1px solid #fde047;
+        border-left: 4px solid #eab308;
         border-radius: var(--radius-md);
-        padding: var(--space-5);
-        margin-top: var(--space-8);
+        padding: var(--space-4) var(--space-5);
+        margin-bottom: var(--space-6);
     }
 
     .disclaimer p {
-        color: #64748b;
+        color: #713f12;
         font-size: var(--text-sm);
         line-height: 1.6;
         margin: 0;

@@ -25,7 +25,6 @@
 		first_name: string;
 		last_name: string;
 		job_date?: string | null;
-		planned_hours: number;
 		actual_hours: number | null;
 		notes: string | null;
 		start_time?: string | null;
@@ -108,13 +107,12 @@
 	// Add-employee form
 	let showAddForm = $state(false);
 	let addEmployeeId = $state('');
-	let addPlannedHours = $state('');
 	let addNotes = $state('');
 	let adding = $state(false);
 
 	// Per-row inline edit state (calendar_item mode)
 	let editingEmp = $state<Record<string, {
-		planned: string; actual: string; notes: string;
+		actual: string; notes: string;
 		clockIn: string; clockOut: string;
 		breakMin: string;
 		transportMode: string;
@@ -165,7 +163,6 @@
 				const state: typeof editingEmp = {};
 				for (const e of assignments) {
 					state[e.employee_id] = {
-						planned: String(e.planned_hours),
 						actual: e.actual_hours != null ? String(e.actual_hours) : '',
 						notes: e.notes ?? '',
 						clockIn: fmtTime(e.clock_in),
@@ -257,7 +254,6 @@
 	function openAddForm() {
 		const available = unassigned();
 		addEmployeeId = available[0]?.id ?? '';
-		addPlannedHours = '';
 		addNotes = '';
 		showAddForm = true;
 	}
@@ -274,7 +270,6 @@
 		try {
 			await apiPost(baseUrl, {
 				employee_id: addEmployeeId,
-				planned_hours: parseFloat(addPlannedHours) || 0,
 				notes: addNotes || null
 			});
 			showToast('Mitarbeiter zugewiesen', 'success');
@@ -291,32 +286,6 @@
 	// ---------------------------------------------------------------------------
 	// Inquiry-mode: blur-to-save helpers
 	// ---------------------------------------------------------------------------
-
-	/**
-	 * PATCHes planned_hours for an inquiry assignment on input blur.
-	 *
-	 * Called by: Template (planned_hours input onblur, inquiry mode only).
-	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id} with the new value.
-	 *
-	 * @param empId - Employee UUID whose planned_hours to update.
-	 * @param value - Raw string from the input element.
-	 */
-	async function updatePlannedHours(empId: string, value: string) {
-		const numValue = parseFloat(value);
-		if (isNaN(numValue)) return;
-		inquerySaving = empId;
-		try {
-			const updated = await apiPatch<EmployeeAssignment>(`${baseUrl}/${empId}`, {
-				planned_hours: numValue
-			});
-			const idx = assignments.findIndex((e) => e.employee_id === empId);
-			if (idx !== -1) assignments[idx] = { ...assignments[idx], ...updated };
-		} catch (e: unknown) {
-			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
-		} finally {
-			inquerySaving = null;
-		}
-	}
 
 	/**
 	 * PATCHes a time field for an inquiry assignment on input blur.
@@ -377,7 +346,6 @@
 		savingEmp = { ...savingEmp, [empId]: true };
 		try {
 			await apiPatch(`${baseUrl}/${empId}`, {
-				planned_hours: parseFloat(s.planned) || 0,
 				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
 				notes: s.notes || null,
 				clock_in: s.clockIn ? s.clockIn + ':00' : null,
@@ -570,7 +538,7 @@
 			<div class="inq-emp-header">
 				<span>Name</span>
 				<span>Von–Bis</span>
-				<span>P.</span>
+				<span>P.min</span>
 				<span></span>
 			</div>
 			{#each assignments as emp}
@@ -641,7 +609,7 @@
 		<!-- ── Calendar-item mode: card list with explicit save ── -->
 		<div class="emp-list">
 			{#each assignments as emp}
-				{@const s = editingEmp[emp.employee_id] ?? { planned: '0', actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', miscCosts: '', mealDeduction: '' }}
+				{@const s = editingEmp[emp.employee_id] ?? { actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', miscCosts: '', mealDeduction: '' }}
 				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, parseInt(s.breakMin) || 0)}
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>

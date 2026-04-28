@@ -49,7 +49,7 @@
 </script>
 
 <MetaTags
-	title="Umzugsfirma Hannover – Professionell, Zuverlässig & Festpreis | Aust Umzüge"
+	title="Umzugsfirma Hannover – Festpreis & Professionell | Aust Umzüge"
 	description="Umzug in Hannover mit Festpreisgarantie: professionelles Team, sorgfältiger Transport, Möbelmontage und Halteverbotszone aus einer Hand. Jetzt kostenlos Angebot anfordern."
 	keywords="Umzugsfirma Hannover, Umzug Hannover, Privatumzug Hannover, Wohnungsumzug Hannover, zuverlässige Umzugsfirma Hannover, Umzug Hannover Festpreis, seriöse Umzugsfirma Hannover"
 	canonical="https://www.aust-umzuege.de/umzug-hannover"
@@ -227,7 +227,7 @@
 	}
 
 	.service-detail__container {
-		max-width: 1000px;
+		max-width: var(--container-max);
 		margin-inline: auto;
 		padding-inline: var(--container-padding);
 	}

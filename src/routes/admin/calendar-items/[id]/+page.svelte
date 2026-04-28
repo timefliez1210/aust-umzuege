@@ -35,7 +35,6 @@
 		employee_id: string;
 		first_name: string;
 		last_name: string;
-		planned_hours: number;
 		actual_hours: number | null;
 		notes: string | null;
 	}

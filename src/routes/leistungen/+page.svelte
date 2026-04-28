@@ -12,6 +12,7 @@
         Archive,
         Warehouse,
         Stethoscope,
+        BookMarked,
         ArrowRight,
         Mail,
     } from "lucide-svelte";
@@ -105,6 +106,13 @@
             icon: Stethoscope,
             link: "/leistungen/praxisumzug",
         },
+        {
+            title: "Archiv-Montage & Demontage",
+            description:
+                "Fachgerechter Aufbau, Abbau und Umzug von Archivregalsystemen. DGUV-konform, mit befähigtem Personal und Abnahmeprotokoll.",
+            icon: BookMarked,
+            link: "/leistungen/archiv-montage",
+        },
     ];
 
     const breadcrumbs = createBreadcrumbs([
@@ -183,7 +191,7 @@
     }
 
     .services-page__container {
-        max-width: 1200px;
+        max-width: var(--container-max);
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }

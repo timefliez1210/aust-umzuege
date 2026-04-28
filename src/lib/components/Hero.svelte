@@ -93,7 +93,7 @@
     }
 
     .hero__content {
-        max-width: 580px;
+        max-width: 720px;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -122,7 +122,7 @@
         font-size: var(--text-lg);
         line-height: var(--leading-relaxed);
         margin: 0;
-        max-width: 480px;
+        max-width: 680px;
     }
 
     .hero__content :global(.cta-button) {

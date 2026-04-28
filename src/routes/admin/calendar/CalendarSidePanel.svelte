@@ -80,7 +80,6 @@
 		employee_id: string;
 		first_name: string;
 		last_name: string;
-		planned_hours: number | null;
 		notes: string | null;
 		start_time: string | null;
 		end_time: string | null;
@@ -199,7 +198,6 @@
 	// Shared state for the "add employee to a day" popover (used for both inq and termin days)
 	let addEmpDayTarget = $state<string | null>(null); // e.g. "inq-0" or "term-2"
 	let addEmpId = $state('');
-	let addEmpHours = $state('');
 	let addEmpStart = $state('');
 	let addEmpEnd = $state('');
 
@@ -236,11 +234,10 @@
 		return { planned_hours: Math.round(planned * 100) / 100, break_minutes: breakMin };
 	}
 
-	/** Recompute a row's planned_hours + break_minutes from its start/end (called on blur). */
-	function recomputeRow(row: { start_time: string | null; end_time: string | null; planned_hours: number | null; break_minutes: number }) {
+	/** Recompute a row's break_minutes from its start/end (called on blur). */
+	function recomputeRow(row: { start_time: string | null; end_time: string | null; break_minutes: number }) {
 		const c = computeHoursAndBreak(row.start_time, row.end_time, row.break_minutes);
 		if (c.planned_hours != null) {
-			row.planned_hours = c.planned_hours;
 			row.break_minutes = c.break_minutes;
 		}
 	}
@@ -375,7 +372,6 @@
 	function openAddEmp(target: string, defaultStart?: string, defaultEnd?: string) {
 		addEmpDayTarget = target;
 		addEmpId = '';
-		addEmpHours = '';
 		addEmpStart = defaultStart ?? '';
 		addEmpEnd = defaultEnd ?? '';
 	}
@@ -393,14 +389,12 @@
 		const emp = allEmployees.find(e => e.id === addEmpId);
 		if (!emp) return;
 		const computed = computeHoursAndBreak(addEmpStart, addEmpEnd, 0);
-		const planned = addEmpHours ? parseFloat(addEmpHours) : computed.planned_hours;
 		inqDays[dayIndex].employees = [
 			...inqDays[dayIndex].employees,
 			{
 				employee_id: emp.id,
 				first_name: emp.first_name,
 				last_name: emp.last_name,
-				planned_hours: planned,
 				notes: null,
 				start_time: addEmpStart || null,
 				end_time: addEmpEnd || null,
@@ -440,14 +434,12 @@
 		const emp = allEmployees.find(e => e.id === addEmpId);
 		if (!emp) return;
 		const computed = computeHoursAndBreak(addEmpStart, addEmpEnd, 0);
-		const planned = addEmpHours ? parseFloat(addEmpHours) : computed.planned_hours;
 		termDays[dayIndex].employees = [
 			...termDays[dayIndex].employees,
 			{
 				employee_id: emp.id,
 				first_name: emp.first_name,
 				last_name: emp.last_name,
-				planned_hours: planned,
 				notes: null,
 				start_time: addEmpStart || null,
 				end_time: addEmpEnd || null,
@@ -510,7 +502,6 @@
 					employee_id:   r.employee_id,
 					first_name:    r.first_name,
 					last_name:     r.last_name,
-					planned_hours: r.planned_hours ?? null,
 					notes:         r.notes ?? null,
 					start_time:    r.start_time ? r.start_time.slice(0, 5) : null,
 					end_time:      r.end_time   ? r.end_time.slice(0, 5)   : null,
@@ -528,7 +519,6 @@
 					...e,
 					clock_in:      e.clock_in  ?? e.start_time,
 					clock_out:     e.clock_out ?? e.end_time,
-					planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
 					break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
 				};
 			};
@@ -574,9 +564,10 @@
 			const computed = computeHoursAndBreak(e.start_time, e.end_time, e.break_minutes);
 			return {
 				...e,
-				clock_in: e.start_time,
-				clock_out: e.end_time,
-				planned_hours: computed.planned_hours ?? e.planned_hours,
+				// New days start with blank clock times — admin fills them when the day occurs.
+				clock_in: null,
+				clock_out: null,
+				notes: null,
 				break_minutes: computed.break_minutes,
 			};
 		});
@@ -587,7 +578,6 @@
 				...e,
 				clock_in:      e.clock_in  ?? e.start_time,
 				clock_out:     e.clock_out ?? e.end_time,
-				planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
 				break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
 			};
 		};
@@ -636,7 +626,6 @@
 				d.employees.map(e => ({
 					employee_id:   e.employee_id,
 					job_date:      d.day_date,
-					planned_hours: e.planned_hours ?? null,
 					notes:         e.notes ?? null,
 					start_time:    e.start_time  ? (e.start_time.length  === 5 ? e.start_time  + ':00' : e.start_time)  : null,
 					end_time:      e.end_time    ? (e.end_time.length    === 5 ? e.end_time    + ':00' : e.end_time)    : null,
@@ -676,7 +665,6 @@
 					employee_id:   r.employee_id,
 					first_name:    r.first_name,
 					last_name:     r.last_name,
-					planned_hours: r.planned_hours ?? null,
 					notes:         r.notes ?? null,
 					start_time:    r.start_time ? r.start_time.slice(0, 5) : null,
 					end_time:      r.end_time   ? r.end_time.slice(0, 5)   : null,
@@ -694,7 +682,6 @@
 					...e,
 					clock_in:      e.clock_in  ?? e.start_time,
 					clock_out:     e.clock_out ?? e.end_time,
-					planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
 					break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
 				};
 			};
@@ -739,7 +726,6 @@
 				...e,
 				clock_in: e.start_time,
 				clock_out: e.end_time,
-				planned_hours: computed.planned_hours ?? e.planned_hours,
 				break_minutes: computed.break_minutes,
 			};
 		});
@@ -750,7 +736,6 @@
 				...e,
 				clock_in:      e.clock_in  ?? e.start_time,
 				clock_out:     e.clock_out ?? e.end_time,
-				planned_hours: (e.planned_hours != null && e.planned_hours > 0) ? e.planned_hours : (computed.planned_hours ?? null),
 				break_minutes: e.break_minutes > 0 ? e.break_minutes : computed.break_minutes,
 			};
 		};
@@ -799,7 +784,6 @@
 				d.employees.map(e => ({
 					employee_id:   e.employee_id,
 					job_date:      d.day_date,
-					planned_hours: e.planned_hours ?? null,
 					notes:         e.notes ?? null,
 					start_time:    e.start_time  ? (e.start_time.length  === 5 ? e.start_time  + ':00' : e.start_time)  : null,
 					end_time:      e.end_time    ? (e.end_time.length    === 5 ? e.end_time    + ':00' : e.end_time)    : null,

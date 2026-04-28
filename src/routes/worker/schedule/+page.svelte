@@ -14,7 +14,6 @@
 		destination_city: string | null;
 		estimated_volume_m3: number | null;
 		customer_name: string | null;
-		planned_hours: number;
 		colleague_names: string[];
 		entry_type: string;
 		calendar_item_id: string | null;
@@ -49,30 +48,6 @@
 		} finally {
 			loading = false;
 		}
-	}
-
-	/**
-	 * Formats a job status string into a German label and color class.
-	 *
-	 * Called by: Template (status badge per job).
-	 * Purpose: Human-readable, color-coded status for the employee.
-	 *
-	 * @param status - Raw status string from the API
-	 * @returns Object with label and CSS class name
-	 */
-	function statusLabel(status: string): { label: string; cls: string } {
-		const map: Record<string, { label: string; cls: string }> = {
-			pending: { label: 'Ausstehend', cls: 'badge-gray' },
-			estimating: { label: 'In Bearbeitung', cls: 'badge-blue' },
-			estimated: { label: 'Geschätzt', cls: 'badge-blue' },
-			offer_ready: { label: 'Angebot bereit', cls: 'badge-blue' },
-			offer_sent: { label: 'Angebot gesendet', cls: 'badge-blue' },
-			accepted: { label: 'Bestätigt', cls: 'badge-green' },
-			scheduled: { label: 'Geplant', cls: 'badge-indigo' },
-			completed: { label: 'Erledigt', cls: 'badge-green' },
-			cancelled: { label: 'Abgesagt', cls: 'badge-red' },
-		};
-		return map[status] ?? { label: status, cls: 'badge-gray' };
 	}
 
 	/**
@@ -274,11 +249,6 @@
 		border-radius: 999px;
 	}
 
-	.badge-gray   { background: #f1f5f9; color: #64748b; }
-	.badge-blue   { background: #dbeafe; color: #1d4ed8; }
-	.badge-indigo { background: #e0e7ff; color: #4338ca; }
-	.badge-green  { background: #dcfce7; color: #16a34a; }
-	.badge-red    { background: #fee2e2; color: #dc2626; }
 	.badge-item   { background: #fef3c7; color: #92400e; }
 
 	.item-card {

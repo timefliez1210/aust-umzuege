@@ -16,7 +16,6 @@
 		phone: string | null;
 		monthly_hours_target: number;
 		active: boolean;
-		planned_hours_month: number | null;
 		actual_hours_month: number | null;
 		created_at: string;
 	}
@@ -52,7 +51,6 @@
 		{ key: 'email', label: 'E-Mail', sortable: true },
 		{ key: 'phone', label: 'Telefon', width: '120px' },
 		{ key: 'target', label: 'Ziel (h)', width: '80px' },
-		{ key: 'planned', label: 'Geplant (h)', width: '90px' },
 		{ key: 'actual', label: 'Ist (h)', width: '80px' },
 		{ key: 'utilization', label: 'Auslastung', width: '100px' },
 		{ key: 'status', label: 'Status', width: '80px' }
@@ -157,8 +155,8 @@
 	 * Math: utilization = (planned_hours / target) * 100
 	 */
 	function utilization(emp: Employee): number | null {
-		if (emp.planned_hours_month == null || emp.monthly_hours_target <= 0) return null;
-		return Math.round((emp.planned_hours_month / emp.monthly_hours_target) * 100);
+		if (emp.actual_hours_month == null || emp.monthly_hours_target <= 0) return null;
+		return Math.round((emp.actual_hours_month / emp.monthly_hours_target) * 100);
 	}
 </script>
 
@@ -277,7 +275,6 @@
 						<td>{emp.email}</td>
 						<td>{emp.phone ?? '—'}</td>
 						<td class="num">{emp.monthly_hours_target}</td>
-						<td class="num">{emp.planned_hours_month?.toFixed(1) ?? '—'}</td>
 						<td class="num">{emp.actual_hours_month?.toFixed(1) ?? '—'}</td>
 						<td>
 							{#if util != null}

@@ -49,7 +49,7 @@
 </script>
 
 <MetaTags
-	title="Umzugsfirma Braunschweig – Zuverlässig, Professionell & Festpreis | Aust Umzüge"
+	title="Umzugsfirma Braunschweig – Festpreis | Aust Umzüge"
 	description="Umzug in Braunschweig mit Festpreisgarantie: sorgfältiger Transport, Möbelmontage, Halteverbotszone – alles aus einer Hand. Kostenlose Vor-Ort-Besichtigung, keine Überraschungen."
 	keywords="Umzugsfirma Braunschweig, Umzug Braunschweig, Privatumzug Braunschweig, Wohnungsumzug Braunschweig, zuverlässige Umzugsfirma Braunschweig, Umzug Braunschweig Festpreis, seriöse Umzugsfirma Braunschweig"
 	canonical="https://www.aust-umzuege.de/umzug-braunschweig"
@@ -224,7 +224,7 @@
 	}
 
 	.service-detail__container {
-		max-width: 1000px;
+		max-width: var(--container-max);
 		margin-inline: auto;
 		padding-inline: var(--container-padding);
 	}

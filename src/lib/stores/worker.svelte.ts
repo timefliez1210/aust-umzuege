@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from '$lib/utils/fetchTimeout';
+
 /**
  * Worker (employee) auth store.
  *
@@ -106,7 +108,7 @@ export async function workerFetch<T = unknown>(
 		headers['Content-Type'] = 'application/json';
 	}
 
-	const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+	const res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers });
 
 	if (res.status === 401) {
 		worker.logout();

@@ -92,8 +92,28 @@
   --z-tooltip: 700;
 
   /* Container */
-  --container-max: 1280px;
+  --container-max: 1440px;
   --container-padding: var(--space-6);
+}
+
+/* Responsive container padding */
+@media (min-width: 1024px) {
+  :root {
+    --container-padding: var(--space-10);
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --container-padding: var(--space-12);
+  }
+}
+
+/* Prevent wide pages from becoming unreadable on ultrawide */
+@media (min-width: 1920px) {
+  :root {
+    --container-padding: var(--space-16);
+  }
 }
 
 /* ============================================

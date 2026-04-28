@@ -1,4 +1,5 @@
 import { auth } from '$lib/stores/auth.svelte';
+import { fetchWithTimeout } from './fetchTimeout';
 
 export const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.aufraeumhelden.com';
 
@@ -53,7 +54,7 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
 		body: body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined
 	};
 
-	let res = await fetch(`${API_BASE}${path}`, fetchOptions);
+	let res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions);
 
 	// On 401, try refreshing the token once
 	if (res.status === 401 && auth.token) {
@@ -61,7 +62,7 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
 		if (refreshed) {
 			headers['Authorization'] = `Bearer ${auth.token}`;
 			fetchOptions.headers = headers;
-			res = await fetch(`${API_BASE}${path}`, fetchOptions);
+			res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions);
 		} else {
 			auth.logout();
 			throw new ApiError(401, 'Sitzung abgelaufen. Bitte erneut anmelden.');
@@ -184,13 +185,13 @@ export async function apiDownload(path: string, filename: string): Promise<void>
 		headers['Authorization'] = `Bearer ${auth.token}`;
 	}
 
-	let res = await fetch(`${API_BASE}${path}`, { headers });
+	let res = await fetchWithTimeout(`${API_BASE}${path}`, { headers });
 
 	if (res.status === 401 && auth.token) {
 		const refreshed = await auth.refreshToken();
 		if (refreshed) {
 			headers['Authorization'] = `Bearer ${auth.token}`;
-			res = await fetch(`${API_BASE}${path}`, { headers });
+			res = await fetchWithTimeout(`${API_BASE}${path}`, { headers });
 		} else {
 			auth.logout();
 			throw new ApiError(401, 'Sitzung abgelaufen. Bitte erneut anmelden.');

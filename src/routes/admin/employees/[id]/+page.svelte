@@ -30,13 +30,14 @@
 		origin_city: string | null;
 		destination_city: string | null;
 		booking_date: string | null;
-		planned_hours: number;
 		actual_hours: number | null;
 		clock_in: string | null;
 		clock_out: string | null;
 		break_minutes: number;
 		start_time: string | null;
 		end_time: string | null;
+		employee_clock_in: string | null;
+		employee_clock_out: string | null;
 		notes: string | null;
 		status: string;
 	}
@@ -47,13 +48,14 @@
 		category: string;
 		location: string | null;
 		scheduled_date: string | null;
-		planned_hours: number;
 		actual_hours: number | null;
 		clock_in: string | null;
 		clock_out: string | null;
 		break_minutes: number;
 		start_time: string | null;
 		end_time: string | null;
+		employee_clock_in: string | null;
+		employee_clock_out: string | null;
 		status: string;
 	}
 
@@ -68,7 +70,6 @@
 		from: string;
 		to: string;
 		target_hours: number;
-		planned_hours: number;
 		actual_hours: number;
 		assignment_count: number;
 		assignments: Assignment[];
@@ -104,6 +105,12 @@
 	 *
 	 * @returns { from, to } — YYYY-MM-DD strings
 	 */
+	function fmtTimestamp(ts: string | null): string {
+		if (!ts) return '—';
+		const d = new Date(ts);
+		return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+	}
+
 	function getWeekRange(): { from: string; to: string } {
 		const today = new Date();
 		const from = today.toISOString().slice(0, 10);
@@ -621,16 +628,6 @@
 						<span class="hours-value">{hoursSummary.target_hours} h</span>
 					</div>
 					<div class="hours-row">
-						<span class="hours-label">Geplant</span>
-						<span class="hours-value">{hoursSummary.planned_hours.toFixed(1)} h</span>
-					</div>
-					<div class="progress-bar">
-						<div
-							class="progress-fill planned"
-							style="width: {progressPct(hoursSummary.planned_hours, hoursSummary.target_hours)}%"
-						></div>
-					</div>
-					<div class="hours-row">
 						<span class="hours-label">Ist</span>
 						<span class="hours-value">{hoursSummary.actual_hours.toFixed(1)} h</span>
 					</div>
@@ -732,11 +729,12 @@
 							<th>Datum</th>
 							<th>Beschreibung</th>
 							<th>Details</th>
-							<th class="num">Geplant (h)</th>
 							<th class="time-col">Von</th>
 							<th class="time-col">Bis</th>
 							<th class="time-col">Pause (Min.)</th>
 							<th class="num">Ist (h)</th>
+							<th class="time-col muted-col">MA-Von</th>
+							<th class="time-col muted-col">MA-Bis</th>
 							<th>Status</th>
 						</tr>
 					</thead>
@@ -757,7 +755,6 @@
 										—
 									{/if}
 								</td>
-								<td class="num">{a.planned_hours.toFixed(1)}</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if draft}
 										<input
@@ -802,6 +799,8 @@
 									{/if}
 								</td>
 								<td class="num">{a.actual_hours?.toFixed(1) ?? '—'}</td>
+								<td class="time-col muted-col">{a.employee_clock_in ? fmtTimestamp(a.employee_clock_in) : '—'}</td>
+								<td class="time-col muted-col">{a.employee_clock_out ? fmtTimestamp(a.employee_clock_out) : '—'}</td>
 								<td><StatusBadge status={a.status} /></td>
 							</tr>
 						{/each}
@@ -818,7 +817,6 @@
 									{ci.title}
 								</td>
 								<td>{ci.location ?? '—'}</td>
-								<td class="num">{ci.planned_hours.toFixed(1)}</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if draft}
 										<input
@@ -863,6 +861,8 @@
 									{/if}
 								</td>
 								<td class="num">{ci.actual_hours?.toFixed(1) ?? '—'}</td>
+								<td class="time-col muted-col">{ci.employee_clock_in ? fmtTimestamp(ci.employee_clock_in) : '—'}</td>
+								<td class="time-col muted-col">{ci.employee_clock_out ? fmtTimestamp(ci.employee_clock_out) : '—'}</td>
 								<td><StatusBadge status={ci.status} /></td>
 							</tr>
 						{/each}
@@ -1106,6 +1106,11 @@
 	.time-col {
 		text-align: center;
 		white-space: nowrap;
+	}
+
+	.muted-col {
+		color: #94a3b8;
+		font-size: 0.8125rem;
 	}
 
 	.time-cell {

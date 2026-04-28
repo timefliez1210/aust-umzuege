@@ -168,7 +168,6 @@
 		employee_id: string;
 		first_name: string;
 		last_name: string;
-		planned_hours: number;
 		clock_in: string | null;
 		clock_out: string | null;
 		actual_hours: number | null;
@@ -1176,7 +1175,6 @@
 	let showAssignModal = $state(false);
 	let availableEmployees = $state<EmployeeOption[]>([]);
 	let assignEmployeeId = $state('');
-	let assignPlannedHours = $state('4');
 	let assignNotes = $state('');
 	let assignLoading = $state(false);
 	let employeeSaving = $state<string | null>(null);
@@ -1512,7 +1510,6 @@
 			const assignedIds = new Set((data?.employees ?? []).map((e: EmployeeAssignment) => e.employee_id));
 			availableEmployees = res.employees.filter((e) => !assignedIds.has(e.id));
 			assignEmployeeId = availableEmployees[0]?.id ?? '';
-			assignPlannedHours = '4';
 			assignNotes = '';
 			showAssignModal = true;
 		} catch {
@@ -1532,7 +1529,6 @@
 		try {
 			await apiPost(`/api/v1/inquiries/${data.id}/employees`, {
 				employee_id: assignEmployeeId,
-				planned_hours: parseFloat(assignPlannedHours) || 0,
 				notes: assignNotes || null
 			});
 			showToast('Mitarbeiter zugewiesen', 'success');
@@ -1545,34 +1541,7 @@
 		}
 	}
 
-	/**
-	 * Updates planned hours for an assignment.
-	 *
-	 * Called by: Template (inline edit blur on planned_hours input)
-	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id}.
-	 *
-	 * @param empId - Employee UUID
-	 * @param value - Raw string value from the input
-	 */
-	async function updatePlannedHours(empId: string, value: string) {
-		if (!data) return;
-		const numValue = parseFloat(value);
-		if (isNaN(numValue)) return;
-		employeeSaving = empId;
-		try {
-			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, { planned_hours: numValue });
-			if (data.employees) {
-				const idx = data.employees.findIndex((e: EmployeeAssignment) => e.employee_id === empId);
-				if (idx !== -1) {
-					data.employees[idx] = { ...data.employees[idx], ...updated };
-				}
-			}
-		} catch (e: unknown) {
-			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
-		} finally {
-			employeeSaving = null;
-		}
-	}
+	async function updatePlannedHours(_empId: string, _value: string) { /* no-op: planned_hours removed */ }
 
 	/**
 	 * Updates clock_in or clock_out for an assignment.
@@ -2887,7 +2856,7 @@
 
 <style>
 	.page {
-		max-width: 1200px;
+		height: 100%;
 	}
 
 	.back-link {
@@ -3935,7 +3904,7 @@
 
 	/* ── Email Thread Section ───────────────────────────────────────── */
 	.email-section {
-		max-width: 1200px;
+		height: 100%;
 		margin-top: 1.5rem;
 	}
 

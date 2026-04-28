@@ -146,7 +146,7 @@
     }
 
     .impressum__container {
-        max-width: 800px;
+        max-width: var(--container-max);
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }

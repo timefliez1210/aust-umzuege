@@ -19,7 +19,7 @@
         },
         {
             question: "Was kosten Umzugshelfer pro Stunde in Hildesheim?",
-            answer: "Unsere professionellen Umzugshelfer kosten zwischen 25 und 35 Euro pro Person und Stunde, inklusive Versicherung und Ausrüstung. Private Helfer sind zwar günstiger (10-15 Euro), arbeiten aber ohne Haftpflichtversicherung und Erfahrung. Für ein konkretes Angebot rufen Sie uns kurz an – wir beraten Sie innerhalb von Minuten."
+            answer: "Unsere professionellen Umzugshelfer kosten 30–35 Euro pro Person und Stunde – je nach Teamgröße. Ab 7 Helfern gilt der günstigste Satz von 30 Euro pro Person. Hinzu kommt die An- und Abfahrtszeit. Private Helfer sind zwar günstiger (10–15 Euro), arbeiten aber ohne Haftpflichtversicherung und Erfahrung. Für ein konkretes Angebot rufen Sie uns einfach kurz an."
         },
         {
             question: "Wie viele Umzugshelfer brauche ich?",
@@ -163,7 +163,52 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title" style="margin-top: var(--space-16);">So arbeiten unsere Umzugshelfer</h2>
+                <h2 class="section-title" style="margin-top: var(--space-10);">Preise & Mengenrabatt</h2>
+                <p>Je mehr Helfer Sie buchen, desto günstiger wird der Stundensatz. Hier eine Übersicht unserer aktuellen Konditionen:</p>
+
+                <div class="price-table-wrapper">
+                    <table class="price-table">
+                        <thead>
+                            <tr>
+                                <th>Anzahl Helfer</th>
+                                <th>Stundensatz / Person</th>
+                                <th>Ersparnis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1–2 Helfer</td>
+                                <td class="price-cell">35,00 €</td>
+                                <td class="savings-cell">–</td>
+                            </tr>
+                            <tr>
+                                <td>3–4 Helfer</td>
+                                <td class="price-cell">33,00 €</td>
+                                <td class="savings-cell">– 2 € / Person</td>
+                            </tr>
+                            <tr>
+                                <td>5–6 Helfer</td>
+                                <td class="price-cell">31,00 €</td>
+                                <td class="savings-cell">– 4 € / Person</td>
+                            </tr>
+                            <tr class="price-best">
+                                <td>7+ Helfer</td>
+                                <td class="price-cell">30,00 €</td>
+                                <td class="savings-cell">– 5 € / Person</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="anfahrt-notice">
+                    <div class="anfahrt-notice__icon">⏱</div>
+                    <div>
+                        <p class="anfahrt-notice__title">Wichtig: An- und Abfahrt wird berechnet</p>
+                        <p>Die Arbeitszeit beginnt bei der Abfahrt von unserem Standort und endet bei der Rückkehr – nicht erst wenn unsere Helfer bei Ihnen anklingeln. <strong>Beispiel:</strong> Sie wohnen 15 Minuten von uns entfernt und benötigen Helfer für 3 Stunden? Die Gesamtzeit beträgt dann 3 Stunden + 30 Minuten An- und Abfahrt = <strong>3,5 Stunden pro Helfer</strong>. Wir nennen Ihnen die voraussichtliche Gesamtdauer vorab – keine bösen Überraschungen auf der Rechnung.</p>
+                    </div>
+                </div>
+
+                <h2 class="section-title" style="margin-top: var(--space-10);">So arbeiten unsere Umzugshelfer</h2>
                 <p>
                     Umzugshelfer buchen – das klingt simpel. Aber zwischen „irgendwelchen Helfern" und professionellen Umzugskräften liegen Welten. Unsere Mitarbeiter sind geschult, versichert und wissen genau, wie man Möbel sicher trägt, LKWs optimal belädt und Schäden vermeidet.
                 </p>
@@ -254,7 +299,7 @@
         background-color: #fff;
     }
     .service-detail__container {
-        max-width: 1000px;
+        max-width: var(--container-max);
         margin-inline: auto;
         padding-inline: var(--container-padding);
     }
@@ -421,5 +466,102 @@
         font-weight: 700;
         font-size: 1.05rem !important;
         color: #1e3a5f !important;
+    }
+
+    /* Price Table */
+    .price-table-wrapper {
+        overflow-x: auto;
+        margin-block: var(--space-6);
+        border-radius: var(--radius-lg);
+        border: 1px solid #e2e8f0;
+    }
+
+    .price-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1rem;
+    }
+
+    .price-table thead {
+        background-color: var(--color-info-bar);
+        color: #fff;
+    }
+
+    .price-table th {
+        padding: var(--space-3) var(--space-5);
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+    }
+
+    .price-table td {
+        padding: var(--space-3) var(--space-5);
+        color: #1a202c;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .price-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .price-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .price-cell {
+        font-weight: 700;
+        color: var(--color-info-bar) !important;
+        font-size: 1.05rem;
+    }
+
+    .savings-cell {
+        color: #16a34a !important;
+        font-weight: 600;
+    }
+
+    .price-best {
+        background-color: #f0fdf4;
+    }
+
+    .price-best td {
+        color: #166534 !important;
+    }
+
+    .price-best .price-cell {
+        color: #166534 !important;
+    }
+
+    /* An- und Abfahrt notice */
+    .anfahrt-notice {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+        background-color: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-left: 4px solid #ea580c;
+        border-radius: var(--radius-md);
+        padding: var(--space-4) var(--space-5);
+        margin-block: var(--space-6);
+    }
+
+    .anfahrt-notice__icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        line-height: 1;
+        margin-top: 2px;
+    }
+
+    .anfahrt-notice__title {
+        font-weight: 700;
+        color: #9a3412 !important;
+        margin-bottom: var(--space-2) !important;
+        font-size: 1.05rem !important;
+    }
+
+    .anfahrt-notice p:not(.anfahrt-notice__title) {
+        color: #7c2d12 !important;
+        font-size: 0.975rem !important;
+        margin-bottom: 0 !important;
     }
 </style>

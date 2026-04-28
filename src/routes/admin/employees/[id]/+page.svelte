@@ -744,7 +744,7 @@
 							{@const draft = timeDrafts[key]}
 							<tr
 								class="clickable-row"
-								onclick={() => { if (a.inquiry_id) goto(`/admin/inquiries/${a.inquiry_id}`); }}
+								onclick={() => { if (a.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${a.inquiry_id}`); }}
 							>
 								<td>{a.booking_date ? formatDate(a.booking_date) : '—'}</td>
 								<td>{a.customer_name ?? '—'}</td>
@@ -809,7 +809,7 @@
 							{@const draft = timeDrafts[key]}
 							<tr
 								class="clickable-row item-row"
-								onclick={() => goto(`/admin/calendar-items/${ci.calendar_item_id}`)}
+								onclick={() => { if (!window.getSelection()?.toString()) goto(`/admin/calendar-items/${ci.calendar_item_id}`); }}
 							>
 								<td>{ci.scheduled_date ? formatDate(ci.scheduled_date) : '—'}</td>
 								<td>

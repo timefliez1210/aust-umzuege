@@ -46,6 +46,13 @@
 		}
 	}
 
+	// Default to most recent month once after data arrives
+	$effect(() => {
+		if (!loading && monthGroups.length > 0) {
+			activeIndex = monthGroups.length - 1;
+		}
+	});
+
 	function fmtEur(cents: number | null): string {
 		if (cents == null) return '\u2014';
 		return (cents / 100).toLocaleString('de-DE', {
@@ -292,14 +299,16 @@
 	/* ── Month navigation ─────────────────────────── */
 	.month-nav {
 		display: flex;
+		flex-direction: row;
 		align-items: center;
 		justify-content: center;
-		gap: var(--dt-space-2);
+		gap: var(--dt-space-3);
 		margin-bottom: var(--dt-space-4);
+		flex-wrap: nowrap;
 	}
 
 	.nav-btn {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		width: 36px;
@@ -307,8 +316,9 @@
 		border-radius: var(--dt-radius-md);
 		color: var(--dt-on-surface);
 		background: var(--dt-surface-container-low);
-		border: none;
+		border: var(--dt-ghost-border);
 		cursor: pointer;
+		flex-shrink: 0;
 		transition: background var(--dt-transition);
 	}
 
@@ -322,8 +332,10 @@
 	}
 
 	.month-label {
-		min-width: 220px;
-		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 200px;
 	}
 
 	.month-select {
@@ -333,8 +345,7 @@
 		color: var(--dt-on-surface);
 		border: var(--dt-ghost-border);
 		border-radius: var(--dt-radius-md);
-		padding: 0.5rem var(--dt-space-4);
-		padding-right: 2rem;
+		padding: 0.5rem 2rem 0.5rem var(--dt-space-4);
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;

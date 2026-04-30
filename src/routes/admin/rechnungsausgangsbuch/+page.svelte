@@ -116,9 +116,10 @@
 		<!-- Month navigator -->
 		<div class="month-nav">
 			<button
+				type="button"
 				class="nav-btn"
+				class:dimmed={activeIndex === 0}
 				aria-label="Vorheriger Monat"
-				disabled={activeIndex === 0}
 				onclick={() => { if (activeIndex > 0) activeIndex -= 1; }}
 			>
 				<ChevronLeft size={18} />
@@ -144,9 +145,10 @@
 			</div>
 
 			<button
+				type="button"
 				class="nav-btn"
+				class:dimmed={activeIndex >= monthGroups.length - 1}
 				aria-label="Nächster Monat"
-				disabled={activeIndex >= monthGroups.length - 1}
 				onclick={() => { if (activeIndex < monthGroups.length - 1) activeIndex += 1; }}
 			>
 				<ChevronRight size={18} />
@@ -238,8 +240,8 @@
 		border: var(--dt-ghost-border); cursor: pointer; font-size: 16px; line-height: 1;
 		transition: background var(--dt-transition);
 	}
-	.nav-btn:hover:not(:disabled) { background: var(--dt-surface-container-high); }
-	.nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+	.nav-btn:hover { background: var(--dt-surface-container-high); }
+	.nav-btn.dimmed { opacity: 0.35; }
 
 	.month-label {
 		flex: 0 0 auto; display: flex; align-items: center; justify-content: center;

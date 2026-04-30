@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { apiGet } from '$lib/utils/api.svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
@@ -34,19 +35,15 @@
 	let error = $state<string | null>(null);
 	let activeIndex = $state(0);
 
-	function invoiceDate(item: RechnungsausgangItem): string {
-		return item.sent_at ?? item.created_at;
-	}
-
-	function computeMonthGroups(list: RechnungsausgangItem[]): MonthGroup[] {
+	function groupByMonth(list: RechnungsausgangItem[]): MonthGroup[] {
 		const map = new Map<string, RechnungsausgangItem[]>();
 		for (const item of list) {
-			const m = invoiceDate(item).substring(0, 7);
+			const d = item.sent_at ?? item.created_at;
+			const m = d.substring(0, 7);
 			if (!map.has(m)) map.set(m, []);
 			map.get(m)!.push(item);
 		}
-		const keys = [...map.keys()].sort();
-		return keys.map(m => {
+		return [...map.keys()].sort().map(m => {
 			const items = map.get(m)!;
 			const [y, mo] = m.split('-');
 			const label = new Date(+y, +mo - 1).toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
@@ -66,20 +63,37 @@
 		try {
 			const data = await apiGet<RechnungsausgangItem[]>('/api/v1/admin/rechnungsausgangsbuch');
 			rows = data;
-			activeIndex = computeMonthGroups(data).length - 1;
+			const groups = groupByMonth(data);
+			activeIndex = Math.max(0, groups.length - 1);
 		} catch (e: any) {
 			error = e?.message || 'Ladefehler';
 			rows = [];
+			activeIndex = 0;
 		} finally {
 			loading = false;
 		}
 	}
 
-	let monthGroups = $derived(computeMonthGroups(rows));
+	onMount(() => { load(); });
+
+	let monthGroups = $derived(groupByMonth(rows));
+
+	function prevMonth() {
+		console.log('prev clicked, before:', activeIndex);
+		activeIndex = Math.max(0, activeIndex - 1);
+		console.log('prev clicked, after:', activeIndex);
+	}
+
+	function nextMonth() {
+		console.log('next clicked, before:', activeIndex);
+		activeIndex = Math.min(monthGroups.length - 1, activeIndex + 1);
+		console.log('next clicked, after:', activeIndex);
+	}
+
 	let active = $derived(monthGroups[activeIndex]);
 
 	let totalNetto = $derived(monthGroups.reduce((s, g) => s + g.netto, 0));
-	let totalMwst = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
+	let totalMwst  = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
 	let totalBrutto = $derived(monthGroups.reduce((s, g) => s + g.brutto, 0));
 	let totalOffen = $derived(monthGroups.reduce((s, g) => s + g.offen, 0));
 
@@ -96,8 +110,6 @@
 		const d = new Date(iso);
 		return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 	}
-
-	$effect(() => { load(); });
 </script>
 
 <div class="page">
@@ -115,42 +127,26 @@
 	{:else}
 		<!-- Month navigator -->
 		<div class="month-nav">
-			<button
-				type="button"
-				class="nav-btn"
-				class:dimmed={activeIndex === 0}
-				aria-label="Vorheriger Monat"
-				onclick={() => { if (activeIndex > 0) activeIndex -= 1; }}
-			>
+			<button type="button" class="nav-btn" class:dimmed={activeIndex === 0} onclick={prevMonth}>
 				<ChevronLeft size={18} />
 			</button>
 
 			<div class="month-label">
-				{#if monthGroups.length > 1}
-					<select
-						class="month-select"
-						value={active?.key ?? ''}
-						onchange={(e) => {
-							const idx = monthGroups.findIndex(g => g.key === e.currentTarget.value);
-							if (idx !== -1) activeIndex = idx;
-						}}
-					>
-						{#each monthGroups as g}
-							<option value={g.key}>{g.label} ({g.items.length})</option>
-						{/each}
-					</select>
-				{:else}
-					<span class="month-static">{active?.label ?? ''}</span>
-				{/if}
+				<select
+					class="month-select"
+					value={active?.key ?? ''}
+					onchange={(e) => {
+						const idx = monthGroups.findIndex(g => g.key === e.currentTarget.value);
+						if (idx !== -1) activeIndex = idx;
+					}}
+				>
+					{#each monthGroups as g}
+						<option value={g.key}>{g.label} ({g.items.length})</option>
+					{/each}
+				</select>
 			</div>
 
-			<button
-				type="button"
-				class="nav-btn"
-				class:dimmed={activeIndex >= monthGroups.length - 1}
-				aria-label="Nächster Monat"
-				onclick={() => { if (activeIndex < monthGroups.length - 1) activeIndex += 1; }}
-			>
+			<button type="button" class="nav-btn" class:dimmed={activeIndex >= monthGroups.length - 1} onclick={nextMonth}>
 				<ChevronRight size={18} />
 			</button>
 		</div>
@@ -160,7 +156,20 @@
 			<div class="table-wrapper">
 				<table>
 					<thead>
-						<tr><th>Rg-Nr.</th><th>Leistungsdatum</th><th>Kunde</th><th class="num">Netto</th><th class="num">MWST</th><th class="num">Brutto</th><th>Rechnungsdatum</th><th>F&auml;llig</th><th>Bezahlt</th><th class="num">Offen</th><th>Zahlungsart</th><th>Bem.</th></tr>
+						<tr>
+							<th>Rg-Nr.</th>
+							<th>Leistungsdatum</th>
+							<th>Kunde</th>
+							<th class="num">Netto</th>
+							<th class="num">MWST</th>
+							<th class="num">Brutto</th>
+							<th>Rechnungsdatum</th>
+							<th>F&auml;llig</th>
+							<th>Bezahlt</th>
+							<th class="num">Offen</th>
+							<th>Zahlungsart</th>
+							<th>Bem.</th>
+						</tr>
 					</thead>
 					<tbody>
 						{#each active.items as item}
@@ -255,7 +264,6 @@
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23191c1e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 		background-repeat: no-repeat; background-position: right 0.75rem center;
 	}
-	.month-static { font-size: 1rem; font-weight: 600; color: var(--dt-on-surface); }
 
 	/* ── table ───────────────────────────────────── */
 	.table-wrapper {

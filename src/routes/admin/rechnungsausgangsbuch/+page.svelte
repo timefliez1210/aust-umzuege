@@ -46,13 +46,6 @@
 		}
 	}
 
-	// Default to most recent month once after data arrives
-	$effect(() => {
-		if (!loading && monthGroups.length > 0) {
-			activeIndex = monthGroups.length - 1;
-		}
-	});
-
 	function fmtEur(cents: number | null): string {
 		if (cents == null) return '\u2014';
 		return (cents / 100).toLocaleString('de-DE', {
@@ -109,9 +102,12 @@
 	let activeIndex = $state(0);
 	let active = $derived(monthGroups[activeIndex]);
 
-	// Default to the most recent month when data loads
+	let initDone = $state(false);
 	$effect(() => {
-		if (monthGroups.length > 0) activeIndex = monthGroups.length - 1;
+		if (monthGroups.length > 0 && !initDone) {
+			activeIndex = monthGroups.length - 1;
+			initDone = true;
+		}
 	});
 
 	function prevMonth() {

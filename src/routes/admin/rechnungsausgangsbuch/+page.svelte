@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { apiGet } from '$lib/utils/api.svelte';
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
 	interface RechnungsausgangItem {
 		id: string;
@@ -10,6 +11,7 @@
 		mwst_cents: number | null;
 		brutto_cents: number | null;
 		sent_at: string | null;
+		created_at: string;
 		due_date: string | null;
 		paid_at: string | null;
 		offene_zahlungen_cents: number | null;
@@ -18,7 +20,8 @@
 	}
 
 	interface MonthGroup {
-		label: string;      // e.g. "April 2026"
+		key: string;        // "YYYY-MM"
+		label: string;      // "April 2026"
 		items: RechnungsausgangItem[];
 		netto: number;
 		mwst: number;
@@ -61,28 +64,19 @@
 		});
 	}
 
-	/**
-	 * Invoice date for grouping: sent_at because invoices are sent immediately
-	 * after human confirmation; drafts (sent_at = null) fall into a catch-all.
-	 */
+	/** Use sent_at when available (invoice date), else created_at (draft). */
 	function invoiceDate(item: RechnungsausgangItem): string {
-		return item.sent_at ?? '';
+		return item.sent_at ?? item.created_at;
 	}
 
 	let monthGroups = $derived.by<MonthGroup[]>(() => {
 		const map = new Map<string, RechnungsausgangItem[]>();
-		const unsent: RechnungsausgangItem[] = [];
 		for (const item of rows) {
 			const d = invoiceDate(item);
-			if (!d) {
-				unsent.push(item);
-				continue;
-			}
 			const m = d.substring(0, 7); // "YYYY-MM"
 			if (!map.has(m)) map.set(m, []);
 			map.get(m)!.push(item);
 		}
-		// Sort month keys chronologically; unsent drafts go last
 		const keys = [...map.keys()].sort();
 		const groups: MonthGroup[] = [];
 		for (const m of keys) {
@@ -93,6 +87,7 @@
 				month: 'long'
 			});
 			groups.push({
+				key: m,
 				label,
 				items,
 				netto: items.reduce((s, r) => s + (r.netto_cents ?? 0), 0),
@@ -101,18 +96,29 @@
 				offen: items.reduce((s, r) => s + (r.offene_zahlungen_cents ?? 0), 0)
 			});
 		}
-		if (unsent.length > 0) {
-			groups.push({
-				label: 'Nicht versendet',
-				items: unsent,
-				netto: unsent.reduce((s, r) => s + (r.netto_cents ?? 0), 0),
-				mwst: unsent.reduce((s, r) => s + (r.mwst_cents ?? 0), 0),
-				brutto: unsent.reduce((s, r) => s + (r.brutto_cents ?? 0), 0),
-				offen: unsent.reduce((s, r) => s + (r.offene_zahlungen_cents ?? 0), 0)
-			});
-		}
 		return groups;
 	});
+
+	let activeIndex = $state(0);
+	let active = $derived(monthGroups[activeIndex]);
+
+	// Default to the most recent month when data loads
+	$effect(() => {
+		if (monthGroups.length > 0) activeIndex = monthGroups.length - 1;
+	});
+
+	function prevMonth() {
+		if (activeIndex > 0) activeIndex -= 1;
+	}
+
+	function nextMonth() {
+		if (activeIndex < monthGroups.length - 1) activeIndex += 1;
+	}
+
+	function selectMonth(key: string) {
+		const idx = monthGroups.findIndex(g => g.key === key);
+		if (idx !== -1) activeIndex = idx;
+	}
 
 	let totalNetto = $derived(monthGroups.reduce((s, g) => s + g.netto, 0));
 	let totalMwst = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
@@ -135,63 +141,101 @@
 	{:else if rows.length === 0}
 		<div class="empty">Keine Rechnungen vorhanden.</div>
 	{:else}
-		{#each monthGroups as group}
-			<div class="month-section">
-				<h2 class="month-heading">{group.label}</h2>
-				<div class="table-wrapper">
-					<table>
-						<thead>
-							<tr>
-								<th>Rg.-Nummer</th>
-								<th>Datum</th>
-								<th>Kunde</th>
-								<th class="num">Netto</th>
-								<th class="num">MWST</th>
-								<th class="num">Brutto</th>
-								<th>Versendet</th>
-								<th>F&auml;llig</th>
-								<th>Bezahlt am</th>
-								<th class="num">Offen</th>
-								<th>Zahlungsart</th>
-								<th>Bemerkungen</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each group.items as item, i}
-								<tr class:paid={item.paid_at != null}>
-									<td class="mono">{item.invoice_number}</td>
-									<td>{fmtDate(item.scheduled_date)}</td>
-									<td>{item.customer_name || '\u2014'}</td>
-									<td class="num">{fmtEur(item.netto_cents)}</td>
-									<td class="num">{fmtEur(item.mwst_cents)}</td>
-									<td class="num">{fmtEur(item.brutto_cents)}</td>
-									<td>{fmtDate(item.sent_at)}</td>
-									<td>{fmtDate(item.due_date)}</td>
-									<td>{fmtDate(item.paid_at)}</td>
-									<td class="num offen">{fmtEur(item.offene_zahlungen_cents)}</td>
-									<td>{item.payment_method || '\u2014'}</td>
-									<td class="notes-cell">{item.notes || ''}</td>
-								</tr>
-							{/each}
-						</tbody>
-						<tfoot>
-							<tr>
-								<th colspan="3">Summe {group.label}</th>
-								<th class="num">{fmtEur(group.netto)}</th>
-								<th class="num">{fmtEur(group.mwst)}</th>
-								<th class="num">{fmtEur(group.brutto)}</th>
-								<th colspan="3"></th>
-								<th class="num">{fmtEur(group.offen)}</th>
-								<th colspan="2"></th>
-							</tr>
-						</tfoot>
-					</table>
-				</div>
-			</div>
-		{/each}
+		<!-- Month selector -->
+		<div class="month-nav">
+			<button
+				class="nav-btn"
+				onclick={prevMonth}
+				disabled={activeIndex === 0}
+				aria-label="Vorheriger Monat"
+			>
+				<ChevronLeft size={18} />
+			</button>
 
+			<div class="month-label">
+				{#if monthGroups.length > 1}
+					<select
+						class="month-select"
+						onchange={(e) => selectMonth(e.currentTarget.value)}
+						value={active?.key ?? ''}
+					>
+						{#each monthGroups as g}
+							<option value={g.key}>
+								{g.label} ({g.items.length})
+							</option>
+						{/each}
+					</select>
+				{:else}
+					<span class="month-static">{active?.label ?? ''}</span>
+				{/if}
+			</div>
+
+			<button
+				class="nav-btn"
+				onclick={nextMonth}
+				disabled={activeIndex >= monthGroups.length - 1}
+				aria-label="Nächster Monat"
+			>
+				<ChevronRight size={18} />
+			</button>
+		</div>
+
+		<!-- Active month table -->
+		{#if active}
+			<div class="table-wrapper">
+				<table>
+					<thead>
+						<tr>
+							<th>Rg.-Nummer</th>
+							<th>Leistungsdatum</th>
+							<th>Kunde</th>
+							<th class="num">Netto</th>
+							<th class="num">MWST</th>
+							<th class="num">Brutto</th>
+							<th>Rechnungsdatum</th>
+							<th>F&auml;llig</th>
+							<th>Bezahlt am</th>
+							<th class="num">Offen</th>
+							<th>Zahlungsart</th>
+							<th>Bemerkungen</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each active.items as item}
+							<tr class:paid={item.paid_at != null}>
+								<td class="mono">{item.invoice_number}</td>
+								<td>{fmtDate(item.scheduled_date)}</td>
+								<td>{item.customer_name || '\u2014'}</td>
+								<td class="num">{fmtEur(item.netto_cents)}</td>
+								<td class="num">{fmtEur(item.mwst_cents)}</td>
+								<td class="num">{fmtEur(item.brutto_cents)}</td>
+								<td>{fmtDate(item.sent_at)}</td>
+								<td>{fmtDate(item.due_date)}</td>
+								<td>{fmtDate(item.paid_at)}</td>
+								<td class="num offen">{fmtEur(item.offene_zahlungen_cents)}</td>
+								<td>{item.payment_method || '\u2014'}</td>
+								<td class="notes-cell">{item.notes || ''}</td>
+							</tr>
+						{/each}
+					</tbody>
+					<tfoot>
+						<tr>
+							<th colspan="3">Summe {active.label}</th>
+							<th class="num">{fmtEur(active.netto)}</th>
+							<th class="num">{fmtEur(active.mwst)}</th>
+							<th class="num">{fmtEur(active.brutto)}</th>
+							<th colspan="3"></th>
+							<th class="num">{fmtEur(active.offen)}</th>
+							<th colspan="2"></th>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		{/if}
+
+		<!-- Year-to-date grand total (shown below active month) -->
 		<div class="grand-total">
-			<span>Gesamtsumme</span>
+			<span>Gesamtsumme (Jahr)</span>
 			<span class="num">{fmtEur(totalNetto)}</span>
 			<span class="num">{fmtEur(totalMwst)}</span>
 			<span class="num">{fmtEur(totalBrutto)}</span>
@@ -245,19 +289,64 @@
 		color: var(--dt-on-surface-variant);
 	}
 
-	/* ── Month sections ─────────────────────────────── */
-	.month-section {
-		margin-bottom: var(--dt-space-8);
+	/* ── Month navigation ─────────────────────────── */
+	.month-nav {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--dt-space-2);
+		margin-bottom: var(--dt-space-4);
 	}
 
-	.month-heading {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		margin: 0 0 var(--dt-space-3) 0;
-		padding: var(--dt-space-3) var(--dt-space-4);
-		background: var(--dt-surface-container-low);
+	.nav-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
 		border-radius: var(--dt-radius-md);
+		color: var(--dt-on-surface);
+		background: var(--dt-surface-container-low);
+		border: none;
+		cursor: pointer;
+		transition: background var(--dt-transition);
+	}
+
+	.nav-btn:hover:not(:disabled) {
+		background: var(--dt-surface-container-high);
+	}
+
+	.nav-btn:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+
+	.month-label {
+		min-width: 220px;
+		text-align: center;
+	}
+
+	.month-select {
+		appearance: none;
+		-webkit-appearance: none;
+		background: var(--dt-surface-container-low);
+		color: var(--dt-on-surface);
+		border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-md);
+		padding: 0.5rem var(--dt-space-4);
+		padding-right: 2rem;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23191c1e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.75rem center;
+	}
+
+	.month-static {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--dt-on-surface);
 	}
 
 	/* ── Table ──────────────────────────────────────── */

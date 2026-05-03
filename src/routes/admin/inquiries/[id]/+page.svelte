@@ -2049,6 +2049,8 @@
 			<AddressEditor
 				originAddress={data.origin_address}
 				destinationAddress={data.destination_address}
+				stopAddress={data.stop_address}
+				inquiryId={data.id}
 				onSaved={loadInquiry}
 			/>
 

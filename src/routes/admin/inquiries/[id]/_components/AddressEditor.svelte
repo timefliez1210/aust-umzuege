@@ -27,15 +27,34 @@
 	 *
 	 * @prop originAddress - The current origin address, or null if not yet set
 	 * @prop destinationAddress - The current destination address, or null if not yet set
+	 * @prop stopAddress - The current stop address, or null if not set
 	 * @prop onSaved - Callback called after a successful address PATCH so the parent can reload
 	 */
 	interface Props {
 		originAddress: AddressSnapshot | null;
 		destinationAddress: AddressSnapshot | null;
+		stopAddress: AddressSnapshot | null;
+		inquiryId: string;
 		onSaved: () => void;
 	}
 
-	let { originAddress, destinationAddress, onSaved }: Props = $props();
+	let { originAddress, destinationAddress, stopAddress, inquiryId, onSaved }: Props = $props();
+
+	/**
+	 * @notice Legacy data may have the house number concatenated into the street
+	 *         field (e.g. "Musterstr. 1") with house_number = NULL.
+	 *         See: aust-api submissions.rs `split_street_house_number()`.
+	 *         When touching the addresses table, consider backfilling.
+	 *
+	 * @dev Extracts the last whitespace-separated token from `street` if it starts
+	 *      with a digit. Returns [streetWithoutNumber, houseNumber] or the original
+	 *      street unchanged if no number pattern is detected.
+	 */
+	function splitStreetNumber(street: string): [string, string] {
+		const m = street.match(/^(.*)\s+(\d\S*)$/);
+		if (m) return [m[1], m[2]];
+		return [street, ''];
+	}
 
 	// ─── Origin address edit state ────────────────────────────────────────────
 
@@ -63,12 +82,32 @@
 		parking_ban: false,
 	});
 
+	// ─── Stop address edit state ────────────────────────────────────────────
+	// addingStop = true when user is creating a stop on an inquiry that has none.
+
+	let editingStop = $state(false);
+	let addingStop = $state(false);
+	let editStop = $state({
+		street: '',
+		house_number: '',
+		postal_code: '',
+		city: '',
+		floor: '0',
+		elevator: false,
+		parking_ban: false,
+	});
+
 	function startEditOrigin() {
 		if (!originAddress) return;
 		const a = originAddress;
+		// @notice Legacy: house_number may be NULL with the number baked into street.
+		//        Extract it so the edit form shows it in the correct field.
+		const [cleanStreet, extractedHn] = a.house_number
+			? [a.street, a.house_number]
+			: splitStreetNumber(a.street);
 		editOrigin = {
-			street: a.street,
-			house_number: a.house_number || '',
+			street: cleanStreet,
+			house_number: extractedHn,
 			postal_code: a.postal_code || '',
 			city: a.city,
 			floor: a.floor || '0',
@@ -81,9 +120,13 @@
 	function startEditDest() {
 		if (!destinationAddress) return;
 		const a = destinationAddress;
+		// @notice Legacy: house_number may be NULL with the number baked into street.
+		const [cleanStreet, extractedHn] = a.house_number
+			? [a.street, a.house_number]
+			: splitStreetNumber(a.street);
 		editDest = {
-			street: a.street,
-			house_number: a.house_number || '',
+			street: cleanStreet,
+			house_number: extractedHn,
 			postal_code: a.postal_code || '',
 			city: a.city,
 			floor: a.floor || '0',
@@ -91,6 +134,64 @@
 			parking_ban: a.parking_ban ?? false,
 		};
 		editingDest = true;
+	}
+
+	function startEditStop() {
+		if (!stopAddress) return;
+		const a = stopAddress;
+		// @notice Legacy: house_number may be NULL with the number baked into street.
+		const [cleanStreet, extractedHn] = a.house_number
+			? [a.street, a.house_number]
+			: splitStreetNumber(a.street);
+		editStop = {
+			street: cleanStreet,
+			house_number: extractedHn,
+			postal_code: a.postal_code || '',
+			city: a.city,
+			floor: a.floor || '0',
+			elevator: a.elevator ?? false,
+			parking_ban: a.parking_ban ?? false,
+		};
+		editingStop = true;
+	}
+
+	function startAddStop() {
+		editStop = {
+			street: '',
+			house_number: '',
+			postal_code: '',
+			city: '',
+			floor: '0',
+			elevator: false,
+			parking_ban: false,
+		};
+		addingStop = true;
+	}
+
+	async function saveNewStop() {
+		try {
+			await apiPatch(`/api/v1/inquiries/${inquiryId}`, {
+				stop_address: editStop,
+			});
+			showToast('Zwischenstopp hinzugefügt', 'success');
+			addingStop = false;
+			onSaved();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	async function removeStop() {
+		if (!confirm('Zwischenstopp entfernen?')) return;
+		try {
+			await apiPatch(`/api/v1/inquiries/${inquiryId}`, {
+				clear_stop_address: true,
+			});
+			showToast('Zwischenstopp entfernt', 'success');
+			onSaved();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
 	}
 
 	async function saveAddress(
@@ -278,6 +379,160 @@
 						<span class="info-value">Ja</span>
 					</div>
 				{/if}
+			</div>
+		{/if}
+	</div>
+{/if}
+
+{#if stopAddress}
+	<div class="card">
+		<div class="card-header">
+			<h3>Zwischenstopp</h3>
+			{#if !editingStop}
+				<div class="addr-actions">
+					<button class="btn btn-sm" onclick={startEditStop}>
+						<Pencil size={14} />
+						Bearbeiten
+					</button>
+					<button class="btn btn-sm" onclick={removeStop}>
+						Entfernen
+					</button>
+				</div>
+			{/if}
+		</div>
+		{#if editingStop}
+			<div class="form-grid">
+				<div class="field">
+					<label for="stop-street">Strasse</label>
+					<input id="stop-street" type="text" bind:value={editStop.street} />
+				</div>
+				<div class="field field--shrink">
+					<label for="stop-number">Nr.</label>
+					<input id="stop-number" type="text" bind:value={editStop.house_number} />
+				</div>
+				<div class="field">
+					<label for="stop-plz">PLZ</label>
+					<input id="stop-plz" type="text" bind:value={editStop.postal_code} />
+				</div>
+				<div class="field">
+					<label for="stop-city">Stadt</label>
+					<input id="stop-city" type="text" bind:value={editStop.city} />
+				</div>
+				<div class="field">
+					<label for="stop-floor">Stockwerk</label>
+					<select id="stop-floor" bind:value={editStop.floor}>
+						<option value="-1">Keller</option>
+						<option value="0">Erdgeschoss</option>
+						<option value="1">1. OG</option>
+						<option value="2">2. OG</option>
+						<option value="3">3. OG</option>
+						<option value="4">4. OG</option>
+						<option value="5">5. OG</option>
+					</select>
+				</div>
+				<div class="field">
+					<label class="checkbox-label">
+						<input type="checkbox" bind:checked={editStop.elevator} />
+						Aufzug
+					</label>
+				</div>
+				<div class="field">
+					<label class="checkbox-label">
+						<input type="checkbox" bind:checked={editStop.parking_ban} />
+						Halteverbot
+					</label>
+				</div>
+				<div class="field full-width addr-actions">
+					<button class="btn btn-sm btn-save" onclick={() => saveAddress(stopAddress!.id, editStop, (v) => (editingStop = v))}>
+						<Save size={14} />
+						Speichern
+					</button>
+					<button class="btn btn-sm" onclick={() => (editingStop = false)}>Abbrechen</button>
+				</div>
+			</div>
+		{:else}
+			<div class="info-grid">
+				<div class="info-item">
+					<span class="info-label">Adresse</span>
+					<span class="info-value">
+						{stopAddress.street}{stopAddress.house_number ? ` ${stopAddress.house_number}` : ''}, {stopAddress.postal_code || ''} {stopAddress.city}
+					</span>
+				</div>
+				<div class="info-item">
+					<span class="info-label">Stockwerk</span>
+					<span class="info-value">
+						{floorLabel(stopAddress.floor)}
+						{#if stopAddress.elevator}(Aufzug){/if}
+					</span>
+				</div>
+				{#if stopAddress.parking_ban}
+					<div class="info-item">
+						<span class="info-label">Halteverbot</span>
+						<span class="info-value">Ja</span>
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</div>
+{:else}
+	<div class="card">
+		<div class="card-header">
+			<h3>Zwischenstopp</h3>
+			{#if !addingStop}
+				<button class="btn btn-sm" onclick={startAddStop}>
+					Hinzufügen
+				</button>
+			{/if}
+		</div>
+		{#if addingStop}
+			<div class="form-grid">
+				<div class="field">
+					<label for="stop-new-street">Strasse</label>
+					<input id="stop-new-street" type="text" bind:value={editStop.street} />
+				</div>
+				<div class="field field--shrink">
+					<label for="stop-new-number">Nr.</label>
+					<input id="stop-new-number" type="text" bind:value={editStop.house_number} />
+				</div>
+				<div class="field">
+					<label for="stop-new-plz">PLZ</label>
+					<input id="stop-new-plz" type="text" bind:value={editStop.postal_code} />
+				</div>
+				<div class="field">
+					<label for="stop-new-city">Stadt</label>
+					<input id="stop-new-city" type="text" bind:value={editStop.city} />
+				</div>
+				<div class="field">
+					<label for="stop-new-floor">Stockwerk</label>
+					<select id="stop-new-floor" bind:value={editStop.floor}>
+						<option value="-1">Keller</option>
+						<option value="0">Erdgeschoss</option>
+						<option value="1">1. OG</option>
+						<option value="2">2. OG</option>
+						<option value="3">3. OG</option>
+						<option value="4">4. OG</option>
+						<option value="5">5. OG</option>
+					</select>
+				</div>
+				<div class="field">
+					<label class="checkbox-label">
+						<input type="checkbox" bind:checked={editStop.elevator} />
+						Aufzug
+					</label>
+				</div>
+				<div class="field">
+					<label class="checkbox-label">
+						<input type="checkbox" bind:checked={editStop.parking_ban} />
+						Halteverbot
+					</label>
+				</div>
+				<div class="field full-width addr-actions">
+					<button class="btn btn-sm btn-save" onclick={saveNewStop}>
+						<Save size={14} />
+						Speichern
+					</button>
+					<button class="btn btn-sm" onclick={() => (addingStop = false)}>Abbrechen</button>
+				</div>
 			</div>
 		{/if}
 	</div>

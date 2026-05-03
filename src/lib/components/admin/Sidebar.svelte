@@ -12,7 +12,8 @@
 		PanelLeftClose,
 		PanelLeft,
 		ClipboardList,
-		Flag
+		Flag,
+		BookOpen
 	} from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 
@@ -37,6 +38,7 @@
 		{ href: '/admin/emails', label: 'E-Mails', icon: Mail },
 		{ href: '/admin/calendar', label: 'Kalender', icon: CalendarDays },
 		{ href: '/admin/calendar-items', label: 'Termine', icon: CalendarCheck },
+		{ href: '/admin/rechnungsausgangsbuch', label: 'Rechnungsausgangsbuch', icon: BookOpen },
 		{ href: '/admin/settings', label: 'Einstellungen', icon: Settings }
 	];
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	// DSGVO-compliant cookie consent banner
+	import { onMount } from 'svelte';
 	import { cookieConsent } from '$lib/stores/cookieConsent';
 
 	let showBanner = $state(false);
@@ -9,9 +10,11 @@
 	let analyticsEnabled = $state(false);
 	let marketingEnabled = $state(false);
 
-	// Show banner if user hasn't consented yet
-	$effect(() => {
-		showBanner = !$cookieConsent.consented;
+	// Delay consent check to avoid blocking initial hydration task
+	onMount(() => {
+		setTimeout(() => {
+			showBanner = !$cookieConsent.consented;
+		}, 300);
 	});
 
 	function handleAcceptAll() {

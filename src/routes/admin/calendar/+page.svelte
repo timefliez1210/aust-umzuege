@@ -63,6 +63,7 @@
 		day_number?: number | null;
 		total_days?: number | null;
 		day_notes?: string | null;
+		description?: string | null;
 	}
 
 	interface HolidayEntry {
@@ -1105,10 +1106,10 @@
 								title="{isMultiDayInquiry ? (entry.item.customer_name ?? '') : entry.item.title} · Tag {dayNum}/{totalDays}"
 								draggable="true"
 								ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr)}
-								onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+								onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 								role="button"
 								tabindex="0"
-								onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
+								onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
 							>
 								{#if isVisualStart}<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>{/if}
 							</div>
@@ -1154,10 +1155,10 @@
 												title="{entry.item.title}{entry.item.location ? ' @ ' + entry.item.location : ''}"
 												draggable="true"
 												ondragstart={(e) => onEntryDragStart(e, entry.item.calendar_item_id, 'termin', dateStr)}
-												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 												role="button"
 												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 											>
 												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.title, 14)}
 											</span>
@@ -1281,10 +1282,10 @@
 												class="week-card {termineEntryClass(entry.item.category)}"
 												draggable="true"
 												ondragstart={(e) => onEntryDragStart(e, entry.item.calendar_item_id, 'termin', dateStr)}
-												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 												role="button"
 												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 											>
 												{#if entry.item.total_days && entry.item.total_days > 1}
 													<div class="wc-multiday-bar">
@@ -1349,7 +1350,7 @@
 										{#if startH === hour}
 											<button
 												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'inquiry' ? 'intern' : (entry.item.category || 'intern'))}"
-												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.type === 'schedule-termin' ? { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' } : entry.item)}
+												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.type === 'schedule-termin' ? { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' } : entry.item)}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
 												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>

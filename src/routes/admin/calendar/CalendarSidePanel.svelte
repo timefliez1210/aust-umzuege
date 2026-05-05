@@ -64,6 +64,7 @@
 		day_number?: number | null;
 		total_days?: number | null;
 		day_notes?: string | null;
+		description?: string | null;
 	}
 
 	interface DaySchedule {
@@ -974,7 +975,7 @@
 					title: ci.title,
 					category: ci.category,
 					location: ci.location,
-					description: null as string | null,
+					description: ci.description ?? null,
 					scheduled_date: ds.date.split('T')[0],
 					start_time: ci.start_time ?? '',
 					end_time: ci.end_time,

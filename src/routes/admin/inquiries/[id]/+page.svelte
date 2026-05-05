@@ -247,6 +247,23 @@
 	let editingCustomer = $state(false);
 	let editCustomer = $state({ salutation: "", first_name: "", last_name: "", email: "", phone: "", customer_type: "private", company_name: "" });
 
+	let cardOpen = $state({
+		customer: false,
+		recipient: false,
+		billing: false,
+		details: false,
+		message: false,
+		pricing: false,
+		positions: false,
+		offer: false,
+		employees: false,
+		invoices: false,
+		route: false,
+		photos: false,
+		items: false,
+	});
+	const toggleCard = (k: keyof typeof cardOpen) => { cardOpen[k] = !cardOpen[k]; };
+
 	// Bindable handles to EstimationItemsTable internals
 	let openPhotoDetailFn = $state<((idx: number) => void) | null>(null);
 	let saveIfDirtyFn = $state<(() => Promise<void>) | null>(null);
@@ -1906,16 +1923,20 @@
 
 		<div class="detail-grid">
 			<!-- Customer -->
-			<div class="card">
-				<div class="card-header">
-					<h3>Kunde</h3>
-					{#if !editingCustomer}
+			<div class="card" class:card--collapsed={!cardOpen.customer}>
+				<div class="card-header card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('customer')} aria-expanded={cardOpen.customer}>
+						<span class="card-toggle-chev" class:open={cardOpen.customer}><ChevronRight size={16} /></span>
+						<h3>Kunde</h3>
+					</button>
+					{#if !editingCustomer && cardOpen.customer}
 						<button class="btn btn-sm" onclick={startEditCustomer}>
 							<Pencil size={14} />
 							Bearbeiten
 						</button>
 					{/if}
 				</div>
+				{#if cardOpen.customer}
 				{#if editingCustomer}
 					<div class="form-grid">
 						<div class="field">
@@ -1987,13 +2008,18 @@
 						{/if}
 					</div>
 				{/if}
+				{/if}
 			</div>
 
 			{#if data.recipient}
-				<div class="card">
-					<div class="card-header">
-						<h3>Leistungsempfänger</h3>
+				<div class="card" class:card--collapsed={!cardOpen.recipient}>
+					<div class="card-header card-header--toggleable">
+						<button class="card-toggle" onclick={() => toggleCard('recipient')} aria-expanded={cardOpen.recipient}>
+							<span class="card-toggle-chev" class:open={cardOpen.recipient}><ChevronRight size={16} /></span>
+							<h3>Leistungsempfänger</h3>
+						</button>
 					</div>
+					{#if cardOpen.recipient}
 					<div class="info-grid">
 						<div class="info-item">
 							<span class="info-label">Name</span>
@@ -2017,18 +2043,25 @@
 							</div>
 						{/if}
 					</div>
+					{/if}
 				</div>
 			{/if}
 
 			<!-- Billing Address -->
-			<div class="card card--compact">
-				<div class="card-header card-header--action">
-					<h3>Rechnungsadresse</h3>
-					<button class="btn-edit" onclick={() => billingEditing = !billingEditing}>
-						{billingEditing ? 'Schließen' : 'Bearbeiten'}
+			<div class="card card--compact" class:card--collapsed={!cardOpen.billing}>
+				<div class="card-header card-header--action card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('billing')} aria-expanded={cardOpen.billing}>
+						<span class="card-toggle-chev" class:open={cardOpen.billing}><ChevronRight size={16} /></span>
+						<h3>Rechnungsadresse</h3>
 					</button>
+					{#if cardOpen.billing}
+						<button class="btn-edit" onclick={() => billingEditing = !billingEditing}>
+							{billingEditing ? 'Schließen' : 'Bearbeiten'}
+						</button>
+					{/if}
 				</div>
 
+				{#if cardOpen.billing}
 				{#if data.effective_billing_address}
 					<div class="billing-addr-display">
 						<div>{data.effective_billing_address.street ?? ''} {data.effective_billing_address.house_number ?? ''}</div>
@@ -2069,6 +2102,7 @@
 						</div>
 					</div>
 				{/if}
+				{/if}
 			</div>
 
 			<!-- Addresses -->
@@ -2081,18 +2115,24 @@
 			/>
 
 			<!-- Editable Fields -->
-			<div class="card">
-				<div class="card-header">
-					<h3>Details</h3>
-					<button
-						class="btn btn-sm"
-						onclick={saveInquiry}
-						disabled={saving}
-					>
-						<Save size={14} />
-						{saving ? "Speichern..." : "Speichern"}
+			<div class="card" class:card--collapsed={!cardOpen.details}>
+				<div class="card-header card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('details')} aria-expanded={cardOpen.details}>
+						<span class="card-toggle-chev" class:open={cardOpen.details}><ChevronRight size={16} /></span>
+						<h3>Details</h3>
 					</button>
+					{#if cardOpen.details}
+						<button
+							class="btn btn-sm"
+							onclick={saveInquiry}
+							disabled={saving}
+						>
+							<Save size={14} />
+							{saving ? "Speichern..." : "Speichern"}
+						</button>
+					{/if}
 				</div>
+				{#if cardOpen.details}
 				<div class="form-grid">
 					<div class="field">
 						<label for="volume">Volumen (m3){isLocked ? ' 🔒' : ''}</label>
@@ -2136,49 +2176,93 @@
 						></textarea>
 					</div>
 				</div>
+				{/if}
 			</div>
 
 			<!-- Route Map -->
 			{#if routeCoordinates}
-				<RouteMap
-					coordinates={routeCoordinates}
-					distanceKm={editDistance}
-				/>
+				<div class="card" class:card--collapsed={!cardOpen.route}>
+					<div class="card-header card-header--toggleable">
+						<button class="card-toggle" onclick={() => toggleCard('route')} aria-expanded={cardOpen.route}>
+							<span class="card-toggle-chev" class:open={cardOpen.route}><ChevronRight size={16} /></span>
+							<h3>Route</h3>
+						</button>
+					</div>
+					{#if cardOpen.route}
+						<RouteMap
+							coordinates={routeCoordinates}
+							distanceKm={editDistance}
+						/>
+					{/if}
+				</div>
 			{/if}
 
 			<!-- Customer Message -->
 			{#if data.customer_message}
-				<div class="card">
-					<h3>Kundennachricht</h3>
-					<p class="customer-message">{data.customer_message}</p>
+				<div class="card" class:card--collapsed={!cardOpen.message}>
+					<div class="card-header card-header--toggleable">
+						<button class="card-toggle" onclick={() => toggleCard('message')} aria-expanded={cardOpen.message}>
+							<span class="card-toggle-chev" class:open={cardOpen.message}><ChevronRight size={16} /></span>
+							<h3>Kundennachricht</h3>
+						</button>
+					</div>
+					{#if cardOpen.message}
+						<p class="customer-message">{data.customer_message}</p>
+					{/if}
 				</div>
 			{/if}
 
 			<!-- Photo/Video Upload & Gallery -->
-			<PhotoVideoUpload
-				inquiryId={data.id}
-				{estimationsList}
-				{filterPhotoIndex}
-				openPhotoDetail={openPhotoDetailFn}
-				onTogglePhotoFilter={togglePhotoFilter}
-				onFilterClear={() => { filterPhotoIndex = null; }}
-				onUpdated={loadInquiry}
-			/>
+			<div class="card" class:card--collapsed={!cardOpen.photos}>
+				<div class="card-header card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('photos')} aria-expanded={cardOpen.photos}>
+						<span class="card-toggle-chev" class:open={cardOpen.photos}><ChevronRight size={16} /></span>
+						<h3>Foto- &amp; Videoanalyse</h3>
+					</button>
+				</div>
+				{#if cardOpen.photos}
+					<PhotoVideoUpload
+						inquiryId={data.id}
+						{estimationsList}
+						{filterPhotoIndex}
+						openPhotoDetail={openPhotoDetailFn}
+						onTogglePhotoFilter={togglePhotoFilter}
+						onFilterClear={() => { filterPhotoIndex = null; }}
+						onUpdated={loadInquiry}
+					/>
+				{/if}
+			</div>
 
 			<!-- Estimation Items Table (Sections A / B / C) -->
-			<EstimationItemsTable
-				inquiryId={data.id}
-				items={data.items ?? []}
-				{filterPhotoIndex}
-				galleryImages={galleryImages}
-				bind:openPhotoDetail={openPhotoDetailFn}
-				bind:saveIfDirty={saveIfDirtyFn}
-				onUpdated={loadInquiry}
-			/>
+			<div class="card" class:card--collapsed={!cardOpen.items}>
+				<div class="card-header card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('items')} aria-expanded={cardOpen.items}>
+						<span class="card-toggle-chev" class:open={cardOpen.items}><ChevronRight size={16} /></span>
+						<h3>Möbel und Gegenstände</h3>
+					</button>
+				</div>
+				{#if cardOpen.items}
+					<EstimationItemsTable
+						inquiryId={data.id}
+						items={data.items ?? []}
+						{filterPhotoIndex}
+						galleryImages={galleryImages}
+						bind:openPhotoDetail={openPhotoDetailFn}
+						bind:saveIfDirty={saveIfDirtyFn}
+						onUpdated={loadInquiry}
+					/>
+				{/if}
+			</div>
 
 			<!-- Pricing Editor -->
-			<div class="card">
-				<h3>Preisgestaltung</h3>
+			<div class="card" class:card--collapsed={!cardOpen.pricing}>
+				<div class="card-header card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('pricing')} aria-expanded={cardOpen.pricing}>
+						<span class="card-toggle-chev" class:open={cardOpen.pricing}><ChevronRight size={16} /></span>
+						<h3>Preisgestaltung</h3>
+					</button>
+				</div>
+				{#if cardOpen.pricing}
 				<div class="pricing-section">
 					<PriceInput
 						bind:bruttoCents={editBruttoCents}
@@ -2240,19 +2324,26 @@
 						>{laborProfit.toFixed(2)} &euro;</span
 					>
 				</div>
+				{/if}
 			</div>
 
 			<!-- Line Items (Editable) -->
-			<div class="card">
-				<div class="card-header">
-					<h3>Positionen</h3>
-					<div class="header-actions">
-						<button class="btn btn-sm" onclick={addLineItem}>
-							<Plus size={14} />
-							Position
-						</button>
-					</div>
+			<div class="card" class:card--collapsed={!cardOpen.positions}>
+				<div class="card-header card-header--toggleable">
+					<button class="card-toggle" onclick={() => toggleCard('positions')} aria-expanded={cardOpen.positions}>
+						<span class="card-toggle-chev" class:open={cardOpen.positions}><ChevronRight size={16} /></span>
+						<h3>Positionen</h3>
+					</button>
+					{#if cardOpen.positions}
+						<div class="header-actions">
+							<button class="btn btn-sm" onclick={addLineItem}>
+								<Plus size={14} />
+								Position
+							</button>
+						</div>
+					{/if}
 				</div>
+				{#if cardOpen.positions}
 				<div class="line-items">
 					{#each editLineItems as li, idx (li._id)}
 					<div
@@ -2348,24 +2439,31 @@
 						>
 					</div>
 				</div>
+				{/if}
 			</div>
 
 			<!-- Linked Offer -->
 			{#if data.offer}
-				<div class="card full-width">
-					<div class="card-header">
-						<h3>Angebot</h3>
-						<button
-							class="btn btn-sm"
-							onclick={downloadPdf}
-							disabled={downloadingPdf}
-						>
-							<Download size={14} />
-							{downloadingPdf
-								? "Wird geladen..."
-								: "PDF herunterladen"}
+				<div class="card full-width" class:card--collapsed={!cardOpen.offer}>
+					<div class="card-header card-header--toggleable">
+						<button class="card-toggle" onclick={() => toggleCard('offer')} aria-expanded={cardOpen.offer}>
+							<span class="card-toggle-chev" class:open={cardOpen.offer}><ChevronRight size={16} /></span>
+							<h3>Angebot</h3>
 						</button>
+						{#if cardOpen.offer}
+							<button
+								class="btn btn-sm"
+								onclick={downloadPdf}
+								disabled={downloadingPdf}
+							>
+								<Download size={14} />
+								{downloadingPdf
+									? "Wird geladen..."
+									: "PDF herunterladen"}
+							</button>
+						{/if}
 					</div>
+					{#if cardOpen.offer}
 					<div class="offers-list">
 						<div class="offer-row">
 							<span class="offer-date"
@@ -2379,6 +2477,7 @@
 							<StatusBadge status={data.offer.status} />
 						</div>
 					</div>
+					{/if}
 				</div>
 			{/if}
 
@@ -2407,7 +2506,14 @@
 <!-- Mitarbeiter Card (visible for accepted+ statuses) -->
 {#if showEmployeeCard && data}
 	<div class="employees-section">
-		<div class="card">
+		<div class="card" class:card--collapsed={!cardOpen.employees}>
+			<div class="card-header card-header--toggleable">
+				<button class="card-toggle" onclick={() => toggleCard('employees')} aria-expanded={cardOpen.employees}>
+					<span class="card-toggle-chev" class:open={cardOpen.employees}><ChevronRight size={16} /></span>
+					<h3>Mitarbeiter</h3>
+				</button>
+			</div>
+			{#if cardOpen.employees}
 			<EmployeeAssignmentPanel
 				entityId={data.id}
 				entityType="inquiry"
@@ -2449,6 +2555,7 @@
 					onblur={persistInquiry}
 				></textarea>
 			</div>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -2456,10 +2563,13 @@
 <!-- Rechnungen Card (visible for accepted+ statuses) -->
 {#if showInvoiceCard && data}
 	<div class="invoices-section">
-		<div class="card">
-			<div class="card-header">
-				<h3>Rechnungen</h3>
-				{#if invoices.length === 0}
+		<div class="card" class:card--collapsed={!cardOpen.invoices}>
+			<div class="card-header card-header--toggleable">
+				<button class="card-toggle" onclick={() => toggleCard('invoices')} aria-expanded={cardOpen.invoices}>
+					<span class="card-toggle-chev" class:open={cardOpen.invoices}><ChevronRight size={16} /></span>
+					<h3>Rechnungen</h3>
+				</button>
+				{#if cardOpen.invoices && invoices.length === 0}
 					<div class="invoice-create-btns">
 						<button
 							class="btn btn-sm btn-primary"
@@ -2479,6 +2589,7 @@
 					</div>
 				{/if}
 			</div>
+			{#if cardOpen.invoices}
 
 			<!-- Partial invoice form -->
 			{#if showPartialForm && invoices.length === 0}
@@ -2629,6 +2740,7 @@
 						</div>
 					{/each}
 				</div>
+			{/if}
 			{/if}
 		</div>
 	</div>
@@ -3038,6 +3150,63 @@
 
 	.card-header h3 {
 		margin-bottom: 0;
+	}
+
+	.card-header--toggleable {
+		gap: 0.75rem;
+	}
+
+	.card--collapsed {
+		padding-bottom: 0.75rem;
+	}
+
+	.card--collapsed .card-header,
+	.card--collapsed .card-header--toggleable {
+		margin-bottom: 0;
+	}
+
+	.card-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex: 1;
+		min-width: 0;
+		background: none;
+		border: none;
+		padding: 0;
+		margin: 0;
+		text-align: left;
+		cursor: pointer;
+		color: inherit;
+		font: inherit;
+	}
+
+	.card-toggle:hover h3 {
+		color: var(--dt-primary);
+	}
+
+	.card-toggle-chev {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 150ms ease;
+		color: var(--dt-on-surface-variant);
+		flex-shrink: 0;
+	}
+
+	.card-toggle-chev.open {
+		transform: rotate(90deg);
+	}
+
+	/* Flatten nested card chrome when a child component already renders its own .card */
+	.card > :global(.card),
+	.card > :global(.route-map-card) {
+		background: none;
+		border: none;
+		box-shadow: none;
+		padding: 0;
+		margin: 0;
+		border-radius: 0;
 	}
 
 	.info-grid {

@@ -84,3 +84,17 @@ export function formatDateTime(dateStr: string): string {
 export function formatTime(t: string | null | undefined): string {
 	return t ? t.slice(0, 5) : '';
 }
+
+/**
+ * Normalizes loose time input (e.g. "7", "7:30", "12") into HH:MM:SS.
+ * Returns null for empty/whitespace input.
+ */
+export function normalizeTimeInput(value: string | null): string | null {
+	if (!value || !value.trim()) return null;
+	const v = value.trim();
+	if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
+	if (/^\d{2}:\d{2}$/.test(v)) return v + ':00';
+	if (/^\d:\d{2}$/.test(v)) return '0' + v + ':00';
+	if (/^\d{1,2}$/.test(v)) return v.padStart(2, '0') + ':00:00';
+	return v;
+}

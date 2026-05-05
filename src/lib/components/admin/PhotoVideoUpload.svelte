@@ -4,7 +4,7 @@
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
-	import { Trash2, X, Download, Upload, Plus } from 'lucide-svelte';
+	import { Trash2, X, Download, Upload, Plus, RefreshCw } from 'lucide-svelte';
 
 	// ---------------------------------------------------------------------------
 	// Interfaces
@@ -113,6 +113,7 @@
 	let videoQueue = $state<File[]>([]);
 
 	let downloadingMedia = $state(false);
+	let retryingId = $state<string | null>(null);
 
 	// ---------------------------------------------------------------------------
 	// Delete confirmation state
@@ -157,6 +158,35 @@
 		} finally {
 			pendingDeleteId = null;
 			showDeleteDialog = false;
+		}
+	}
+
+	/**
+	 * Retries a failed estimation by calling the backend retry endpoint.
+	 *
+	 * Called by: Template ("Wiederholen" button on failed estimation rows)
+	 * Purpose: Re-downloads the original images/video from S3 and respawns the Modal
+	 *          pipeline without requiring the admin to re-upload from the browser.
+	 *
+	 * @param estimationId - UUID of the failed estimation to retry
+	 */
+	async function retryEstimation(estimationId: string) {
+		retryingId = estimationId;
+		try {
+			const resp = await apiFetch<{
+				estimation_id: string;
+				status: string;
+				message: string;
+			}>(
+				`/api/v1/inquiries/${inquiryId}/estimations/${estimationId}/retry`,
+				{ method: 'POST' },
+			);
+			showToast(resp.message, 'success');
+			onUpdated();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			retryingId = null;
 		}
 	}
 
@@ -488,12 +518,26 @@
 						? 'Video'
 						: 'Foto'}-Analyse fehlgeschlagen</span
 				>
-				<button
-					class="btn btn-sm btn-danger"
-					onclick={() => confirmDeleteEstimation(est.id)}
-				>
-					<Trash2 size={14} /> Entfernen
-				</button>
+				<div class="estimation-actions">
+					<button
+						class="btn btn-sm btn-secondary"
+						disabled={retryingId === est.id}
+						onclick={() => retryEstimation(est.id)}
+					>
+						{#if retryingId === est.id}
+							<div class="upload-spinner inline-spinner"></div>
+							Wird wiederholt…
+						{:else}
+							<RefreshCw size={14} /> Wiederholen
+						{/if}
+					</button>
+					<button
+						class="btn btn-sm btn-danger"
+						onclick={() => confirmDeleteEstimation(est.id)}
+					>
+						<Trash2 size={14} /> Entfernen
+					</button>
+				</div>
 			</div>
 		{/each}
 	</div>
@@ -839,6 +883,14 @@
 		animation: spin 0.8s linear infinite;
 	}
 
+	.inline-spinner {
+		width: 14px;
+		height: 14px;
+		display: inline-block;
+		vertical-align: middle;
+		margin-right: 0.25rem;
+	}
+
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
@@ -861,6 +913,12 @@
 		color: var(--dt-secondary);
 		background: var(--dt-surface-container-high);
 		justify-content: space-between;
+	}
+
+	.estimation-actions {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
 	}
 
 	.download-all-btn {

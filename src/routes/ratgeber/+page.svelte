@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed, Receipt } from "lucide-svelte";
+    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed, Receipt, HandCoins } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
@@ -61,6 +61,13 @@
                 "Einbauküche sicher demontieren, Spülmaschine richtig abklemmen, Granit transportieren. Was Sie selbst tun können – und wo Profis Fehler verhindern.",
             icon: UtensilsCrossed,
             link: "/ratgeber/kueche-umzug",
+        },
+        {
+            title: "Umzug mit Bürgergeld – Jobcenter & § 22 SGB II",
+            description:
+                "Wann das Jobcenter Umzugskosten, Mietkaution und Wohnungsbeschaffungskosten übernimmt. Zusicherung richtig beantragen, Fallstricke vermeiden, mit den Originalzitaten aus § 22 SGB II.",
+            icon: HandCoins,
+            link: "/ratgeber/umzug-mit-buergergeld",
         },
         {
             title: "Umzugskosten steuerlich absetzen",

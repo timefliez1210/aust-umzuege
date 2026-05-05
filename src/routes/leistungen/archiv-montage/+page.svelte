@@ -15,14 +15,11 @@
     const serviceSchema = {
         "@type": "Service",
         serviceType: "Archiv-Montage und Demontage",
-        name: "Archiv-Montage & Demontage Hildesheim",
+        name: "Archiv-Montage & Demontage – deutschlandweit",
         description:
-            "Fachgerechte Montage, Demontage und Verlagerung von Archivregalen – Standregale, Fachregale und mobile Rollregalsysteme. DGUV-konform, mit befähigtem Personal und vollständiger Abnahmedokumentation.",
+            "Fachgerechte Montage, Demontage und Verlagerung von Archivregalen – Standregale, Fachregale und mobile Rollregalsysteme. Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer mit DGUV-konformer Dokumentation.",
         provider: { "@id": "https://www.aust-umzuege.de/#organization" },
-        areaServed: [
-            { "@type": "City", name: "Hildesheim" },
-            { "@type": "AdministrativeArea", name: "Niedersachsen" }
-        ],
+        areaServed: { "@type": "Country", name: "Deutschland" },
         url: "https://www.aust-umzuege.de/leistungen/archiv-montage",
         offers: { "@type": "Offer", priceCurrency: "EUR" }
     };
@@ -30,42 +27,42 @@
     const faqs = [
         {
             question: "Wer darf Archivregale montieren oder demontieren?",
-            answer: "Laut DGUV Information 208-043 muss jede Regalmontage durch eine befähigte Person ausgeführt und abgenommen werden. Das bedeutet: nachgewiesene Fachkenntnisse durch Ausbildung, Berufserfahrung und aktuelle Tätigkeit im Bereich Regalmontage. Hilfskräfte ohne diese Qualifikation dürfen Archivregale weder montieren noch demontieren. Unser Team erfüllt diese Anforderungen."
+            answer: "Laut DGUV Information 208-043 muss jede Regalmontage durch eine befähigte Person ausgeführt und abgenommen werden. Das setzt nachgewiesene Fachkenntnisse durch Ausbildung, Berufserfahrung und aktuelle Tätigkeit im Bereich Regalmontage voraus. Wir führen die handwerkliche Ausführung in enger Abstimmung mit der befähigten Person aus, die der Auftraggeber oder unser Kooperationspartner stellt. Hilfskräfte ohne entsprechende Qualifikation kommen für sicherheitsrelevante Schritte nicht zum Einsatz."
         },
         {
             question: "Was passiert, wenn die Bodenplatte nicht tragfähig genug ist?",
-            answer: "Archivregale erzeugen Bodenbelastungen von 7,5 bis 15 kN/m² – je nach System. Ist der Untergrund nicht geeignet (falscher Beton, Asphalt, zu dünn, nicht bewehrt), können wir nicht einfach montieren. Wir prüfen vor der Montage Bodenqualität und Statik und empfehlen bei Bedarf eine statische Begutachtung. Damit vermeiden wir unerwartete Mehrkosten und Einsturzrisiken."
+            answer: "Archivregale erzeugen Bodenbelastungen von 7,5 bis 15 kN/m² – je nach System. Ist der Untergrund nicht geeignet (falscher Beton, Asphalt, zu dünn, nicht bewehrt), darf nicht einfach montiert werden. Die statische Bewertung erfolgt durch einen vom Auftraggeber oder Kooperationspartner gestellten Statiker bzw. die befähigte Person. Wir kommunizieren Auffälligkeiten frühzeitig und stoppen die Ausführung, bis Klarheit über Tragfähigkeit und Bodenvorbereitung besteht."
         },
         {
             question: "Muss das Archiv während der Umbauarbeiten geschlossen bleiben?",
-            answer: "Nicht zwingend. Wir arbeiten wo möglich im Parallel-Verfahren: Demontage am alten Standort und Aufbau am neuen laufen gleichzeitig. So bleibt Ihr Betrieb so lange wie möglich verfügbar. Ist ein kompletter Betriebsstillstand unvermeidlich, planen wir diesen gemeinsam so kurz wie möglich – auf Wunsch auch am Wochenende."
+            answer: "Nicht zwingend. Wo möglich arbeiten wir im Parallel-Verfahren: Demontage am alten Standort und Aufbau am neuen laufen gleichzeitig. So bleibt der Betrieb so lange wie möglich verfügbar. Ist ein kompletter Betriebsstillstand unvermeidlich, planen wir gemeinsam mit dem Auftraggeber ein möglichst kurzes Zeitfenster – auf Wunsch auch am Wochenende oder in der Nacht."
         },
         {
-            question: "Wie schützen Sie das Archivgut während der Montagearbeiten?",
-            answer: "Archivgut reagiert empfindlich auf Erschütterungen, Temperaturschwankungen, Staub und Feuchtigkeit. Wir arbeiten mit staubdichten Abdeckungen, vermeiden unnötige Erschütterungen und koordinieren die Klimabedingungen im Magazin. Alle Regalkomponenten werden vor dem Transport sorgfältig verpackt und gekennzeichnet – keine verlorenen Teile, keine Nachbestellungen."
+            question: "Wie wird das Archivgut während der Montagearbeiten geschützt?",
+            answer: "Archivgut reagiert empfindlich auf Erschütterungen, Temperaturschwankungen, Staub und Feuchtigkeit. Wir arbeiten mit staubdichten Abdeckungen, vermeiden unnötige Erschütterungen und koordinieren die Klimabedingungen im Magazin mit dem Auftraggeber. Alle Regalkomponenten werden vor dem Transport sorgfältig verpackt und gekennzeichnet – keine verlorenen Teile, keine Nachbestellungen."
         },
         {
             question: "Was bedeutet die DGUV-Abnahme nach der Montage?",
-            answer: "Nach DGUV Information 208-043 muss jedes Regal nach Montage durch eine befähigte Person geprüft und protokolliert abgenommen werden, bevor es in Betrieb genommen wird. Wir führen diese Erstprüfung durch und übergeben Ihnen die vollständige Dokumentation – mit Angabe der prüfenden Person, Datum und Ergebnis. Diese Unterlagen müssen Sie gemäß §14 BetrSichV über die gesamte Betriebsdauer aufbewahren."
+            answer: "Nach DGUV Information 208-043 muss jedes Regal nach Montage durch eine befähigte Person geprüft und protokolliert abgenommen werden, bevor es in Betrieb geht. Diese Erstprüfung führt die befähigte Person des Auftraggebers oder unseres Kooperationspartners durch; wir liefern alle nötigen Ausführungsnachweise zu. Die Unterlagen muss der Betreiber gemäß §14 BetrSichV über die gesamte Betriebsdauer aufbewahren."
         },
         {
-            question: "Können Sie auch mobile Rollregalsysteme demontieren und wieder aufbauen?",
-            answer: "Ja. Rollregale stellen die höchsten Anforderungen: besonders hohe Bodenlasten, präzise auszurichtende Führungsschienen und Antrieb sowie Sicherheitsabschaltungen, die nach der Demontage neu justiert werden müssen. Wir haben Erfahrung mit verschiedenen Rollregalsystemen und führen nach dem Wiederaufbau eine vollständige Funktions- und Sicherheitsprüfung durch."
+            question: "Können auch mobile Rollregalsysteme demontiert und wieder aufgebaut werden?",
+            answer: "Ja. Rollregale stellen die höchsten Anforderungen: besonders hohe Bodenlasten, präzise auszurichtende Führungsschienen und Antrieb sowie Sicherheitsabschaltungen, die nach der Demontage neu justiert werden müssen. Wir haben Erfahrung mit verschiedenen Rollregalsystemen. Die abschließende Funktions- und Sicherheitsfreigabe erfolgt durch die befähigte Person; unsere Aufgabe ist die fachgerechte Ausführung und Vorbereitung dieser Prüfung."
         },
         {
             question: "Bleibt die Regalgarantie nach einer Demontage und Wiedermontage erhalten?",
-            answer: "Das hängt vom Hersteller ab. Grundsätzlich muss eine Wiedermontage die Tragfähigkeit des Neuzustands wiederherstellen – das ist in der Regel durch Berechnung oder Versuch nachzuweisen. Wir montieren nach Herstellervorgaben und dokumentieren die Arbeiten vollständig, was Ihnen gegenüber Versicherung und Hersteller die beste Ausgangslage verschafft."
+            answer: "Das hängt vom Hersteller ab. Grundsätzlich muss eine Wiedermontage die Tragfähigkeit des Neuzustands wiederherstellen – nachzuweisen durch Berechnung oder Versuch. Wir montieren nach Herstellervorgaben und dokumentieren alle Arbeiten vollständig. Die Bewertung gegenüber Hersteller und Versicherung obliegt der befähigten Person bzw. dem Statiker."
         },
         {
             question: "Was kostet die Montage oder Demontage von Archivregalen?",
-            answer: "Die Kosten richten sich nach Regaltyp (Standregale, Fachregale, Rollregale), Anzahl der Felder, Zustand des Bodenuntergrunds und Zugänglichkeit. Aufwände für Statikprüfung, Bodenvorbereitung oder besondere Höhenarbeit werden separat ausgewiesen. Wir besichtigen vor Ort und erstellen ein vollständiges Festpreisangebot – ohne versteckte Nachträge."
+            answer: "Wir kalkulieren einen Festpreis für die handwerkliche Ausführung – abhängig von Regaltyp (Standregale, Fachregale, Rollregale), Anzahl der Felder, Anfahrtsweg und Zugänglichkeit. Statikgutachten, Bodenvorbereitung oder die DGUV-Erstprüfung sind eigenständige Leistungen, die der Auftraggeber direkt oder über unseren Kooperationspartner beauftragt. So bleibt für jeden Posten klar, wer ihn verantwortet."
         }
     ];
 
     const risks = [
         {
             label: "Statik & Boden",
-            text: "Archivregale erzeugen 7,5–15 kN/m² Bodenbelastung. Nicht jeder Untergrund trägt das. Wir prüfen Bodenqualität und Tragfähigkeit, bevor ein einziges Bauteil montiert wird."
+            text: "Archivregale erzeugen 7,5–15 kN/m² Bodenbelastung. Nicht jeder Untergrund trägt das. Tragfähigkeit und Bodenqualität bewertet die befähigte Person bzw. ein Statiker des Auftraggebers, bevor wir mit der Montage beginnen."
         },
         {
             label: "Einsturzgefahr",
@@ -83,9 +80,9 @@
 </script>
 
 <MetaTags
-    title="Archiv-Montage & Demontage Hildesheim – DGUV-konform | Aust Umzüge"
-    description="Fachgerechte Montage und Demontage von Archivregalen: Standregale, Fachregale, mobile Rollregale. DGUV 208-043, befähigtes Personal, Abnahmeprotokoll. Hildesheim & Region."
-    keywords="Archiv Montage, Archiv Demontage, Archivregale montieren, Rollregale Montage, DGUV 208-043, Regalmontage Hildesheim"
+    title="Archiv-Montage & Demontage – Ausführungspartner deutschlandweit | Aust Umzüge"
+    description="Fachgerechte Montage, Demontage und Verlagerung von Archivregalen – Standregale, Fachregale, mobile Rollregale. Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer, DGUV-konforme Dokumentation."
+    keywords="Archiv Montage, Archiv Demontage, Archivregale montieren, Rollregale Montage, DGUV 208-043, Regalmontage Subunternehmer, Archivumzug deutschlandweit"
     canonical="https://www.aust-umzuege.de/leistungen/archiv-montage"
 />
 
@@ -106,7 +103,7 @@
             </div>
             <h1 class="service-title">Archiv-Montage & Demontage</h1>
             <p class="service-subtitle">
-                Fachgerechter Aufbau, Abbau und Umzug von Archivregalsystemen – sicher, dokumentiert und DGUV-konform.
+                Erfahrener Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer – fachgerechter Aufbau, Abbau und Verlagerung von Archivregalsystemen, deutschlandweit.
             </p>
         </header>
 
@@ -118,7 +115,7 @@
                     Archivregale sind keine Büromöbel. Sie tragen hunderte Kilogramm Kulturgut, stehen jahrzehntelang und müssen präzise verankert, ausgerichtet und belastet sein. Ein Fehler bei der Montage – eine schiefe Stütze, ein fehlender Verband, ein falscher Bodenanker – kann die Tragfähigkeit um bis zu 30 Prozent reduzieren. Im schlimmsten Fall endet das mit einem Einsturz.
                 </p>
                 <p>
-                    Alexander Aust und sein Team führen Archiv-Montagen und -Demontagen regelmäßig durch. Wir kennen die Normen, arbeiten mit befähigtem Personal nach DGUV Information 208-043 und übergeben jede Anlage mit vollständigem Abnahmeprotokoll. Das schützt Ihr Archivgut, Ihre Mitarbeiter – und Sie rechtlich.
+                    Wir sind Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer, die für Archivprojekte ein erfahrenes Montageteam suchen – deutschlandweit. Statikbewertung, Bodenprüfung und die DGUV-Abnahme verantwortet die befähigte Person des Auftraggebers oder unseres Kooperationspartners. Wir bringen die handwerkliche Ausführung mit – nach DGUV Information 208-043, mit sauberer Vorbereitung jeder Erstprüfung und vollständig dokumentierter Arbeit.
                 </p>
 
                 <!-- RISK ALERT BOX -->
@@ -152,7 +149,7 @@
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Vor-Ort-Prüfung von Bodenqualität, Ebenheit (DIN 18202 Kl. 3) und Statik vor der Montage</span>
+                        <span>Aufnahme der Vorgaben aus Statikgutachten und Bodenfreigabe des Auftraggebers vor Montagebeginn</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
@@ -164,7 +161,7 @@
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Erstprüfung und Abnahmeprotokoll durch befähigte Person (DGUV 208-043) vor Inbetriebnahme</span>
+                        <span>Vorbereitung und Begleitung der Erstprüfung nach DGUV 208-043 durch die befähigte Person des Auftraggebers oder Kooperationspartners</span>
                     </li>
                 </ul>
 
@@ -200,19 +197,19 @@
                 <div class="compliance-box">
                     <div class="compliance-box__header">
                         <ShieldCheck size={20} />
-                        <span>Rechtliche Sicherheit für Betreiber</span>
+                        <span>Saubere Dokumentation für Betreiber & Generalunternehmer</span>
                     </div>
                     <p>
-                        Nach §14 BetrSichV müssen Regalbetreiber Prüfnachweise über die gesamte Betriebsdauer aufbewahren: Wer hat gepruft, wann, was wurde repariert oder geändert. Wir übergeben Ihnen nach jeder Montage ein vollständiges Protokoll – unterschrieben von der befähigten Person. Das ist keine Formalie. Es ist Ihre Absicherung gegenüber Versicherung, Gewerbeaufsicht und Haftpflicht.
+                        Nach §14 BetrSichV muss der Regalbetreiber Prüfnachweise über die gesamte Betriebsdauer aufbewahren: Wer hat geprüft, wann, was wurde repariert oder geändert. Damit das Abnahmeprotokoll der befähigten Person belastbar wird, liefern wir alle Ausführungsnachweise sauber zu – Bauteile, Drehmomente, Austausch- und Änderungsstand. Das ist keine Formalie. Es ist die Grundlage gegenüber Versicherung, Gewerbeaufsicht und Haftpflicht.
                     </p>
                     <ul class="compliance-list">
                         <li>
                             <FileText size={16} />
-                            <span>Abnahmeprotokoll gemäß DGUV 208-043</span>
+                            <span>Ausführungsnachweise als Grundlage des Abnahmeprotokolls nach DGUV 208-043</span>
                         </li>
                         <li>
                             <FileText size={16} />
-                            <span>Prüfnachweis durch namentlich benannte befähigte Person</span>
+                            <span>Übergabe an die befähigte Person des Auftraggebers oder Kooperationspartners</span>
                         </li>
                         <li>
                             <FileText size={16} />
@@ -225,17 +222,17 @@
                     </ul>
                 </div>
 
-                <h2 class="section-title">Für welche Archive und Einrichtungen?</h2>
+                <h2 class="section-title">Für welche Auftraggeber wir arbeiten</h2>
                 <p>
-                    Wir arbeiten für Kommunal- und Stadtarchive, Behörden, Unternehmen mit eigenem Aktenarchiv, Bibliotheken und private Sammlungen. Gleichgültig ob Sie ein kleines Fachregalsystem umstellen oder ein komplettes Rollregalmagazin verlagern müssen: Wir besichtigen vorab, bewerten die technischen Gegebenheiten und erstellen Ihnen ein vollständiges Festpreisangebot.
+                    Unsere Leistung richtet sich primär an Umzugsunternehmen, Regalbauer und Generalunternehmer, die für ein Archivprojekt ein erfahrenes Ausführungsteam suchen – egal ob kleines Fachregalsystem oder komplettes Rollregalmagazin, einmalige Verlagerung oder wiederkehrende Aufträge im Rahmenvertrag. Wir kalkulieren einen klaren Festpreis für die handwerkliche Ausführung und stimmen Schnittstellen, Schichtmodell und Dokumentationsformat vorab eng mit Ihrem Projektleiter ab.
                 </p>
                 <p>
-                    Unerwartete Mehraufwände – etwa für Statikgutachten, Bodenausgleich oder den Austausch beschädigter Stützen – weisen wir nach der Besichtigung transparent aus. Kein Nachtrag, der Sie überrascht.
+                    Endkunden – Kommunal- und Stadtarchive, Behörden, Bibliotheken, Unternehmen mit eigenem Aktenarchiv – vermitteln wir an unser Kooperationsnetzwerk mit befähigter Person und Statiker. Auf diesem Weg bekommen Sie das Gesamtpaket aus Bewertung, Planung, Ausführung und Abnahme aus einer Hand, ohne dass Schnittstellen verloren gehen.
                 </p>
 
                 <div class="cta-inline">
-                    <p>Sie planen eine Archivmontage oder müssen ein bestehendes System verlagern?</p>
-                    <CTAButton href="/kostenloses-angebot" text="Besichtigung & Angebot anfragen" />
+                    <p>Sie haben ein Archivprojekt und brauchen eine zuverlässige Ausführung – oder die Vermittlung eines Komplettpartners?</p>
+                    <CTAButton href="/kostenloses-angebot" text="Projekt anfragen" />
                 </div>
             </div>
         </div>

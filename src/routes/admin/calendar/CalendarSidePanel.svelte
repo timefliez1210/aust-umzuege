@@ -2,7 +2,7 @@
 	import { apiGet, apiPatch, apiPost, apiDelete, apiPut } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { INQUIRY_STATUS_LABELS } from '$lib/utils/status';
-	import { formatTime } from '$lib/utils/format';
+	import { formatTime, normalizeTimeInput } from '$lib/utils/format';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
 	import { X, Save, Trash2, Plus, Check, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
@@ -233,14 +233,6 @@
 		const breakMin = Math.max(currentBreak ?? 0, legalBreak);
 		const planned = Math.max(0, gross - breakMin / 60);
 		return { planned_hours: Math.round(planned * 100) / 100, break_minutes: breakMin };
-	}
-
-	/** Recompute a row's break_minutes from its start/end (called on blur). */
-	function recomputeRow(row: { start_time: string | null; end_time: string | null; break_minutes: number }) {
-		const c = computeHoursAndBreak(row.start_time, row.end_time, row.break_minutes);
-		if (c.planned_hours != null) {
-			row.break_minutes = c.break_minutes;
-		}
 	}
 
 	// Inquiry days (multi-day editor)
@@ -603,6 +595,30 @@
 	}
 
 	/**
+	 * Auto-saves a single field for a multi-day employee assignment on input blur.
+	 *
+	 * Called by: Template (clock_in, clock_out, break_minutes onblur in multi-day rows).
+	 * Purpose: PATCHes the individual per-day assignment so "Zeitraum speichern" is optional.
+	 */
+	async function saveMultiDayField(
+		entityType: 'inquiry' | 'calendar_item',
+		entityId: string,
+		empId: string,
+		dayDate: string,
+		field: string,
+		value: string
+	) {
+		const baseUrl = entityType === 'inquiry'
+			? `/api/v1/inquiries/${entityId}/employees`
+			: `/api/v1/admin/calendar-items/${entityId}/employees`;
+		try {
+			await apiPatch(`${baseUrl}/${empId}`, { [field]: value, day_date: dayDate });
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		}
+	}
+
+	/**
 	 * Persists the current inquiry day list via PATCH (end_date) + PUT /employees (flat array).
 	 *
 	 * Called by: Template (Zeitraum speichern button in inquiry panel)
@@ -628,11 +644,9 @@
 					employee_id:   e.employee_id,
 					job_date:      d.day_date,
 					notes:         e.notes ?? null,
-					start_time:    e.start_time  ? (e.start_time.length  === 5 ? e.start_time  + ':00' : e.start_time)  : null,
-					end_time:      e.end_time    ? (e.end_time.length    === 5 ? e.end_time    + ':00' : e.end_time)    : null,
 					clock_in:      e.clock_in    ? (e.clock_in.length    === 5 ? e.clock_in    + ':00' : e.clock_in)    : null,
 					clock_out:     e.clock_out   ? (e.clock_out.length   === 5 ? e.clock_out   + ':00' : e.clock_out)   : null,
-					break_minutes: e.break_minutes ?? 0,
+					break_minutes: parseInt(String(e.break_minutes)) || 0,
 				}))
 			);
 			await apiPut(`/api/v1/inquiries/${inqId}/employees`, flatAssignments);
@@ -786,11 +800,9 @@
 					employee_id:   e.employee_id,
 					job_date:      d.day_date,
 					notes:         e.notes ?? null,
-					start_time:    e.start_time  ? (e.start_time.length  === 5 ? e.start_time  + ':00' : e.start_time)  : null,
-					end_time:      e.end_time    ? (e.end_time.length    === 5 ? e.end_time    + ':00' : e.end_time)    : null,
 					clock_in:      e.clock_in    ? (e.clock_in.length    === 5 ? e.clock_in    + ':00' : e.clock_in)    : null,
 					clock_out:     e.clock_out   ? (e.clock_out.length   === 5 ? e.clock_out   + ':00' : e.clock_out)   : null,
-					break_minutes: e.break_minutes ?? 0,
+					break_minutes: parseInt(String(e.break_minutes)) || 0,
 				}))
 			);
 			await apiPut(`/api/v1/admin/calendar-items/${itemId}/employees`, flatAssignments);
@@ -1181,18 +1193,12 @@
 													<div class="day-emp-row">
 														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
 														<span class="day-time-group">
-															<span class="day-time-label">Pl.</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].start_time} onblur={() => recomputeRow(inqDays[i].employees[ei])} />
-															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].end_time} onblur={() => recomputeRow(inqDays[i].employees[ei])} />
-														</span>
-														<span class="day-time-group">
 															<span class="day-time-label">Ist</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_in} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_in} oninput={(e) => inqDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', panelSelection.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_in', norm); }} />
 															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_out} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_out} oninput={(e) => inqDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', panelSelection.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_out', norm); }} />
 															<span class="day-time-label">P:</span>
-															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={inqDays[i].employees[ei].break_minutes} />
+															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={inqDays[i].employees[ei].break_minutes} oninput={(e) => inqDays[i].employees[ei].break_minutes = (e.target as HTMLInputElement).value} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; inqDays[i].employees[ei].break_minutes = v; saveMultiDayField('inquiry', panelSelection.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'break_minutes', v); }} />
 														</span>
 														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
 													</div>
@@ -1366,18 +1372,12 @@
 													<div class="day-emp-row">
 														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
 														<span class="day-time-group">
-															<span class="day-time-label">Pl.</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].start_time} onblur={() => recomputeRow(termDays[i].employees[ei])} />
-															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].end_time} onblur={() => recomputeRow(termDays[i].employees[ei])} />
-														</span>
-														<span class="day-time-group">
 															<span class="day-time-label">Ist</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_in} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_in} oninput={(e) => termDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', panelSelection.item.id, emp.employee_id, termDays[i].day_date, 'clock_in', norm); }} />
 															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_out} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_out} oninput={(e) => termDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', panelSelection.item.id, emp.employee_id, termDays[i].day_date, 'clock_out', norm); }} />
 															<span class="day-time-label">P:</span>
-															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={termDays[i].employees[ei].break_minutes} />
+															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={termDays[i].employees[ei].break_minutes} oninput={(e) => termDays[i].employees[ei].break_minutes = (e.target as HTMLInputElement).value} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; termDays[i].employees[ei].break_minutes = v; saveMultiDayField('calendar_item', panelSelection.item.id, emp.employee_id, termDays[i].day_date, 'break_minutes', v); }} />
 														</span>
 														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
 													</div>

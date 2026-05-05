@@ -63,6 +63,18 @@
                         label: "Praxisumzug",
                         href: "/leistungen/praxisumzug",
                     },
+                    {
+                        label: "Archiv-Montage & Demontage",
+                        href: "/leistungen/archiv-montage",
+                    },
+                    {
+                        label: "Malerarbeiten",
+                        href: "/leistungen/malerarbeiten",
+                    },
+                    {
+                        label: "Renovierungsarbeiten",
+                        href: "/leistungen/renovierungsarbeiten",
+                    },
                 ],
             },
             {
@@ -101,6 +113,10 @@
                     {
                         label: "Umzugskosten von der Steuer absetzen",
                         href: "/ratgeber/umzugskosten-steuerlich-absetzen",
+                    },
+                    {
+                        label: "Umzug mit Bürgergeld",
+                        href: "/ratgeber/umzug-mit-buergergeld",
                     },
                 ],
             },

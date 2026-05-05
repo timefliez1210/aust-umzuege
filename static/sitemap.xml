@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.aust-umzuege.de/</loc>
-    <lastmod>2026-03-10</lastmod>
+    <lastmod>2026-05-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -85,8 +85,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.aust-umzuege.de/leistungen/archiv-montage</loc>
+    <lastmod>2026-05-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.aust-umzuege.de/leistungen/malerarbeiten</loc>
+    <lastmod>2026-05-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aust-umzuege.de/leistungen/renovierungsarbeiten</loc>
+    <lastmod>2026-05-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.aust-umzuege.de/ratgeber</loc>
-    <lastmod>2026-04-25</lastmod>
+    <lastmod>2026-05-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -141,6 +159,12 @@
   <url>
     <loc>https://www.aust-umzuege.de/ratgeber/umzugskosten-steuerlich-absetzen</loc>
     <lastmod>2026-04-28</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.aust-umzuege.de/ratgeber/umzug-mit-buergergeld</loc>
+    <lastmod>2026-05-04</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>

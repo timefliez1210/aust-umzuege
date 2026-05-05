@@ -189,9 +189,10 @@
 	/**
 	 * Copies the incoming `items` prop into the mutable editItems state and resets dirty flag.
 	 *
-	 * Called by: $effect (whenever the `items` prop changes, i.e. after a server reload)
+	 * Called by: $effect (whenever the `items` prop changes **and** there are no unsaved local edits)
 	 * Purpose: Keeps the editable local copy in sync with fresh server data after the parent
 	 *          calls onUpdated → loadInquiry and passes the new items back as a prop.
+	 *          Guards against stomping manual additions by only running when `itemsDirty` is false.
 	 *
 	 * @param incoming - Raw EstimationItem array from the parent
 	 * @returns void (side-effect: replaces editItems, resets itemsDirty)
@@ -217,7 +218,9 @@
 	}
 
 	$effect(() => {
-		initEditItems(items);
+		if (!itemsDirty) {
+			initEditItems(items);
+		}
 	});
 
 	// ---------------------------------------------------------------------------

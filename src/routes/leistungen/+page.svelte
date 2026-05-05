@@ -12,6 +12,9 @@
         Archive,
         Warehouse,
         Stethoscope,
+        BookMarked,
+        Paintbrush,
+        Hammer,
         ArrowRight,
         Mail,
     } from "lucide-svelte";
@@ -104,6 +107,27 @@
                 "Arzt- und Zahnarztpraxen umziehen – sicherer Transport medizinischer Geräte, DSGVO-konformer Aktentransport, Wochenendservice.",
             icon: Stethoscope,
             link: "/leistungen/praxisumzug",
+        },
+        {
+            title: "Archiv-Montage & Demontage",
+            description:
+                "Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer – Standregale, Fachregale und Rollregale, deutschlandweit.",
+            icon: BookMarked,
+            link: "/leistungen/archiv-montage",
+        },
+        {
+            title: "Malerarbeiten beim Umzug",
+            description:
+                "Kleine Übergabe-Ausbesserungen erledigen wir selbst, Komplettrenovierung läuft über unseren Meisterbetrieb-Partner. Transparent und rechtssicher.",
+            icon: Paintbrush,
+            link: "/leistungen/malerarbeiten",
+        },
+        {
+            title: "Renovierungsarbeiten beim Umzug",
+            description:
+                "Maler, Boden, Fliesen, Trockenbau, Elektro und Sanitär – koordiniert über eingetragene Meisterbetriebe in Hildesheim und Region.",
+            icon: Hammer,
+            link: "/leistungen/renovierungsarbeiten",
         },
     ];
 

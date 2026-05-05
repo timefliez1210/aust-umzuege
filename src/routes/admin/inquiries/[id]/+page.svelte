@@ -36,6 +36,7 @@
 		ChevronRight,
 		Download,
 		Send,
+		GripVertical,
 	} from "lucide-svelte";
 
 	interface AddressSnapshot {
@@ -250,25 +251,40 @@
 	let openPhotoDetailFn = $state<((idx: number) => void) | null>(null);
 	let saveIfDirtyFn = $state<(() => Promise<void>) | null>(null);
 
-	// Editable line items
-	const ROW_OPTIONS: { row: number; label: string; defaultCents: number; defaultRemark: string }[] =
-		[
-			{ row: 30, label: "Fahrkostenpauschale", defaultCents: 0, defaultRemark: "" },
-			{ row: 31, label: "Demontage", defaultCents: 5000, defaultRemark: "" },
-			{ row: 32, label: "Montage", defaultCents: 5000, defaultRemark: "" },
-			{ row: 33, label: "Halteverbotszone", defaultCents: 10000, defaultRemark: "" },
-			{ row: 34, label: "Umzugsmaterial", defaultCents: 3000, defaultRemark: "Stretchfolie, Decken, Gurte" },
-			{ row: 35, label: "3,5t Transporter m. Koffer", defaultCents: 6000, defaultRemark: "" },
-			{ row: 36, label: "Möbellift", defaultCents: 0, defaultRemark: "" },
-			{ row: 36, label: "Verleih Kleiderboxen", defaultCents: 1000, defaultRemark: "610x520x1370" },
-			{ row: 37, label: "Verkauf Seidenpapier", defaultCents: 500, defaultRemark: "500x750" },
-			{ row: 38, label: "Verkauf U-Karton", defaultCents: 210, defaultRemark: "590x318x328" },
-			{ row: 39, label: "Verkauf B-Karton", defaultCents: 220, defaultRemark: "400x318x328" },
-			{ row: 99, label: "Sonstiges", defaultCents: 0, defaultRemark: "" },
-		];
+	type ItemKind = 'labor' | 'fahrt' | 'insurance' | 'item';
+
+	interface PositionDef {
+		kind: ItemKind;
+		label: string;
+		defaultCents: number;
+		defaultRemark: string;
+	}
+
+	const POSITION_SKELETON: PositionDef[] = [
+		{ kind: 'labor', label: 'Umzugshelfer', defaultCents: 0, defaultRemark: '' },
+		{ kind: 'item', label: 'Demontage', defaultCents: 5000, defaultRemark: '' },
+		{ kind: 'item', label: 'Montage', defaultCents: 5000, defaultRemark: '' },
+		{ kind: 'item', label: 'Halteverbotszone', defaultCents: 10000, defaultRemark: '' },
+		{ kind: 'item', label: 'Umzugsmaterial', defaultCents: 3000, defaultRemark: 'Stretchfolie, Decken, Gurte' },
+		{ kind: 'item', label: 'Verkauf Seidenpapier', defaultCents: 500, defaultRemark: '500x750' },
+		{ kind: 'item', label: 'Verkauf U-Karton', defaultCents: 210, defaultRemark: '590x318x328' },
+		{ kind: 'item', label: 'Verkauf B-Karton', defaultCents: 220, defaultRemark: '400x318x328' },
+		{ kind: 'item', label: 'Verleih Kleiderboxen', defaultCents: 1000, defaultRemark: '610x520x1370' },
+		{ kind: 'item', label: '3,5t Transporter m. Koffer', defaultCents: 6000, defaultRemark: '' },
+		{ kind: 'item', label: 'Möbellift', defaultCents: 0, defaultRemark: '' },
+		{ kind: 'item', label: 'Transferfahrzeug', defaultCents: 0, defaultRemark: '' },
+		{ kind: 'fahrt', label: 'Fahrkostenpauschale', defaultCents: 0, defaultRemark: '' },
+		{ kind: 'insurance', label: 'Nürnbergerversicherung', defaultCents: 0, defaultRemark: 'Deckungssumme: 620,00 Euro / m³' },
+	];
+
+	const CUSTOM_LABEL_OPTIONS: string[] = [
+		...POSITION_SKELETON.filter(p => p.kind === 'item').map(p => p.label),
+		'Sonstiges',
+	];
 
 	interface EditLineItem {
-		row: number;
+		_id: number;        // stable key so Svelte tracks DOM nodes across reorders
+		kind: ItemKind;
 		label: string;
 		remark: string;
 		quantity: number;
@@ -277,7 +293,19 @@
 		_editing: boolean;
 	}
 
+	let _idCounter = 0;
+	function nextId() { return ++_idCounter; }
+
 	let editLineItems = $state<EditLineItem[]>([]);
+	let dragIdx = $state<number | null>(null);
+	let dragOverIdx = $state<number | null>(null);
+
+	function classifyKind(label: string): ItemKind {
+		if (label === 'Fahrkostenpauschale') return 'fahrt';
+		if (label === 'Nürnbergerversicherung') return 'insurance';
+		if (label.endsWith('Umzugshelfer')) return 'labor';
+		return 'item';
+	}
 
 	/**
 	 * Constructs a new EditLineItem object with sensible defaults for UI state fields.
@@ -286,7 +314,7 @@
 	 * Purpose: Centralises line-item construction so all items share a consistent shape including
 	 *          the derived `_priceText` string and the `_editing` flag used by inline price inputs.
 	 *
-	 * @param row - The ROW_OPTIONS row number (e.g. 31 for De/Montage, 39 for Transporter)
+	 * @param kind - ItemKind discriminator (labor/fahrt/insurance/item)
 	 * @param label - Human-readable label shown on the PDF line item
 	 * @param quantity - Number of units
 	 * @param unitPriceCents - Unit price in euro cents
@@ -294,14 +322,15 @@
 	 * @returns A fully initialised EditLineItem ready for use in `editLineItems`
 	 */
 	function mkLineItem(
-		row: number,
+		kind: ItemKind,
 		label: string,
 		quantity: number,
 		unitPriceCents: number,
 		remark: string = "",
 	): EditLineItem {
 		return {
-			row,
+			_id: nextId(),
+			kind,
 			label,
 			remark,
 			quantity,
@@ -321,113 +350,133 @@
 	 *
 	 * @returns void (side-effect: replaces `editLineItems` with auto-computed items)
 	 */
-	function computeLineItemsFromNotes() {
+	function buildSkeleton(): EditLineItem[] {
+		return POSITION_SKELETON.map(p =>
+			mkLineItem(p.kind, p.label, p.kind === 'insurance' ? 1 : 0, p.defaultCents, p.defaultRemark)
+		);
+	}
+
+	function applyNotesToSkeleton(skel: EditLineItem[]) {
 		const notes = editNotes.toLowerCase();
-		const items: EditLineItem[] = [];
-
-		if (notes.includes("demontage")) {
-			items.push(mkLineItem(31, "Demontage", 1, 5000));
-		}
-		// Check "montage" separately — strip "demontage" occurrences first to avoid false positive
-		if (notes.replace("demontage", "").includes("montage")) {
-			items.push(mkLineItem(32, "Montage", 1, 5000));
-		}
-
+		const setQty = (label: string, qty: number, remark?: string) => {
+			const it = skel.find(i => i.label === label);
+			if (it) {
+				it.quantity = qty;
+				if (remark !== undefined) it.remark = remark;
+			}
+		};
+		if (notes.includes("demontage")) setQty("Demontage", 1);
+		if (notes.replace("demontage", "").includes("montage")) setQty("Montage", 1);
 		const hvAuszug = notes.includes("halteverbot auszug");
 		const hvEinzug = notes.includes("halteverbot einzug");
 		const hvCount = (hvAuszug ? 1 : 0) + (hvEinzug ? 1 : 0);
 		if (hvCount > 0) {
-			const remark =
-				hvAuszug && hvEinzug
-					? "Beladestelle + Entladestelle"
-					: hvAuszug
-						? "Beladestelle"
-						: "Entladestelle";
-			items.push(
-				mkLineItem(33, "Halteverbotszone", hvCount, 10000, remark),
-			);
+			const remark = hvAuszug && hvEinzug
+				? "Beladestelle + Entladestelle"
+				: hvAuszug ? "Beladestelle" : "Entladestelle";
+			setQty("Halteverbotszone", hvCount, remark);
 		}
-
-		if (
-			notes.includes("verpackungsservice") ||
-			notes.includes("einpackservice")
-		) {
-			items.push(
-				mkLineItem(
-					34,
-					"Umzugsmaterial",
-					1,
-					3000,
-					"Stretchfolie, Decken, Gurte Einzelpreis 30,00 €",
-				),
-			);
+		if (notes.includes("verpackungsservice") || notes.includes("einpackservice")) {
+			setQty("Umzugsmaterial", 1, "Stretchfolie, Decken, Gurte Einzelpreis 30,00 €");
 		}
-
-		editLineItems = items;
 	}
 
-	/**
-	 * Appends a new De/Montage line item with default values to the editable line-items list.
-	 *
-	 * Called by: Template (onclick on the "+" add line item button in the pricing section)
-	 * Purpose: Allows the admin to add an extra charge not auto-detected from the notes,
-	 *          before generating the offer PDF.
-	 *
-	 * @returns void (side-effect: appends to `editLineItems`)
-	 */
+	function computeLineItemsFromNotes() {
+		const skel = buildSkeleton();
+		applyNotesToSkeleton(skel);
+		editLineItems = skel;
+	}
+
 	function addLineItem() {
 		editLineItems = [
 			...editLineItems,
-			mkLineItem(0, '', 1, 0),
+			mkLineItem('item', '', 1, 0),
 		];
 	}
 
-	/**
-	 * Removes a line item from the editable list by index.
-	 *
-	 * Called by: Template (onclick on the X button next to each extra line item row)
-	 * Purpose: Allows the admin to delete auto-generated or manually added charges before generating the offer.
-	 *
-	 * @param idx - Zero-based index of the line item to remove from `editLineItems`
-	 * @returns void
-	 */
 	function removeLineItem(idx: number) {
 		editLineItems = editLineItems.filter((_, i) => i !== idx);
 	}
 
-	/**
-	 * Resets a line item's label and price to the defaults for the newly selected row type.
-	 *
-	 * Called by: Template (onchange on the row-type <select> for each line item row)
-	 * Purpose: Keeps the label and default unit price in sync with the chosen category after the
-	 *          admin changes the row type. Row 99 "Sonstiges" clears label and price for manual entry.
-	 *
-	 * @param idx - Zero-based index of the changed line item in `editLineItems`
-	 * @returns void (side-effect: mutates label, unitPriceCents, _priceText on the item; triggers reactivity)
-	 */
-	function onLineItemRowChange(idx: number) {
+	function addInsurance() {
+		const def = POSITION_SKELETON.find(p => p.kind === 'insurance')!;
+		editLineItems = [
+			...editLineItems,
+			mkLineItem('insurance', def.label, 1, def.defaultCents, def.defaultRemark),
+		];
+	}
+
+	function onCustomLabelChange(idx: number) {
 		const item = editLineItems[idx];
-		const opt = ROW_OPTIONS.find((r) => r.row === item.row);
-		if (opt) {
-			if (item.row === 99) {
-				item.label = "";
-				item.unitPriceCents = 0;
-				item._priceText = "0.00";
-				item.remark = "";
-			} else {
-				item.label = opt.label;
-				item.unitPriceCents = opt.defaultCents;
-				item._priceText = (opt.defaultCents / 100).toFixed(2);
-				item.remark = opt.defaultRemark;
-			}
+		const def = POSITION_SKELETON.find(p => p.label === item.label && p.kind === 'item');
+		if (def) {
+			item.unitPriceCents = def.defaultCents;
+			item._priceText = (def.defaultCents / 100).toFixed(2);
+			if (!item.remark) item.remark = def.defaultRemark;
 		}
 		editLineItems = [...editLineItems];
 	}
 
+	// `armedIdx` is set when the user mouse-downs on a drag handle. Only then will the
+	// row's `dragstart` actually initiate a reorder — clicking into an input or select
+	// inside the row will not trigger a drag because the handle wasn't pressed.
+	let armedIdx = $state<number | null>(null);
+	function armDrag(idx: number) { armedIdx = idx; }
+	function disarmDrag() { armedIdx = null; }
+
+	function onDragStart(e: DragEvent, idx: number) {
+		if (armedIdx !== idx) {
+			e.preventDefault();
+			return;
+		}
+		dragIdx = idx;
+		if (e.dataTransfer) {
+			e.dataTransfer.effectAllowed = 'move';
+			// Firefox requires data to be set for the drag to actually start.
+			e.dataTransfer.setData('text/plain', String(idx));
+		}
+	}
+	function onDragOver(e: DragEvent, idx: number) {
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		dragOverIdx = idx;
+	}
+	function onDragLeave() { dragOverIdx = null; }
+	function onDrop(e: DragEvent, idx: number) {
+		e.preventDefault();
+		if (dragIdx === null || dragIdx === idx) { dragIdx = null; dragOverIdx = null; return; }
+		const next = [...editLineItems];
+		const [moved] = next.splice(dragIdx, 1);
+		next.splice(idx, 0, moved);
+		editLineItems = next;
+		dragIdx = null;
+		dragOverIdx = null;
+	}
+	function onDragEnd() { dragIdx = null; dragOverIdx = null; armedIdx = null; }
+
 	let laborCents = $derived(editPersons * editHours * editRateCents);
+	function serializeLineItems() {
+		return editLineItems
+			.filter((li) => {
+				if (li.kind === 'labor') return true;
+				if (li.kind === 'fahrt') return true;
+				if (li.kind === 'insurance') return true;
+				return li.quantity > 0;
+			})
+			.map((li) => {
+				const description = li.kind === 'labor' ? `${editPersons} Umzugshelfer` : li.label;
+				return {
+					description,
+					quantity: li.quantity,
+					unit_price: li.unitPriceCents / 100,
+					...(li.remark ? { remark: li.remark } : {}),
+				};
+			});
+	}
+
 	let nonLaborCents = $derived(
 		editLineItems.reduce(
-			(sum, li) => sum + li.quantity * li.unitPriceCents,
+			(sum, li) => li.kind === 'labor' ? sum : sum + li.quantity * li.unitPriceCents,
 			0,
 		),
 	);
@@ -620,20 +669,25 @@
 			editHours = lo.hours;
 			editRateCents = lo.rate_cents;
 			editBruttoCents = lo.total_brutto_cents;
-			// Build editable line items from offer (non-labor only; Nürnbergerversicherung is fixed non-editable)
-			editLineItems = lo.line_items
-				.filter((li) => !li.is_labor && li.label !== "Nürnbergerversicherung")
-				.map((li) => {
-					const normalized = normalizeFlatTotalItem(li);
-					const match = ROW_OPTIONS.find((r) => r.label === li.label);
-					return mkLineItem(
-						match?.row ?? 99,
-						li.label,
-						normalized.quantity,
-						normalized.unit_price_cents,
-						li.remark ?? "",
-					);
-				});
+			const fromServer: EditLineItem[] = lo.line_items.map((li) => {
+				const normalized = normalizeFlatTotalItem(li);
+				return mkLineItem(classifyKind(li.label), li.label, normalized.quantity, normalized.unit_price_cents, li.remark ?? "");
+			});
+			const seenLabels = new Set(fromServer.map((i) => i.label));
+			const haveLabor = fromServer.some((i) => i.kind === 'labor');
+			const haveInsurance = fromServer.some((i) => i.kind === 'insurance');
+			const missing = POSITION_SKELETON
+				.filter((p) => {
+					if (p.kind === 'labor') return !haveLabor;
+					if (p.kind === 'insurance') return !haveInsurance;
+					return !seenLabels.has(p.label);
+				})
+				.map((p) => mkLineItem(p.kind, p.label, 0, p.defaultCents, p.defaultRemark));
+			const missingInsurance = missing.find((i) => i.kind === 'insurance');
+			const missingRest = missing.filter((i) => i.kind !== 'insurance');
+			const merged = [...fromServer, ...missingRest];
+			if (missingInsurance) merged.push(missingInsurance);
+			editLineItems = merged;
 			priceDirty = false;
 			return;
 		}
@@ -894,23 +948,8 @@
 				payload.price_cents_netto = bruttoCentsToNetto(editBruttoCents);
 			}
 			// If the admin has a Fahrkostenpauschale in editLineItems, that value is law —
-			// always send it as fahrt_flat_total so backend never recalculates via ORS.
-			const fahrtItemRe = editLineItems.find((li) => li.label === "Fahrkostenpauschale");
-			if (fahrtItemRe) {
-				payload.fahrt_flat_total = (fahrtItemRe.quantity * fahrtItemRe.unitPriceCents) / 100;
-			}
-			const nonFahrtItems = editLineItems.filter(
-				(li) => li.label !== "Fahrkostenpauschale",
-			);
-			if (nonFahrtItems.length > 0) {
-				payload.line_items = nonFahrtItems.map((li) => ({
-					description: li.label,
-					quantity: li.quantity,
-					unit_price: li.unitPriceCents / 100,
-					...(li.remark ? { remark: li.remark } : {}),
-				}));
-			}
-			await apiPost(
+					payload.line_items = serializeLineItems();
+		await apiPost(
 				`/api/v1/inquiries/${data!.id}/generate-offer`,
 				payload,
 			);
@@ -949,21 +988,8 @@
 			if (priceDirty) {
 				payload.price_cents_netto = bruttoCentsToNetto(editBruttoCents);
 			}
-			// Extract Fahrkostenpauschale as fahrt_flat_total — admin-set value is law.
-			const fahrtItemGen = editLineItems.find((li) => li.label === "Fahrkostenpauschale");
-			if (fahrtItemGen) {
-				payload.fahrt_flat_total = (fahrtItemGen.quantity * fahrtItemGen.unitPriceCents) / 100;
-			}
-			const nonFahrtGen = editLineItems.filter((li) => li.label !== "Fahrkostenpauschale");
-			if (nonFahrtGen.length > 0) {
-				payload.line_items = nonFahrtGen.map((li) => ({
-					description: li.label,
-					quantity: li.quantity,
-					unit_price: li.unitPriceCents / 100,
-					...(li.remark ? { remark: li.remark } : {}),
-				}));
-			}
-			await apiPost<{ id: string }>(
+					payload.line_items = serializeLineItems();
+		await apiPost<{ id: string }>(
 				`/api/v1/inquiries/${data.id}/generate-offer`,
 				payload,
 			);
@@ -2228,108 +2254,86 @@
 					</div>
 				</div>
 				<div class="line-items">
-					<!-- Labor (always shown, driven by persons/hours/rate) -->
-					<div class="line-item">
-						<span class="li-name">{editPersons} Umzugshelfer</span>
-						<div class="li-detail">
-							<span class="li-qty">{editHours} Std.</span>
-							<span class="li-unit"
-								>&times; {(editRateCents / 100).toFixed(2)} EUR</span
-							>
-							<span class="li-total"
-								>{formatEuro(laborCents)}</span
-							>
-						</div>
-					</div>
+					{#each editLineItems as li, idx (li._id)}
+					<div
+						class="line-item editable"
+						class:drag-over={dragOverIdx === idx}
+						class:dragging={dragIdx === idx}
+						draggable={armedIdx === idx}
+						ondragstart={(e) => onDragStart(e, idx)}
+						ondragover={(e) => onDragOver(e, idx)}
+						ondragleave={onDragLeave}
+						ondrop={(e) => onDrop(e, idx)}
+						ondragend={onDragEnd}
+					>
+						<span
+							role="button"
+							tabindex="-1"
+							aria-label="Ziehen zum Sortieren"
+							class="drag-handle"
+							title="Ziehen zum Sortieren"
+							onmousedown={() => armDrag(idx)}
+							onmouseup={disarmDrag}
+						>
+							<GripVertical size={14} />
+						</span>
 
-
-					{#each editLineItems as li, idx}
-						<div class="line-item editable">
+						{#if li.kind === 'labor'}
+							<div class="li-fixed">
+								<span class="li-name">{editPersons} Umzugshelfer</span>
+								<div class="li-detail">
+									<span class="li-qty">{editHours} Std.</span>
+									<span class="li-unit">&times; {(editRateCents / 100).toFixed(2)} EUR</span>
+									<span class="li-total">{formatEuro(laborCents)}</span>
+								</div>
+							</div>
+						{:else if li.kind === 'insurance'}
+							<div class="li-fixed">
+								<span class="li-name">Nürnbergerversicherung</span>
+								<div class="li-detail">
+									<span class="li-qty">{li.remark || 'Deckungssumme: 620,00 Euro / m³'}</span>
+									<span class="li-total">inklusive</span>
+								</div>
+							</div>
+							<button class="del-btn" onclick={() => removeLineItem(idx)} title="Versicherung entfernen"><X size={14} /></button>
+						{:else if li.kind === 'fahrt'}
+							<div class="li-edit-top"><span class="li-name">Fahrkostenpauschale</span></div>
+							<div class="li-edit-bottom">
+								<input type="text" class="edit-li-remark" bind:value={li.remark} placeholder="Bemerkung" />
+								<input type="number" class="edit-li-qty" min={0} step={1} bind:value={li.quantity} />
+								<span class="li-times">&times;</span>
+								<input type="number" class="edit-li-price" min={0} step={0.5} value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)} oninput={(e) => { const t = e.target as HTMLInputElement; li._priceText = t.value; const v = parseFloat(t.value); if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100); }} onfocus={() => { li._editing = true; }} onblur={() => { li._editing = false; }} />
+								<span class="li-eur">EUR</span>
+								<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
+							</div>
+						{:else}
 							<div class="li-edit-top">
-								<select
-									bind:value={li.row}
-									onchange={() => onLineItemRowChange(idx)}
-								>
-									{#each ROW_OPTIONS as opt}
-										<option value={opt.row}
-											>{opt.label}</option
-										>
+								<select bind:value={li.label} onchange={() => onCustomLabelChange(idx)}>
+									<option value="" disabled>Position wählen…</option>
+									{#each CUSTOM_LABEL_OPTIONS as opt}
+										<option value={opt}>{opt}</option>
 									{/each}
 								</select>
-								{#if li.row === 99}
-									<input
-										type="text"
-										class="edit-li-label"
-										bind:value={li.label}
-										placeholder="Bezeichnung"
-									/>
+								{#if li.label === '' || li.label === 'Sonstiges'}
+									<input type="text" class="edit-li-label" bind:value={li.label} placeholder="Bezeichnung" />
 								{/if}
-								<button
-									class="del-btn"
-									onclick={() => removeLineItem(idx)}
-									title="Entfernen"
-								>
-									<X size={14} />
-								</button>
+								<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen"><X size={14} /></button>
 							</div>
 							<div class="li-edit-bottom">
-								<input
-									type="text"
-									class="edit-li-remark"
-									bind:value={li.remark}
-									placeholder="Bemerkung"
-								/>
-								<input
-									type="number"
-									class="edit-li-qty"
-									min={1}
-									step={1}
-									bind:value={li.quantity}
-								/>
+								<input type="text" class="edit-li-remark" bind:value={li.remark} placeholder="Bemerkung" />
+								<input type="number" class="edit-li-qty" min={0} step={1} bind:value={li.quantity} />
 								<span class="li-times">&times;</span>
-								<input
-									type="number"
-									class="edit-li-price"
-									min={0}
-									step={0.5}
-									value={li._editing
-										? li._priceText
-										: (li.unitPriceCents / 100).toFixed(2)}
-									oninput={(e) => {
-										const target =
-											e.target as HTMLInputElement;
-										li._priceText = target.value;
-										const val = parseFloat(target.value);
-										if (!isNaN(val))
-											li.unitPriceCents = Math.round(
-												val * 100,
-											);
-									}}
-									onfocus={() => {
-										li._editing = true;
-									}}
-									onblur={() => {
-										li._editing = false;
-									}}
-								/>
+								<input type="number" class="edit-li-price" min={0} step={0.5} value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)} oninput={(e) => { const t = e.target as HTMLInputElement; li._priceText = t.value; const v = parseFloat(t.value); if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100); }} onfocus={() => { li._editing = true; }} onblur={() => { li._editing = false; }} />
 								<span class="li-eur">EUR</span>
-								<span class="li-total"
-									>{formatEuro(
-										li.quantity * li.unitPriceCents,
-									)}</span
-								>
+								<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
 							</div>
-						</div>
-					{/each}
-
-					<!-- Nürnbergerversicherung: fixed non-editable last item, always €0 -->
-					<div class="line-item">
-						<span class="li-name">Nürnbergerversicherung</span>
-						<div class="li-detail">
-							<span class="li-qty">Deckungssumme: 620,00 Euro / m³</span>
-							<span class="li-total">inklusive</span>
-						</div>
+						{/if}
 					</div>
+				{/each}
+
+				{#if !editLineItems.some((li) => li.kind === 'insurance')}
+					<button class="btn-link" onclick={addInsurance}><Plus size={14} /> Versicherung hinzufügen</button>
+				{/if}
 
 					<div class="line-item total">
 						<span class="li-name">Netto</span>
@@ -3418,10 +3422,62 @@
 	/* Editable line items */
 	.line-item.editable {
 		padding: 0.5rem 0;
+		padding-left: 1.5rem;
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		gap: 0.375rem;
+		transition: background var(--dt-transition), opacity var(--dt-transition);
+		border-radius: var(--dt-radius-sm);
+	}
+
+	.line-item.editable.dragging {
+		opacity: 0.4;
+	}
+
+	.line-item.editable.drag-over {
+		background: var(--dt-surface-container-high);
+		box-shadow: inset 0 2px 0 0 var(--dt-primary);
+	}
+
+	.drag-handle {
+		position: absolute;
+		left: 0;
+		top: 0.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		border: none;
+		color: var(--dt-on-surface-variant);
+		cursor: grab;
+		padding: 0.25rem;
+		border-radius: var(--dt-radius-sm);
+		transition: background var(--dt-transition), color var(--dt-transition);
+	}
+
+	.drag-handle:hover {
+		background: var(--dt-surface-container-high);
+		color: var(--dt-on-surface);
+	}
+
+	.drag-handle:active {
+		cursor: grabbing;
+	}
+
+	.li-fixed {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		flex: 1;
+	}
+
+	.li-fixed .li-detail {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
 	}
 
 	.li-edit-top {

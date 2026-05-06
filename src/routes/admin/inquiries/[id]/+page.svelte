@@ -2974,7 +2974,8 @@
 
 <style>
 	.page {
-		height: 100%;
+		/* No height:100% — Mitarbeiter/Rechnungen/E-Mail sections render as
+		   siblings of .page, so a fixed page height pushes them off-screen. */
 	}
 
 	.back-link {
@@ -3825,6 +3826,7 @@
 	/* ── Employees Section ─────────────────────────────────────────── */
 
 	.employees-section {
+		margin-top: 1rem;
 		margin-bottom: 1.5rem;
 	}
 

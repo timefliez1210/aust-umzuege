@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Building2, CheckCircle } from "lucide-svelte";
 	import CTAButton from "$lib/components/CTAButton.svelte";
+	import Hero from "$lib/components/Hero.svelte";
 	import MetaTags from "$lib/components/MetaTags.svelte";
 	import StructuredData from "$lib/components/StructuredData.svelte";
 	import FAQSection from "$lib/components/FAQSection.svelte";
@@ -68,18 +69,16 @@
 	"reviewBody": "Wir hatten einen Firmenumzug mit Maschinen und sperrigen, schweren Mobiliar etc. Einfach super gut gelaufen. Nicht eine Beschädigung an den Transportgütern noch an Gebäuden, Türen etc. Selbst kleine Schrauben, Plastikteile usw. die beim Transport aus den Möbeln kullerten wurden gesammelt und mir übergeben. Der Preis: unschlagbar. Alle Mitarbeiter ohne Ausnahme waren konzentriert und mit Umsicht bei der Sache. Herr Aust war stets präsent, offen für Kundenhinweise, ruhig und sachlich. Mit Abstand das beste Umzugsunternehmen, das ich je bisher beauftragt habe."
 }} />
 
+<Hero
+	leadIn="Ihr Partner für den"
+	accentWord="Firmenumzug Wolfsburg"
+	trailing="– minimale Ausfallzeit, Festpreis"
+	imageBase="/firmenumzug-hildesheim-umzugshelfer-bueroumzug"
+	imageAlt="Aust Umzüge Team bei einem Firmenumzug in Wolfsburg"
+/>
+
 <main class="service-detail">
 	<div class="service-detail__container">
-
-		<header class="service-header">
-			<div class="icon-wrapper">
-				<Building2 size={48} strokeWidth={1.5} />
-			</div>
-			<h1 class="service-title">Firmenumzug Wolfsburg</h1>
-			<p class="service-subtitle">
-				Minimale Ausfallzeit. Sichere IT. Festpreis. Für Büros, Praxen und Gewerbebetriebe in der VW-Region.
-			</p>
-		</header>
 
 		<div class="service-content">
 			<div class="text-column">

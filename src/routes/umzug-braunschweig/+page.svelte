@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Home, CheckCircle } from "lucide-svelte";
 	import CTAButton from "$lib/components/CTAButton.svelte";
+	import Hero from "$lib/components/Hero.svelte";
 	import MetaTags from "$lib/components/MetaTags.svelte";
 	import StructuredData from "$lib/components/StructuredData.svelte";
 	import FAQSection from "$lib/components/FAQSection.svelte";
@@ -60,18 +61,16 @@
 <StructuredData schema={services.umzugBraunschweig} />
 <StructuredData schema={breadcrumbs} />
 
+<Hero
+	leadIn="Ihre Umzugsfirma für"
+	accentWord="Braunschweig"
+	trailing="– Festpreis aus Hildesheim"
+	imageBase="/privatumzuege-hildesheim-carousel-1"
+	imageAlt="Aust Umzüge Team beim Privatumzug nach Braunschweig"
+/>
+
 <main class="service-detail">
 	<div class="service-detail__container">
-
-		<header class="service-header">
-			<div class="icon-wrapper">
-				<Home size={48} strokeWidth={1.5} />
-			</div>
-			<h1 class="service-title">Umzugsfirma Braunschweig</h1>
-			<p class="service-subtitle">
-				Sorgfältig, zuverlässig, Festpreis. Auf der Strecke Hildesheim–Braunschweig seit Jahren zu Hause.
-			</p>
-		</header>
 
 		<div class="service-content">
 			<div class="text-column">

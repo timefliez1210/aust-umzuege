@@ -230,8 +230,7 @@
 	let editEndTime = $state("");
 	let editHasPauschale = $state(false);
 
-	const LOCKED_STATUSES = new Set(['offer_ready', 'offer_sent', 'accepted', 'scheduled', 'completed', 'invoiced', 'paid']);
-	let isLocked = $derived(data ? LOCKED_STATUSES.has(data.status) : false);
+	let isLocked = $derived(false);
 
 	// Pricing fields
 	let editPersons = $state(2);

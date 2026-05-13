@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import PriceCards from "$lib/components/PriceCards.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
@@ -50,8 +51,8 @@
 </script>
 
 <MetaTags
-    title="Firmenumzug Hildesheim – Büro & Gewerbe | Aust Umzüge"
-    description="§431 HGB begrenzt die Spediteushaftung auf 8,33 SDR/kg – ein 3kg-Laptop wäre mit ~35 € versichert. Firmenumzug Hildesheim mit schriftlicher Wertdeklaration und Festpreis."
+    title="Firmenumzug Hildesheim · Wochenende & IT-Migration | Aust"
+    description="Büroumzug Hildesheim mit Wochenend-/Nachteinsatz, IT- und Servertransport, NDA & Wertdeklaration nach §431 HGB. Festpreis · 71× ★★★★★. ☎ 05121 755 83 79."
     keywords="Firmenumzug Hildesheim, Büroumzug, Geschäftsumzug, IT-Umzug, Betriebsumzug"
     canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
 />
@@ -211,10 +212,10 @@
                     <strong>2. Umzug am Wochenende oder nachts:</strong> Die meisten unserer Firmenumzüge finden außerhalb der Geschäftszeiten statt – am Freitagnachmittag, über das Wochenende oder in der Nacht. So starten Ihre Mitarbeiter am Montagmorgen direkt am neuen Standort in die Arbeitswoche.
                 </p>
                 <p>
-                    <strong>3. IT- und Servertransport:</strong> Computer, Netzwerktechnik und Server werden fachgerecht demontiert, antistatisch verpackt und sicher transportiert. Am neuen Standort bauen wir alles nach Ihrem Plan wieder auf. Auf Wunsch koordinieren wir den Prozess mit Ihrem IT-Administrator, damit die Systeme schnellstmöglich wieder laufen.
+                    <strong>3. IT- und Servertransport:</strong> Computer, Netzwerktechnik und Server werden fachgerecht demontiert, antistatisch verpackt und sicher transportiert. Am neuen Standort bauen wir alles nach Ihrem Plan wieder auf. Wichtig ist die Reihenfolge bei der Inbetriebnahme: Internet- und WAN-Anschluss zuerst, dann Telefonanlage bzw. VoIP, anschließend Server und Domain Controller, zuletzt die Arbeitsplatzrechner. Eine falsche Reihenfolge kostet schnell halbe Tage. Auf Wunsch stimmen wir den Ablauf direkt mit Ihrem IT-Administrator und dem Telekommunikationsanbieter ab, damit am ersten Werktag wirklich alles steht.
                 </p>
                 <p>
-                    <strong>4. Akten- und Archivtransport:</strong> Vertrauliche Unterlagen transportieren wir in versiegelten Behältern. Jede Kiste wird inventarisiert und beschriftet, damit am neuen Standort alles sofort am richtigen Platz ist. Auf Wunsch übernehmen wir auch die datenschutzkonforme Aktenvernichtung.
+                    <strong>4. Akten- und Archivtransport:</strong> Vertrauliche Unterlagen transportieren wir in versiegelten Behältern. Jede Kiste wird inventarisiert und beschriftet, damit am neuen Standort alles sofort am richtigen Platz ist. Auf Wunsch unterzeichnen wir vorab eine Vertraulichkeitsvereinbarung (NDA) und übernehmen auch die datenschutzkonforme Aktenvernichtung.
                 </p>
                 <p>
                     <strong>5. Montage von Büromöbelsystemen:</strong> Moderne Büromöbel wie USM, Vitra oder Steelcase erfordern Fachwissen beim Ab- und Aufbau. Unsere Monteure kennen die gängigen Systeme und bauen Ihre Arbeitsplätze schnell und sauber wieder auf.
@@ -222,6 +223,12 @@
                 <p>
                     <strong>6. Entsorgung und Neuausstattung:</strong> Alte Möbel, die nicht mehr benötigt werden, entsorgen wir fachgerecht. Falls Sie neue Büromöbel bestellt haben, koordinieren wir die Anlieferung und den Aufbau direkt mit den Lieferanten.
                 </p>
+
+                <PriceCards
+                    service="firmenumzug"
+                    title="Firmenumzug: Pakete für kleine und mittlere Büros"
+                    intro="Für Büros, Praxen und kleinere Geschäftsräume bieten wir folgende Komplettpakete inkl. LKW. Bei größeren Volumen, IT-Migrationen oder Wochenend-Einsätzen erstellen wir Ihnen nach kostenloser Besichtigung ein individuelles Festpreisangebot."
+                />
 
                 <h2 class="section-title">Warum Hildesheimer Unternehmen uns vertrauen</h2>
                 <p>

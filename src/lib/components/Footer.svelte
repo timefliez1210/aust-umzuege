@@ -67,7 +67,7 @@
             <div class="footer__column">
                 <h4 class="footer__heading">Kontakt</h4>
                 <p class="footer__text">
-                    Telefon: <a href="tel:+4951217558379">05121 – 7558379</a><br
+                    Telefon: <a href="tel:+4951217558379">05121 – 755 83 79</a><br
                     />
                     Mobil: <a href="tel:+4917670745281">0176 – 70745281</a><br
                     />

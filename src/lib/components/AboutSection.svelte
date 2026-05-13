@@ -10,13 +10,13 @@
     }
 
     let {
-        tagline = "Umzüge und Haushaltsauflösungen",
-        heading = "Mehr als nur Umzug – Ihr Spezialist für die schwierigen Fälle",
+        tagline = "Vollservice-Umzugsunternehmen aus Hildesheim",
+        heading = "Ihr Umzugsunternehmen aus Hildesheim: pünktlich, sorgfältig, persönlich",
         paragraphs = [
-            "Sie suchen einen Umzugspartner, der mehr kann als nur tragen? Aust Umzüge verbindet professionelle Umzüge und Haushaltsauflösungen mit echtem Fachwissen – dort, wo andere an ihre Grenzen stoßen.",
-            "Ihre Einbauküche muss nicht nur ab-, sondern auch wieder fachgerecht aufgebaut werden? Unsere erfahrenen Monteure übernehmen komplexe Küchenmontagen inklusive Arbeitsplatten-Anpassung, Wasser- und Elektroanschluss. Ihre Eltern ziehen ins betreute Wohnen und brauchen mehr als nur einen Transporter? Wir begleiten Seniorenumzüge mit Geduld, Einfühlungsvermögen und einem Komplett-Service vom Einpacken bis zum Einräumen. Sie besitzen hochwertige Möbel, die beim Transport besondere Sorgfalt verlangen? Wir wissen, wie man empfindliche Stücke sicher ans Ziel bringt.",
-            "Ob Privatumzug, Firmenumzug oder Haushaltsauflösung – bei uns bekommen Sie alles aus einer Hand: Planung, Organisation, Transport, Montage und auf Wunsch auch die fachgerechte Entsorgung. Von Hildesheim aus arbeiten wir bundesweit und europaweit.",
-            "Was uns unterscheidet? Wir nehmen uns Zeit. Für eine ehrliche Beratung vor Ort, für Ihre individuellen Wünsche und für die Details, die einen guten Umzug von einem stressfreien unterscheiden.",
+            "Aust Umzüge ist Ihr Vollservice-Umzugsunternehmen aus Hildesheim. Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung, Möbelmontage und Einlagerung – alles aus einer Hand, vom selben Team koordiniert. Wir arbeiten mit eigenen festangestellten Mitarbeitern statt Tagelöhnern und nehmen uns die Zeit, jeden Auftrag persönlich vor Ort zu besichtigen. Daraus kalkulieren wir ehrlich – manchmal sagen wir auch, dass ein 3,5-Tonner reicht, wenn andere mit einem 7,5-Tonner kommen würden. Was Sie im Kostenvoranschlag lesen, steht auch auf der Endrechnung.",
+            "Über 70 Fünf-Sterne-Bewertungen wiederholen drei Dinge in fast jedem Text: pünktlich, sorgfältig, freundlich. Das ist kein Marketing-Versprechen, sondern Arbeitsweise. Möbel werden professionell verpackt, mit Tragegurten gesichert und auch nach 100 oder 350 Kilometern Fahrt unbeschädigt entladen. Wo eine schwere Druckmaschine durch einen engen Flur muss, tragen zwei Mitarbeiter mit Gurten – und zwei weitere stützen ihnen den Rücken. So sehen die Details aus, die einen Umzug ohne Kratzer von einem Umzug mit Schadensliste unterscheiden.",
+            "Aust Umzüge ist inhabergeführt. Bei der kostenlosen Vor-Ort-Besichtigung kommt Alex Aust selbst vorbei. Er schätzt das Volumen ein, erstellt das Festpreisangebot und koordiniert den Auftrag. Per Telefon und WhatsApp ist er direkt erreichbar – auch nach Auftragsbestätigung, auch am Umzugstag, falls unterwegs eine Frage auftaucht. Die Ausführung am Umzugstag selbst liegt in den Händen unseres festangestellten Teams: sieben Mitarbeiter, eingespielt, mit denselben Standards – kein Tagelöhner-Karussell.",
+            "Ein Umzugstag ist hektisch genug. Unser Team bringt die Ruhe mit, die ein guter Umzug braucht – nicht weil wir es eilig haben, sondern weil wir wissen, wie es geht. Sie kümmern sich um Ihr neues Zuhause; wir kümmern uns um alles, was bis zur Schlüsselübergabe dazwischen liegt.",
         ],
         imageSrc = "/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig.webp",
         imageAlt = "Aust Umzüge Mitarbeiter beim Umzug",

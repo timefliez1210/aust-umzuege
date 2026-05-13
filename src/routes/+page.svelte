@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Hero from "$lib/components/Hero.svelte";
-  import ServiceBoxes from "$lib/components/ServiceBoxes.svelte";
+  import Hero from "$lib/components/HeroV2.svelte";
+  import TrustSignals from "$lib/components/TrustSignals.svelte";
   import ReviewsSection from "$lib/components/ReviewsSection.svelte";
   import AboutSection from "$lib/components/AboutSection.svelte";
   import ServicesCarousel from "$lib/components/ServicesCarousel.svelte";
@@ -15,9 +15,9 @@
 </script>
 
 <MetaTags
-  title="Umzugsunternehmen Hildesheim, Aust Umzüge & Haushaltsauflösungen"
-  description="Umzugsfirma Hildesheim mit über 71 Fünf-Sterne-Bewertungen. Festpreisgarantie, kostenlose Besichtigung und persönliche Beratung. Jetzt anfragen."
-  keywords="Umzugsunternehmen Hildesheim, Umzugsfirma Hildesheim, Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung, Möbelmontage"
+  title="Umzugsunternehmen Hildesheim · Festpreis & 71× ★★★★★ | Aust"
+  description="Umzug Hildesheim zum Festpreis vom Inhaber Alex Aust. 71× ★★★★★ auf Google, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. ☎ 05121 755 83 79 · Mo–Fr 8–18 Uhr."
+  keywords="Umzugsunternehmen Hildesheim, Umzugsfirma Hildesheim, Umzug Hildesheim, Aust Umzüge"
   canonical="https://www.aust-umzuege.de/"
   ogType="website"
 />
@@ -28,7 +28,7 @@
 
 <main>
   <Hero />
-  <ServiceBoxes />
+  <TrustSignals />
   <AboutSection />
   <ReviewsSection />
   <ServicesCarousel />

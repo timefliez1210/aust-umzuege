@@ -108,16 +108,9 @@
                 class="contact-form"
                 onsubmit={handleSubmit}
                 name="kontakt"
-                method="POST"
-                data-netlify="true"
-                netlify-honeypot="bot-field"
                 toolname="kontakt"
                 tooldescription="Kontaktformular für allgemeine Anfragen an Aust Umzüge Hildesheim. Senden Sie eine Nachricht mit Name, E-Mail und Anliegen."
             >
-                <!-- Netlify form detection -->
-                <input type="hidden" name="form-name" value="kontakt" />
-                <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
-
                 <div class="contact-form__group contact-form__group--radio">
                     <label class="contact-form__radio-label">Anrede:</label>
                     <div class="contact-form__radio-row">
@@ -177,6 +170,8 @@
                         name="phone"
                         bind:value={formData.phone}
                         placeholder="Ihre Telefonnummer:"
+                        autocomplete="tel"
+                        inputmode="tel"
                         toolparamtitle="Telefon"
                         toolparamdescription="Telefonnummer für Rückruf (optional)"
                     />
@@ -216,6 +211,10 @@
                     <p class="contact-form__error">{submitError}</p>
                 {/if}
 
+                {#if !isFormValid}
+                    <p class="contact-form__hint">Bitte füllen Sie alle Pflichtfelder aus (*) und akzeptieren Sie die Datenschutzerklärung.</p>
+                {/if}
+
                 <button
                     type="submit"
                     class="submit-button"
@@ -240,7 +239,7 @@
                 </svg>
                 <div>
                     <span class="contact-info__label">Telefon</span>
-                    <a href="tel:+4951217558379" class="contact-info__value">05121 / 755 83 79</a>
+                    <a href="tel:+4951217558379" class="contact-info__value">05121 – 755 83 79</a>
                 </div>
             </div>
 
@@ -284,9 +283,6 @@
 </main>
 
 <style>
-    .hidden {
-        display: none;
-    }
 
     .contact-page {
         background-color: #ffffff;
@@ -313,6 +309,12 @@
         color: #dc2626;
         font-size: var(--text-sm);
         margin: 0 0 var(--space-4);
+    }
+
+    .contact-form__hint {
+        color: #64748b;
+        font-size: var(--text-sm);
+        margin: 0 0 var(--space-2);
     }
 
     .contact-page__container {

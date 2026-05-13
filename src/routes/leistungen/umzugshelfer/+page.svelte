@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import PriceCards from "$lib/components/PriceCards.svelte";
     import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
     const breadcrumbs = createBreadcrumbs([
@@ -34,6 +35,18 @@
             answer: "Selbstverständlich. Ob nur zum Beladen des Transporters, zum Tragen eines Klaviers die Treppe hinunter oder zum kompletten Be- und Entladen – wir passen uns flexibel Ihrem Bedarf an. Auch stundenweise Buchungen ab 2 Stunden sind möglich."
         },
         {
+            question: "Gibt es Umzugshelfer in Hildesheim auch für kleine Budgets oder Studentenumzüge?",
+            answer: "Ja, gerade dafür ist unser stundenweises Helfer-Modell gemacht. Sie buchen nur die Zeit und die Anzahl Helfer, die Sie wirklich brauchen – ab 2 Stunden, ab einem Helfer. Für Studenten, Auszubildende oder Single-Haushalte mit eigenem Sprinter liegt der typische Einsatz zwischen 200 € und 350 €. Wir nennen Ihnen vorab eine realistische Spanne, und Sie zahlen am Ende nur die tatsächlich geleisteten Stunden – nicht mehr."
+        },
+        {
+            question: "Wie bleibt der Umzug mit Aust planbar – ohne Pauschalfallen?",
+            answer: "Wir arbeiten ohne Pauschalen und ohne versteckte Kosten. Vor dem Termin besprechen wir Umfang, Anzahl der Helfer und voraussichtliche Dauer und nennen Ihnen eine konkrete Preisspanne. Abgerechnet wird stundengenau ab Abfahrt von unserem Standort bis zur Rückkehr. Wenn es schneller geht, zahlen Sie weniger. Falls vor Ort etwas dazukommt, sprechen wir das offen an, bevor die Uhr weiterläuft – damit Sie jederzeit die Kontrolle über Ihr Budget behalten."
+        },
+        {
+            question: "Lohnt sich eine Umzugsfirma für eine kleine Wohnung oder als Single?",
+            answer: "Ja, oft mehr als gedacht. Viele rechnen mit 200–500 € und erschrecken bei Online-Vergleichen über Pauschalen ab 1.000 €. Bei uns zahlen Sie nur die tatsächliche Zeit: Ein typischer Single-Umzug (1-Zimmer-Wohnung, eigener Transporter, 2 Helfer für 3 Stunden) liegt inklusive An- und Abfahrt bei rund 245 €. Profis arbeiten zudem etwa doppelt so schnell wie Laien – am Ende ist der Stundensatz höher, die Rechnung aber oft niedriger als gedacht."
+        },
+        {
             question: "Wie kurzfristig kann ich Umzugshelfer buchen?",
             answer: "Bei freien Kapazitäten stellen wir auch innerhalb von 24-48 Stunden Helfer. Am Monatsende und in der Sommersaison empfehlen wir 1-2 Wochen Vorlauf. Rufen Sie uns einfach an – wir sagen Ihnen sofort, ob wir an Ihrem Wunschtermin verfügbar sind."
         },
@@ -49,8 +62,8 @@
 </script>
 
 <MetaTags
-    title="Umzugshelfer in Hildesheim mieten – Versichert & Haftbar | Aust Umzüge"
-    description="Private Helfer beim Umzug: Bei Verletzung haften Sie persönlich nach §823 BGB. Professionelle Umzugshelfer von Aust – versichert, erfahren, kurzfristig buchbar."
+    title="Umzugshelfer in Hildesheim – stundenweise & versichert | Aust Umzüge"
+    description="Mit unseren Umzugshelfern gelingt Ihnen ein stressfreier Umzug – flexibel buchbar und passend zu jedem Budget. Profis ab 30 €/Std., Transporter ab 60 €/Tag."
     keywords="Umzugshelfer Hildesheim, Umzugskräfte mieten, Tragehilfe Umzug, stundenweise Helfer"
     canonical="https://www.aust-umzuege.de/leistungen/umzugshelfer"
 />
@@ -91,7 +104,7 @@
             </div>
             <h1 class="service-title">Umzugshelfer Hildesheim</h1>
             <p class="service-subtitle">
-                Starke Hände für Ihren Umzug – flexibel und zuverlässig.
+                Stressfreier Umzug für jedes Budget – stundengenau abgerechnet, ohne Überraschungen.
             </p>
         </header>
 
@@ -163,8 +176,31 @@
                     </li>
                 </ul>
 
-                <h2 class="section-title" style="margin-top: var(--space-10);">Preise & Mengenrabatt</h2>
-                <p>Je mehr Helfer Sie buchen, desto günstiger wird der Stundensatz. Hier eine Übersicht unserer aktuellen Konditionen:</p>
+                <h2 class="section-title" style="margin-top: var(--space-10);">Stressfreier Umzug für jedes Budget</h2>
+                <p>
+                    Ob kleine Studentenwohnung, Single-Umzug mit gemietetem Sprinter oder voller Familienhaushalt – bei uns sagen Sie, wie viel Sie selbst übernehmen wollen. Den Rest erledigen unsere Helfer. Sie buchen <strong>stundenweise und stundengenau</strong>: Wenn der Umzug schneller geht als geplant, zahlen Sie weniger. Keine Pauschalfallen, keine Mindestpauschale ab 1.000 €, kein Kleingedrucktes.
+                </p>
+                <p>
+                    So bleibt Ihr Umzug in Hildesheim und Umgebung planbar – egal ob das Budget bei 250 € oder bei 2.500 € liegt. Wir nennen Ihnen vorab eine realistische Spanne und halten uns daran.
+                </p>
+
+                <PriceCards
+                    service="umzugshelfer"
+                    title="Komplettpakete – Helfer inkl. LKW"
+                    intro="Sie brauchen Helfer und einen Transporter? Wählen Sie eines unserer fertigen Pakete – mit klarer Stundenstaffel und Pauschale für jede weitere Stunde. Ohne Kleingedrucktes."
+                />
+
+                <h2 class="section-title" style="margin-top: var(--space-10);">Nur Helfer buchen – ohne unseren LKW</h2>
+                <p>Sie haben bereits einen Transporter gemietet oder einen Sprinter zur Verfügung? Dann buchen Sie nur die Helfer – stundenweise und stundengenau. Je mehr Helfer Sie buchen, desto günstiger wird der Stundensatz pro Person:</p>
+
+                <div class="example-box">
+                    <p class="example-box__lead">Rechenbeispiel: Kleiner Umzug mit eigenem Transporter</p>
+                    <p>1-Zimmer-Wohnung, Sie haben einen Sprinter gemietet und brauchen 2 Helfer für ca. 3 Stunden. Anfahrt 15 Minuten, Rückfahrt 15 Minuten:</p>
+                    <ul class="example-calc">
+                        <li><span>2 Helfer × 3,5 Std. (inkl. An-/Abfahrt) × 35 €</span><strong>245 €</strong></li>
+                    </ul>
+                    <p class="example-box__note">Statt einer 1.000-€-Pauschale aus Online-Vergleichsportalen zahlen Sie nur die tatsächliche Zeit. Mehr Möbel oder mehr Stockwerke? Wir nennen Ihnen vorab eine realistische Spanne – ohne versteckte Kosten.</p>
+                </div>
 
                 <div class="price-table-wrapper">
                     <table class="price-table">
@@ -231,18 +267,57 @@
                     <strong>6. Abrechnung nach tatsächlichem Aufwand:</strong> Sie zahlen nur die tatsächlich geleisteten Stunden. Wenn der Umzug schneller geht als geplant, sparen Sie Geld. Fair und transparent.
                 </p>
 
-                <h2 class="section-title">Warum professionelle Helfer sich lohnen</h2>
+                <h2 class="section-title">Privater Helfer oder Profi? Der ehrliche Vergleich</h2>
                 <p>
-                    Viele denken: „Ich frage einfach ein paar Freunde." Das Problem: Freunde haben oft keine Erfahrung, arbeiten langsamer und sind nicht versichert. Wenn etwas kaputt geht, gibt es Streit. Wenn jemand sich verletzt, wird es teuer.
+                    Auf Kleinanzeigen finden Sie Helfer für 10–15 € pro Stunde. Bei uns kosten sie 30–35 €. Warum der Unterschied – und warum die Profi-Variante am Ende oft sogar günstiger ist:
                 </p>
+
+                <div class="compare-table-wrapper">
+                    <table class="compare-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Privater Helfer<br><span class="compare-sub">(Kleinanzeigen, Freunde)</span></th>
+                                <th class="compare-aust">Aust Umzugshelfer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Stundensatz</td>
+                                <td>10–15 €</td>
+                                <td class="compare-aust">30–35 €</td>
+                            </tr>
+                            <tr>
+                                <td>Tempo (1-Zi-Wohnung)</td>
+                                <td>5–6 Std.</td>
+                                <td class="compare-aust">3–4 Std.</td>
+                            </tr>
+                            <tr>
+                                <td>Versicherung bei Schäden</td>
+                                <td>keine</td>
+                                <td class="compare-aust">Betriebshaftpflicht</td>
+                            </tr>
+                            <tr>
+                                <td>Haftung bei Verletzung</td>
+                                <td>Sie persönlich (§823 BGB)</td>
+                                <td class="compare-aust">vollständig bei uns</td>
+                            </tr>
+                            <tr>
+                                <td>Tragegurte, Decken, Sackkarre</td>
+                                <td>selbst besorgen</td>
+                                <td class="compare-aust">inklusive</td>
+                            </tr>
+                            <tr class="compare-total">
+                                <td>Endpreis (2 Helfer, kleiner Umzug)</td>
+                                <td>~150 € + Risiko</td>
+                                <td class="compare-aust">~245 € versichert</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <p>
-                    Unsere Helfer dagegen sind über unsere Betriebshaftpflicht versichert. Schäden an Möbeln, Türrahmen oder Treppenhaus werden übernommen. Das gibt Ihnen die Sicherheit, die Sie bei einem Umzug brauchen.
-                </p>
-                <p>
-                    Außerdem arbeiten professionelle Helfer effizienter. Was Laien in 6 Stunden schaffen, erledigen unsere Mitarbeiter oft in 3-4 Stunden. Am Ende zahlen Sie weniger, weil die Arbeitszeit kürzer ist.
-                </p>
-                <p>
-                    Und dann ist da noch die körperliche Belastung: Ein Umzug ist anstrengend. Wenn Sie selbst den ganzen Tag schleppen, sind Sie am Abend völlig erschöpft. Mit professionellen Helfern können Sie sich auf die Organisation konzentrieren – und bleiben fit für die erste Nacht in der neuen Wohnung.
+                    Der Aufpreis von rund 100 € ist im Grunde Ihre Versicherungsprämie: Geht ein Möbelstück oder eine Tür zu Bruch, ist das gedeckt. Verletzt sich jemand, haften nicht Sie. Und Sie sparen sich den ganzen Tag Schleppen – am Abend sind Sie fit für die erste Nacht in der neuen Wohnung statt völlig erledigt.
                 </p>
 
                 <h3 class="highlight-title">Was Kunden an unserem Service schätzen</h3>
@@ -563,5 +638,109 @@
         color: #7c2d12 !important;
         font-size: 0.975rem !important;
         margin-bottom: 0 !important;
+    }
+
+    /* Rechenbeispiel-Box */
+    .example-box {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-left: 4px solid #16a34a;
+        border-radius: var(--radius-md);
+        padding: var(--space-5) var(--space-5);
+        margin-block: var(--space-6);
+    }
+    .example-box p {
+        color: #14532d !important;
+        font-size: 1rem !important;
+        line-height: 1.6;
+        margin-bottom: var(--space-3) !important;
+    }
+    .example-box__lead {
+        font-weight: 700;
+        font-size: 1.05rem !important;
+    }
+    .example-box__note {
+        font-size: 0.95rem !important;
+        margin-bottom: 0 !important;
+    }
+    .example-calc {
+        list-style: none;
+        padding: 0;
+        margin: var(--space-3) 0;
+    }
+    .example-calc li {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--space-4);
+        padding: var(--space-3) var(--space-4);
+        background: #fff;
+        border-radius: var(--radius-md);
+        color: #14532d;
+        font-size: 1rem;
+    }
+    .example-calc strong {
+        font-size: 1.25rem;
+        color: #166534;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    /* Vergleichstabelle privat vs. Aust */
+    .compare-table-wrapper {
+        overflow-x: auto;
+        margin-block: var(--space-6);
+        border-radius: var(--radius-lg);
+        border: 1px solid #e2e8f0;
+    }
+    .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.975rem;
+    }
+    .compare-table thead th {
+        padding: var(--space-3) var(--space-4);
+        text-align: left;
+        font-weight: 600;
+        background-color: #f8fafc;
+        color: #1a202c;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .compare-table th.compare-aust {
+        background-color: var(--color-info-bar);
+        color: #fff;
+    }
+    .compare-sub {
+        font-weight: 400;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    .compare-table td {
+        padding: var(--space-3) var(--space-4);
+        color: #4a5568;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: top;
+    }
+    .compare-table td:first-child {
+        font-weight: 600;
+        color: #1a202c;
+    }
+    .compare-table td.compare-aust {
+        background-color: #eff6ff;
+        color: #1e3a5f;
+        font-weight: 600;
+    }
+    .compare-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .compare-table tr.compare-total td {
+        background-color: #f8fafc;
+        font-weight: 700;
+        color: #1a202c;
+        border-top: 2px solid #e2e8f0;
+    }
+    .compare-table tr.compare-total td.compare-aust {
+        background-color: #dbeafe;
+        color: #1e3a5f;
     }
 </style>

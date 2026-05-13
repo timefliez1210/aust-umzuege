@@ -6,7 +6,7 @@
     }
 
     let {
-        phone = "05121 - 755 83 79",
+        phone = "05121 – 755 83 79",
         hours = "Montag – Freitag von 09:00 – 19:00 Uhr",
     }: Props = $props();
 </script>

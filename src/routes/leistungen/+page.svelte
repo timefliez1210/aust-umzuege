@@ -26,106 +26,91 @@
     const services = [
         {
             title: "Privatumzug",
-            description:
-                "Stressfreier Wohnungswechsel für Singles, Paare und Familien. Wir kümmern uns um Ihr Hab und Gut.",
+            description: "Wohnungswechsel zum Festpreis – mit Versicherungsschutz.",
             icon: Home,
             link: "/leistungen/privatumzug",
         },
         {
             title: "Firmenumzug",
-            description:
-                "Professionelle Büro- und Objektumzüge mit minimaler Ausfallzeit für Ihr Unternehmen.",
+            description: "Büro- und Objektumzüge mit minimaler Ausfallzeit.",
             icon: Building2,
             link: "/leistungen/firmenumzug",
         },
         {
             title: "Fern- & Überseeumzug",
-            description:
-                "Sicherer Transport über weite Distanzen und Grenzen hinweg. Logistik aus einer Hand.",
+            description: "Sicherer Transport über lange Distanzen und Grenzen.",
             icon: Globe,
             link: "/leistungen/fern-ueberseeumzug",
         },
         {
             title: "Seniorenumzug",
-            description:
-                "Einfühlsamer und umfassender Service für den Umzug ins betreute Wohnen oder Seniorenheim.",
+            description: "Einfühlsam ins betreute Wohnen oder Pflegeheim.",
             icon: HeartHandshake,
             link: "/leistungen/seniorenumzug",
         },
         {
             title: "Umzugshelfer",
-            description:
-                "Kräftige Unterstützung beim Tragen, Beladen und Entladen – auch ohne LKW-Buchung.",
+            description: "Versicherte Tragehilfe – stundenweise buchbar.",
             icon: Users,
             link: "/leistungen/umzugshelfer",
         },
         {
             title: "Halteverbot",
-            description:
-                "Beantragung und Einrichtung offizieller Halteverbotszonen für einen reibungslosen Ablauf.",
+            description: "Beantragung und Aufstellung der Halteverbotszone.",
             icon: Ban,
             link: "/leistungen/halteverbot",
         },
         {
             title: "Umzugsberatung",
-            description:
-                "Kostenlose Besichtigung und individuelle Planung für ein maßgeschneidertes Angebot.",
+            description: "Kostenlose Besichtigung mit individueller Planung.",
             icon: MessageSquare,
             link: "/leistungen/umzugsberatung",
         },
         {
             title: "Demontage & Montage",
-            description:
-                "Fachgerechter Abbau und Aufbau Ihrer Möbel und Küchen durch erfahrenes Personal.",
+            description: "Fachgerechter Auf- und Abbau von Möbeln und Küchen.",
             icon: Wrench,
             link: "/leistungen/montage",
         },
         {
             title: "Haushaltsauflösung",
-            description:
-                "Diskrete und einfühlsame Wohnungsauflösung – nach Todesfall, Pflegeheim-Umzug oder Erbschaft. Festpreis, besenrein.",
+            description: "Diskrete Wohnungsauflösung mit Wertanrechnung.",
             icon: Trash2,
             link: "/leistungen/haushaltsaufloesung",
         },
         {
             title: "Entrümpelung",
-            description:
-                "Keller, Dachboden, Garage oder Messie-Wohnung räumen. Schnell, diskret und zum Festpreis – mit Wertanrechnung.",
+            description: "Keller, Dachboden, Garage oder Messie-Wohnung räumen.",
             icon: Archive,
             link: "/leistungen/entruempelung",
         },
         {
             title: "Lagerung & Einlagerung",
-            description:
-                "Sichere Lagerung für Ihre Möbel – ob kurzfristig beim Umzug oder langfristig.",
+            description: "Kurz- oder langfristige Möbellagerung.",
             icon: Warehouse,
             link: "/leistungen/lagerung",
         },
         {
             title: "Praxisumzug",
-            description:
-                "Arzt- und Zahnarztpraxen umziehen – sicherer Transport medizinischer Geräte, DSGVO-konformer Aktentransport, Wochenendservice.",
+            description: "Arzt- und Zahnarztpraxen DSGVO-konform umziehen.",
             icon: Stethoscope,
             link: "/leistungen/praxisumzug",
         },
         {
             title: "Archiv-Montage & Demontage",
-            description:
-                "Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer – Standregale, Fachregale und Rollregale, deutschlandweit.",
+            description: "Stand-, Fach- und Rollregale, deutschlandweit.",
             icon: BookMarked,
             link: "/leistungen/archiv-montage",
         },
         {
             title: "Malerarbeiten beim Umzug",
-            description:
-                "Kleine Übergabe-Ausbesserungen erledigen wir selbst, Komplettrenovierung läuft über unseren Meisterbetrieb-Partner. Transparent und rechtssicher.",
+            description: "Übergabe-Ausbesserungen selbst, Komplett über Meisterbetrieb-Partner.",
             icon: Paintbrush,
             link: "/leistungen/malerarbeiten",
         },
         {
             title: "Renovierungsarbeiten beim Umzug",
-            description:
-                "Maler, Boden, Fliesen, Trockenbau, Elektro und Sanitär – koordiniert über eingetragene Meisterbetriebe in Hildesheim und Region.",
+            description: "Maler, Boden, Elektro, Sanitär – koordiniert über Meisterbetriebe.",
             icon: Hammer,
             link: "/leistungen/renovierungsarbeiten",
         },
@@ -138,9 +123,9 @@
 </script>
 
 <MetaTags
-    title="Umzugsleistungen Hildesheim – Alle Services | Aust Umzüge"
-    description="Alle Umzugsleistungen in Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung, Entrümpelung und mehr. Kostenlose Beratung und Festpreisgarantie."
-    keywords="Umzugsleistungen, Umzugsservice, Privatumzug, Firmenumzug, Montage, Entrümpelung Hildesheim"
+    title="Leistungen — Umzug, Entrümpelung & Haushaltsauflösung Hildesheim"
+    description="Privatumzug, Firmenumzug, Haushaltsauflösung, Entrümpelung & Seniorenumzug in Hildesheim. Festpreis nach Vor-Ort-Termin · 71× ★★★★★ auf Google. ☎ 05121 755 83 79."
+    keywords="Umzugsservice Hildesheim, Umzugsleistungen Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen"
 />
 
@@ -150,15 +135,59 @@
 <main class="services-page">
     <div class="services-page__container">
         <header class="services-page__header">
-            <h1 class="services-page__title">Umzugsleistungen in Hildesheim & Umgebung</h1>
+            <h1 class="services-page__title">Umzugsservice Hildesheim – Alle Leistungen</h1>
             <p class="services-page__intro">
-                Als Umzugsunternehmen in Hildesheim bieten wir Ihnen alles aus einer Hand: vom klassischen Privatumzug über
-                Firmenumzüge und Seniorenumzüge bis hin zu Haushaltsauflösungen, Entrümpelungen, Möbelmontagen und Einlagerungen. Unser
-                erfahrenes Team arbeitet professionell, zuverlässig und zu fairen Festpreisen – ohne versteckte Kosten.
-                Ob innerhalb Hildesheims, in ganz Niedersachsen oder bundesweit: Wir planen Ihren Umzug individuell und
-                übernehmen auf Wunsch die komplette Organisation. Starten Sie mit einer kostenlosen Beratung vor Ort.
+                Ihr kompletter Umzugsservice aus Hildesheim: Privatumzug, Firmenumzug, Seniorenumzug,
+                Haushaltsauflösung und mehr – alles aus einer Hand, mit eigenen Mitarbeitern und
+                Festpreisgarantie. Auf dieser Seite finden Sie alle Umzugsleistungen im Überblick.
+                Klicken Sie auf eine Leistung für Details, Preisbeispiele und häufige Fragen.
             </p>
         </header>
+
+        <section class="why-section">
+            <h2 class="why-section__title">Warum unser Umzugsservice in Hildesheim?</h2>
+            <p>
+                Eine überregionale Umzugsfirma kennt Ihre Stadt nicht. Wir schon. Wir wissen,
+                wo in der Innenstadt das Halteverbot zwei Wochen vorher beim Bauamt beantragt
+                werden muss, welche Altbauten am Moritzberg keinen Aufzug haben und welche
+                Gründerzeit-Treppenhäuser in der Nordstadt zu schmal für den Standard-Möbellift sind.
+                Diese lokale Erfahrung spart Zeit, Geld und Nerven – und ist der Grund, warum sich
+                unsere Kunden in Hildesheim seit Jahren auf uns verlassen.
+            </p>
+            <p>
+                Was uns von vielen anderen Umzugsunternehmen unterscheidet: Wir arbeiten mit eigenen
+                festangestellten Mitarbeitern, nicht mit Tagelöhnern oder Subunternehmern. Das heißt:
+                dieselben Gesichter bei der Besichtigung wie am Umzugstag, geschultes Personal,
+                klare Verantwortung. Schäden – sollten sie passieren – sind über unsere
+                Betriebshaftpflicht und Transportversicherung vollständig abgedeckt.
+                Sie haften nicht und müssen nicht selbst nachverhandeln.
+            </p>
+            <p>
+                Unser Festpreis ist ein echter Festpreis. Wir besichtigen Ihren Haushalt kostenlos vor Ort,
+                kalkulieren sorgfältig und nennen Ihnen einen Preis, der auch dann gilt, wenn der Umzug
+                eine Stunde länger dauert oder das Treppenhaus enger ist als gedacht. Keine Überraschungen
+                auf der Rechnung – ein Punkt, den Sie in vielen Bewertungen unserer Kunden wiederfinden.
+            </p>
+
+            <h3 class="why-section__subtitle">Unser Umzugsservice umfasst</h3>
+            <p>
+                Den klassischen <a href="/leistungen/privatumzug">Privatumzug</a> innerhalb Hildesheims oder
+                deutschlandweit, <a href="/leistungen/firmenumzug">Firmenumzüge</a> mit minimaler Ausfallzeit,
+                <a href="/leistungen/seniorenumzug">Seniorenumzüge</a> ins betreute Wohnen,
+                <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösungen</a> nach Todesfall oder Pflegeheim-Umzug
+                sowie <a href="/leistungen/entruempelung">Entrümpelungen</a> von Keller, Dachboden oder Messie-Wohnungen.
+                Dazu Zusatzleistungen wie <a href="/leistungen/halteverbot">Halteverbot</a>,
+                <a href="/leistungen/montage">Möbelmontage</a> und <a href="/leistungen/lagerung">Einlagerung</a> –
+                alles aus einer Hand, von einem Ansprechpartner koordiniert.
+            </p>
+            <p>
+                Spezialaufträge wie <a href="/leistungen/praxisumzug">Praxisumzüge</a> mit DSGVO-konformem
+                Aktentransport, <a href="/leistungen/archiv-montage">Archiv-Montagen</a> für andere Umzugsunternehmen
+                oder <a href="/leistungen/fern-ueberseeumzug">Fern- und Überseeumzüge</a> übernehmen wir ebenfalls.
+                Eine vollständige Übersicht aller Leistungen finden Sie unten – jede mit eigener Detailseite,
+                konkreten Preisbeispielen und Antworten auf häufige Fragen.
+            </p>
+        </section>
 
         <div class="services-grid">
             {#each services as service}
@@ -244,6 +273,47 @@
         color: #4a5568;
         font-size: var(--text-lg);
         line-height: 1.6;
+    }
+
+    .why-section {
+        max-width: 820px;
+        margin: 0 auto var(--space-16);
+        padding: var(--space-8);
+        background-color: #fff;
+        border: 1px solid #f1f5f9;
+        border-radius: var(--radius-lg);
+    }
+
+    .why-section__title {
+        color: var(--color-info-bar);
+        font-size: clamp(var(--text-2xl), 3vw, var(--text-3xl));
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-4);
+    }
+
+    .why-section__subtitle {
+        color: var(--color-info-bar);
+        font-size: var(--text-xl);
+        font-weight: var(--font-semibold);
+        margin-top: var(--space-8);
+        margin-bottom: var(--space-3);
+    }
+
+    .why-section p {
+        color: #4a5568;
+        font-size: var(--text-base);
+        line-height: 1.7;
+        margin-bottom: var(--space-4);
+    }
+
+    .why-section a {
+        color: var(--color-nav-accent);
+        text-decoration: underline;
+        font-weight: var(--font-semibold);
+    }
+
+    .why-section a:hover {
+        color: var(--color-info-bar);
     }
 
     /* Grid */

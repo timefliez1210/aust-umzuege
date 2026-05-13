@@ -262,24 +262,9 @@
                 class="angebot-page__form"
                 onsubmit={handleSubmit}
                 name="kostenloses-angebot"
-                method="POST"
-                data-netlify="true"
-                netlify-honeypot="bot-field"
                 toolname="kostenloses-angebot"
                 tooldescription="Kostenloses Umzugsangebot anfordern bei Aust Umzüge Hildesheim. Kontaktdaten, Auszugs-/Einzugsadresse mit Etage, Wunschtermin und Zusatzleistungen angeben."
             >
-                <!-- Netlify form detection -->
-                <input
-                    type="hidden"
-                    name="form-name"
-                    value="kostenloses-angebot"
-                />
-                <p class="hidden">
-                    <label
-                        >Don't fill this out: <input name="bot-field" /></label
-                    >
-                </p>
-
                 <!-- Hidden fields for volume calculator data -->
                 <input
                     type="hidden"
@@ -378,6 +363,8 @@
                                 bind:value={formData.phone}
                                 placeholder="05121 1234567"
                                 required
+                                autocomplete="tel"
+                                inputmode="tel"
                                 toolparamtitle="Telefon"
                                 toolparamdescription="Telefonnummer des Kunden"
                             />
@@ -782,10 +769,6 @@
 </main>
 
 <style>
-    .hidden {
-        display: none;
-    }
-
     .angebot-page {
         background-color: #f4f6f8;
         min-height: 60vh;

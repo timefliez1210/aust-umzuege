@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import PriceCards from "$lib/components/PriceCards.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
@@ -50,8 +51,8 @@
 </script>
 
 <MetaTags
-    title="Entrümpelung Hildesheim – Keller, Dachboden & Messie | Aust Umzüge"
-    description="Entrümpelung als Vermieter nach schwierigem Mieter: Kosten nach §21 EStG als Werbungskosten absetzbar. Hildesheim, Festpreis, Entsorgungsnachweis inklusive."
+    title="Entrümpelung Hildesheim · Festpreis & Messie-Wohnung | Aust"
+    description="Entrümpelung in Hildesheim — Keller, Dachboden, Messie-Wohnung. Festpreis mit Wertanrechnung, Entsorgungsnachweis inklusive · 71× ★★★★★. ☎ 05121 755 83 79."
     keywords="Entrümpelung Hildesheim, Keller entrümpeln, Dachboden entrümpeln, Messie Wohnung, Garage entrümpeln"
     canonical="https://www.aust-umzuege.de/leistungen/entruempelung"
 />
@@ -197,6 +198,12 @@
                 <p>
                     <strong>5. Besenreine Übergabe:</strong> Der Raum ist leer, gefegt und bereit für die nächste Nutzung – ob Vermieterübergabe, Renovierung oder neuer Zweck.
                 </p>
+
+                <PriceCards
+                    service="entruempelung"
+                    title="Was kostet eine Entrümpelung? Unsere Pakete"
+                    intro="Der eigentliche Räumaufwand richtet sich nach diesen Crew-Paketen. Hinzu kommen Entsorgungs- und Containerkosten nach tatsächlichem Aufwand – verkaufsfähige Möbel rechnen wir transparent dagegen. Den verbindlichen Festpreis legen wir nach der kostenlosen Besichtigung fest."
+                />
 
                 <h2 class="section-title">Entrümpelung in Hildesheim und Umgebung</h2>
                 <p>

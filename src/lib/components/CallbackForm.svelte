@@ -3,6 +3,7 @@
     // Submits to /api/v1/flash-contact and broadcasts an `aust:callback:submitted`
     // window event + sessionStorage flag so other surfaces (sticky FAB) can react.
     import { ArrowRight } from "lucide-svelte";
+    import { API_BASE } from "$lib/utils/api.svelte";
 
     interface Props {
         compact?: boolean;
@@ -57,7 +58,7 @@
         }
         cbSubmitting = true;
         try {
-            const res = await fetch("/api/v1/flash-contact", {
+            const res = await fetch(`${API_BASE}/api/v1/flash-contact`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

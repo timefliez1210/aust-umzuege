@@ -205,7 +205,7 @@
         .hero__badge { padding: 0.55rem 0.75rem; gap: 0.65rem; }
         .hero__badge-icon { width: 1.75rem; height: 1.75rem; }
         .hero__badge-text strong { font-size: 0.88rem; }
-        .hero__badge-text span { display: none; }
+        .hero__badge-text span { font-size: 0.78rem; line-height: 1.3; }
         .hero__cta { padding: 0.85rem 1.1rem; font-size: 0.92rem; }
         .hero__cta--secondary { width: 100%; justify-content: center; }
         .hero__owner { max-width: 100%; }

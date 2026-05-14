@@ -77,7 +77,7 @@ export const crewPackages: CrewPackage[] = [
 export const baseDisclaimers = [
     "Alle Preise inkl. 19 % MwSt.",
     "Anfahrt und Rückfahrt zählen zur Arbeitszeit (Beginn ab Standort Hildesheim).",
-    "Bei Anfahrten über 30 km außerhalb Hildesheims berechnen wir 0,80 € pro km.",
+    "Bei Anfahrten über 30 km außerhalb Hildesheims berechnen wir 1,20 € pro km.",
 ];
 
 // Seitenspezifische Zusatz-Disclaimer

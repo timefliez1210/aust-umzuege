@@ -102,7 +102,7 @@
             <div class="hero__ctas">
                 <a class="hero__cta hero__cta--secondary" href={phoneHref}>
                     <Phone size={16} strokeWidth={2.5} />
-                    Lieber direkt anrufen: {phoneDisplay}
+                    Lieber direkt anrufen: <span class="hero__cta-phone">{phoneDisplay}</span>
                 </a>
             </div>
         </div>
@@ -132,7 +132,7 @@
                 <div class="hero__quote-mark" aria-hidden="true">„</div>
                 <p>{testimonialQuote}</p>
                 <footer>
-                    <div class="hero__quote-stars" aria-label="5 von 5 Sternen">
+                    <div class="hero__quote-stars" role="img" aria-label="5 von 5 Sternen">
                         {#each Array(5) as _, i (i)}
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -350,6 +350,10 @@
     .hero__cta--secondary:hover { background: var(--hero-navy); color: #fff; }
 
     /* Callback card — primary lead capture */
+    .hero__cta-phone {
+        white-space: nowrap;
+    }
+
     .hero__callback {
         background: var(--hero-card);
         border: 1px solid var(--hero-line);

@@ -111,6 +111,7 @@
                 toolname="kontakt"
                 tooldescription="Kontaktformular für allgemeine Anfragen an Aust Umzüge Hildesheim. Senden Sie eine Nachricht mit Name, E-Mail und Anliegen."
             >
+                <input type="hidden" name="form-name" value="kontakt" />
                 <div class="contact-form__group contact-form__group--radio">
                     <label class="contact-form__radio-label">Anrede:</label>
                     <div class="contact-form__radio-row">

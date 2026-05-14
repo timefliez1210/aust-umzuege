@@ -265,6 +265,7 @@
                 toolname="kostenloses-angebot"
                 tooldescription="Kostenloses Umzugsangebot anfordern bei Aust Umzüge Hildesheim. Kontaktdaten, Auszugs-/Einzugsadresse mit Etage, Wunschtermin und Zusatzleistungen angeben."
             >
+                <input type="hidden" name="form-name" value="kostenloses-angebot" />
                 <!-- Hidden fields for volume calculator data -->
                 <input
                     type="hidden"

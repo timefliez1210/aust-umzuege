@@ -18,7 +18,7 @@
     }
 
     let {
-        tagline = "Umzüge, Entrümpelung und Haushaltsauflösungen",
+        tagline = "Unsere Leistungen",
         heading = "Alle Leistungen im Überblick",
         ctaText = "Leistungen",
         ctaHref = "/leistungen",
@@ -50,9 +50,9 @@
             {
                 image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.webp",
                 title: "Haushaltsauflösungen",
-                alt: "Haushaltsauflösung Hildesheim – Entrümpelung einer Wohnung",
+                alt: "Diskrete Wohnungsauflösung – Aust Umzüge Team beim Räumen",
                 description:
-                    "Wir lösen Haushalte diskret auf und entrümpeln Keller, Dachboden oder Garage. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
+                    "Wir lösen Haushalte diskret auf und räumen Keller, Dachboden oder Garage. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
                 href: "/leistungen/haushaltsaufloesung",
             },
             {

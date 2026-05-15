@@ -102,6 +102,7 @@ export const businessInfo = {
 	name: "Aust Umzüge & Haushaltsauflösungen",
 	alternateName: "Aust Umzüge",
 	legalName: "Aust Umzüge & Haushaltsauflösungen",
+	foundingDate: "2019",
 	url: "https://www.aust-umzuege.de",
 	logo: {
 		"@type": "ImageObject",

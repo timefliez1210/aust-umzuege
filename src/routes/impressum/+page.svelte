@@ -45,7 +45,7 @@
 
         <section class="impressum__section">
             <h2>Telefon</h2>
-            <p><a href="tel:+4951217558379">05121 – 7558379</a></p>
+            <p><a href="tel:+4951217558379">05121 – 755 83 79</a></p>
         </section>
 
         <section class="impressum__section">

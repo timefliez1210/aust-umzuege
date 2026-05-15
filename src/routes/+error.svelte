@@ -11,7 +11,10 @@
 	<h1>404</h1>
 	<p class="error-message">Wir haben hier leider keine Seite gefunden</p>
 	<p class="error-hint">Die Seite existiert nicht mehr oder die Adresse wurde falsch eingegeben.</p>
-	<CTAButton text="Zur Startseite" href="/" />
+	<div class="error-actions">
+		<CTAButton text="Zur Startseite" href="/" />
+		<CTAButton text="Kostenloses Angebot" href="/kostenloses-angebot" />
+	</div>
 </section>
 
 <style>
@@ -43,5 +46,12 @@
 		font-size: 1rem;
 		color: #666;
 		margin-bottom: 2rem;
+	}
+
+	.error-actions {
+		display: flex;
+		gap: 1rem;
+		flex-wrap: wrap;
+		justify-content: center;
 	}
 </style>

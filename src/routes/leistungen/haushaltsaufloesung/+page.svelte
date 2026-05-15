@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import PriceCards from "$lib/components/PriceCards.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
@@ -40,7 +41,7 @@
         },
         {
             question: "Wer kümmert sich um die fachgerechte Entsorgung?",
-            answer: "Wir übernehmen die komplette Entsorgung nach gesetzlichen Vorschriften: Sperrmüll, Elektrogeräte, Sondermüll und Bauschutt entsorgen wir über zertifizierte Entsorgungsstellen in Hildesheim. Auf Wunsch erhalten Sie Entsorgungsnachweise für Ihre Unterlagen."
+            answer: "Wir übernehmen die komplette Entsorgung nach gesetzlichen Vorschriften: Sperrmüll, Elektrogeräte, Sondermüll und Bauschutt entsorgen wir ausschließlich über den ZAH (Zweckverband Abfallwirtschaft Hildesheim) und andere zertifizierte Entsorgungsstellen – kein illegales Abladen. Sie erhalten Entsorgungsnachweise, die belegen, wo Ihr Hausrat gelandet ist."
         },
         {
             question: "Können Sie auch im Namen von Erben oder Nachlassverwaltern tätig werden?",
@@ -54,8 +55,8 @@
 </script>
 
 <MetaTags
-    title="Haushaltsauflösung Hildesheim – Diskret & Festpreis | Aust Umzüge"
-    description="Haushaltsauflösung im Erbfall: Kosten als Nachlassverbindlichkeit nach §10 ErbStG absetzbar – mindert die Erbschaftsteuer direkt. Hildesheim, Festpreis, diskret."
+    title="Haushaltsauflösung Hildesheim · Diskret & Festpreis | Aust"
+    description="Haushaltsauflösung in Hildesheim — diskret, Festpreis nach Vor-Ort-Termin, mit Wertanrechnung. Im Erbfall als Nachlassverbindlichkeit absetzbar (§10 ErbStG). 71× ★★★★★."
     keywords="Haushaltsauflösung Hildesheim, Wohnungsauflösung, Nachlassräumung, besenreine Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />
@@ -181,7 +182,7 @@
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Fachgerechte Entsorgung mit Nachweis</span>
+                        <span>Entsorgung über ZAH und zertifizierte Betriebe – mit Nachweis</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
@@ -203,13 +204,27 @@
                     <strong>3. Wertanrechnung:</strong> Gut erhaltene Möbel, Antiquitäten oder Sammlungen verkaufen wir an Händler oder spenden sie an soziale Einrichtungen in Hildesheim. Den Erlös rechnen wir transparent gegen unsere Kosten auf. So zahlen Sie am Ende oft deutlich weniger.
                 </p>
                 <p>
-                    <strong>4. Fachgerechte Entsorgung:</strong> Alles, was nicht mehr verwertbar ist, entsorgen wir nach gesetzlichen Vorschriften: Sperrmüll, Elektroschrott, Farben, Chemikalien – über zertifizierte Entsorgungsbetriebe. Auf Wunsch erhalten Sie Nachweise für Ihre Unterlagen.
+                    <strong>4. Fachgerechte Entsorgung:</strong> Alles, was nicht mehr verwertbar ist, entsorgen wir nach gesetzlichen Vorschriften: Sperrmüll, Elektroschrott, Farben, Chemikalien – ausschließlich über den ZAH (Zweckverband Abfallwirtschaft Hildesheim) und andere zertifizierte Entsorgungsbetriebe. Kein illegales Abladen, keine grauen Kanäle. Sie erhalten einen Entsorgungsnachweis, der belegt, wo und wie Ihr Hausrat entsorgt wurde.
                 </p>
                 <p>
                     <strong>5. Besenreine Übergabe:</strong> Am Ende ist die Wohnung leer, gefegt und bereit für die Schlüsselübergabe. Auf Wunsch entfernen wir auch Tapeten, Teppichböden oder Einbauten – sodass die Wohnung renovierungsbereit ist.
                 </p>
                 <p>
                     <strong>6. Schnelle Abwicklung:</strong> Eine durchschnittliche 3-Zimmer-Wohnung räumen wir in 1–2 Tagen komplett. Bei größeren Objekten planen wir entsprechend mehr Zeit ein. Sie erhalten einen verbindlichen Termin, auf den Sie sich verlassen können.
+                </p>
+
+                <PriceCards
+                    service="haushaltsaufloesung"
+                    title="Was kostet eine Haushaltsauflösung? Unsere Pakete"
+                    intro="Der reine Räum- und Transportaufwand richtet sich nach diesen Crew-Paketen. Entsorgungs- und Containerkosten kommen nach tatsächlichem Aufwand hinzu – verkaufsfähige Möbel und Wertgegenstände werden transparent gegengerechnet. Den verbindlichen Festpreis legen wir nach der kostenlosen Besichtigung fest."
+                />
+
+                <h2 class="section-title">Umzug ins Pflegeheim oder in eine kleinere Wohnung?</h2>
+                <p>
+                    Nicht jede Haushaltsauflösung folgt auf einen Todesfall. Viele unserer Kunden regeln ihren Haushalt selbst – weil der Umzug ins Pflegeheim ansteht, weil die Kinder aus dem Haus sind und die Wohnung zu groß geworden ist, oder weil ein Neuanfang einen klaren Schnitt verlangt.
+                </p>
+                <p>
+                    In diesen Situationen geht es oft darum, das Richtige zu behalten und den Rest würdevoll loszulassen. Wir helfen Ihnen dabei: Was mit in die neue Wohnung soll, transportieren wir. Was gut erhalten ist, spenden wir oder rechnen es gegen die Kosten auf. Den Rest entsorgen wir fachgerecht. Sie entscheiden, wir kümmern uns um die Ausführung – in Ihrem Tempo.
                 </p>
 
                 <h2 class="section-title">Haushaltsauflösung in Hildesheim und Umgebung</h2>
@@ -221,6 +236,13 @@
                 </p>
                 <p>
                     Besonders bei Haushaltsauflösungen nach einem Todesfall arbeiten wir diskret und respektvoll. Wir wissen, wie emotional belastend diese Situation ist – und geben Ihnen die Zeit, die Sie brauchen. Unser Team geht behutsam mit den Hinterlassenschaften um und behandelt jeden Gegenstand mit der Sorgfalt, die er verdient.
+                </p>
+
+                <h3 class="highlight-title">Entrümpelung, Haushaltsauflösung oder Nachlassverwertung – was ist der Unterschied?</h3>
+                <p>
+                    <strong>Entrümpelung</strong> meint das Räumen einzelner Bereiche: Keller, Dachboden, Garage oder einzelne Zimmer. Kein vollständiger Haushalt, kein Todesfall vorausgesetzt.<br />
+                    <strong>Haushaltsauflösung</strong> ist die vollständige Auflösung eines Haushalts – ob nach einem Todesfall, einem Pflegeheimumzug oder einem Neuanfang. Der gesamte Wohnraum wird geräumt, Wertgegenstände werden gesichert oder angerechnet, die Übergabe erfolgt besenrein.<br />
+                    <strong>Nachlassverwertung</strong> geht einen Schritt weiter: Hierbei werden Nachlässe gezielt auf verwertbare Gegenstände gesichtet, Antiquitäten und Sammlungen bewertet und vermarktet. Sprechen Sie uns an, wenn Sie einen Nachlass mit besonderem Inventar haben – wir koordinieren das.
                 </p>
 
                 <h3 class="highlight-title">Verwandte Leistungen</h3>

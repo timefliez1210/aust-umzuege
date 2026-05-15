@@ -57,9 +57,9 @@
 	>
 		<div class="cookie-banner__container">
 			<div class="cookie-banner__content">
-				<h2 id="cookie-banner-title" class="cookie-banner__title">
+				<p id="cookie-banner-title" class="cookie-banner__title">
 					🍪 Wir respektieren Ihre Privatsphäre
-				</h2>
+				</p>
 				<p class="cookie-banner__text">
 					Wir verwenden Cookies, um Ihnen die bestmögliche Erfahrung auf unserer
 					Website zu bieten. Notwendige Cookies sind für die Funktion der Website
@@ -113,9 +113,9 @@
 		aria-modal="true"
 	>
 		<div class="cookie-settings__header">
-			<h2 id="cookie-settings-title" class="cookie-settings__title">
+			<p id="cookie-settings-title" class="cookie-settings__title">
 				Cookie-Einstellungen
-			</h2>
+			</p>
 			<button
 				type="button"
 				class="cookie-settings__close"

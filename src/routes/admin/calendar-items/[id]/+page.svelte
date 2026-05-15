@@ -64,6 +64,7 @@
 	let newCustEmail = $state('');
 	let newCustName = $state('');
 	let newCustPhone = $state('');
+	let newCustSalutation = $state('');
 	let savingCustomer = $state(false);
 
 	$effect(() => {
@@ -184,7 +185,7 @@
 			customerMode = 'view';
 			customerSearch = '';
 			customerResults = [];
-			newCustEmail = ''; newCustName = ''; newCustPhone = '';
+			newCustEmail = ''; newCustName = ''; newCustPhone = ''; newCustSalutation = '';
 			showToast('Kunde zugewiesen', 'success');
 		} catch (e) { showToast((e as Error).message, 'error'); }
 		finally { savingCustomer = false; }
@@ -204,6 +205,7 @@
 				email: newCustEmail.trim() || null,
 				name: newCustName.trim() || null,
 				phone: newCustPhone.trim() || null,
+				salutation: newCustSalutation || null,
 			});
 			await assignCustomer(c.id);
 		} catch (e) { showToast((e as Error).message, 'error'); }
@@ -359,6 +361,15 @@
 					</div>
 				{:else}
 					<div class="customer-create">
+						<div class="field">
+							<label for="nc-salutation">Anrede</label>
+							<select id="nc-salutation" bind:value={newCustSalutation}>
+								<option value="">—</option>
+								<option value="Herr">Herr</option>
+								<option value="Frau">Frau</option>
+								<option value="D">Divers</option>
+							</select>
+						</div>
 						<div class="field">
 							<label for="nc-email">E-Mail</label>
 							<input id="nc-email" type="email" bind:value={newCustEmail} placeholder="kunde@example.com" />

@@ -23,7 +23,7 @@
                 </div>
                 <h3 class="contact-cta__title">Telefon</h3>
                 <p class="contact-cta__text">
-                    05121 – 7558379<br />
+                    05121 – 755 83 79<br />
                     Mobil: 0176 – 70745281
                 </p>
             </a>

@@ -49,6 +49,7 @@
 	let newCustomerEmail = $state('');
 	let newCustomerName = $state('');
 	let newCustomerPhone = $state('');
+	let newCustomerSalutation = $state('');
 
 	// Addresses
 	let originStreet = $state('');
@@ -203,6 +204,7 @@
 		newCustomerEmail = '';
 		newCustomerName = '';
 		newCustomerPhone = '';
+		newCustomerSalutation = '';
 		newCustomerCompanyName = '';
 		customerType = 'private';
 		bookingForSelf = true;
@@ -290,6 +292,7 @@
 					email: newCustomerEmail.trim() || null,
 					name: newCustomerName.trim() || null,
 					phone: newCustomerPhone.trim() || null,
+					salutation: newCustomerSalutation || null,
 					customer_type: customerType || null,
 					company_name: customerType === 'business' ? newCustomerCompanyName.trim() || null : null,
 				});
@@ -465,6 +468,12 @@
 				{#if customerType === 'business'}
 					<input type="text" placeholder="Firmenname *" bind:value={newCustomerCompanyName} class="form-input" />
 				{/if}
+				<select bind:value={newCustomerSalutation} class="form-input">
+					<option value="">Anrede</option>
+					<option value="Herr">Herr</option>
+					<option value="Frau">Frau</option>
+					<option value="D">Divers</option>
+				</select>
 				<input type="email" placeholder="E-Mail" bind:value={newCustomerEmail} class="form-input" />
 				<input type="text" placeholder="Name" bind:value={newCustomerName} class="form-input" />
 				<input type="tel" placeholder="Telefon" bind:value={newCustomerPhone} class="form-input" />

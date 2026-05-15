@@ -4,6 +4,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import FAQSection from "$lib/components/FAQSection.svelte";
+    import PriceCards from "$lib/components/PriceCards.svelte";
     import ServiceReviews from "$lib/components/ServiceReviews.svelte";
     import { services, businessInfoSlim, createBreadcrumbs } from "$lib/data/structuredData";
 
@@ -54,8 +55,8 @@
 </script>
 
 <MetaTags
-    title="Umziehen in Hildesheim – Festpreis, Stressfrei & Zuverlässig"
-    description="Umzugskosten steuerlich absetzen: bis zu 4.000 € via §35a EStG oder volle Werbungskosten bei beruflichem Umzug. Privatumzug Hildesheim – Festpreis, richtige Rechnung inklusive."
+    title="Privatumzug Hildesheim · Festpreis ohne Stundenzähler | Aust"
+    description="Privatumzug Hildesheim zum Festpreis — Vor-Ort-Termin, verbindliches Angebot in 48 h, 71× ★★★★★. Bis 4.000 € absetzbar (§35a EStG). ☎ 05121 755 83 79."
     keywords="Privatumzug Hildesheim, Umzug Privatpersonen, Wohnungsumzug, Umzugsfirma Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />
@@ -236,6 +237,25 @@
                     <strong>6. Aufbau und Feinschliff</strong><br>
                     Möbel wieder zusammenbauen, Küche anschließen, Lampen aufhängen. Erst wenn Sie sagen "alles gut", ist der Umzug für uns erledigt. Nicht vorher.
                 </p>
+
+                <PriceCards
+                    service="privatumzug"
+                    title="Was kostet ein Umzug? Unsere Stundenpakete zur Orientierung"
+                    intro="Damit Sie eine ehrliche Hausnummer haben: Diese Pakete sind nach Stunden kalkuliert und decken typische Privatumzüge in Hildesheim ab – von der 1-Zimmer-Wohnung bis zum 4-Zimmer-Haushalt. Sie können sie direkt so buchen, wenn Ihr Umzug überschaubar ist."
+                />
+
+                <aside class="highlight-box">
+                    <div class="highlight-box__icon" aria-hidden="true">⚠️</div>
+                    <div class="highlight-box__body">
+                        <p class="highlight-box__title">Wichtig zu wissen</p>
+                        <p>
+                            Wie lange ein Umzug tatsächlich dauert, hängt von Faktoren ab, die man von außen nicht sieht – Etage und Treppenhaus, Laufweg zum LKW, Fahrstuhl oder Möbellift, Parksituation, wie weit Sie selbst schon gepackt haben. Die Pakete bezahlen die reinen Arbeitsstunden, keine Garantie, dass damit auch alles fertig wird.
+                        </p>
+                        <p>
+                            Wer auf Nummer sicher gehen möchte, vereinbart eine <strong>kostenlose Vor-Ort-Besichtigung</strong>: Danach nennen wir einen verbindlichen <strong>Festpreis</strong> – und der Umzug wird garantiert erledigt, egal wie lange wir dafür brauchen.
+                        </p>
+                    </div>
+                </aside>
 
                 <h2 class="section-title">Privatumzug in Hildesheim und Umgebung</h2>
                 <p>
@@ -513,6 +533,39 @@
     }
 
     .hook-box p:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .highlight-box {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 4px solid #f59e0b;
+        border-radius: var(--radius-lg);
+        padding: var(--space-5) var(--space-6);
+        margin: var(--space-6) 0 var(--space-10);
+    }
+    .highlight-box__icon {
+        font-size: 1.5rem;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    .highlight-box__body {
+        flex: 1;
+    }
+    .highlight-box__title {
+        font-weight: 700;
+        color: #78350f;
+        margin: 0 0 var(--space-2) 0 !important;
+        font-size: var(--text-base);
+    }
+    .highlight-box__body p {
+        color: #422006;
+        margin-bottom: var(--space-3) !important;
+    }
+    .highlight-box__body p:last-child {
         margin-bottom: 0 !important;
     }
 </style>

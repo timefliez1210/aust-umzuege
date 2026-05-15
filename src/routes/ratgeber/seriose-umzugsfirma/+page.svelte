@@ -122,12 +122,23 @@
 						billig" anbietet, spart an der falschen Stelle – und das endet oft
 						teurer als gedacht.
 					</p>
+					<div class="highlight-box">
+						<p>
+							<strong>Faustregel:</strong> Holen Sie mindestens drei Angebote ein. Seriöse Anbieter kalkulieren ähnlich – die Preise bewegen sich meist in einem Korridor von rund zehn Prozent. Liegt ein Angebot deutlich darunter, fragen Sie konkret nach: Welche Leistungen sind enthalten? Welche Versicherung greift? Wer packt? Wer haftet bei Schäden? Bekommen Sie auf diese Fragen ausweichende Antworten, ist der niedrige Preis fast immer ein Lockvogel.
+						</p>
+					</div>
 					<p>
 						Klassische Masche: Der Lockvogel-Preis. Am Umzugstag kommen dann
 						plötzlich "unvorhergesehene Kosten" für Dinge dazu, die von Anfang an
 						klar waren. Treppenhaus im dritten Stock? "Ach, das haben Sie nicht
 						erwähnt!" Spoiler: Haben Sie. Im Endeffekt zahlen Sie mehr als bei einem
 						ehrlichen Angebot – nur mit deutlich mehr Ärger.
+					</p>
+					<p>
+						Ein realer Erfahrungsbericht aus einem deutschen Forum macht greifbar, wohin so etwas führen kann: Eine Familie zog mit einer günstig wirkenden Spedition von Hannover ins Ausland. Vorgespräche und Verträge "machten einen sehr ordentlichen Eindruck". Am Abholtag durften plötzlich keine Flüssigkeiten mehr mitgenommen werden – obwohl vorher alles besprochen war. Halb angefangene Pflegeprodukte, Putzmittel, Vorräte: zurückgelassen. Die Kartons wurden im LKW nur aneinandergestapelt, nicht gepolstert oder gesichert. Was an Möbeln und Geschirr ankam, war entsprechend.
+					</p>
+					<p>
+						Das Muster ist immer gleich: niedriger Preis, freundliche Vorgespräche, am Tag der Wahrheit kippt das Versprechen. Wer auf Festpreisbasis nach ordentlicher Besichtigung arbeitet, hat keinen Grund für solche Last-Minute-Überraschungen.
 					</p>
 
 					<h3>Keine Besichtigung vor Ort</h3>

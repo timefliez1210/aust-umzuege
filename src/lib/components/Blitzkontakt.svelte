@@ -2,6 +2,7 @@
     // Blitzkontakt — ultra-quick callback request.
     // Posts to public /api/v1/flash-contact; backend pings Alex on Telegram immediately.
     import { Phone } from "lucide-svelte";
+    import { API_BASE } from "$lib/utils/api.svelte";
 
     type TimePref = "any_time" | "08-10" | "10-12" | "14-16" | "16-18";
 
@@ -29,7 +30,7 @@
         }
         submitting = true;
         try {
-            const res = await fetch("/api/v1/flash-contact", {
+            const res = await fetch(`${API_BASE}/api/v1/flash-contact`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -209,7 +209,7 @@
         <!-- CTA Button -->
         <div class="navbar__cta-wrapper">
             <CTAButton
-                text="Kostenfreies Angebot"
+                text="Kostenloses Angebot"
                 href="/kostenloses-angebot"
             />
         </div>
@@ -287,7 +287,7 @@
                     class="navbar__mobile-cta"
                     onclick={closeMobileMenu}
                 >
-                    Kostenfreies Angebot
+                    Kostenloses Angebot
                 </a>
             </li>
         </ul>

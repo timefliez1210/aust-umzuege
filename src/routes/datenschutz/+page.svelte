@@ -133,7 +133,7 @@
             <p>
                 Alex Aust<br />
                 Telefon:
-                <a href="tel:+4951217558379">+49 (0) 5121- 7558379</a><br />
+                <a href="tel:+4951217558379">05121 – 755 83 79</a><br />
                 E-Mail:
                 <a href="mailto:info@aust-umzuege.de">info@aust-umzuege.de</a>
             </p>

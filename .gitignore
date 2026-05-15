@@ -26,6 +26,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 SEO-TODO.md
+TODO-SEO.md
 
 # Leftover one-off deploy scripts (not part of the standard workflow)
 deploy-kas.py

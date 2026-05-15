@@ -405,6 +405,14 @@
                         </div>
                     </div>
 
+                    <h3>Sonderfall doppelte Miete im Übergangsmonat</h3>
+                    <p>
+                        Die gesetzliche Kündigungsfrist von drei Monaten und der Wunschtermin des neuen Vermieters passen selten zusammen – ein Übergangsmonat mit zwei laufenden Mietverhältnissen ist oft unvermeidbar. Auch diese <strong>Doppelmiete</strong> zählt zu den Wohnungsbeschaffungskosten nach § 22 Abs. 6 Satz 1 SGB II und kann übernommen werden, wenn drei Voraussetzungen erfüllt sind: Der Umzug ist anerkannt notwendig, die Überlappung ist <em>unvermeidbar</em> (kein Nachmieter findbar, keine Aufhebungsvereinbarung mit dem alten Vermieter erreichbar), und sie wurde in der schriftlichen Zusicherung ausdrücklich aufgenommen.
+                    </p>
+                    <p>
+                        In der Praxis erkennen die meisten Jobcenter <strong>einen Übergangsmonat</strong> an. Längere Überlappungen werden nur bei besonderem Begründungsbedarf bewilligt. Reichen Sie zur Beantragung ein: alten Mietvertrag mit Kündigungsschreiben und Eingangsbestätigung, neuen Mietvertrag bzw. Wohnungsangebot, sowie eine kurze schriftliche Begründung, warum eine zeitliche Überschneidung nicht vermeidbar war (z.&nbsp;B. erfolglose Nachmietersuche, dokumentiert durch Inserate). Wichtig: Der Posten muss <em>vor</em> dem Umzug im Zusicherungsbescheid stehen – eine nachträgliche Erstattung der bereits gezahlten Doppelmiete wird in der Regel abgelehnt.
+                    </p>
+
                     <p>
                         Sonderfall <strong>Erstausstattung</strong>: Für Personen, die erstmals einen eigenen Haushalt gründen oder durch besondere Umstände ohne Hausrat dastehen (z.&nbsp;B. nach Frauenhaus-Aufenthalt), greift § 24 Abs. 3 Nr. 1 SGB II. Möbel, Haushaltsgeräte und Einrichtungsgegenstände können dann zusätzlich als Zuschuss oder Darlehen gewährt werden – als eigenständiger Antrag, getrennt vom Umzugskostenantrag.
                     </p>

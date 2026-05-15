@@ -257,6 +257,7 @@
 	let qiEmail = $state('');
 	let qiName = $state('');
 	let qiPhone = $state('');
+	let qiSalutation = $state('');
 	let qiOriginStreet = $state('');
 	let qiOriginCity = $state('');
 	let qiOriginPostal = $state('');
@@ -279,6 +280,7 @@
 	let qtNewCustEmail = $state('');
 	let qtNewCustName = $state('');
 	let qtNewCustPhone = $state('');
+	let qtNewCustSalutation = $state('');
 	let qtStartTime = $state('09:00');
 	let qtEndTime = $state('');
 
@@ -832,14 +834,14 @@
 		quickCreateError = '';
 		qiServiceType = 'privatumzug';
 		qiCustomerMode = 'existing'; qiCustomerSearch = ''; qiCustomerResults = []; qiCustomerId = null; qiCustomerLabel = '';
-		qiEmail = ''; qiName = ''; qiPhone = '';
+		qiEmail = ''; qiName = ''; qiPhone = ''; qiSalutation = '';
 		qiOriginStreet = ''; qiOriginCity = ''; qiOriginPostal = '';
 		qiDestStreet = ''; qiDestCity = ''; qiDestPostal = '';
 		qiNotes = '';
 		qtTitle = ''; qtCategory = 'intern'; qtLocation = ''; qtDuration = 8;
 		qtStartTime = '09:00'; qtEndTime = '';
 		qtCustomerMode = 'none'; qtCustomerSearch = ''; qtCustomerResults = []; qtCustomerId = null; qtCustomerLabel = '';
-		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = '';
+		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = ''; qtNewCustSalutation = '';
 	}
 
 	/**
@@ -880,6 +882,7 @@
 					email: qiEmail.trim() || null,
 					name: qiName.trim() || null,
 					phone: qiPhone.trim() || null,
+					salutation: qiSalutation || null,
 				});
 				customerId = c.id;
 			}
@@ -951,6 +954,7 @@
 					email: qtNewCustEmail.trim() || null,
 					name: qtNewCustName.trim() || null,
 					phone: qtNewCustPhone.trim() || null,
+					salutation: qtNewCustSalutation || null,
 				});
 				customerId = c.id;
 			}
@@ -1468,6 +1472,15 @@
 					</div>
 				{:else}
 					<div class="qc-row">
+						<div class="qc-field">
+							<label for="qi-salutation">Anrede</label>
+							<select id="qi-salutation" bind:value={qiSalutation}>
+								<option value="">—</option>
+								<option value="Herr">Herr</option>
+								<option value="Frau">Frau</option>
+								<option value="D">Divers</option>
+							</select>
+						</div>
 						<div class="qc-field qc-field-grow">
 							<label for="qi-email">E-Mail</label>
 							<input id="qi-email" type="email" bind:value={qiEmail} placeholder="kunde@example.com" />
@@ -1616,6 +1629,15 @@
 					</div>
 				{:else if qtCustomerMode === 'new'}
 					<div class="qc-row">
+						<div class="qc-field">
+							<label for="qtc-salutation">Anrede</label>
+							<select id="qtc-salutation" bind:value={qtNewCustSalutation}>
+								<option value="">—</option>
+								<option value="Herr">Herr</option>
+								<option value="Frau">Frau</option>
+								<option value="D">Divers</option>
+							</select>
+						</div>
 						<div class="qc-field qc-field-grow">
 							<label for="qtc-email">E-Mail</label>
 							<input id="qtc-email" type="email" bind:value={qtNewCustEmail} placeholder="kunde@example.com" />

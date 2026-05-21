@@ -901,8 +901,8 @@
 				start_time: termEditStartTime ? (termEditStartTime.length === 5 ? termEditStartTime + ':00' : termEditStartTime) : undefined,
 				end_time: termEditEndTime ? (termEditEndTime.length === 5 ? termEditEndTime + ':00' : termEditEndTime) : null,
 				duration_hours: parseFloat(termEditDuration) || 0,
-				location: termEditLocation || null,
-				description: termEditDescription || null,
+				location: termEditLocation,
+				description: termEditDescription,
 			});
 			showToast('Termin gespeichert', 'success');
 			await onLoadSchedule();

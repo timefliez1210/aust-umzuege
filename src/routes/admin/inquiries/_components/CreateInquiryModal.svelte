@@ -343,7 +343,7 @@
 				});
 				body.recipient_id = recipientRes.id;
 			}
-			if (showBilling && billingStreet.trim() && billingCity.trim()) {
+			if ((showBilling || customerType === 'business') && billingStreet.trim() && billingCity.trim()) {
 				body.billing_address = {
 					street: billingStreet.trim(),
 					house_number: billingNumber.trim() || null,
@@ -566,15 +566,17 @@
 	<!-- Billing address (when not auto-derived from origin/destination) -->
 	{#if customerType === 'business' || !bookingForSelf}
 	<div class="create-section__group">
-");
 		<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
 			<h3 style="margin:0;">Rechnungsadresse</h3>
-			<button type="button" class="toggle-btn" style="font-size:0.75rem;padding:0.2rem 0.5rem;"
-				onclick={() => showBilling = !showBilling}>{showBilling ? 'Ausblenden' : 'Abweichend'}</button>
+			{#if customerType !== 'business'}
+				<button type="button" class="toggle-btn" style="font-size:0.75rem;padding:0.2rem 0.5rem;"
+					onclick={() => showBilling = !showBilling}>{showBilling ? 'Ausblenden' : 'Abweichend'}</button>
+			{/if}
 		</div>
-		{#if !showBilling}
-			<p class="form-hint">{customerType === 'business' ? 'Firmensitz wird als Rechnungsadresse verwendet.' : 'Auszugsadresse wird als Rechnungsadresse verwendet.'}</p>
-		{:else}
+		{#if customerType === 'business'}
+			<p class="form-hint">Firmensitz des Kunden — wird als Rechnungsadresse verwendet.</p>
+		{/if}
+		{#if customerType === 'business' || showBilling}
 			<div class="address-row">
 				<input type="text" placeholder="Straße" bind:value={billingStreet} class="form-input" style="flex:1;" />
 				<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" style="max-width:80px;" />
@@ -583,6 +585,8 @@
 				<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" style="max-width:100px;" />
 				<input type="text" placeholder="Stadt" bind:value={billingCity} class="form-input" style="flex:1;" />
 			</div>
+		{:else}
+			<p class="form-hint">Auszugsadresse wird als Rechnungsadresse verwendet.</p>
 		{/if}
 	</div>
 	{/if}

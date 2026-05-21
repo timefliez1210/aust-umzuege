@@ -101,6 +101,7 @@
 		body.set('form-name', 'kontakt');
 		body.set('name', name.trim());
 		body.set('email', email.trim());
+		if (phone.trim()) body.set('phone', phone.trim());
 		body.set('nachricht', message.trim());
 		body.set('datenschutz-akzeptiert', '1');
 		const res = await fetch('/send-mail.php', {
@@ -205,6 +206,17 @@
 								bind:value={email}
 								placeholder="ihre@email.de"
 								autocomplete="email"
+							/>
+						</label>
+						<label class="field">
+							<span class="field__lbl">Telefon <span class="field__opt">optional</span></span>
+							<input
+								type="tel"
+								inputmode="tel"
+								bind:value={phone}
+								placeholder="0151 23 45 67 89"
+								autocomplete="tel"
+								maxlength="40"
 							/>
 						</label>
 						<label class="field">
@@ -351,6 +363,13 @@
 		text-transform: uppercase;
 		color: var(--muted-on-light);
 		font-weight: 600;
+	}
+	.field__opt {
+		font-weight: 500;
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--muted-on-light);
+		opacity: 0.7;
 	}
 	.field input, .field textarea {
 		width: 100%;

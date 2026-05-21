@@ -15,6 +15,19 @@
   ]);
 </script>
 
+<svelte:head>
+  <!-- Preload the real LCP element: HeroV2 owner image -->
+  <link
+    rel="preload"
+    as="image"
+    href="/seniorenumzuege-hildesheim-carousel-6.webp"
+    imagesrcset="/seniorenumzuege-hildesheim-carousel-6-400w.webp 400w, /seniorenumzuege-hildesheim-carousel-6-600w.webp 600w, /seniorenumzuege-hildesheim-carousel-6-800w.webp 800w"
+    imagesizes="(max-width: 1023px) 80vw, 480px"
+    type="image/webp"
+    fetchpriority="high"
+  />
+</svelte:head>
+
 <MetaTags
   title="Umzugsunternehmen Hildesheim · Festpreis & 71× ★★★★★ | Aust"
   description="Umzug Hildesheim zum Festpreis vom Inhaber Alex Aust. 71× ★★★★★ auf Google, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. ☎ 05121 755 83 79 · Mo–Fr 8–18 Uhr."

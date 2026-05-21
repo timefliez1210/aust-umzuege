@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Phone, RotateCcw, MessageCircle, Mail, FileText, ArrowRight } from 'lucide-svelte';
 	import { hours } from '$lib/utils/officeHours.svelte';
+	import { closeContactFlow } from '$lib/stores/contactFlow.svelte';
 	import StatusPill from './StatusPill.svelte';
 	import { PHONE_HREF, PHONE_SHORT, WHATSAPP_HREF, KOSTENLOSES_ANGEBOT_HREF } from './constants';
 
@@ -90,7 +91,10 @@
 			<ArrowRight size={20} strokeWidth={2.5} class="flow-btn__arrow" />
 		</button>
 
-		<a href={KOSTENLOSES_ANGEBOT_HREF} class="flow-btn">
+		<!-- Navigates to the standalone /kostenloses-angebot HTML form —
+		     dismiss the modal so the sheet doesn't linger over the new page.
+		     Harmless no-op when the card is used inline (ReadyCloser). -->
+		<a href={KOSTENLOSES_ANGEBOT_HREF} class="flow-btn" onclick={closeContactFlow}>
 			<div class="flow-btn__icon"><FileText size={22} strokeWidth={2} /></div>
 			<div class="flow-btn__body">
 				<div class="flow-btn__title">Kostenloses Angebot</div>

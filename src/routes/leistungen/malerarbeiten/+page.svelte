@@ -82,6 +82,7 @@
             answer: "Die Vermittlung an unseren Meisterbetrieb ist für Sie kostenfrei. Sie zahlen ausschließlich die Leistung des Meisterbetriebs zum dort kalkulierten Preis. Wir verdienen daran nichts – uns geht es darum, dass Ihr Umzug rundläuft und Sie keine Wohnung mit halb fertiger Wand übergeben müssen."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -214,6 +215,7 @@
         <FAQSection {faqs} title="Häufige Fragen zu Malerarbeiten beim Umzug" />
 
     </div>
+<ReadyCloser />
 </main>
 
 <style>

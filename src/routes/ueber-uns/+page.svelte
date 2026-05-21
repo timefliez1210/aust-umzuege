@@ -21,6 +21,7 @@
             "@id": "https://www.aust-umzuege.de/#organization"
         }
     };
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -230,10 +231,11 @@
             <p>Kostenlose Besichtigung mit Festpreisangebot – persönlich, vor Ort.</p>
             <div class="cta-buttons">
                 <CTAButton text="Kostenloses Angebot" href="/kostenloses-angebot" showArrow={false} />
-                <CTAButton text="Kontakt aufnehmen" href="/kontakt" showArrow={false} />
+                <CTAButton text="Kontakt aufnehmen" openFlow showArrow={false} />
             </div>
         </div>
     </div>
+<ReadyCloser />
 </main>
 
 <style>

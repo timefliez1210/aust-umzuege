@@ -42,6 +42,7 @@
             answer: "Wir organisieren Umzüge in alle Länder weltweit – von europäischen Nachbarländern wie Schweiz, Österreich und Niederlande bis zu Überseezielen wie USA, Kanada, Australien und den Nahen Osten. Durch unser internationales Partnernetzwerk sind wir an jedem Zielort vertreten. Nennen Sie uns Ihr Zielland und wir beraten Sie."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -223,7 +224,7 @@
                     <div class="cta-button-wrapper">
                         <CTAButton
                             text="Kontakt aufnehmen"
-                            href="/kontakt"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -234,6 +235,7 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

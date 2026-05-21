@@ -94,6 +94,7 @@
         { stadt: "Hildesheim", p1: "ca. 330–380 €", p2: "ca. 410–470 €", p3: "ca. 510–570 €" },
         { stadt: "Chemnitz", p1: "ca. 280–320 €", p2: "ca. 370–420 €", p3: "ca. 460–510 €" }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -539,6 +540,7 @@
             />
         </article>
     </div>
+<ReadyCloser />
 </main>
 
 <style>

@@ -1,33 +1,57 @@
 <script lang="ts">
+	import { openContactFlow } from "$lib/stores/contactFlow.svelte";
+
 	interface Props {
 		text: string;
-		href: string;
+		href?: string;
 		ariaLabel?: string;
 		showArrow?: boolean;
+		/** When true, render a button that opens the site-wide contact flow instead of a link. */
+		openFlow?: boolean;
+		onclick?: (e: MouseEvent) => void;
 	}
 
-	let { text, href, ariaLabel, showArrow = true }: Props = $props();
+	let {
+		text,
+		href,
+		ariaLabel,
+		showArrow = true,
+		openFlow = false,
+		onclick,
+	}: Props = $props();
+
+	function handleClick(e: MouseEvent) {
+		if (onclick) onclick(e);
+		if (openFlow) {
+			e.preventDefault();
+			openContactFlow('picker');
+		}
+	}
 </script>
 
-<a {href} class="cta-button" aria-label={ariaLabel || undefined}>
-	{text}
-	{#if showArrow}
-		<svg
-			width="18"
-			height="18"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			aria-hidden="true"
-		>
-			<line x1="5" y1="12" x2="19" y2="12"></line>
-			<polyline points="12 5 19 12 12 19"></polyline>
-		</svg>
-	{/if}
-</a>
+{#if openFlow || onclick}
+	<button type="button" class="cta-button" aria-label={ariaLabel || undefined} onclick={handleClick}>
+		{text}
+		{#if showArrow}
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<line x1="5" y1="12" x2="19" y2="12"></line>
+				<polyline points="12 5 19 12 12 19"></polyline>
+			</svg>
+		{/if}
+	</button>
+{:else}
+	<a {href} class="cta-button" aria-label={ariaLabel || undefined}>
+		{text}
+		{#if showArrow}
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<line x1="5" y1="12" x2="19" y2="12"></line>
+				<polyline points="12 5 19 12 12 19"></polyline>
+			</svg>
+		{/if}
+	</a>
+{/if}
 
 <style>
 	.cta-button {
@@ -40,7 +64,10 @@
 		font-size: var(--text-base);
 		font-weight: var(--font-semibold);
 		text-decoration: none;
+		border: none;
 		border-radius: var(--radius-md);
+		cursor: pointer;
+		font-family: inherit;
 		transition:
 			transform var(--transition-fast),
 			box-shadow var(--transition-fast);

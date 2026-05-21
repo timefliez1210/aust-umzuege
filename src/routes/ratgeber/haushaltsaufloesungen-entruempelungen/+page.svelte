@@ -9,6 +9,7 @@
 		{ name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
 		{ name: "Haushaltsauflösungen" }
 	]);
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -373,6 +374,7 @@
 			/>
 		</article>
 	</div>
+<ReadyCloser />
 </main>
 
 <style>

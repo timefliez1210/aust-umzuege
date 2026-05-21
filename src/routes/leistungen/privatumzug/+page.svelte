@@ -52,6 +52,7 @@
             answer: "In den meisten Fällen ja – besonders in Innenstadtlagen und engen Straßen. Eine Halteverbotszone spart erheblich Zeit und Kosten, weil der LKW direkt vor der Tür parken kann. Wir übernehmen auf Wunsch die komplette Beantragung und Aufstellung. Der Service kostet in Hildesheim ca. 100-200 Euro pro Zone."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -323,16 +324,8 @@
                     </p>
                     <div class="cta-button-wrapper">
                         <CTAButton
-                            text="Kostenloses Angebot"
-                            href="/kostenloses-angebot"
-                            showArrow={false}
-                        />
-                    </div>
-                    <div class="divider">oder</div>
-                    <div class="cta-button-wrapper">
-                        <CTAButton
                             text="Kontakt aufnehmen"
-                            href="/kontakt"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -343,6 +336,7 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

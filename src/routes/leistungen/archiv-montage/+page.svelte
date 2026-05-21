@@ -77,6 +77,7 @@
             text: "§14 BetrSichV schreibt Prüfdokumentation über die gesamte Lebensdauer vor. Fehlt die DGUV-Abnahme, erlischt möglicherweise der Versicherungsschutz."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -240,6 +241,7 @@
         <FAQSection {faqs} title="Häufige Fragen zur Archiv-Montage" />
 
     </div>
+<ReadyCloser />
 </main>
 
 <style>

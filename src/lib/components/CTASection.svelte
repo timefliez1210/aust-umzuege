@@ -5,10 +5,19 @@
 		heading: string;
 		description: string;
 		buttonText: string;
-		buttonHref: string;
+		/** Optional fallback link target. Ignored when openFlow is true (default). */
+		buttonHref?: string;
+		/** Open the site-wide contact flow on click instead of navigating. */
+		openFlow?: boolean;
 	}
 
-	let { heading, description, buttonText, buttonHref }: Props = $props();
+	let {
+		heading,
+		description,
+		buttonText,
+		buttonHref,
+		openFlow = true,
+	}: Props = $props();
 </script>
 
 <section class="cta-section">
@@ -18,6 +27,7 @@
 		text={buttonText}
 		href={buttonHref}
 		showArrow={false}
+		openFlow={openFlow}
 	/>
 </section>
 
@@ -45,5 +55,4 @@
 		margin-inline: auto;
 		color: #fff;
 	}
-
 </style>

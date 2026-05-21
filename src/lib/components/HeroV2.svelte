@@ -3,7 +3,7 @@
     // Light surface with navy accent rail, Alex's portrait, scannable trust
     // chips, one full testimonial, dual CTA (Vor-Ort-Termin + phone tap).
     import { Phone, MapPin, ExternalLink, CalendarCheck, FileCheck2, ShieldCheck } from "lucide-svelte";
-    import CallbackForm from "$lib/components/CallbackForm.svelte";
+    import AnchorCTA from "$lib/components/contact/AnchorCTA.svelte";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type IconComponent = any;
@@ -81,7 +81,11 @@
             </p>
 
             <div class="hero__callback" id="rueckruf">
-                <CallbackForm />
+                <AnchorCTA
+                    variant="primary"
+                    title="Reden wir 5 Minuten."
+                    sub="Anruf, Rückruf, WhatsApp oder Nachricht — Sie entscheiden."
+                />
             </div>
 
             <ul class="hero__badges">
@@ -355,15 +359,9 @@
     }
 
     .hero__callback {
-        background: var(--hero-card);
-        border: 1px solid var(--hero-line);
-        border-top: 3px solid var(--hero-orange);
-        border-radius: 0.85rem;
-        box-shadow: 0 12px 28px -10px rgba(20, 40, 63, 0.18);
         display: flex;
         flex-direction: column;
         gap: 0.85rem;
-        padding: 1.1rem 1.15rem 1rem;
     }
 
 

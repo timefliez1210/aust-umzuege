@@ -52,6 +52,7 @@
             answer: "Persönliche Dokumente – Ausweise, Verträge, Fotos, Briefe – werden immer gesondert gesammelt und Ihnen übergeben, niemals entsorgt. Wir sichern diese Unterlagen bereits vor Beginn der eigentlichen Räumung. Falls Sie nicht vor Ort sein können, werden die Dokumente sicher verpackt und Ihnen auf dem Postweg oder persönlich übergeben."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -285,7 +286,7 @@
                     <div class="cta-button-wrapper">
                         <CTAButton
                             text="Kontakt aufnehmen"
-                            href="/kontakt"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -296,6 +297,7 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

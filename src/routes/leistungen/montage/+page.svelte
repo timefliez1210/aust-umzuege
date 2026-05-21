@@ -43,6 +43,7 @@
             answer: "Selbstverständlich. Viele unserer Kunden buchen uns ausschließlich für Montagearbeiten: Küchen einbauen, Kleiderschränke aufbauen, Lampen anhängen oder Gardinenstangen befestigen. Rufen Sie uns an oder schreiben Sie uns – wir vereinbaren zeitnah einen Termin."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -274,6 +275,7 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

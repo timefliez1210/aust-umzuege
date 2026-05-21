@@ -51,6 +51,7 @@
             answer: "Ja, die Kosten eines betrieblichen Praxisumzugs sind vollständig als Betriebsausgabe steuerlich absetzbar – Transport, Montage, Halteverbotszone und Projektkoordination. Sie erhalten von uns eine detaillierte Rechnung mit allen Einzelpositionen, die Ihr Steuerberater direkt verwenden kann."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -284,6 +285,7 @@
 
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

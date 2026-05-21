@@ -47,6 +47,7 @@
 			answer: "Vier bis sechs Wochen Vorlauf sind gut. Samstage im Sommer und an Monatsenden sind am schnellsten ausgebucht. Kurzfristige Anfragen nehmen wir trotzdem entgegen – melden Sie sich, wir schauen, was möglich ist."
 		}
 	];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -195,16 +196,8 @@
 					<p>Jetzt kostenlose Besichtigung vereinbaren – wir melden uns am selben Tag.</p>
 					<div class="cta-button-wrapper">
 						<CTAButton
-							text="Kostenloses Angebot"
-							href="/kostenloses-angebot"
-							showArrow={false}
-						/>
-					</div>
-					<div class="divider">oder</div>
-					<div class="cta-button-wrapper">
-						<CTAButton
 							text="Kontakt aufnehmen"
-							href="/kontakt"
+							openFlow
 							showArrow={false}
 						/>
 					</div>
@@ -214,6 +207,7 @@
 
 		<FAQSection {faqs} />
 	</div>
+<ReadyCloser />
 </main>
 
 <style>

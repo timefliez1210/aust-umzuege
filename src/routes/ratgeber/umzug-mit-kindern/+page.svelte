@@ -9,6 +9,7 @@
 		{ name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
 		{ name: "Umzug mit Kindern" }
 	]);
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -470,6 +471,7 @@
 			/>
 		</article>
 	</div>
+<ReadyCloser />
 </main>
 
 <style>

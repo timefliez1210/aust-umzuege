@@ -209,8 +209,8 @@
         <!-- CTA Button -->
         <div class="navbar__cta-wrapper">
             <CTAButton
-                text="Kostenloses Angebot"
-                href="/kostenloses-angebot"
+                text="Kontakt aufnehmen"
+                openFlow
             />
         </div>
 

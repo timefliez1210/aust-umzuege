@@ -48,6 +48,7 @@
             answer: "Ja, wir haben Erfahrung mit Arztpraxen, Zahnarztpraxen, Anwaltskanzleien und Einzelhandelsgeschäften. Medizinische Geräte, Ladeneinrichtungen und empfindliche Technik transportieren wir fachgerecht. Auch hier planen wir den Umzug so, dass Ihre Ausfallzeit minimal bleibt."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -315,6 +316,7 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

@@ -7,9 +7,7 @@
   import Footer from "$lib/components/Footer.svelte";
   import CookieBanner from "$lib/components/CookieBanner.svelte";
   import ConsentManager from "$lib/components/ConsentManager.svelte";
-  import WhatsAppButton from "$lib/components/WhatsAppButton.svelte";
-  import CallButton from "$lib/components/CallButton.svelte";
-  import StickyCallback from "$lib/components/StickyCallback.svelte";
+  import ContactFlow from "$lib/components/contact/ContactFlow.svelte";
 
   let { children } = $props();
 </script>
@@ -62,9 +60,7 @@
 
   <ContactCTA />
   <Footer />
-  <WhatsAppButton />
-  <CallButton />
-  <StickyCallback />
+  <ContactFlow />
   <CookieBanner />
   <ConsentManager />
 {/if}

@@ -105,6 +105,7 @@
             answer: "Die Koordination berechnen wir nicht separat. Sie zahlen den Umzug zum vereinbarten Festpreis und die Handwerksleistungen direkt zu den Konditionen der Meisterbetriebe. Wir verdienen an der Vermittlung selbst nichts – uns geht es darum, dass Ihr Umzug rundläuft und Sie nicht zwischen drei Gewerken hin- und herrennen müssen."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -239,6 +240,7 @@
         <FAQSection {faqs} title="Häufige Fragen zur Renovierung beim Umzug" />
 
     </div>
+<ReadyCloser />
 </main>
 
 <style>

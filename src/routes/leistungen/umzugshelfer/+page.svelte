@@ -59,6 +59,7 @@
             answer: "Ja, unsere Helfer kommen mit Tragegurten, Möbeldecken, Sackkarren, Spanngurten und grundlegendem Montagewerkzeug. Sie müssen nichts vorbereiten. Falls spezielle Werkzeuge benötigt werden (z.B. für Küchen), sprechen wir das vorab ab."
         }
     ];
+    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -354,7 +355,7 @@
                     <div class="cta-button-wrapper">
                         <CTAButton
                             text="Kontakt aufnehmen"
-                            href="/kontakt"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -365,6 +366,7 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
+<ReadyCloser />
 </main>
 
 <style>

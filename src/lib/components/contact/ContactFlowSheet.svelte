@@ -95,7 +95,10 @@
 
 	async function submitMessage() {
 		const body = new URLSearchParams();
-		body.set('form-name', 'message');
+		// send-mail.php only routes known form-names; 'kontakt' is the
+		// simple-message branch (name + email + nachricht). 'message'
+		// would fall through to the 400 "Unknown form" handler.
+		body.set('form-name', 'kontakt');
 		body.set('name', name.trim());
 		body.set('email', email.trim());
 		body.set('nachricht', message.trim());

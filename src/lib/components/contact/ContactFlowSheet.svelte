@@ -154,7 +154,7 @@
 					<p class="sheet__sub">{sub}</p>
 				</div>
 
-				<form class="sheet__form" onsubmit={onSubmit} novalidate>
+				<form class="sheet__form" onsubmit={onSubmit}>
 					<label class="field">
 						<span class="field__lbl">Ihr Name</span>
 						<input

@@ -25,6 +25,11 @@ function clean(string $input): string {
     return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
 }
 
+// Strip CR/LF so a value can't inject extra mail headers (e.g. via Subject).
+function headerSafe(string $input): string {
+    return trim(preg_replace('/[\r\n]+/', ' ', $input));
+}
+
 $formName = $_POST['form-name'] ?? '';
 $to = 'angebot@aust-umzuege.de';
 
@@ -185,6 +190,11 @@ if ($formName === 'kontakt') {
     exit;
 }
 
+// Header-injection hardening: subject must be single-line, Reply-To must be a
+// valid address (an invalid one falls back to the From address).
+$subject = headerSafe($subject);
+$replyTo = filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : 'angebot@aust-umzuege.de';
+
 // Build JSON attachment from form data
 $jsonData = $_POST;
 unset($jsonData['bot-field']); // Remove honeypot field
@@ -197,7 +207,7 @@ $jsonFilename = $formName . '-' . date('Y-m-d-His') . '.json';
 $boundary = md5(uniqid(time()));
 
 $headers = "From: angebot@aust-umzuege.de\r\n";
-$headers .= "Reply-To: $email\r\n";
+$headers .= "Reply-To: $replyTo\r\n";
 $headers .= "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: multipart/mixed; boundary=\"$boundary\"\r\n";
 $headers .= "X-Mailer: Aust-Umzuege-Website\r\n";

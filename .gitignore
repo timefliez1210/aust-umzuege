@@ -56,3 +56,5 @@ lighthouse-output.log
 
 # WordPress backup
 wp-backup/
+
+AUDIT.md

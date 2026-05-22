@@ -30,7 +30,7 @@
 
 <MetaTags
   title="Umzugsunternehmen Hildesheim · Festpreis & 71× ★★★★★ | Aust"
-  description="Umzug Hildesheim zum Festpreis vom Inhaber Alex Aust. 71× ★★★★★ auf Google, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. ☎ 05121 755 83 79 · Mo–Fr 8–18 Uhr."
+  description="Umzug Hildesheim zum Festpreis vom Inhaber Alex Aust. 71× ★★★★★ auf Google, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. ☎ 05121 755 83 79 · Mo–Fr 09–19 Uhr."
   keywords="Umzugsunternehmen Hildesheim, Umzugsfirma Hildesheim, Umzug Hildesheim, Aust Umzüge"
   canonical="https://www.aust-umzuege.de/"
   ogType="website"

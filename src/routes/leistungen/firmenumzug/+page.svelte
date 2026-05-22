@@ -48,7 +48,6 @@
             answer: "Ja, wir haben Erfahrung mit Arztpraxen, Zahnarztpraxen, Anwaltskanzleien und Einzelhandelsgeschäften. Medizinische Geräte, Ladeneinrichtungen und empfindliche Technik transportieren wir fachgerecht. Auch hier planen wir den Umzug so, dass Ihre Ausfallzeit minimal bleibt."
         }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -296,16 +295,8 @@
                     </p>
                     <div class="cta-button-wrapper">
                         <CTAButton
-                            text="Angebot anfordern"
-                            href="/kostenloses-angebot"
-                            showArrow={false}
-                        />
-                    </div>
-                    <div class="divider">oder</div>
-                    <div class="cta-button-wrapper">
-                        <CTAButton
-                            text="Beratungsgespräch"
-                            href="/kontakt"
+                            text="Kontakt aufnehmen"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -316,7 +307,6 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
-<ReadyCloser />
 </main>
 
 <style>

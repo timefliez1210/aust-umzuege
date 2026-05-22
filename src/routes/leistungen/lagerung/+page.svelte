@@ -42,7 +42,6 @@
             answer: "Ja. Wir holen Ihre Sachen ab, lagern sie sicher ein und liefern sie später direkt an die neue Adresse – auch bundesweit. So sparen Sie sich doppelte Fahrten und das Organisieren eines separaten Transports. Alles aus einer Hand."
         }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -252,14 +251,6 @@
                     </p>
                     <div class="cta-button-wrapper">
                         <CTAButton
-                            text="Angebot anfordern"
-                            href="/kostenloses-angebot"
-                            showArrow={false}
-                        />
-                    </div>
-                    <div class="divider">oder</div>
-                    <div class="cta-button-wrapper">
-                        <CTAButton
                             text="Kontakt aufnehmen"
                             openFlow
                             showArrow={false}
@@ -272,7 +263,6 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
-<ReadyCloser />
 </main>
 
 <style>

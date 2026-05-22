@@ -47,7 +47,6 @@
 			answer: "Bei beruflich bedingten Umzügen ja – als Werbungskosten. Die Umzugskostenpauschale beträgt aktuell 964 Euro pro Person. Auch privat veranlasste Umzüge lassen sich teilweise als haushaltsnahe Dienstleistung geltend machen (20 % der Arbeitskosten, max. 4.000 Euro pro Jahr). Sie erhalten von uns eine ordnungsgemäße Rechnung."
 		}
 	];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -210,7 +209,6 @@
 
 		<FAQSection {faqs} />
 	</div>
-<ReadyCloser />
 </main>
 
 <style>

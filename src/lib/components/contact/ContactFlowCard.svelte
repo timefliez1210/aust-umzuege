@@ -85,7 +85,10 @@
 		<button type="button" class="flow-btn" onclick={() => onPick('message')}>
 			<div class="flow-btn__icon"><Mail size={22} strokeWidth={2} /></div>
 			<div class="flow-btn__body">
-				<div class="flow-btn__title">Nachricht schreiben</div>
+				<div class="flow-btn__title">
+					Nachricht schreiben
+					<span class="flow-btn__time">ca. 2 Min.</span>
+				</div>
 				<div class="flow-btn__sub">Antwort am gleichen Werktag</div>
 			</div>
 			<ArrowRight size={20} strokeWidth={2.5} class="flow-btn__arrow" />
@@ -97,8 +100,11 @@
 		<a href={KOSTENLOSES_ANGEBOT_HREF} class="flow-btn" onclick={closeContactFlow}>
 			<div class="flow-btn__icon"><FileText size={22} strokeWidth={2} /></div>
 			<div class="flow-btn__body">
-				<div class="flow-btn__title">Kostenloses Angebot</div>
-				<div class="flow-btn__sub">Mit Foto-Upload — verbindliches Angebot in 48 h</div>
+				<div class="flow-btn__title">
+					Kostenloses Angebot
+					<span class="flow-btn__time">ca. 20 Min.</span>
+				</div>
+				<div class="flow-btn__sub">Alle Angaben einreichen – Angebot innerhalb von 48 Stunden</div>
 			</div>
 			<ArrowRight size={20} strokeWidth={2.5} class="flow-btn__arrow" />
 		</a>
@@ -231,6 +237,16 @@
 		background: var(--orange-soft);
 		color: var(--orange-bright);
 		font-weight: 700;
+	}
+	.flow-btn__time {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.06em;
+		padding: 2px 7px;
+		border-radius: 4px;
+		background: #f0f4f8;
+		color: #64748b;
+		font-weight: 600;
 	}
 
 	.flow-btn--primary {

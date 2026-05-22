@@ -79,7 +79,6 @@
         { gruppe: "Jedes weitere Haushaltsmitglied", betrag: "+ 402 €" },
         { gruppe: "Zusatzbetrag bei Behinderung / besonderem Bedarf", betrag: "+ 624 €" }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -498,7 +497,6 @@
             />
         </article>
     </div>
-<ReadyCloser />
 </main>
 
 <style>

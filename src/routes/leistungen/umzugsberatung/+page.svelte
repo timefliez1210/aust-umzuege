@@ -43,7 +43,6 @@
             answer: "Achten Sie darauf, dass die Angebote dieselben Leistungen umfassen: Verpackung, Transport, Montage, Versicherung und Halteverbot. Vergleichen Sie Festpreise statt Stundenpreise. Prüfen Sie, ob die Firma versichert ist und lesen Sie Bewertungen. Wir scheuen keinen Vergleich – holen Sie sich ruhig mehrere Angebote ein."
         }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -236,7 +235,7 @@
                     <div class="cta-button-wrapper">
                         <CTAButton
                             text="Termin anfragen"
-                            href="/kontakt"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -247,7 +246,6 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
-<ReadyCloser />
 </main>
 
 <style>

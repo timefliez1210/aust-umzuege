@@ -42,7 +42,6 @@
             answer: "Ja, ein genehmigtes Halteverbot gilt an allen Tagen, auch am Wochenende und an Feiertagen. Wir beantragen das Halteverbot genau für den Zeitraum, den Sie benötigen – ob Samstag, Sonntag oder unter der Woche. Die Kosten sind unabhängig vom Wochentag."
         }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -216,7 +215,7 @@
                     <div class="cta-button-wrapper">
                         <CTAButton
                             text="Jetzt bestellen"
-                            href="/kontakt"
+                            openFlow
                             showArrow={false}
                         />
                     </div>
@@ -227,7 +226,6 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
-<ReadyCloser />
 </main>
 
 <style>

@@ -21,7 +21,6 @@
             "@id": "https://www.aust-umzuege.de/#organization"
         }
     };
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -235,7 +234,6 @@
             </div>
         </div>
     </div>
-<ReadyCloser />
 </main>
 
 <style>

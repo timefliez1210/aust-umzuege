@@ -43,7 +43,6 @@
             answer: "Wir empfehlen 4-6 Wochen Vorlauf für die gründliche Planung und Beantragung des Pflegekassenzuschusses. Bei einem Umzug ins Pflegeheim mit festem Einzugstermin passen wir uns Ihrem Zeitplan an. In dringenden Fällen sind auch kürzere Fristen möglich – sprechen Sie uns an."
         }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -246,14 +245,6 @@
                     </p>
                     <div class="cta-button-wrapper">
                         <CTAButton
-                            text="Angebot anfordern"
-                            href="/kostenloses-angebot"
-                            showArrow={false}
-                        />
-                    </div>
-                    <div class="divider">oder</div>
-                    <div class="cta-button-wrapper">
-                        <CTAButton
                             text="Kontakt aufnehmen"
                             openFlow
                             showArrow={false}
@@ -266,7 +257,6 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
-<ReadyCloser />
 </main>
 
 <style>

@@ -5,7 +5,6 @@
   import AboutSection from "$lib/components/AboutSection.svelte";
   import ServicesCarousel from "$lib/components/ServicesCarousel.svelte";
   import RatgeberTeaser from "$lib/components/RatgeberTeaser.svelte";
-  import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
   import MetaTags from "$lib/components/MetaTags.svelte";
   import StructuredData from "$lib/components/StructuredData.svelte";
   import { businessInfo, website, createBreadcrumbs } from "$lib/data/structuredData";
@@ -47,7 +46,6 @@
   <ReviewsSection />
   <ServicesCarousel />
   <RatgeberTeaser />
-  <ReadyCloser />
 </main>
 
 <style>

@@ -48,7 +48,6 @@
             answer: "Ja, auf Wunsch erhalten Sie Entsorgungsnachweise für alle fachgerecht entsorgten Materialien – Sperrmüll, Elektrogeräte, Sondermüll. Besonders für Vermieter, Behörden oder Nachlasspfleger ist das häufig wichtig. Sprechen Sie uns bei der Besichtigung einfach darauf an."
         }
     ];
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -243,14 +242,6 @@
                     </p>
                     <div class="cta-button-wrapper">
                         <CTAButton
-                            text="Angebot anfordern"
-                            href="/kostenloses-angebot"
-                            showArrow={false}
-                        />
-                    </div>
-                    <div class="divider">oder</div>
-                    <div class="cta-button-wrapper">
-                        <CTAButton
                             text="Kontakt aufnehmen"
                             openFlow
                             showArrow={false}
@@ -263,7 +254,6 @@
         <!-- FAQ Section -->
         <FAQSection {faqs} />
     </div>
-<ReadyCloser />
 </main>
 
 <style>

@@ -22,6 +22,7 @@
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
     import { leistungenOverview, createBreadcrumbs } from "$lib/data/structuredData";
+    import { openContactFlow } from "$lib/stores/contactFlow.svelte";
 
     const services = [
         {
@@ -144,6 +145,39 @@
             </p>
         </header>
 
+        <div class="services-grid">
+            {#each services as service}
+                {@const Icon = service.icon}
+                <div class="service-card">
+                    <div class="service-card__icon-wrapper">
+                        <Icon size={32} strokeWidth={1.5} />
+                    </div>
+                    <div class="service-card__content">
+                        <h2 class="service-card__title">{service.title}</h2>
+                        <p class="service-card__description">
+                            {service.description}
+                        </p>
+                    </div>
+                    <div class="service-card__actions">
+                        <a
+                            href={service.link}
+                            class="service-card__link details"
+                        >
+                            Details
+                            <ArrowRight size={16} />
+                        </a>
+                        <button
+                            onclick={() => openContactFlow('picker')}
+                            class="service-card__link contact"
+                        >
+                            Direkt anfragen
+                            <Mail size={16} />
+                        </button>
+                    </div>
+                </div>
+            {/each}
+        </div>
+
         <section class="why-section">
             <h2 class="why-section__title">Warum unser Umzugsservice in Hildesheim?</h2>
             <p>
@@ -188,36 +222,6 @@
                 konkreten Preisbeispielen und Antworten auf häufige Fragen.
             </p>
         </section>
-
-        <div class="services-grid">
-            {#each services as service}
-                {@const Icon = service.icon}
-                <div class="service-card">
-                    <div class="service-card__icon-wrapper">
-                        <Icon size={32} strokeWidth={1.5} />
-                    </div>
-                    <div class="service-card__content">
-                        <h2 class="service-card__title">{service.title}</h2>
-                        <p class="service-card__description">
-                            {service.description}
-                        </p>
-                    </div>
-                    <div class="service-card__actions">
-                        <a
-                            href={service.link}
-                            class="service-card__link details"
-                        >
-                            Details
-                            <ArrowRight size={16} />
-                        </a>
-                        <a href="/kontakt" class="service-card__link contact">
-                            Direkt anfragen
-                            <Mail size={16} />
-                        </a>
-                    </div>
-                </div>
-            {/each}
-        </div>
 
         <CTASection
             heading="Planen Sie einen Umzug?"
@@ -276,8 +280,7 @@
     }
 
     .why-section {
-        max-width: 820px;
-        margin: 0 auto var(--space-16);
+        margin: var(--space-16) 0;
         padding: var(--space-8);
         background-color: #fff;
         border: 1px solid #f1f5f9;
@@ -464,6 +467,10 @@
         color: var(--color-nav-accent);
         position: relative;
         z-index: 2; /* Above the stretched link */
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
     }
 
     .service-card__link.contact:hover {

@@ -3,11 +3,11 @@
   import { page } from "$app/stores";
   import InfoBar from "$lib/components/InfoBar.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
-  import ContactCTA from "$lib/components/ContactCTA.svelte";
   import Footer from "$lib/components/Footer.svelte";
   import CookieBanner from "$lib/components/CookieBanner.svelte";
   import ConsentManager from "$lib/components/ConsentManager.svelte";
   import ContactFlow from "$lib/components/contact/ContactFlow.svelte";
+  import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 
   let { children } = $props();
 </script>
@@ -58,7 +58,7 @@
     {@render children()}
   </div>
 
-  <ContactCTA />
+  <ReadyCloser />
   <Footer />
   <ContactFlow />
   <CookieBanner />

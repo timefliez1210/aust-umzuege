@@ -9,7 +9,6 @@
 		{ name: "Ratgeber", url: "https://www.aust-umzuege.de/ratgeber" },
 		{ name: "Seriöse Umzugsfirma" }
 	]);
-    import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
 </script>
 
 <MetaTags
@@ -461,7 +460,6 @@
 			/>
 		</article>
 	</div>
-<ReadyCloser />
 </main>
 
 <style>

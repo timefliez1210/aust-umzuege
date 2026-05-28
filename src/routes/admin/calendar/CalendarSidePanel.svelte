@@ -626,6 +626,15 @@
 	async function saveInquiryDays() {
 		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
 		if (!inqUntilDate) { showToast('Enddatum fehlt', 'error'); return; }
+		// Reject retroactive expansion: if the origin is today or future, the until
+		// date must also be today or future. Past-origin inquiries are still editable
+		// for historical record-keeping.
+		const originStr = panelSelection.item.scheduled_date?.slice(0, 10) ?? '';
+		const today = new Date().toISOString().slice(0, 10);
+		if (originStr >= today && inqUntilDate < today) {
+			showToast('Enddatum darf nicht in der Vergangenheit liegen', 'error');
+			return;
+		}
 		applyInquiryDateRange();
 		const inqId = panelSelection.item.inquiry_id;
 		inqDaysSaving = true;
@@ -782,6 +791,12 @@
 	async function saveTerminDays() {
 		if (!panelSelection || panelSelection.kind !== 'termin') return;
 		if (!termUntilDate) { showToast('Enddatum fehlt', 'error'); return; }
+		const originStr = panelSelection.item.scheduled_date ?? '';
+		const today = new Date().toISOString().slice(0, 10);
+		if (originStr >= today && termUntilDate < today) {
+			showToast('Enddatum darf nicht in der Vergangenheit liegen', 'error');
+			return;
+		}
 		applyTerminDateRange();
 		const itemId = panelSelection.item.id;
 		termDaysSaving = true;

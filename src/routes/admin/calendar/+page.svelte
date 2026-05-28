@@ -783,6 +783,15 @@
 			}
 			return day;
 		};
+		// Snapshot for rollback on PATCH failure (avoids the flicker where the item
+		// moves, then the error toast fires, then loadSchedule snaps it back).
+		const scheduleSnapshot = schedule.map(d => ({
+			...d,
+			inquiries: [...d.inquiries],
+			calendar_items: [...d.calendar_items],
+		}));
+		const byStartTime = <T extends { start_time?: string | null }>(a: T, b: T) =>
+			(a.start_time || '').localeCompare(b.start_time || '');
 		if (type === 'inquiry') {
 			const fromDay = fromDate ? schedule.find(s => s.date === fromDate) : undefined;
 			const idx = fromDay?.inquiries.findIndex(i => i.inquiry_id === id) ?? -1;
@@ -790,7 +799,7 @@
 				const moved = { ...fromDay.inquiries[idx], scheduled_date: dateStr };
 				fromDay.inquiries = fromDay.inquiries.filter((_, i) => i !== idx);
 				const toDay = ensureDay(dateStr);
-				toDay.inquiries = [...toDay.inquiries, moved];
+				toDay.inquiries = [...toDay.inquiries, moved].sort(byStartTime);
 				schedule = [...schedule];
 			}
 		} else if (type === 'termin') {
@@ -800,7 +809,7 @@
 				const moved = { ...fromDay.calendar_items[idx] };
 				fromDay.calendar_items = fromDay.calendar_items.filter((_, i) => i !== idx);
 				const toDay = ensureDay(dateStr);
-				toDay.calendar_items = [...toDay.calendar_items, moved];
+				toDay.calendar_items = [...toDay.calendar_items, moved].sort(byStartTime);
 				schedule = [...schedule];
 			}
 		}
@@ -823,6 +832,10 @@
 			showToast('Termin verschoben', 'success');
 			if (!movedOutOfView) await loadSchedule();
 		} catch (err) {
+			// Roll back the optimistic move before reloading so the user sees a single
+			// transition (snap back to origin + toast) instead of the item flickering
+			// at the new spot first.
+			schedule = scheduleSnapshot;
 			showToast((err as Error).message, 'error');
 			await loadSchedule();
 		}

@@ -28,8 +28,6 @@ export function loadGoogleAnalytics(measurementId: string) {
 		});
 	`;
 	document.head.appendChild(gtagConfig);
-
-	console.log('✅ Google Analytics loaded');
 }
 
 /**
@@ -54,8 +52,6 @@ export function loadMetaPixel(pixelId: string) {
 		fbq('track', 'PageView');
 	`;
 	document.head.appendChild(fbScript);
-
-	console.log('✅ Meta Pixel loaded');
 }
 
 /**
@@ -83,8 +79,6 @@ export function loadGoogleTagManager(gtmId: string) {
 		height="0" width="0" style="display:none;visibility:hidden"></iframe>
 	`;
 	document.body.insertBefore(gtmNoScript, document.body.firstChild);
-
-	console.log('✅ Google Tag Manager loaded');
 }
 
 /**
@@ -109,7 +103,6 @@ export function removeTrackingCookies() {
 
 		if (shouldRemove) {
 			document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-			console.log(`🗑️ Removed cookie: ${cookieName}`);
 		}
 	});
 }

@@ -79,15 +79,11 @@
 	let monthGroups = $derived(groupByMonth(rows));
 
 	function prevMonth() {
-		console.log('prev clicked, before:', activeIndex);
 		activeIndex = Math.max(0, activeIndex - 1);
-		console.log('prev clicked, after:', activeIndex);
 	}
 
 	function nextMonth() {
-		console.log('next clicked, before:', activeIndex);
 		activeIndex = Math.min(monthGroups.length - 1, activeIndex + 1);
-		console.log('next clicked, after:', activeIndex);
 	}
 
 	let active = $derived(monthGroups[activeIndex]);

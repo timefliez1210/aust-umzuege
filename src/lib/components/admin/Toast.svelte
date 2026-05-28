@@ -1,8 +1,13 @@
 <script lang="ts" module>
+	interface ToastAction {
+		label: string;
+		onClick: () => void;
+	}
 	interface ToastItem {
 		id: number;
 		type: 'success' | 'error' | 'info';
 		message: string;
+		action?: ToastAction;
 	}
 
 	let toasts = $state<ToastItem[]>([]);
@@ -25,12 +30,16 @@
 	 * @param type    - Visual variant: 'success' (green), 'error' (red), or
 	 *                  'info' (blue); defaults to 'info'
 	 */
-	export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+	export function showToast(
+		message: string,
+		type: 'success' | 'error' | 'info' = 'info',
+		options?: { action?: ToastAction; durationMs?: number }
+	) {
 		const id = nextId++;
-		toasts.push({ id, type, message });
+		toasts.push({ id, type, message, action: options?.action });
 		setTimeout(() => {
 			toasts = toasts.filter((t) => t.id !== id);
-		}, 4000);
+		}, options?.durationMs ?? 4000);
 	}
 </script>
 
@@ -56,6 +65,12 @@
 		{#each toasts as toast (toast.id)}
 			<div class="toast toast-{toast.type}">
 				<span class="toast-message">{toast.message}</span>
+				{#if toast.action}
+					<button
+						class="toast-action"
+						onclick={() => { toast.action?.onClick(); dismiss(toast.id); }}
+					>{toast.action.label}</button>
+				{/if}
 				<button class="toast-close" onclick={() => dismiss(toast.id)} aria-label="Schliessen">
 					<X size={16} />
 				</button>
@@ -113,6 +128,19 @@
 		flex: 1;
 		font-weight: 500;
 	}
+
+	.toast-action {
+		background: transparent;
+		border: 1px solid currentColor;
+		border-radius: var(--dt-radius-sm);
+		padding: 0.25rem 0.625rem;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: currentColor;
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+	.toast-action:hover { opacity: 0.85; }
 
 	.toast-close {
 		color: currentColor;

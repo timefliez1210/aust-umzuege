@@ -829,7 +829,31 @@
 			} else {
 				await apiPatch(`/api/v1/inquiries/${id}`, { scheduled_date: newScheduledDate });
 			}
-			showToast('Termin verschoben', 'success');
+			// Offer a 5s undo window — PATCHes the entity back to its original
+			// scheduled_date. The end_date-shift logic on the backend preserves
+			// the span on the way back as well.
+			if (fromDate && fromDate !== newScheduledDate) {
+				const undoUrl = type === 'termin'
+					? `/api/v1/admin/calendar-items/${id}`
+					: `/api/v1/inquiries/${id}`;
+				const originalDate = fromDate;
+				showToast('Verschoben', 'success', {
+					durationMs: 5000,
+					action: {
+						label: 'Rückgängig',
+						onClick: async () => {
+							try {
+								await apiPatch(undoUrl, { scheduled_date: originalDate });
+								await loadSchedule();
+							} catch (e) {
+								showToast((e as Error).message, 'error');
+							}
+						},
+					},
+				});
+			} else {
+				showToast('Termin verschoben', 'success');
+			}
 			if (!movedOutOfView) await loadSchedule();
 		} catch (err) {
 			// Roll back the optimistic move before reloading so the user sees a single
@@ -1163,7 +1187,11 @@
 								tabindex="0"
 								onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
 							>
-								{#if isVisualStart}<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>{/if}
+								{#if isVisualStart}
+									<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>
+								{:else}
+									<span class="md-bar-text md-bar-cont">Tag {dayNum}/{totalDays}</span>
+								{/if}
 							</div>
 						{:else}
 							<div class="md-bar-spacer"></div>
@@ -1914,6 +1942,7 @@
 		border-radius: 3px;
 	}
 	.md-bar-text { padding-left: 5px; }
+	.md-bar-cont { opacity: 0.7; font-style: italic; }
 	.md-bar-spacer { display: block; min-height: 14px; margin: 1px calc(-0.25rem - 1px) 1px -0.375rem; }
 
 	/* ─── Week view grid ───────────────────────────────────────────────────────── */

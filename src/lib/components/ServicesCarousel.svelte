@@ -314,7 +314,7 @@
     }
 
     .services-carousel__tagline {
-        color: #c44a00; /* Darker orange for WCAG AA contrast */
+        color: #ff6b00; /* Darker orange for WCAG AA contrast */
         font-size: var(--text-sm);
         font-weight: var(--font-semibold);
         text-transform: uppercase;

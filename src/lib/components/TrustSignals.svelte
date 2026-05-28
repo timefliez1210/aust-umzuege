@@ -43,7 +43,7 @@
 <style>
     .trust {
         --trust-navy: #1e3a5f;
-        --trust-orange: var(--color-nav-accent, #c44100);
+        --trust-orange: var(--color-nav-accent, #ff6b00);
         --trust-mute: #5b6478;
         --trust-line: #e6e8ed;
         --trust-card: #ffffff;

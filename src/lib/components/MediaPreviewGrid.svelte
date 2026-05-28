@@ -419,8 +419,8 @@
 	}
 
 	.mpg-add--public:hover {
-		border-color: var(--color-nav-accent, #c44100);
-		color: var(--color-nav-accent, #c44100);
+		border-color: var(--color-nav-accent, #ff6b00);
+		color: var(--color-nav-accent, #ff6b00);
 	}
 
 	/* Admin variant */
@@ -546,7 +546,7 @@
 		align-items: center;
 		gap: var(--space-2, 0.5rem);
 		font-size: var(--text-sm, 0.875rem);
-		color: var(--color-nav-accent, #c44100);
+		color: var(--color-nav-accent, #ff6b00);
 		cursor: pointer;
 		background: none;
 		border: none;

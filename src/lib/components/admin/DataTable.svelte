@@ -16,6 +16,7 @@
 		sortDir = $bindable<'asc' | 'desc'>('desc'),
 		onRowClick,
 		row: rowSnippet,
+		rowClass,
 		emptyMessage = 'Keine Eintraege gefunden'
 	}: {
 		columns: Column[];
@@ -24,6 +25,7 @@
 		sortDir?: 'asc' | 'desc';
 		onRowClick?: (row: unknown) => void;
 		row: Snippet<[unknown, number]>;
+		rowClass?: (row: unknown, i: number) => string | undefined;
 		emptyMessage?: string;
 	} = $props();
 
@@ -82,6 +84,7 @@
 			{:else}
 				{#each rows as item, i}
 					<tr
+						class={rowClass?.(item, i) ?? ''}
 						class:clickable={!!onRowClick}
 						onclick={() => onRowClick?.(item)}
 						onkeydown={(e) => { if (e.key === 'Enter') onRowClick?.(item); }}

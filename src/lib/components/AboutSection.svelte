@@ -87,7 +87,7 @@
 
     .about-section__tagline {
         display: inline-block;
-        color: #c44a00; /* Darker orange for WCAG AA contrast (4.5:1 against white) */
+        color: #ff6b00; /* Darker orange for WCAG AA contrast (4.5:1 against white) */
         font-size: var(--text-sm);
         font-weight: var(--font-semibold);
         text-transform: uppercase;

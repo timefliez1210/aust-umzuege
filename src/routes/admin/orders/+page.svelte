@@ -137,6 +137,7 @@
 		bind:sortKey
 		bind:sortDir
 		onRowClick={(row) => goto(`/admin/inquiries/${(row as Order).id}`)}
+		rowClass={(row) => `row-status-${(row as Order).status}`}
 	>
 		{#snippet row(item, _i)}
 			{@const o = item as Order}
@@ -195,6 +196,25 @@
 <style>
 	.page {
 		height: 100%;
+	}
+
+	/* Row tinting by status — feature request "Zeilenmarkierung":
+	   gelb für fakturiert, grün für bezahlt. */
+	:global(tbody tr.row-status-invoiced),
+	:global(tbody tr.row-status-invoiced:nth-child(even)),
+	:global(tbody tr.row-status-invoiced:nth-child(odd)) {
+		background: #fef3c7;
+	}
+	:global(tbody tr.row-status-invoiced:hover) {
+		background: #fde68a;
+	}
+	:global(tbody tr.row-status-paid),
+	:global(tbody tr.row-status-paid:nth-child(even)),
+	:global(tbody tr.row-status-paid:nth-child(odd)) {
+		background: #bbf7d0;
+	}
+	:global(tbody tr.row-status-paid:hover) {
+		background: #86efac;
 	}
 
 	.page-header h1 {

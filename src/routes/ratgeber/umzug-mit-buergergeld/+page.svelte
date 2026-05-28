@@ -991,7 +991,7 @@
 
     /* Inline link */
     .inline-link {
-        color: #c44100;
+        color: #ff6b00;
         font-weight: 500;
         text-decoration: underline;
         text-decoration-color: rgba(196, 65, 0, 0.3);

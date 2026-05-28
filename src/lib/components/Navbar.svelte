@@ -367,7 +367,7 @@
     }
 
     .navbar__link.active {
-        color: #c44a00; /* Darker orange for better contrast on white background */
+        color: #ff6b00; /* Darker orange for better contrast on white background */
         font-weight: var(--font-semibold);
     }
 

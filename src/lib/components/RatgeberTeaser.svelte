@@ -112,7 +112,7 @@
 	}
 
 	.ratgeber-teaser__tagline {
-		color: #c44a00;
+		color: #ff6b00;
 		font-size: var(--text-sm);
 		font-weight: var(--font-semibold);
 		text-transform: uppercase;

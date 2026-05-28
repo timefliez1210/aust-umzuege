@@ -190,7 +190,8 @@
 					</div>
 					<div class="field">
 						<label for="c-cat">Kategorie</label>
-						<select id="c-cat" bind:value={createCategory}>
+						<input id="c-cat" type="text" list="cal-categories" bind:value={createCategory} placeholder="z.B. Intern, Umzug, eigene…" />
+						<datalist id="cal-categories">
 							<option value="intern">Intern</option>
 							<option value="umzug">Umzug</option>
 							<option value="entruempelung">Entrümpelung</option>
@@ -198,7 +199,7 @@
 							<option value="streichen">Streichen</option>
 							<option value="kartons_auslieferung">Kartons Auslieferung</option>
 							<option value="kartons_abholung">Kartons Abholung</option>
-						</select>
+						</datalist>
 					</div>
 					<div class="field">
 						<label for="c-date">Datum</label>

@@ -229,6 +229,9 @@
 	let editStartTime = $state("");
 	let editEndTime = $state("");
 	let editHasPauschale = $state(false);
+	// Free-text override for the A29 headline on the KVA ("Umzugspauschale X m³" by default).
+	// Lets Alex re-label the main service line for non-volume jobs (Umzugshelfer, Lagerung, …).
+	let editHeadlineOverride = $state("");
 
 	let isLocked = $derived(false);
 
@@ -758,6 +761,7 @@
 			editHasPauschale = (data as any).has_pauschale || false;
 			editStartTime = data.start_time ? data.start_time.slice(0, 5) : '';
 			editEndTime = data.end_time ? data.end_time.slice(0, 5) : '';
+			editHeadlineOverride = (data as any).custom_fields?.offer_headline_override ?? "";
 			computePricingDefaults();
 
 			// Load emails non-blocking so the inquiry renders first
@@ -821,6 +825,10 @@
 			start_time: editStartTime ? editStartTime + ':00' : undefined,
 			end_time: editEndTime ? editEndTime + ':00' : undefined,
 			has_pauschale: editHasPauschale,
+			custom_fields: {
+				...((data as any).custom_fields ?? {}),
+				offer_headline_override: editHeadlineOverride.trim() || null,
+			},
 		});
 	}
 
@@ -1951,6 +1959,15 @@
 							<input id="cust-company" type="text" bind:value={editCustomer.company_name} placeholder="{editCustomer.customer_type === 'business' ? 'Firmenname' : 'optional'}" />
 						</div>
 						<div class="field">
+							<label for="cust-salutation">Anrede</label>
+							<select id="cust-salutation" bind:value={editCustomer.salutation}>
+								<option value="">–</option>
+								<option value="Herr">Herr</option>
+								<option value="Frau">Frau</option>
+								<option value="D">Divers</option>
+							</select>
+						</div>
+						<div class="field">
 							<label for="cust-first-name">Vorname</label>
 							<input id="cust-first-name" type="text" bind:value={editCustomer.first_name} />
 						</div>
@@ -2322,6 +2339,18 @@
 					<span class="labor-profit" class:negative={laborProfit < 0}
 						>{laborProfit.toFixed(2)} &euro;</span
 					>
+
+					<div class="field" style="margin-top: 0.75rem">
+						<label for="kva-headline">KVA-Überschrift überschreiben</label>
+						<input
+							id="kva-headline"
+							type="text"
+							bind:value={editHeadlineOverride}
+							placeholder={editVolume != null ? `Umzugspauschale ${editVolume.toFixed(1)} m³` : "Umzugspauschale"}
+							onblur={persistInquiry}
+						/>
+						<small class="hint">Leer lassen für Standard. Praktisch für Umzugshelfer, Lagerung u.ä. ohne Volumenangabe.</small>
+					</div>
 				</div>
 				{/if}
 			</div>

@@ -260,7 +260,7 @@
         display: inline-flex;
         align-items: center;
         gap: var(--space-2);
-        color: #c44a00; /* Darker orange for better contrast on white */
+        color: #ff6b00; /* Darker orange for better contrast on white */
         font-weight: var(--font-semibold);
         text-decoration: none;
         transition: color var(--transition-fast);

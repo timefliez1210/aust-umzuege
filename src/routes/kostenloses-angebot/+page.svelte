@@ -1099,7 +1099,7 @@
     }
 
     .angebot-page__privacy-text a {
-        color: #c44100;
+        color: #ff6b00;
         text-decoration: underline;
     }
 

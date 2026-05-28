@@ -290,7 +290,7 @@
 	}
 
 	.cookie-banner__link {
-		color: #c44100;
+		color: #ff6b00;
 		text-decoration: underline;
 		font-size: 0.9rem;
 		font-weight: 600;

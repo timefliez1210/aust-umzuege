@@ -227,7 +227,7 @@
 	}
 
 	.md-wrap--public.md-wrap--dragging {
-		border-color: var(--color-nav-accent, #c44100);
+		border-color: var(--color-nav-accent, #ff6b00);
 		background-color: rgba(196, 65, 0, 0.05);
 	}
 
@@ -245,7 +245,7 @@
 	}
 
 	.md-empty--public:hover {
-		color: var(--color-nav-accent, #c44100);
+		color: var(--color-nav-accent, #ff6b00);
 	}
 
 	.md-label--public {

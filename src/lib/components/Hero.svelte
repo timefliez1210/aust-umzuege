@@ -275,7 +275,7 @@
 <style>
     .hero {
         --hero-navy: #1e3a5f;
-        --hero-orange: var(--color-nav-accent, #c44100);
+        --hero-orange: var(--color-nav-accent, #ff6b00);
         --hero-orange-hover: #a83700;
         background: var(--hero-navy);
         color: #fff;

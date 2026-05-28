@@ -202,8 +202,9 @@
 
 	let currentDate = $state(new Date());
 	let schedule = $state<DaySchedule[]>([]);
-	let calendarItems = $state<CalendarItem[]>([]);
 	let loading = $state(true);
+	// Monotonic counter incremented per loadSchedule call; stale awaits compare and bail.
+	let loadToken = 0;
 
 	// Side panel
 	let panelSelection = $state<PanelSelection>(null);
@@ -226,6 +227,7 @@
 	let draggingId = $state<string | null>(null);
 	let draggingType = $state<'inquiry' | 'termin' | null>(null);
 	let draggingFromDate = $state<string | null>(null);
+	let draggingDayNumber = $state<number>(1);
 	let dragOverDate = $state<string | null>(null);
 	let navDragOver = $state<'prev' | 'next' | null>(null);
 	let navDragTimer: ReturnType<typeof setTimeout> | null = null;
@@ -432,14 +434,8 @@
 	function buildDayEntries(dateStr: string): Array<{ type: 'inquiry'; item: InquiryItem } | { type: 'termin'; item: CalendarItem } | { type: 'schedule-termin'; item: ScheduleCalendarItem }> {
 		const sched = schedule.find(s => s.date === dateStr || s.date.startsWith(dateStr));
 		const inqEntries = (sched?.inquiries ?? []).map(i => ({ type: 'inquiry' as const, item: i }));
-		// Merge schedule calendar items (with multi-day data) alongside the flat list
 		const schedTermEntries = (sched?.calendar_items ?? []).map(ci => ({ type: 'schedule-termin' as const, item: ci }));
-		// Also include legacy flat calendar items that have a scheduled_date matching this day
-		const legacyTermEntries = calendarItems
-			.filter(ci => ci.scheduled_date?.startsWith(dateStr))
-			.filter(ci => !schedTermEntries.some(se => se.item.calendar_item_id === ci.id))
-			.map(ci => ({ type: 'termin' as const, item: ci }));
-		return [...inqEntries, ...schedTermEntries, ...legacyTermEntries].sort((a, b) =>
+		return [...inqEntries, ...schedTermEntries].sort((a, b) =>
 			(a.item.start_time || '').localeCompare(b.item.start_time || '')
 		);
 	}
@@ -530,51 +526,34 @@
 	 *          so the calendar grid stays consistent with server state.
 	 */
 	async function loadSchedule() {
+		const myToken = ++loadToken;
 		loading = true;
 		try {
 			let from: string, to: string;
-			let itemMonths: string[];
 			if (viewMode === 'week') {
 				from = weekDays[0];
 				to = weekDays[6];
-				const m0 = weekDays[0].slice(0, 7);
-				const m6 = weekDays[6].slice(0, 7);
-				itemMonths = m0 === m6 ? [m0] : [m0, m6];
 			} else if (viewMode === 'day') {
 				from = dayViewDate;
 				to = dayViewDate;
-				itemMonths = [dayViewDate.slice(0, 7)];
 			} else {
 				const pad = (n: number) => String(n).padStart(2, '0');
-				// Extend fetch range to cover the full grid (including overflow days from adjacent months)
-				const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Monday=0
+				const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
 				const daysInMonth = new Date(year, month + 1, 0).getDate();
 				const trailing = (7 - ((firstDow + daysInMonth) % 7)) % 7;
 				const gridStart = new Date(year, month, 1 - firstDow);
 				const gridEnd = new Date(year, month + 1, trailing);
 				from = `${gridStart.getFullYear()}-${pad(gridStart.getMonth() + 1)}-${pad(gridStart.getDate())}`;
 				to = `${gridEnd.getFullYear()}-${pad(gridEnd.getMonth() + 1)}-${pad(gridEnd.getDate())}`;
-				itemMonths = [`${year}-${pad(month + 1)}`];
-				if (firstDow > 0) {
-					const prevYM = `${gridStart.getFullYear()}-${pad(gridStart.getMonth() + 1)}`;
-					if (!itemMonths.includes(prevYM)) itemMonths.unshift(prevYM);
-				}
-				if (trailing > 0) {
-					const nextYM = `${gridEnd.getFullYear()}-${pad(gridEnd.getMonth() + 1)}`;
-					if (!itemMonths.includes(nextYM)) itemMonths.push(nextYM);
-				}
 			}
 			const schedRes = await apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`);
+			if (myToken !== loadToken) return;
 			schedule = (Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? [])).map(d => ({ ...d, calendar_items: d.calendar_items ?? [] }));
-			const itemResults = await Promise.all(
-				itemMonths.map(m => apiGet<CalendarItem[]>(`/api/v1/admin/calendar-items?month=${m}`).catch(() => [] as CalendarItem[]))
-			);
-			calendarItems = itemResults.flat();
 		} catch {
+			if (myToken !== loadToken) return;
 			schedule = [];
-			calendarItems = [];
 		} finally {
-			loading = false;
+			if (myToken === loadToken) loading = false;
 		}
 	}
 
@@ -695,10 +674,11 @@
 	 * @param type - 'inquiry' or 'termin'
 	 * @param fromDate - ISO date string of the source cell
 	 */
-	function onEntryDragStart(e: DragEvent, id: string, type: 'inquiry' | 'termin', fromDate: string) {
+	function onEntryDragStart(e: DragEvent, id: string, type: 'inquiry' | 'termin', fromDate: string, dayNumber: number = 1) {
 		draggingId = id;
 		draggingType = type;
 		draggingFromDate = fromDate;
+		draggingDayNumber = dayNumber;
 		e.dataTransfer!.effectAllowed = 'move';
 	}
 
@@ -776,20 +756,75 @@
 		const id = draggingId;
 		const type = draggingType;
 		const fromDate = draggingFromDate;
+		const dayNumber = draggingDayNumber;
 		draggingId = null;
 		draggingType = null;
 		draggingFromDate = null;
+		draggingDayNumber = 1;
 		if (!id || fromDate === dateStr) return;
+
+		// Multi-day items: grabbing day N and dropping on D means the whole span shifts so
+		// that day N lands on D — i.e. new scheduled_date = D - (N - 1) days.
+		let newScheduledDate = dateStr;
+		if (dayNumber > 1) {
+			const [yy, mm, dd] = dateStr.split('-').map(Number);
+			const shifted = new Date(yy, mm - 1, dd - (dayNumber - 1));
+			const pad = (n: number) => String(n).padStart(2, '0');
+			newScheduledDate = `${shifted.getFullYear()}-${pad(shifted.getMonth() + 1)}-${pad(shifted.getDate())}`;
+		}
+
+		// Optimistic merge: move the entry between days in local state immediately so it
+		// never disappears between PATCH and reload. The subsequent loadSchedule confirms.
+		const ensureDay = (d: string): DaySchedule => {
+			let day = schedule.find(s => s.date === d);
+			if (!day) {
+				day = { date: d, available: true, capacity: 1, booked: 0, remaining: 1, inquiries: [], calendar_items: [] };
+				schedule = [...schedule, day];
+			}
+			return day;
+		};
+		if (type === 'inquiry') {
+			const fromDay = fromDate ? schedule.find(s => s.date === fromDate) : undefined;
+			const idx = fromDay?.inquiries.findIndex(i => i.inquiry_id === id) ?? -1;
+			if (fromDay && idx >= 0) {
+				const moved = { ...fromDay.inquiries[idx], scheduled_date: dateStr };
+				fromDay.inquiries = fromDay.inquiries.filter((_, i) => i !== idx);
+				const toDay = ensureDay(dateStr);
+				toDay.inquiries = [...toDay.inquiries, moved];
+				schedule = [...schedule];
+			}
+		} else if (type === 'termin') {
+			const fromDay = fromDate ? schedule.find(s => s.date === fromDate) : undefined;
+			const idx = fromDay?.calendar_items.findIndex(c => c.calendar_item_id === id) ?? -1;
+			if (fromDay && idx >= 0) {
+				const moved = { ...fromDay.calendar_items[idx] };
+				fromDay.calendar_items = fromDay.calendar_items.filter((_, i) => i !== idx);
+				const toDay = ensureDay(dateStr);
+				toDay.calendar_items = [...toDay.calendar_items, moved];
+				schedule = [...schedule];
+			}
+		}
+
+		// If the drop target falls outside the currently-viewed month, jump to that month
+		// so Alex visually lands on the new location.
+		const [dy, dm] = dateStr.split('-').map(Number);
+		const movedOutOfView =
+			viewMode === 'month' && (dy !== year || dm - 1 !== month);
+		if (movedOutOfView) {
+			currentDate = new Date(dy, dm - 1, 1);
+		}
+
 		try {
 			if (type === 'termin') {
-				await apiPatch(`/api/v1/admin/calendar-items/${id}`, { scheduled_date: dateStr });
+				await apiPatch(`/api/v1/admin/calendar-items/${id}`, { scheduled_date: newScheduledDate });
 			} else {
-				await apiPatch(`/api/v1/inquiries/${id}`, { scheduled_date: dateStr });
+				await apiPatch(`/api/v1/inquiries/${id}`, { scheduled_date: newScheduledDate });
 			}
 			showToast('Termin verschoben', 'success');
-			await loadSchedule();
+			if (!movedOutOfView) await loadSchedule();
 		} catch (err) {
 			showToast((err as Error).message, 'error');
+			await loadSchedule();
 		}
 	}
 
@@ -1109,7 +1144,7 @@
 								class:md-bar-end={isVisualEnd}
 								title="{isMultiDayInquiry ? (entry.item.customer_name ?? '') : entry.item.title} · Tag {dayNum}/{totalDays}"
 								draggable="true"
-								ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr)}
+								ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr, ('day_number' in entry.item ? entry.item.day_number : null) ?? 1)}
 								onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 								role="button"
 								tabindex="0"
@@ -1391,7 +1426,7 @@
 			<div class="sheet-backdrop" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
 		{/if}
 
-		<CalendarSidePanel bind:panelSelection {calendarItems} {schedule} onLoadSchedule={loadSchedule} />
+		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} />
 	</div>
 </div>
 
@@ -1568,15 +1603,16 @@
 			<div class="qc-row">
 				<div class="qc-field">
 					<label for="qt-cat">Kategorie</label>
-					<select id="qt-cat" bind:value={qtCategory}>
+					<input id="qt-cat" type="text" list="cal-categories" bind:value={qtCategory} placeholder="z.B. Intern, Umzug, eigene…" />
+					<datalist id="cal-categories">
 						<option value="intern">Intern</option>
-							<option value="umzug">Umzug</option>
-							<option value="entruempelung">Entrümpelung</option>
-							<option value="montage">Montage</option>
-							<option value="streichen">Streichen</option>
-							<option value="kartons_auslieferung">Kartons Auslieferung</option>
-							<option value="kartons_abholung">Kartons Abholung</option>
-					</select>
+						<option value="umzug">Umzug</option>
+						<option value="entruempelung">Entrümpelung</option>
+						<option value="montage">Montage</option>
+						<option value="streichen">Streichen</option>
+						<option value="kartons_auslieferung">Kartons Auslieferung</option>
+						<option value="kartons_abholung">Kartons Abholung</option>
+					</datalist>
 				</div>
 				<div class="qc-field">
 					<label for="qt-dur">Dauer (h)</label>

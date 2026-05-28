@@ -150,12 +150,10 @@
 	 */
 	let {
 		panelSelection = $bindable<PanelSelection>(null),
-		calendarItems,
 		schedule,
 		onLoadSchedule
 	}: {
 		panelSelection: PanelSelection;
-		calendarItems: CalendarItem[];
 		schedule: DaySchedule[];
 		onLoadSchedule: () => Promise<void>;
 	} = $props();
@@ -1249,7 +1247,8 @@
 					<div class="field-row">
 						<div class="field">
 							<label for="term-cat">Kategorie</label>
-							<select id="term-cat" class="neu-input" bind:value={termEditCategory}>
+							<input id="term-cat" type="text" class="neu-input" list="cal-categories" bind:value={termEditCategory} placeholder="z.B. Intern, Umzug, eigene…" />
+							<datalist id="cal-categories">
 								<option value="intern">Intern</option>
 								<option value="umzug">Umzug</option>
 								<option value="entruempelung">Entrümpelung</option>
@@ -1257,7 +1256,7 @@
 								<option value="streichen">Streichen</option>
 								<option value="kartons_auslieferung">Kartons Auslieferung</option>
 								<option value="kartons_abholung">Kartons Abholung</option>
-							</select>
+							</datalist>
 						</div>
 						<div class="field">
 							<label for="term-status">Status</label>

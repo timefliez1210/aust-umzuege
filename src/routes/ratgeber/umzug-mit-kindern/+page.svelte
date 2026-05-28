@@ -597,7 +597,7 @@
 	}
 
 	.article-content a {
-		color: #c44100;
+		color: #ff6b00;
 		text-decoration: underline;
 		font-weight: 500;
 	}

@@ -160,7 +160,7 @@
     .hero {
         --hero-navy: #1e3a5f;
         --hero-navy-deep: #14283f;
-        --hero-orange: var(--color-nav-accent, #c44100);
+        --hero-orange: var(--color-nav-accent, #ff6b00);
         --hero-ink: #1a1f2e;
         --hero-mute: #5b6478;
         --hero-line: #e6e8ed;

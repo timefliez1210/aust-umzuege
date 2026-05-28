@@ -286,7 +286,7 @@
 	}
 
 	.text-column a {
-		color: #c44100;
+		color: #ff6b00;
 		text-decoration: underline;
 	}
 

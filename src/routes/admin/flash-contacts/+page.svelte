@@ -265,7 +265,7 @@
 	}
 
 	.card--open {
-		border-left: 4px solid #c44100;
+		border-left: 4px solid #ff6b00;
 	}
 
 	.cards--done { opacity: 0.7; }
@@ -287,7 +287,7 @@
 		align-items: center;
 		gap: 0.3rem;
 		font-size: 0.9rem;
-		color: #c44100;
+		color: #ff6b00;
 		text-decoration: none;
 		font-weight: 600;
 	}

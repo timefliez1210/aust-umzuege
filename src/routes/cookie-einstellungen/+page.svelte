@@ -211,7 +211,7 @@
 	}
 
 	.cookie-page__intro a {
-		color: #c44100;
+		color: #ff6b00;
 		text-decoration: underline;
 	}
 

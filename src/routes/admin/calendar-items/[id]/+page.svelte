@@ -267,7 +267,8 @@
 				</div>
 				<div class="field">
 					<label for="e-cat">Kategorie</label>
-					<select id="e-cat" bind:value={editCategory}>
+					<input id="e-cat" type="text" list="cal-categories" bind:value={editCategory} placeholder="z.B. Intern, Umzug, eigene…" />
+					<datalist id="cal-categories">
 						<option value="intern">Intern</option>
 						<option value="umzug">Umzug</option>
 						<option value="entruempelung">Entrümpelung</option>
@@ -275,7 +276,7 @@
 						<option value="streichen">Streichen</option>
 						<option value="kartons_auslieferung">Kartons Auslieferung</option>
 						<option value="kartons_abholung">Kartons Abholung</option>
-					</select>
+					</datalist>
 				</div>
 				<div class="field">
 					<label for="e-status">Status</label>

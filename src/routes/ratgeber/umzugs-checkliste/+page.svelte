@@ -406,7 +406,7 @@
         display: inline-flex;
         align-items: center;
         gap: var(--space-1);
-        color: #c44100;
+        color: #ff6b00;
         font-size: var(--text-sm);
         font-weight: 500;
         text-decoration: none;

@@ -274,7 +274,6 @@
 		{:else}
 			<div class="info-grid">
 				<div class="info-item">
-					<span class="info-label">Adresse</span>
 					<span class="info-value">
 						{originAddress.street}{originAddress.house_number ? ` ${originAddress.house_number}` : ''}, {originAddress.postal_code || ''} {originAddress.city}
 					</span>
@@ -361,7 +360,6 @@
 		{:else}
 			<div class="info-grid">
 				<div class="info-item">
-					<span class="info-label">Adresse</span>
 					<span class="info-value">
 						{destinationAddress.street}{destinationAddress.house_number ? ` ${destinationAddress.house_number}` : ''}, {destinationAddress.postal_code || ''} {destinationAddress.city}
 					</span>
@@ -453,7 +451,6 @@
 		{:else}
 			<div class="info-grid">
 				<div class="info-item">
-					<span class="info-label">Adresse</span>
 					<span class="info-value">
 						{stopAddress.street}{stopAddress.house_number ? ` ${stopAddress.house_number}` : ''}, {stopAddress.postal_code || ''} {stopAddress.city}
 					</span>

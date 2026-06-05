@@ -16,6 +16,7 @@
 		inquiry_id: string;
 		customer_name: string | null;
 		customer_email?: string | null;
+		customer_phone?: string | null;
 		customer_type?: string | null;
 		company_name?: string | null;
 		departure_address: string | null;
@@ -1083,7 +1084,15 @@
 				<div class="panel-section">
 					<div class="panel-kv">
 						<span class="kv-label">E-Mail</span>
-						<span class="kv-value kv-muted">{inq.customer_email ?? '—'}</span>
+						<span class="kv-value kv-muted">
+							{#if inq.customer_email}<a href="mailto:{inq.customer_email}" class="kv-link">{inq.customer_email}</a>{:else}—{/if}
+						</span>
+					</div>
+					<div class="panel-kv">
+						<span class="kv-label">Telefon</span>
+						<span class="kv-value kv-muted">
+							{#if inq.customer_phone}<a href="tel:{inq.customer_phone}" class="kv-link">{inq.customer_phone}</a>{:else}—{/if}
+						</span>
 					</div>
 					{#if inq.departure_address || inq.arrival_address}
 						<div class="panel-kv">
@@ -1570,6 +1579,8 @@
 	.kv-label { font-size: 0.75rem; font-weight: 600; color: var(--dt-on-surface-variant); flex-shrink: 0; }
 	.kv-value { font-size: 0.8125rem; color: var(--dt-on-surface); font-weight: 500; text-align: right; }
 	.kv-muted { color: var(--dt-on-surface-variant); font-weight: 400; }
+	.kv-link { color: inherit; text-decoration: none; }
+	.kv-link:hover { text-decoration: underline; }
 
 	.panel-empty { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }
 	.panel-loading { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }

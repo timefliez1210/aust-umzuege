@@ -272,7 +272,7 @@
 			createError = `${addrCfg.originLabel} (Straße, Stadt) ist erforderlich`;
 			return;
 		}
-		if (addrCfg.showDestination && (!destStreet.trim() || !destCity.trim())) {
+		if (addrCfg.showDestination && !addrCfg.optionalDestination && (!destStreet.trim() || !destCity.trim())) {
 			createError = `${addrCfg.destinationLabel} (Straße, Stadt) ist erforderlich`;
 			return;
 		}
@@ -315,7 +315,9 @@
 						parking_ban: originHalteverbot || null,
 					},
 				} : {}),
-				...(addrCfg.showDestination ? {
+				// Include destination when the service requires it, or when it's optional
+				// (Umzugshelfer) but the user actually filled it in.
+				...(addrCfg.showDestination && (!addrCfg.optionalDestination || destStreet.trim() || destCity.trim()) ? {
 					destination: {
 						street: destStreet.trim(),
 						city: destCity.trim(),
@@ -539,10 +541,10 @@
 			{#if addrCfg.showDestination}
 				<div class="address-col">
 					<h4>{addrCfg.destinationLabel}</h4>
-					<input type="text" placeholder="Straße *" bind:value={destStreet} class="form-input" />
+					<input type="text" placeholder={addrCfg.optionalDestination ? 'Straße' : 'Straße *'} bind:value={destStreet} class="form-input" />
 					<div class="address-row">
 						<input type="text" placeholder="PLZ" bind:value={destPostal} class="form-input form-input--short" />
-						<input type="text" placeholder="Stadt *" bind:value={destCity} class="form-input" />
+						<input type="text" placeholder={addrCfg.optionalDestination ? 'Stadt' : 'Stadt *'} bind:value={destCity} class="form-input" />
 					</div>
 					<div class="address-row">
 						<select bind:value={destFloor} class="form-select">

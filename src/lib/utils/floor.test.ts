@@ -20,6 +20,13 @@ describe('floorLabel', () => {
 		expect(floorLabel('8')).toBe('8. OG');
 		expect(floorLabel('10')).toBe('10. OG');
 	});
+
+	it('returns pre-formatted labels as-is (no "2. OG. OG" doubling)', () => {
+		expect(floorLabel('2. OG')).toBe('2. OG');
+		expect(floorLabel('DG')).toBe('DG');
+		expect(floorLabel('UG')).toBe('UG');
+		expect(floorLabel('EG')).toBe('EG');
+	});
 });
 
 describe('parseFloor', () => {

@@ -16,6 +16,7 @@
 		inquiry_id: string;
 		customer_name: string | null;
 		customer_email?: string | null;
+		customer_phone?: string | null;
 		customer_type?: string | null;
 		company_name?: string | null;
 		departure_address: string | null;
@@ -942,7 +943,7 @@
 	 */
 	async function submitQuickInquiry() {
 		if (qiAddrCfg.showOrigin && (!qiOriginStreet.trim() || !qiOriginCity.trim())) { quickCreateError = `${qiAddrCfg.originLabel} (Straße, Stadt) erforderlich`; return; }
-		if (qiAddrCfg.showDestination && (!qiDestStreet.trim() || !qiDestCity.trim())) { quickCreateError = `${qiAddrCfg.destinationLabel} (Straße, Stadt) erforderlich`; return; }
+		if (qiAddrCfg.showDestination && !qiAddrCfg.optionalDestination && (!qiDestStreet.trim() || !qiDestCity.trim())) { quickCreateError = `${qiAddrCfg.destinationLabel} (Straße, Stadt) erforderlich`; return; }
 		if (qiCustomerMode === 'existing' && !qiCustomerId) { quickCreateError = 'Bitte einen Kunden auswählen'; return; }
 		if (qiCustomerMode === 'new' && !qiName.trim() && !qiEmail.trim() && !qiPhone.trim()) { quickCreateError = 'Bitte mindestens Name, E-Mail oder Telefon angeben'; return; }
 		quickCreateError = '';
@@ -971,7 +972,7 @@
 					postal_code: qiOriginPostal.trim() || null,
 				};
 			}
-			if (qiAddrCfg.showDestination) {
+			if (qiAddrCfg.showDestination && (!qiAddrCfg.optionalDestination || qiDestStreet.trim() || qiDestCity.trim())) {
 				body.destination = {
 					street: qiDestStreet.trim(),
 					city: qiDestCity.trim(),

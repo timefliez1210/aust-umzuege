@@ -43,12 +43,15 @@ export const CUSTOMER_TYPE_COLORS: Record<string, string> = {
  *
  * `showDestination` = false for services that only need 1 address
  * (Haushaltsauflösung, Entrümpelung, Montage, Lagerung).
+ *
+ * `optionalDestination` = true shows the destination field but does NOT require it
+ * (Umzugshelfer are usually booked to a single address — the second one is optional).
  */
-export const SERVICE_ADDRESS_CONFIG: Record<string, { showOrigin: boolean; originLabel: string; showDestination: boolean; destinationLabel: string; showBilling: boolean }> = {
+export const SERVICE_ADDRESS_CONFIG: Record<string, { showOrigin: boolean; originLabel: string; showDestination: boolean; destinationLabel: string; showBilling: boolean; optionalDestination?: boolean }> = {
 	privatumzug:          { showOrigin: true, originLabel: 'Auszugsadresse',  showDestination: true,  destinationLabel: 'Einzugsadresse',  showBilling: false },
 	firmenumzug:          { showOrigin: true, originLabel: 'Aktueller Standort', showDestination: true,  destinationLabel: 'Neuer Standort',    showBilling: false },
 	seniorenumzug:        { showOrigin: true, originLabel: 'Auszugsadresse',  showDestination: true,  destinationLabel: 'Einzugsadresse',  showBilling: false },
-	umzugshelfer:         { showOrigin: true, originLabel: 'Von',             showDestination: true,  destinationLabel: 'Nach',             showBilling: false },
+	umzugshelfer:         { showOrigin: true, originLabel: 'Von',             showDestination: true,  destinationLabel: 'Nach (optional)',  showBilling: false, optionalDestination: true },
 	montage:              { showOrigin: true, originLabel: 'Einsatzadresse',  showDestination: false, destinationLabel: '',                 showBilling: false },
 	haushaltsaufloesung:  { showOrigin: true, originLabel: 'Auflösungsadresse', showDestination: false, destinationLabel: '',                 showBilling: true },
 	entruempelung:        { showOrigin: true, originLabel: 'Räumungsadresse',  showDestination: false, destinationLabel: '',                 showBilling: false },

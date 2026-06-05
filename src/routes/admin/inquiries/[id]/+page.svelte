@@ -1403,6 +1403,49 @@
 	}
 
 	/**
+	 * Overwrite an invoice's number (recovery path).
+	 *
+	 * Called by: Template (number edit control per invoice)
+	 * Purpose: When the in-system counter falls out of sync with manually-sent
+	 *          invoices, lets Alex correct the number on a generated invoice. The
+	 *          server regenerates the PDF with the new number and nudges the counter
+	 *          forward so the next generated number won't collide.
+	 */
+	let editingNumberId = $state<string | null>(null);
+	let numberDraft = $state('');
+	let numberSaving = $state(false);
+
+	function startEditNumber(inv: Invoice) {
+		editingNumberId = inv.id;
+		numberDraft = inv.invoice_number;
+	}
+
+	function cancelEditNumber() {
+		editingNumberId = null;
+		numberDraft = '';
+	}
+
+	async function saveInvoiceNumber(invId: string) {
+		if (!data) return;
+		const next = numberDraft.trim();
+		if (!next) { showToast('Rechnungsnummer darf nicht leer sein', 'error'); return; }
+		numberSaving = true;
+		try {
+			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/invoices/${invId}/number`, {
+				invoice_number: next,
+			});
+			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
+			editingNumberId = null;
+			numberDraft = '';
+			showToast('Rechnungsnummer aktualisiert', 'success');
+		} catch (e) {
+			showToast((e as Error).message || 'Rechnungsnummer konnte nicht geändert werden', 'error');
+		} finally {
+			numberSaving = false;
+		}
+	}
+
+	/**
 	 * Begin editing extra services for a specific invoice.
 	 *
 	 * Called by: Template ("Zusatzleistungen bearbeiten" toggle)
@@ -2659,7 +2702,26 @@
 						<div class="invoice-row">
 							<div class="invoice-row-header">
 								<div class="invoice-row-meta">
-									<span class="invoice-number">Nr. {inv.invoice_number}</span>
+									{#if editingNumberId === inv.id}
+										<span class="invoice-number">Nr.</span>
+										<input
+											class="inline-input invoice-number-input"
+											bind:value={numberDraft}
+											placeholder="z.B. 2026-0053"
+											onkeydown={(e) => { if (e.key === 'Enter') saveInvoiceNumber(inv.id); if (e.key === 'Escape') cancelEditNumber(); }}
+										/>
+										<button class="btn btn-sm btn-primary" disabled={numberSaving} onclick={() => saveInvoiceNumber(inv.id)}>
+											{numberSaving ? '...' : 'Speichern'}
+										</button>
+										<button class="btn btn-sm" onclick={cancelEditNumber}>Abbrechen</button>
+									{:else}
+										<span class="invoice-number">Nr. {inv.invoice_number}</span>
+										{#if inv.status !== 'paid'}
+											<button class="btn-icon" title="Rechnungsnummer korrigieren" onclick={() => startEditNumber(inv)}>
+												<Pencil size={13} />
+											</button>
+										{/if}
+									{/if}
 									<span class="invoice-type-label">
 										{#if inv.invoice_type === 'full'}Vollrechnung
 										{:else if inv.invoice_type === 'partial_first'}Anzahlung ({inv.partial_percent}%)
@@ -4036,6 +4098,10 @@
 	.invoice-number {
 		font-weight: 600;
 		color: var(--dt-on-surface);
+	}
+
+	.invoice-number-input {
+		max-width: 150px;
 	}
 
 	.invoice-type-label {

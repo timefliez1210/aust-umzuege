@@ -15,7 +15,11 @@ export function floorLabel(floor: string | null): string {
 		'0': 'Erdgeschoss', '1': '1. OG', '2': '2. OG', '3': '3. OG',
 		'4': '4. OG', '5': '5. OG', '-1': 'Keller'
 	};
-	return labels[floor] || `${floor}. OG`;
+	if (labels[floor]) return labels[floor];
+	// Already a human-readable label (e.g. "2. OG", "DG", "UG") — return as-is
+	// instead of re-appending ". OG" (which produced "2. OG. OG").
+	if (!/^-?\d+$/.test(floor.trim())) return floor;
+	return `${floor}. OG`;
 }
 
 /**

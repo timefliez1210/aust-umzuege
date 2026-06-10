@@ -71,28 +71,33 @@ Both inquiries and appointments (Termine) support multi-day scheduling. The two 
 - Changing **Bis** calls `applyInquiryDateRange` / `applyTerminDateRange`, which regenerates the day list.
 - Saving calls `saveInquiryDays` / `saveTerminDays`: PATCHes `end_date` on the entity, then PUTs the full flat employee-assignment array (one entry per employee × job_date) in a single full-replace call.
 
+### Single tracked time (consolidation)
+
+> **History**: there used to be two times per employee per day — *Geplant* (planned, `start_time`/`end_time` → `planned_hours`) and *Ist* (actual, `clock_in`/`clock_out`). That was **consolidated to a single tracked time**: the UI now only edits **Ist** (`clock_in`/`clock_out` + `break_minutes`). The DB columns `start_time`/`end_time`/`planned_hours` still exist and the backend `put_*_employees` PUT still accepts them, but **nothing in the UI writes planned times anymore** — they survive only as a read-fallback (see `fillEmp` below). Do not reintroduce a planned-time input.
+
 ### Employee auto-copy to new days
 
 When the date range is extended, any **newly generated day** inherits the employees from day 1 as a template. The `fillEmp` function is applied to **all** days (both new and existing) on every range update and on initial load:
 
 ```
 fillEmp(e):
-  clock_in  = e.clock_in  ?? e.start_time   // pre-fill Ist from Pl. if not yet set
+  clock_in  = e.clock_in  ?? e.start_time   // legacy read-fallback: use planned only if Ist unset
   clock_out = e.clock_out ?? e.end_time
-  planned_hours = existing > 0 ? keep : recompute from start/end via computeHoursAndBreak
-  break_minutes = existing > 0 ? keep : legal minimum (ArbZG: >6h → 30min, >9h → 45min)
+  break_minutes = e.break_minutes > 0 ? keep : legal minimum (ArbZG: >6h → 30min, >9h → 45min)
 ```
 
-**Key invariant**: neither Geplant nor Ist should ever be empty after a day is generated. If an employee has `start_time`/`end_time` set, `planned_hours` and `clock_in`/`clock_out` are always populated.
+The `?? e.start_time` fallback only matters for old rows written before the consolidation; new rows set `clock_in`/`clock_out` directly.
 
-### Geplant vs Ist
+### Day-level Start/Ende (bulk-apply)
 
-| Field | Source | Meaning |
-|-------|--------|---------|
-| **Geplant** | `planned_hours` (DB) | Net planned hours = gross(start→end) − legal break. Computed by `computeHoursAndBreak`. |
-| **Ist** | derived from `clock_in`, `clock_out`, `break_minutes` | Actual hours worked. Pre-filled from planned times; admin edits after the fact. |
+Each day in the multi-day editor (`CalendarSidePanel`) has a day-level **Start**/**Ende** pair *above* the per-employee rows. These are a **convenience bulk-setter, not a separate stored time**:
 
-`break_minutes` is a single shared field — the same break deduction applies to both Geplant and Ist. If a worker actually took no break, the admin zeros out `break_minutes` manually.
+- Editing a day's Start/Ende (`applyDayTime`) writes that time into **every** assigned employee's `clock_in`/`clock_out` for that day and PATCHes each row immediately.
+- Editing one employee's Ist afterwards overrides just that row — every change (day-level and per-row) saves independently, so **last write wins**.
+- On load, the day-level field is derived via `commonEmpTime`: it shows the crew's shared time, or blank if the employees differ.
+- All time inputs are normalised through `normalizeTimeInput` (`$lib/utils/format`), which accepts loose input (`7`, `7:30`, `3:30`) and pads to `HH:MM:SS`. Never hand-roll `value + ':00'` / `value.length === 5` — that silently drops single-digit-hour entries.
+
+`break_minutes` is the per-employee break deduction applied to the Ist hours. If a worker took no break, the admin zeros it manually.
 
 ### EmployeeAssignmentPanel — multi-day summary mode
 

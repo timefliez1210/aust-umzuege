@@ -12,6 +12,7 @@
 		formatEuro,
 		API_BASE,
 	} from "$lib/utils/api.svelte";
+	import { normalizeTimeInput } from "$lib/utils/format";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 	import StatusBadge from "$lib/components/admin/StatusBadge.svelte";
 	import PriceInput from "$lib/components/admin/PriceInput.svelte";
@@ -822,8 +823,8 @@
 			notes: editNotes || null,
 			employee_notes: editEmployeeNotes || null,
 			scheduled_date: editDate || null,
-			start_time: editStartTime ? editStartTime + ':00' : undefined,
-			end_time: editEndTime ? editEndTime + ':00' : undefined,
+			start_time: normalizeTimeInput(editStartTime) ?? undefined,
+			end_time: normalizeTimeInput(editEndTime) ?? undefined,
 			has_pauschale: editHasPauschale,
 			custom_fields: {
 				...((data as any).custom_fields ?? {}),

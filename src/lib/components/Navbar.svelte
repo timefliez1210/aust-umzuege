@@ -120,7 +120,7 @@
                     },
                 ],
             },
-            { label: "Kontakt", href: "/kontakt" },
+            { label: "Über uns", href: "/ueber-uns" },
         ],
     }: Props = $props();
 

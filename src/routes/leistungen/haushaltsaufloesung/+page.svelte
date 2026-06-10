@@ -56,7 +56,7 @@
 
 <MetaTags
     title="Haushaltsauflösung Hildesheim · Diskret & Festpreis | Aust"
-    description="Haushaltsauflösung in Hildesheim — diskret, Festpreis nach Vor-Ort-Termin, mit Wertanrechnung. Im Erbfall als Nachlassverbindlichkeit absetzbar (§10 ErbStG). 71× ★★★★★."
+    description="Haushaltsauflösung in Hildesheim — diskret, Festpreis nach Vor-Ort-Termin, mit Wertanrechnung. Im Erbfall als Nachlassverbindlichkeit steuerlich absetzbar (§10 ErbStG)."
     keywords="Haushaltsauflösung Hildesheim, Wohnungsauflösung, Nachlassräumung, besenreine Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />

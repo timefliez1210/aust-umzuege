@@ -516,14 +516,17 @@
 			};
 			const sortedDates = Array.from(byDate.keys()).sort();
 			const originStr = panelSelection?.kind === 'inquiry' ? (panelSelection.item.scheduled_date?.slice(0, 10) ?? '') : '';
-			inqDays = sortedDates.map((date, i) => ({
-				day_date:   date,
-				day_number: i + 1,
-				notes:      null,
-				start_time: null,
-				end_time:   null,
-				employees:  (byDate.get(date) ?? []).map(fillEmp),
-			}));
+			inqDays = sortedDates.map((date, i) => {
+				const employees = (byDate.get(date) ?? []).map(fillEmp);
+				return {
+					day_date:   date,
+					day_number: i + 1,
+					notes:      null,
+					start_time: commonEmpTime(employees, 'clock_in'),
+					end_time:   commonEmpTime(employees, 'clock_out'),
+					employees,
+				};
+			});
 			inqUntilDate = sortedDates.length > 1 ? sortedDates[sortedDates.length - 1] : (originStr ?? '');
 		} catch {
 			inqDays = [];
@@ -605,7 +608,7 @@
 		empId: string,
 		dayDate: string,
 		field: string,
-		value: string
+		value: string | number | null
 	) {
 		const baseUrl = entityType === 'inquiry'
 			? `/api/v1/inquiries/${entityId}/employees`
@@ -615,6 +618,71 @@
 		} catch (e: unknown) {
 			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
 		}
+	}
+
+	/**
+	 * Returns the time shared by every employee on a day (for the day-level Start/Ende
+	 * display), or null if the day is empty or the employees' times differ.
+	 */
+	function commonEmpTime(emps: DayEmployee[], field: 'clock_in' | 'clock_out'): string | null {
+		if (emps.length === 0) return null;
+		const first = emps[0][field] ?? null;
+		if (first === null) return null;
+		return emps.every((e) => (e[field] ?? null) === first) ? first : null;
+	}
+
+	/**
+	 * Day-level Start/Ende: bulk-apply one time to every employee's Ist (clock_in or
+	 * clock_out) for that day and persist each row immediately.
+	 *
+	 * Called by: Template (onblur on a day's Start/Ende input, inquiry + termin).
+	 * Purpose: Lets Alex set the whole day's window once instead of per employee.
+	 *          Individual employee edits afterwards overwrite just that row, because
+	 *          every change (here and per-row) saves independently — the last write wins.
+	 */
+	// Snapshot of a day-level Start/Ende field when it gains focus, so a blur that
+	// didn't actually change the value does NOT re-broadcast (which would clobber an
+	// individual employee's manually-adjusted time, e.g. someone who came late).
+	let dayBulkBefore = '';
+
+	/** onblur for a day-level field: only bulk-apply if the value was actually edited. */
+	function maybeApplyDayTime(
+		entityType: 'inquiry' | 'calendar_item',
+		dayIndex: number,
+		field: 'clock_in' | 'clock_out',
+		raw: string
+	) {
+		if (raw === dayBulkBefore) return;
+		applyDayTime(entityType, dayIndex, field, raw);
+	}
+
+	async function applyDayTime(
+		entityType: 'inquiry' | 'calendar_item',
+		dayIndex: number,
+		field: 'clock_in' | 'clock_out',
+		raw: string
+	) {
+		const days = entityType === 'inquiry' ? inqDays : termDays;
+		const day = days[dayIndex];
+		if (!day || !panelSelection) return;
+		const entityId = entityType === 'inquiry'
+			? (panelSelection.kind === 'inquiry' ? panelSelection.item.inquiry_id : '')
+			: (panelSelection.kind === 'termin' ? panelSelection.item.id : '');
+		if (!entityId) return;
+
+		const norm = normalizeTimeInput(raw || null);
+		const display = norm ? norm.slice(0, 5) : null;
+		// Reflect the normalized value back into the day-level field.
+		if (field === 'clock_in') day.start_time = display;
+		else day.end_time = display;
+
+		// Push to every assigned employee on this day and save each.
+		for (const emp of day.employees) {
+			emp[field] = display;
+			await saveMultiDayField(entityType, entityId, emp.employee_id, day.day_date, field, norm);
+		}
+		// Trigger reactivity for the mutated nested array.
+		days[dayIndex] = day;
 	}
 
 	/**
@@ -652,8 +720,8 @@
 					employee_id:   e.employee_id,
 					job_date:      d.day_date,
 					notes:         e.notes ?? null,
-					clock_in:      e.clock_in    ? (e.clock_in.length    === 5 ? e.clock_in    + ':00' : e.clock_in)    : null,
-					clock_out:     e.clock_out   ? (e.clock_out.length   === 5 ? e.clock_out   + ':00' : e.clock_out)   : null,
+					clock_in:      normalizeTimeInput(e.clock_in),
+					clock_out:     normalizeTimeInput(e.clock_out),
 					break_minutes: parseInt(String(e.break_minutes)) || 0,
 				}))
 			);
@@ -709,14 +777,17 @@
 				};
 			};
 			const sortedDates = Array.from(byDate.keys()).sort();
-			termDays = sortedDates.map((date, i) => ({
-				day_date:   date,
-				day_number: i + 1,
-				notes:      null,
-				start_time: null,
-				end_time:   null,
-				employees:  (byDate.get(date) ?? []).map(fillEmp),
-			}));
+			termDays = sortedDates.map((date, i) => {
+				const employees = (byDate.get(date) ?? []).map(fillEmp);
+				return {
+					day_date:   date,
+					day_number: i + 1,
+					notes:      null,
+					start_time: commonEmpTime(employees, 'clock_in'),
+					end_time:   commonEmpTime(employees, 'clock_out'),
+					employees,
+				};
+			});
 			termUntilDate = sortedDates.length > 1 ? sortedDates[sortedDates.length - 1] : '';
 		} catch {
 			termDays = [];
@@ -814,8 +885,8 @@
 					employee_id:   e.employee_id,
 					job_date:      d.day_date,
 					notes:         e.notes ?? null,
-					clock_in:      e.clock_in    ? (e.clock_in.length    === 5 ? e.clock_in    + ':00' : e.clock_in)    : null,
-					clock_out:     e.clock_out   ? (e.clock_out.length   === 5 ? e.clock_out   + ':00' : e.clock_out)   : null,
+					clock_in:      normalizeTimeInput(e.clock_in),
+					clock_out:     normalizeTimeInput(e.clock_out),
 					break_minutes: parseInt(String(e.break_minutes)) || 0,
 				}))
 			);
@@ -848,8 +919,8 @@
 				notes: inqEditNotes || null,
 				employee_notes: inqEditEmployeeNotes || null,
 				scheduled_date: inqEditPreferredDate || null,
-				start_time: inqEditStartTime ? (inqEditStartTime.length === 5 ? inqEditStartTime + ':00' : inqEditStartTime) : undefined,
-				end_time: inqEditEndTime ? (inqEditEndTime.length === 5 ? inqEditEndTime + ':00' : inqEditEndTime) : null,
+				start_time: normalizeTimeInput(inqEditStartTime) ?? undefined,
+				end_time: normalizeTimeInput(inqEditEndTime),
 			});
 			showToast('Anfrage gespeichert', 'success');
 			await onLoadSchedule();
@@ -912,8 +983,8 @@
 				category: termEditCategory,
 				status: termEditStatus,
 				scheduled_date: termEditDate || null,
-				start_time: termEditStartTime ? (termEditStartTime.length === 5 ? termEditStartTime + ':00' : termEditStartTime) : undefined,
-				end_time: termEditEndTime ? (termEditEndTime.length === 5 ? termEditEndTime + ':00' : termEditEndTime) : null,
+				start_time: normalizeTimeInput(termEditStartTime) ?? undefined,
+				end_time: normalizeTimeInput(termEditEndTime),
 				duration_hours: parseFloat(termEditDuration) || 0,
 				location: termEditLocation,
 				description: termEditDescription,
@@ -1202,11 +1273,11 @@
 										<div class="field-row">
 											<div class="field">
 												<label>Start</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].start_time} />
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_in', (e.target as HTMLInputElement).value)} />
 											</div>
 											<div class="field">
 												<label>Ende</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].end_time} />
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_out', (e.target as HTMLInputElement).value)} />
 											</div>
 										</div>
 										{#if day.employees.length > 0}
@@ -1382,11 +1453,11 @@
 										<div class="field-row">
 											<div class="field">
 												<label>Start</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].start_time} />
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_in', (e.target as HTMLInputElement).value)} />
 											</div>
 											<div class="field">
 												<label>Ende</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].end_time} />
+												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_out', (e.target as HTMLInputElement).value)} />
 											</div>
 										</div>
 										{#if day.employees.length > 0}

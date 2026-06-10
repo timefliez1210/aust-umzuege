@@ -51,6 +51,16 @@
             </p>
         </header>
 
+        <div class="team-photo">
+            <img
+                src="/team-aust-umzuege-hildesheim.jpg"
+                alt="Das Team von Aust Umzüge vor dem Umzugs-LKW in Hildesheim"
+                width="1200"
+                height="800"
+                loading="eager"
+            />
+        </div>
+
         <section class="stats-grid">
             <div class="stat">
                 <Star size={28} strokeWidth={1.8} />
@@ -294,6 +304,21 @@
     .about-subtitle {
         color: #64748b;
         font-size: 1.25rem;
+    }
+
+    .team-photo {
+        margin-bottom: var(--space-12);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .team-photo img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        max-height: 520px;
     }
 
     .stats-grid {

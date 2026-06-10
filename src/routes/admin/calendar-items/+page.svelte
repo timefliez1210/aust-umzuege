@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
+	import { normalizeTimeInput } from '$lib/utils/format';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { Plus, CalendarCheck } from 'lucide-svelte';
 
@@ -88,8 +89,8 @@
 				title: createTitle.trim(),
 				category: createCategory,
 				scheduled_date: createDate || null,
-				start_time: createStartTime.length === 5 ? createStartTime + ':00' : createStartTime,
-				end_time: createEndTime ? (createEndTime.length === 5 ? createEndTime + ':00' : createEndTime) : null,
+				start_time: normalizeTimeInput(createStartTime),
+				end_time: normalizeTimeInput(createEndTime),
 				duration_hours: parseFloat(createDuration) || 0,
 				location: createLocation.trim() || null,
 				description: createDescription.trim() || null

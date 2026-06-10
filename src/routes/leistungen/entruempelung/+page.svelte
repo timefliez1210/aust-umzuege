@@ -52,7 +52,7 @@
 
 <MetaTags
     title="Entrümpelung Hildesheim · Festpreis & Messie-Wohnung | Aust"
-    description="Entrümpelung in Hildesheim — Keller, Dachboden, Messie-Wohnung. Festpreis mit Wertanrechnung, Entsorgungsnachweis inklusive · 71× ★★★★★. ☎ 05121 755 83 79."
+    description="Entrümpelung in Hildesheim — Keller, Dachboden, Messie-Wohnung. Festpreis nach Vor-Ort-Termin, Wertanrechnung & Entsorgungsnachweis inklusive."
     keywords="Entrümpelung Hildesheim, Keller entrümpeln, Dachboden entrümpeln, Messie Wohnung, Garage entrümpeln"
     canonical="https://www.aust-umzuege.de/leistungen/entruempelung"
 />

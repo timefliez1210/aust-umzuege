@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPatch, apiPost, apiDownload, apiFetch, formatDate } from '$lib/utils/api.svelte';
+	import { normalizeTimeInput } from '$lib/utils/format';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -196,10 +197,9 @@
 		}
 	}
 
-	/** Converts "HH:MM" (from <input type="time">) to "HH:MM:SS" for the API, or null if empty. */
+	/** Converts loose time input ("7", "7:30", "07:30") to "HH:MM:SS" for the API, or null if empty. */
 	function toTimeStr(val: string): string | null {
-		if (!val) return null;
-		return val.length === 5 ? `${val}:00` : val;
+		return normalizeTimeInput(val);
 	}
 
 	/**

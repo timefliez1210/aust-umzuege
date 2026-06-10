@@ -3,7 +3,7 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { buildCalendar, getISOWeek } from '$lib/utils/calendar';
 	import { draggable } from '$lib/utils/draggable';
-	import { formatTime } from '$lib/utils/format';
+	import { formatTime, normalizeTimeInput } from '$lib/utils/format';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
@@ -1036,8 +1036,8 @@
 				category: qtCategory,
 				location: qtLocation.trim() || null,
 				scheduled_date: quickCreateDate,
-				start_time: qtStartTime.length === 5 ? qtStartTime + ':00' : qtStartTime,
-				end_time: qtEndTime ? (qtEndTime.length === 5 ? qtEndTime + ':00' : qtEndTime) : null,
+				start_time: normalizeTimeInput(qtStartTime),
+				end_time: normalizeTimeInput(qtEndTime),
 				duration_hours: qtDuration,
 				customer_id: customerId,
 			});

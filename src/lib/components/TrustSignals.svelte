@@ -49,11 +49,11 @@
         --trust-card: #ffffff;
         --trust-surface: #fafafa;
 
-        background: var(--trust-surface);
-        padding: 0 1.5rem 3rem;
+        background: #1e3a5f;
+        padding: 3rem 1.5rem;
     }
     @media (min-width: 768px) {
-        .trust { padding: 0 2rem 4rem; }
+        .trust { padding: 4rem 2rem; }
     }
 
     .trust__grid {
@@ -68,12 +68,21 @@
         display: flex;
         align-items: center;
         gap: 0.85rem;
-        background: var(--trust-card);
-        border: 1px solid var(--trust-line);
+        background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-top: 1px solid rgba(255, 255, 255, 0.4);
         border-left: 3px solid var(--trust-orange);
         border-radius: 0.6rem;
         padding: 0.85rem 1rem;
-        box-shadow: 0 1px 2px rgba(20, 40, 63, 0.04);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+        transition: box-shadow 0.2s, background 0.2s;
+    }
+
+    .stat:hover {
+        background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.12) 100%);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
     }
 
     .stat__icon {
@@ -98,14 +107,14 @@
     .stat__number {
         font-size: 1rem;
         font-weight: 800;
-        color: var(--trust-navy);
+        color: #ffffff;
         letter-spacing: -0.01em;
         line-height: 1.2;
     }
 
     .stat__label {
         font-size: 0.78rem;
-        color: var(--trust-mute);
+        color: rgba(255, 255, 255, 0.7);
         line-height: 1.3;
     }
 

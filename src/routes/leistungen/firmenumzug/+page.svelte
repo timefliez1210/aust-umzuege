@@ -52,7 +52,7 @@
 
 <MetaTags
     title="Firmenumzug Hildesheim · Wochenende & IT-Migration | Aust"
-    description="Büroumzug Hildesheim mit Wochenend-/Nachteinsatz, IT- und Servertransport, NDA & Wertdeklaration nach §431 HGB. Festpreis · 71× ★★★★★. ☎ 05121 755 83 79."
+    description="Büroumzug & Firmenumzug Hildesheim — Wochenend-/Nachteinsatz, IT- und Servertransport, Wertdeklaration nach §431 HGB. Festpreis nach kostenloser Besichtigung."
     keywords="Firmenumzug Hildesheim, Büroumzug, Geschäftsumzug, IT-Umzug, Betriebsumzug"
     canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
 />

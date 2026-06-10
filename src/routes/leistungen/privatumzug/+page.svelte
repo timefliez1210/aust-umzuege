@@ -55,9 +55,9 @@
 </script>
 
 <MetaTags
-    title="Privatumzug Hildesheim · Festpreis ohne Stundenzähler | Aust"
-    description="Privatumzug Hildesheim zum Festpreis — Vor-Ort-Termin, verbindliches Angebot in 48 h, 71× ★★★★★. Bis 4.000 € absetzbar (§35a EStG). ☎ 05121 755 83 79."
-    keywords="Privatumzug Hildesheim, Umzug Privatpersonen, Wohnungsumzug, Umzugsfirma Hildesheim"
+    title="Umzug Hildesheim · Privatumzug zum Festpreis | Aust Umzüge"
+    description="Umzug in Hildesheim zum Festpreis — Privatumzug, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. Bis 4.000 € steuerlich absetzbar (§35a EStG)."
+    keywords="Umzug Hildesheim, Umziehen Hildesheim, Privatumzug Hildesheim, Wohnungsumzug Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />
 

@@ -124,8 +124,8 @@
 </script>
 
 <MetaTags
-    title="Leistungen — Umzug, Entrümpelung & Haushaltsauflösung Hildesheim"
-    description="Privatumzug, Firmenumzug, Haushaltsauflösung, Entrümpelung & Seniorenumzug in Hildesheim. Festpreis nach Vor-Ort-Termin · 71× ★★★★★ auf Google. ☎ 05121 755 83 79."
+    title="Leistungen — Umzug, Seniorenumzug & Entrümpelung Hildesheim"
+    description="Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung & Entrümpelung in Hildesheim — alle Leistungen zum Festpreis nach kostenloser Vor-Ort-Besichtigung."
     keywords="Umzugsservice Hildesheim, Umzugsleistungen Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen"
 />

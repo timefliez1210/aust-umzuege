@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, apiPatch, apiDelete, formatDate } from '$lib/utils/api.svelte';
+	import { normalizeTimeInput } from '$lib/utils/format';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { ArrowLeft, Save, Trash2, X } from 'lucide-svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -115,8 +116,8 @@
 				title: editTitle,
 				category: editCategory,
 				scheduled_date: editDate || null,
-				start_time: editStartTime ? (editStartTime.length === 5 ? editStartTime + ':00' : editStartTime) : undefined,
-				end_time: editEndTime ? (editEndTime.length === 5 ? editEndTime + ':00' : editEndTime) : null,
+				start_time: normalizeTimeInput(editStartTime) ?? undefined,
+				end_time: normalizeTimeInput(editEndTime),
 				duration_hours: parseFloat(editDuration) || 0,
 				location: editLocation || null,
 				description: editDescription || null,

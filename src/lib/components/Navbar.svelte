@@ -3,6 +3,7 @@
     import { page } from "$app/stores";
     import { Plus, Minus } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
+    import { openContactFlow } from "$lib/stores/contactFlow.svelte";
 
     interface DropdownItem {
         label: string;
@@ -282,13 +283,16 @@
                 </li>
             {/each}
             <li>
-                <a
-                    href="/kostenloses-angebot"
+                <button
+                    type="button"
                     class="navbar__mobile-cta"
-                    onclick={closeMobileMenu}
+                    onclick={() => {
+                        closeMobileMenu();
+                        openContactFlow('picker');
+                    }}
                 >
-                    Kostenloses Angebot
-                </a>
+                    Kontakt aufnehmen
+                </button>
             </li>
         </ul>
     </div>
@@ -549,6 +553,11 @@
 
     .navbar__mobile-cta {
         display: block;
+        width: 100%;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: inherit;
         background: linear-gradient(135deg, #ff6b00 0%, #e65100 100%);
         color: var(--color-text);
         padding: var(--space-4);

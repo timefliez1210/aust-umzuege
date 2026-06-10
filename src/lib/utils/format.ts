@@ -86,15 +86,24 @@ export function formatTime(t: string | null | undefined): string {
 }
 
 /**
- * Normalizes loose time input (e.g. "7", "7:30", "12") into HH:MM:SS.
+ * Normalizes loose time input (e.g. "7", "7:30", "7.30", "7,30", "730") into HH:MM:SS.
  * Returns null for empty/whitespace input.
+ *
+ * Dot/comma separators matter: the assignment time fields use
+ * `inputmode="decimal"`, whose mobile keyboard has no colon key — German users
+ * naturally type "7.30" for 07:30 (this silently failed as a backend 422
+ * before, see Lisa Lullies incident 2026-06-10).
  */
 export function normalizeTimeInput(value: string | null): string | null {
 	if (!value || !value.trim()) return null;
 	const v = value.trim();
 	if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
-	if (/^\d{2}:\d{2}$/.test(v)) return v + ':00';
-	if (/^\d:\d{2}$/.test(v)) return '0' + v + ':00';
+	// Colon, dot, or comma as hour/minute separator: 7:30 / 07.30 / 7,30
+	const sep = v.match(/^(\d{1,2})[:.,](\d{2})$/);
+	if (sep) return sep[1].padStart(2, '0') + ':' + sep[2] + ':00';
+	// Bare 3-4 digits: 730 → 07:30, 1230 → 12:30
+	const bare = v.match(/^(\d{1,2})(\d{2})$/);
+	if (bare && v.length >= 3) return bare[1].padStart(2, '0') + ':' + bare[2] + ':00';
 	if (/^\d{1,2}$/.test(v)) return v.padStart(2, '0') + ':00:00';
 	return v;
 }

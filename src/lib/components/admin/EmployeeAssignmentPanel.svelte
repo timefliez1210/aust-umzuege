@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiDelete } from '$lib/utils/api.svelte';
+	import { normalizeTimeInput } from '$lib/utils/format';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import { Plus, Trash2, Check, X } from 'lucide-svelte';
@@ -296,16 +297,23 @@
 	 * @param empId - Employee UUID.
 	 * @param field - One of start_time | end_time | clock_in | clock_out.
 	 * @param time  - HH:MM string from the input (seconds appended automatically).
+	 * @returns true when the save succeeded — callers revert the input on false,
+	 *          so a rejected value can never sit in the field looking "saved".
 	 */
-	async function updateTimeField(empId: string, field: string, time: string) {
+	async function updateTimeField(empId: string, field: string, time: string): Promise<boolean> {
 		inquerySaving = empId;
 		try {
-			const value = time ? time + ':00' : null;
+			const value = normalizeTimeInput(time);
 			const updated = await apiPatch<EmployeeAssignment>(`${baseUrl}/${empId}`, { [field]: value });
 			const idx = assignments.findIndex((e) => e.employee_id === empId);
 			if (idx !== -1) assignments[idx] = { ...assignments[idx], ...updated };
+			return true;
 		} catch (e: unknown) {
-			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+			showToast(
+				`Zeit nicht gespeichert (Format z. B. 07:30): ${e instanceof Error ? e.message : 'Fehler'}`,
+				'error'
+			);
+			return false;
 		} finally {
 			inquerySaving = null;
 		}
@@ -348,8 +356,8 @@
 			await apiPatch(`${baseUrl}/${empId}`, {
 				actual_hours: s.actual !== '' ? parseFloat(s.actual) : null,
 				notes: s.notes || null,
-				clock_in: s.clockIn ? s.clockIn + ':00' : null,
-				clock_out: s.clockOut ? s.clockOut + ':00' : null,
+				clock_in: normalizeTimeInput(s.clockIn),
+				clock_out: normalizeTimeInput(s.clockOut),
 				break_minutes: parseInt(s.breakMin) || 0,
 				transport_mode: s.transportMode || null,
 				travel_costs_cents: s.travelCosts !== '' ? parseInt(s.travelCosts) : null,
@@ -554,7 +562,11 @@
 							placeholder="--:--"
 							maxlength="5"
 							value={fmtTime(emp.clock_in)}
-							onblur={(e) => updateTimeField(emp.employee_id, 'clock_in', (e.target as HTMLInputElement).value)}
+							onblur={async (e) => {
+								const el = e.target as HTMLInputElement;
+								if (!(await updateTimeField(emp.employee_id, 'clock_in', el.value)))
+									el.value = fmtTime(emp.clock_in);
+							}}
 						/>
 						<span class="inq-sep">–</span>
 						<input
@@ -564,7 +576,11 @@
 							placeholder="--:--"
 							maxlength="5"
 							value={fmtTime(emp.clock_out)}
-							onblur={(e) => updateTimeField(emp.employee_id, 'clock_out', (e.target as HTMLInputElement).value)}
+							onblur={async (e) => {
+								const el = e.target as HTMLInputElement;
+								if (!(await updateTimeField(emp.employee_id, 'clock_out', el.value)))
+									el.value = fmtTime(emp.clock_out);
+							}}
 						/>
 						{#if emp.actual_hours != null}
 							<span class="hours-badge">{fmtHours(emp.actual_hours)}</span>

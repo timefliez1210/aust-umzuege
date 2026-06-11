@@ -4,6 +4,7 @@ export interface InquiryItem {
 	inquiry_id: string;
 	customer_name: string | null;
 	customer_email?: string | null;
+	customer_phone?: string | null;
 	customer_type?: string | null;
 	company_name?: string | null;
 	departure_address: string | null;
@@ -47,7 +48,8 @@ export interface ScheduleCalendarItem {
 	title: string;
 	category: string;
 	location: string | null;
-	start_time: string | null;
+	/** Always present — backend COALESCEs missing times to '08:00'. */
+	start_time: string;
 	end_time: string | null;
 	employees_assigned: number;
 	employee_names: string | null;
@@ -64,7 +66,7 @@ export interface DaySchedule {
 	booked: number;
 	remaining: number;
 	inquiries: InquiryItem[];
-	calendar_items?: ScheduleCalendarItem[];
+	calendar_items: ScheduleCalendarItem[];
 }
 
 export interface DayEmployee {

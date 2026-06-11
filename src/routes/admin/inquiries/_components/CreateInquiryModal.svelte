@@ -734,12 +734,6 @@
 		margin-bottom: 1.25rem;
 	}
 
-	.create-section__group--subtle {
-		background: var(--dt-surface-container);
-		border-radius: 8px;
-		padding: 0.75rem;
-		margin-bottom: 1rem;
-	}
 
 	.create-section__group h3 {
 		font-size: 0.9375rem;

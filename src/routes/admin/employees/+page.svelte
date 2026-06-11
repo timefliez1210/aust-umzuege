@@ -201,8 +201,21 @@
 
 <!-- Create Modal -->
 {#if showCreateForm}
-	<div class="modal-overlay" onclick={() => (showCreateForm = false)}>
-		<div class="modal" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="modal-overlay"
+		role="presentation"
+		onclick={() => (showCreateForm = false)}
+		onkeydown={(e) => e.key === 'Escape' && (showCreateForm = false)}
+		tabindex="-1"
+	>
+		<div
+			class="modal"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<h2>Neuer Mitarbeiter</h2>
 			{#if createError}
 				<div class="alert alert-error">{createError}</div>
@@ -467,10 +480,6 @@
 		color: var(--dt-on-surface-variant);
 	}
 
-	.page-info {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
 
 	/* Modal */
 	.alert-error {

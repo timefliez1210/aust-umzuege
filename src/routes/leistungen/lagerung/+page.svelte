@@ -407,15 +407,6 @@
         width: 100%;
         justify-content: center;
     }
-    .divider {
-        margin: 0.75rem 0;
-        color: #1a202c;
-        font-size: 0.875rem;
-        font-weight: var(--font-semibold);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
     /* Price Table */
     .price-table-wrapper {
         overflow-x: auto;

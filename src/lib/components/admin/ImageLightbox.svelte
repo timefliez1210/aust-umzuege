@@ -24,7 +24,7 @@
 	} = $props();
 
 	let isGallery = $derived(images.length > 0);
-	let currentIndex = $state(initialIndex);
+	let currentIndex = $state((() => initialIndex)());
 	let currentUrl = $derived(isGallery ? images[currentIndex] : imageUrl);
 
 	let imgEl = $state<HTMLImageElement | null>(null);

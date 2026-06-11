@@ -284,6 +284,7 @@
 				{#if patchingStatusId === q.id}
 					<span class="status-saving">…</span>
 				{:else if editingStatusId === q.id}
+					<!-- svelte-ignore a11y_autofocus -->
 					<select
 						class="status-select"
 						value={q.status}

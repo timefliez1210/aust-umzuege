@@ -219,7 +219,6 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	.summary-value.planned { color: #4f46e5; }
 	.summary-value.actual  { color: #16a34a; }
 
 	.bars {
@@ -256,7 +255,6 @@
 		transition: width 400ms ease;
 	}
 
-	.bar-fill.planned { background: #818cf8; }
 	.bar-fill.actual  { background: #34d399; }
 
 	.bar-pct {
@@ -333,12 +331,6 @@
 		gap: 0.25rem;
 		flex-shrink: 0;
 		padding-right: 1.25rem;
-	}
-
-	.h-planned {
-		font-size: 0.875rem;
-		font-weight: 700;
-		color: #4f46e5;
 	}
 
 	.h-actual {

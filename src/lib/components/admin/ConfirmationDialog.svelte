@@ -74,10 +74,22 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={handleCancel} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="modal" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="modal-backdrop"
+		role="presentation"
+		onclick={handleCancel}
+		onkeydown={(e) => e.key === 'Escape' && handleCancel()}
+		tabindex="-1"
+	>
+		<div
+			class="modal"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="confirm-dialog-title"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<h2 id="confirm-dialog-title">{title}</h2>
 			<p class="dialog-message">{message}</p>
 			<div class="modal-actions">

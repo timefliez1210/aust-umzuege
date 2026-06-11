@@ -81,7 +81,7 @@
 			editLastName = data.last_name || '';
 			editName = data.name || '';
 			editPhone = data.phone || '';
-			editEmail = data.email;
+			editEmail = data.email ?? '';
 			billingStreet = data.billing_address?.street ?? '';
 			billingNumber = data.billing_address?.house_number ?? '';
 			billingPostal = data.billing_address?.postal_code ?? '';

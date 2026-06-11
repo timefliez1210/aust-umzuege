@@ -113,7 +113,7 @@
             >
                 <input type="hidden" name="form-name" value="kontakt" />
                 <div class="contact-form__group contact-form__group--radio">
-                    <label class="contact-form__radio-label">Anrede:</label>
+                    <span class="contact-form__radio-label">Anrede:</span>
                     <div class="contact-form__radio-row">
                         <label class="contact-form__radio">
                             <input type="radio" name="anrede" value="Herr" bind:group={formData.salutation} />

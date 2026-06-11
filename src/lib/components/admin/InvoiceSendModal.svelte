@@ -42,11 +42,11 @@
 	// ── Manual amount (used when no active offer exists) ─────────────────────
 
 	/** Brutto EUR string for manual price entry (pre-filled from offer if available). */
-	let manualBruttoEur = $state(
-		offerPriceCents != null
-			? ((offerPriceCents * 1.19) / 100).toFixed(2).replace('.', ',')
-			: ''
-	);
+	function defaultManualBrutto(priceCents: number | null): string {
+		return priceCents != null ? ((priceCents * 1.19) / 100).toFixed(2).replace('.', ',') : '';
+	}
+	// svelte-ignore state_referenced_locally -- intentional one-time seed; user edits take over afterwards
+	let manualBruttoEur = $state(defaultManualBrutto(offerPriceCents));
 
 	// ── Step 1: invoice type ──────────────────────────────────────────────────
 
@@ -305,10 +305,21 @@
 	});
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div class="overlay" onclick={onClose}>
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal" onclick={(e) => e.stopPropagation()}>
+<div
+	class="overlay"
+	role="presentation"
+	onclick={onClose}
+	onkeydown={(e) => e.key === 'Escape' && onClose()}
+	tabindex="-1"
+>
+	<div
+		class="modal"
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.stopPropagation()}
+	>
 
 		<div class="modal-header">
 			<h2>{stepTitle}</h2>

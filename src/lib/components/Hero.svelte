@@ -138,7 +138,7 @@
         }
     }
 
-    const srcset = `${imageBase}-400w.webp 400w, ${imageBase}-600w.webp 600w, ${imageBase}-800w.webp 800w`;
+    const srcset = $derived(`${imageBase}-400w.webp 400w, ${imageBase}-600w.webp 600w, ${imageBase}-800w.webp 800w`);
 </script>
 
 <section class="hero">

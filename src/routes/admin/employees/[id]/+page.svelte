@@ -1032,10 +1032,6 @@
 		transition: width var(--dt-transition-panel);
 	}
 
-	.progress-fill.planned {
-		background: var(--dt-primary-container);
-	}
-
 	.progress-fill.actual {
 		background: #34d399;
 	}

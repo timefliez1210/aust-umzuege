@@ -140,6 +140,8 @@
 		volume_m3: number | null;
 		distance_km: number | null;
 		scheduled_date: string | null;
+		start_time: string;
+		end_time: string;
 		notes: string | null;
 		customer_message: string | null;
 		created_at: string;
@@ -1657,7 +1659,7 @@
 		const iso = new Date(`${date}T${time}:00`).toISOString();
 		employeeSaving = empId;
 		try {
-			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/employees/${empId}`, { [field]: iso });
+			const updated = await apiPatch<EmployeeAssignment>(`/api/v1/inquiries/${data.id}/employees/${empId}`, { [field]: iso });
 			// Update local state so actual_hours badge and planned_hours reflect immediately
 			if (data.employees) {
 				const idx = data.employees.findIndex((e: EmployeeAssignment) => e.employee_id === empId);
@@ -2423,6 +2425,7 @@
 						class:drag-over={dragOverIdx === idx}
 						class:dragging={dragIdx === idx}
 						draggable={armedIdx === idx}
+						role="listitem"
 						ondragstart={(e) => onDragStart(e, idx)}
 						ondragover={(e) => onDragOver(e, idx)}
 						ondragleave={onDragLeave}
@@ -3019,8 +3022,21 @@
 
 <!-- Review request popup — shown after marking an inquiry as "Erledigt" -->
 {#if showReviewPopup}
-	<div class="review-overlay" onclick={() => (showReviewPopup = false)}>
-		<div class="review-dialog" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="review-overlay"
+		role="presentation"
+		onclick={() => (showReviewPopup = false)}
+		onkeydown={(e) => e.key === 'Escape' && (showReviewPopup = false)}
+		tabindex="-1"
+	>
+		<div
+			class="review-dialog"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<h3>Bewertungsanfrage senden?</h3>
 			<p>
 				Möchten Sie dem Kunden jetzt eine E-Mail mit der Bitte um eine Google-Bewertung schicken?
@@ -3067,6 +3083,7 @@
 	.page {
 		/* No height:100% — Mitarbeiter/Rechnungen/E-Mail sections render as
 		   siblings of .page, so a fixed page height pushes them off-screen. */
+		display: block;
 	}
 
 	.back-link {
@@ -3663,11 +3680,6 @@
 		cursor: pointer;
 	}
 
-	.checkbox-label input[type="checkbox"] {
-		width: 1rem;
-		height: 1rem;
-		accent-color: var(--dt-primary);
-	}
 
 	.addr-actions {
 		display: flex;

@@ -177,8 +177,21 @@
 </div>
 
 {#if showCreate}
-	<div class="modal-overlay" onclick={() => (showCreate = false)}>
-		<div class="modal" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="modal-overlay"
+		role="presentation"
+		onclick={() => (showCreate = false)}
+		onkeydown={(e) => e.key === 'Escape' && (showCreate = false)}
+		tabindex="-1"
+	>
+		<div
+			class="modal"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<h2>Neuer Termin</h2>
 			{#if createError}
 				<div class="alert-error">{createError}</div>
@@ -408,7 +421,6 @@
 	.field.span-2 { grid-column: span 2; }
 
 	.field input,
-	.field select,
 	.field textarea {
 		padding: 0.5rem 0.625rem;
 		font-family: inherit;

@@ -1324,6 +1324,7 @@
         cursor: text;
         border-radius: var(--radius-sm);
         -moz-appearance: textfield;
+        appearance: textfield;
     }
 
     .volume-calculator__counter-value::-webkit-inner-spin-button,

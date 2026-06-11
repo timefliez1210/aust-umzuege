@@ -276,7 +276,7 @@
 
 			<!-- Status selector -->
 			<div class="detail-field">
-				<label class="field-label">Status</label>
+				<span class="field-label">Status</span>
 				<div class="status-select-wrap">
 					<select
 						class="status-select badge {STATUS_CLS[selected.status]}"
@@ -293,27 +293,27 @@
 
 			{#if selected.location}
 				<div class="detail-field">
-					<label class="field-label">Seite / Bereich</label>
+					<span class="field-label">Seite / Bereich</span>
 					<div class="detail-value mono">{selected.location}</div>
 				</div>
 			{/if}
 
 			{#if selected.description}
 				<div class="detail-field">
-					<label class="field-label">Beschreibung</label>
+					<span class="field-label">Beschreibung</span>
 					<div class="detail-value pre">{selected.description}</div>
 				</div>
 			{/if}
 
 			<div class="detail-field">
-				<label class="field-label">Erstellt</label>
+				<span class="field-label">Erstellt</span>
 				<div class="detail-value">{fmt(selected.created_at)}</div>
 			</div>
 
 			<!-- Attachments -->
 			{#if selected.attachment_keys.length > 0}
 				<div class="detail-field">
-					<label class="field-label">Anhänge ({selected.attachment_keys.length})</label>
+					<span class="field-label">Anhänge ({selected.attachment_keys.length})</span>
 					<div class="attachment-list">
 						{#each selected.attachment_keys as key, i}
 							{@const fname = key.split('/').pop() ?? `Datei ${i + 1}`}
@@ -345,7 +345,13 @@
 
 <!-- Create form overlay -->
 {#if showForm}
-	<div class="modal-backdrop" onclick={() => { showForm = false; }}></div>
+	<div
+		class="modal-backdrop"
+		role="presentation"
+		onclick={() => { showForm = false; }}
+		onkeydown={(e) => e.key === 'Escape' && (showForm = false)}
+		tabindex="-1"
+	></div>
 	<div class="modal">
 		<div class="modal-header">
 			<h2>Neuer Report</h2>

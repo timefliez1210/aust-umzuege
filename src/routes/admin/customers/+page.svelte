@@ -11,7 +11,11 @@
 		email: string | null;
 		name: string | null;
 		salutation: string | null;
+		first_name: string | null;
+		last_name: string | null;
 		phone: string | null;
+		customer_type: string | null;
+		company_name: string | null;
 		created_at: string;
 	}
 

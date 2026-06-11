@@ -440,8 +440,8 @@
 					fd.append('billing_city', billingAddress.city);
 				}
 
-				// Manual volume
-				if (activeMode === 'manuell' && volumeM3 > 0) {
+				// Manual volume (volume calculator may also be used in termin mode)
+				if (volumeM3 > 0) {
 					fd.append('volumen', volumeM3.toFixed(1));
 					if (itemSummary) fd.append('umzugsgut', itemSummary);
 				}
@@ -1081,26 +1081,26 @@
 				<h3 class="address-block-title">{selectedService.addressConfig.originLabel}</h3>
 				<div class="field-row">
 					<div class="field field--grow">
-						<label>Straße *</label>
-						<input type="text" bind:value={originAddress.street} autocomplete="street-address" required />
+						<label for="origin-street">Straße *</label>
+						<input id="origin-street" type="text" bind:value={originAddress.street} autocomplete="street-address" required />
 					</div>
 					<div class="field field--shrink">
-						<label>Nr.</label>
-						<input type="text" bind:value={originAddress.number} />
+						<label for="origin-number">Nr.</label>
+						<input id="origin-number" type="text" bind:value={originAddress.number} />
 					</div>
 				</div>
 				<div class="field-row">
 					<div class="field field--shrink">
-						<label>PLZ *</label>
-						<input type="text" bind:value={originAddress.zip} maxlength="5" autocomplete="postal-code" required />
+						<label for="origin-zip">PLZ *</label>
+						<input id="origin-zip" type="text" bind:value={originAddress.zip} maxlength="5" autocomplete="postal-code" required />
 					</div>
 					<div class="field field--grow">
-						<label>Ort *</label>
-						<input type="text" bind:value={originAddress.city} autocomplete="address-level2" required />
+						<label for="origin-city">Ort *</label>
+						<input id="origin-city" type="text" bind:value={originAddress.city} autocomplete="address-level2" required />
 					</div>
 					<div class="field field--quarter">
-						<label>Etage</label>
-						<select bind:value={originAddress.floor}>
+						<label for="origin-floor">Etage</label>
+						<select id="origin-floor" bind:value={originAddress.floor}>
 							{#each floorOptions as opt}<option value={opt.value}>{opt.label}</option>{/each}
 						</select>
 					</div>
@@ -1134,26 +1134,26 @@
 				<h3 class="address-block-title">Zwischenstopp</h3>
 				<div class="field-row">
 					<div class="field field--grow">
-						<label>Straße</label>
-						<input type="text" bind:value={intermediateAddress.street} />
+						<label for="intermediate-street">Straße</label>
+						<input id="intermediate-street" type="text" bind:value={intermediateAddress.street} />
 					</div>
 					<div class="field field--shrink">
-						<label>Nr.</label>
-						<input type="text" bind:value={intermediateAddress.number} />
+						<label for="intermediate-number">Nr.</label>
+						<input id="intermediate-number" type="text" bind:value={intermediateAddress.number} />
 					</div>
 				</div>
 				<div class="field-row">
 					<div class="field field--shrink">
-						<label>PLZ</label>
-						<input type="text" bind:value={intermediateAddress.zip} maxlength="5" />
+						<label for="intermediate-zip">PLZ</label>
+						<input id="intermediate-zip" type="text" bind:value={intermediateAddress.zip} maxlength="5" />
 					</div>
 					<div class="field field--grow">
-						<label>Ort</label>
-						<input type="text" bind:value={intermediateAddress.city} />
+						<label for="intermediate-city">Ort</label>
+						<input id="intermediate-city" type="text" bind:value={intermediateAddress.city} />
 					</div>
 					<div class="field field--quarter">
-						<label>Etage</label>
-						<select bind:value={intermediateAddress.floor}>
+						<label for="intermediate-floor">Etage</label>
+						<select id="intermediate-floor" bind:value={intermediateAddress.floor}>
 							{#each floorOptions as opt}<option value={opt.value}>{opt.label}</option>{/each}
 						</select>
 					</div>
@@ -1167,26 +1167,26 @@
 				<h3 class="address-block-title">{selectedService.addressConfig.destinationLabel}</h3>
 				<div class="field-row">
 					<div class="field field--grow">
-						<label>Straße *</label>
-						<input type="text" bind:value={destinationAddress.street} required />
+						<label for="destination-street">Straße *</label>
+						<input id="destination-street" type="text" bind:value={destinationAddress.street} required />
 					</div>
 					<div class="field field--shrink">
-						<label>Nr.</label>
-						<input type="text" bind:value={destinationAddress.number} />
+						<label for="destination-number">Nr.</label>
+						<input id="destination-number" type="text" bind:value={destinationAddress.number} />
 					</div>
 				</div>
 				<div class="field-row">
 					<div class="field field--shrink">
-						<label>PLZ *</label>
-						<input type="text" bind:value={destinationAddress.zip} maxlength="5" required />
+						<label for="destination-zip">PLZ *</label>
+						<input id="destination-zip" type="text" bind:value={destinationAddress.zip} maxlength="5" required />
 					</div>
 					<div class="field field--grow">
-						<label>Ort *</label>
-						<input type="text" bind:value={destinationAddress.city} required />
+						<label for="destination-city">Ort *</label>
+						<input id="destination-city" type="text" bind:value={destinationAddress.city} required />
 					</div>
 					<div class="field field--quarter">
-						<label>Etage</label>
-						<select bind:value={destinationAddress.floor}>
+						<label for="destination-floor">Etage</label>
+						<select id="destination-floor" bind:value={destinationAddress.floor}>
 							{#each floorOptions as opt}<option value={opt.value}>{opt.label}</option>{/each}
 						</select>
 					</div>
@@ -1220,22 +1220,22 @@
 				<h3 class="address-block-title">Rechnungsadresse</h3>
 				<div class="field-row">
 					<div class="field field--grow">
-						<label>Straße</label>
-						<input type="text" bind:value={billingAddress.street} />
+						<label for="billing-street">Straße</label>
+						<input id="billing-street" type="text" bind:value={billingAddress.street} />
 					</div>
 					<div class="field field--shrink">
-						<label>Nr.</label>
-						<input type="text" bind:value={billingAddress.number} />
+						<label for="billing-number">Nr.</label>
+						<input id="billing-number" type="text" bind:value={billingAddress.number} />
 					</div>
 				</div>
 				<div class="field-row">
 					<div class="field field--shrink">
-						<label>PLZ</label>
-						<input type="text" bind:value={billingAddress.zip} maxlength="5" />
+						<label for="billing-zip">PLZ</label>
+						<input id="billing-zip" type="text" bind:value={billingAddress.zip} maxlength="5" />
 					</div>
 					<div class="field field--grow">
-						<label>Ort</label>
-						<input type="text" bind:value={billingAddress.city} />
+						<label for="billing-city">Ort</label>
+						<input id="billing-city" type="text" bind:value={billingAddress.city} />
 					</div>
 				</div>
 			</div>

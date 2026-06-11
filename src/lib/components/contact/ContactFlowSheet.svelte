@@ -133,8 +133,8 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="backdrop" onclick={onBackdrop}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<div class="backdrop" role="presentation" onclick={onBackdrop}>
 		<div
 			class="sheet"
 			role="dialog"

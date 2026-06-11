@@ -9,101 +9,16 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
-
-	// ─── Interfaces ──────────────────────────────────────────────────────────────
-
-	interface InquiryItem {
-		inquiry_id: string;
-		customer_name: string | null;
-		customer_email?: string | null;
-		customer_phone?: string | null;
-		customer_type?: string | null;
-		company_name?: string | null;
-		departure_address: string | null;
-		arrival_address: string | null;
-		volume_m3: number | null;
-		status: string;
-		notes: string | null;
-		offer_price_cents: number | null;
-		start_time: string;
-		end_time: string;
-		employees_assigned: number;
-		employee_names: string | null;
-		day_number?: number | null;
-		total_days?: number | null;
-		day_notes?: string | null;
-		service_type?: string | null;
-		scheduled_date?: string | null;
-	}
-
-	interface CalendarItem {
-		id: string;
-		title: string;
-		category: string;
-		location: string | null;
-		description?: string | null;
-		scheduled_date: string;
-		start_time: string;
-		end_time: string | null;
-		duration_hours: number;
-		status: string;
-		customer_id?: string | null;
-		customer_name?: string | null;
-	}
-
-	/** Per-day calendar item row from the schedule API. */
-	interface ScheduleCalendarItem {
-		calendar_item_id: string;
-		title: string;
-		category: string;
-		location: string | null;
-		start_time: string;
-		end_time?: string | null;
-		employees_assigned: number;
-		employee_names?: string | null;
-		day_number?: number | null;
-		total_days?: number | null;
-		day_notes?: string | null;
-		description?: string | null;
-	}
-
-	interface HolidayEntry {
-		startDate: string;
-		endDate: string;
-		name: Array<{ language: string; text: string }>;
-	}
-
-	interface DaySchedule {
-		date: string;
-		available: boolean;
-		capacity: number;
-		booked: number;
-		remaining: number;
-		inquiries: InquiryItem[];
-		calendar_items: ScheduleCalendarItem[];
-	}
-
-
-	// Side panel selection types
-	type PanelKind = 'day' | 'inquiry' | 'termin';
-
-	interface PanelDay {
-		kind: 'day';
-		date: string;
-		schedule: DaySchedule;
-	}
-
-	interface PanelInquiry {
-		kind: 'inquiry';
-		item: InquiryItem;
-	}
-
-	interface PanelTermin {
-		kind: 'termin';
-		item: CalendarItem;
-	}
-
-	type PanelSelection = PanelDay | PanelInquiry | PanelTermin | null;
+	import type {
+		InquiryItem,
+		CalendarItem,
+		ScheduleCalendarItem,
+		DaySchedule,
+		PanelDay,
+		PanelInquiry,
+		PanelTermin,
+		PanelSelection
+	} from '$lib/types/calendar';
 
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
 
@@ -236,7 +151,12 @@
 	// Context menu
 	let contextMenu = $state<{ x: number; y: number; dateStr: string } | null>(null);
 
-	// Holidays (DE-NI / Niedersachsen)
+	// Holidays (DE-NI / Niedersachsen) — shape follows the OpenHolidays API response
+	interface HolidayEntry {
+		startDate: string;
+		endDate: string;
+		name: Array<{ language: string; text: string }>;
+	}
 	let publicHolidays = $state<HolidayEntry[]>([]);
 	let schoolHolidays = $state<HolidayEntry[]>([]);
 	let loadedHolidayYear = $state(0);
@@ -1122,7 +1042,7 @@
 				</div>
 			</div>
 
-			<div class="calendar-scroll" ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
+			<div class="calendar-scroll" role="region" aria-label="Kalenderbereich" ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
 				{#if viewMode === 'month'}
 				<div class="calendar-grid">
 					<div class="cal-kw cal-kw-header"></div>
@@ -1168,28 +1088,29 @@
 					{#each lanes as laneId}
 						{@const entry = mdEntries.find(e => e.type === 'inquiry' ? e.item.inquiry_id === laneId : ('calendar_item_id' in e.item && e.item.calendar_item_id === laneId))}
 						{#if entry}
-							{@const dayNum = entry.item.day_number ?? 1}
-							{@const totalDays = entry.item.total_days ?? 1}
+							{@const mdEntry = entry as ({type: 'inquiry'; item: InquiryItem} | {type: 'schedule-termin'; item: ScheduleCalendarItem})}
+							{@const dayNum = mdEntry.item.day_number ?? 1}
+							{@const totalDays = mdEntry.item.total_days ?? 1}
 							{@const dow = new Date(dateStr + 'T00:00:00').getDay()}
 							{@const isVisualStart = dayNum === 1 || dow === 1}
 							{@const isVisualEnd = dayNum === totalDays || dow === 0}
-							{@const isMultiDayInquiry = entry.type === 'inquiry'}
-							{@const barColor = isMultiDayInquiry ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.item.category)}
+							{@const isMultiDayInquiry = mdEntry.type === 'inquiry'}
+							{@const barColor = isMultiDayInquiry ? inquiryEntryClass(mdEntry.item.status) : termineEntryClass(mdEntry.item.category)}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div
 								class="md-bar {barColor}"
 								class:md-bar-start={isVisualStart}
 								class:md-bar-end={isVisualEnd}
-								title="{isMultiDayInquiry ? (entry.item.customer_name ?? '') : entry.item.title} · Tag {dayNum}/{totalDays}"
+								title="{isMultiDayInquiry ? (mdEntry.item.customer_name ?? '') : mdEntry.item.title} · Tag {dayNum}/{totalDays}"
 								draggable="true"
-								ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? entry.item.inquiry_id : entry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr, ('day_number' in entry.item ? entry.item.day_number : null) ?? 1)}
-								onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, entry.item) : openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
+								ondragstart={(e) => onEntryDragStart(e, isMultiDayInquiry ? mdEntry.item.inquiry_id : mdEntry.item.calendar_item_id, isMultiDayInquiry ? 'inquiry' : 'termin', dateStr, ('day_number' in entry.item ? mdEntry.item.day_number : null) ?? 1)}
+								onclick={(e) => isMultiDayInquiry ? openInquiryPanel(e, mdEntry.item) : openTerminPanel(e, { id: mdEntry.item.calendar_item_id, title: mdEntry.item.title, category: mdEntry.item.category, location: mdEntry.item.location, description: mdEntry.item.description ?? null, scheduled_date: dateStr, start_time: mdEntry.item.start_time, end_time: mdEntry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
 								role="button"
 								tabindex="0"
-								onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, entry.item) : openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
+								onkeydown={(e) => e.key === 'Enter' && (isMultiDayInquiry ? openInquiryPanel(e as unknown as MouseEvent, mdEntry.item) : openTerminPanel(e as unknown as MouseEvent, { id: mdEntry.item.calendar_item_id, title: mdEntry.item.title, category: mdEntry.item.category, location: mdEntry.item.location, description: mdEntry.item.description ?? null, scheduled_date: dateStr, start_time: mdEntry.item.start_time, end_time: mdEntry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' }))}
 							>
 								{#if isVisualStart}
-									<span class="md-bar-text">{truncate(isMultiDayInquiry ? entry.item.customer_name : entry.item.title, 12)}</span>
+									<span class="md-bar-text">{truncate(isMultiDayInquiry ? mdEntry.item.customer_name : mdEntry.item.title, 12)}</span>
 								{:else}
 									<span class="md-bar-text md-bar-cont">Tag {dayNum}/{totalDays}</span>
 								{/if}
@@ -1430,8 +1351,8 @@
 										{@const endH = parseInt((entry.item.end_time || (String(startH + 1).padStart(2, '0') + ':00')).slice(0, 2))}
 										{#if startH === hour}
 											<button
-												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.type === 'inquiry' ? 'intern' : (entry.item.category || 'intern'))}"
-												onclick={(e) => entry.type === 'inquiry' ? openInquiryPanel(e, entry.item) : openTerminPanel(e, entry.type === 'schedule-termin' ? { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' } : entry.item)}
+												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.item.category || 'intern')}"
+												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
 												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>

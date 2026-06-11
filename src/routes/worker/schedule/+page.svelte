@@ -270,7 +270,7 @@
 		color: #64748b;
 	}
 
-	.chevron {
+	:global(.chevron) {
 		position: absolute;
 		right: 1rem;
 		top: 50%;

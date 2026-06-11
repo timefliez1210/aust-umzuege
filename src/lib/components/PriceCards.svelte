@@ -16,7 +16,7 @@
         disclaimers,
     }: Props = $props();
 
-    const notes = disclaimers ?? disclaimersByService[service];
+    const notes = $derived(disclaimers ?? disclaimersByService[service]);
 
     const fmt = (n: number) => new Intl.NumberFormat("de-DE").format(n);
 </script>

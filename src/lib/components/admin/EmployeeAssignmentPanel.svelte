@@ -310,7 +310,7 @@
 			return true;
 		} catch (e: unknown) {
 			showToast(
-				`Zeit nicht gespeichert (Format z. B. 07:30): ${e instanceof Error ? e.message : 'Fehler'}`,
+				`Zeit nicht gespeichert: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`,
 				'error'
 			);
 			return false;
@@ -630,14 +630,14 @@
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 					<div class="emp-fields">
-						<label class="tiny-label">Von</label>
-						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
+						<label class="tiny-label" for="ci-{emp.employee_id}">Von</label>
+						<input id="ci-{emp.employee_id}" class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
 							value={s.clockIn}
 							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockIn: (e.target as HTMLInputElement).value } }; }}
 						/>
 						<span class="sep">–</span>
-						<label class="tiny-label">Bis</label>
-						<input class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
+						<label class="tiny-label" for="co-{emp.employee_id}">Bis</label>
+						<input id="co-{emp.employee_id}" class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
 							value={s.clockOut}
 							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockOut: (e.target as HTMLInputElement).value } }; }}
 						/>
@@ -646,13 +646,14 @@
 						{:else if derived != null}
 							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
 						{/if}
-						<label class="tiny-label" style="margin-left:0.5rem">P.min</label>
-						<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="3"
+						<label class="tiny-label" style="margin-left:0.5rem" for="brk-{emp.employee_id}">P.min</label>
+						<input id="brk-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="3"
 							value={s.breakMin}
 							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, breakMin: (e.target as HTMLInputElement).value } }; }}
 						/>
-						<label class="tiny-label" style="margin-left:0.5rem">Notiz</label>
+						<label class="tiny-label" style="margin-left:0.5rem" for="note-{emp.employee_id}">Notiz</label>
 						<input
+							id="note-{emp.employee_id}"
 							class="notes-input"
 							type="text"
 							value={s.notes}
@@ -667,8 +668,9 @@
 							}}
 						/>
 						{#if hasPauschale}
-							<label class="tiny-label" style="margin-left:0.5rem">Transport</label>
+							<label class="tiny-label" style="margin-left:0.5rem" for="trns-{emp.employee_id}">Transport</label>
 							<select
+								id="trns-{emp.employee_id}"
 								class="break-input"
 								style="width:80px"
 								value={s.transportMode}
@@ -681,23 +683,24 @@
 								<option value="Taxi">Taxi</option>
 								<option value="Sonstiges">Sonstiges</option>
 							</select>
-							<label class="tiny-label" style="margin-left:0.5rem">Fahrtk. (€)</label>
-							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
+							<label class="tiny-label" style="margin-left:0.5rem" for="trvl-{emp.employee_id}">Fahrtk. (€)</label>
+							<input id="trvl-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
 								value={s.travelCosts}
 								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, travelCosts: (e.target as HTMLInputElement).value } }; }}
 							/>
-							<label class="tiny-label" style="margin-left:0.5rem">Übern. (€)</label>
-							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
+							<label class="tiny-label" style="margin-left:0.5rem" for="acmd-{emp.employee_id}">Übern. (€)</label>
+							<input id="acmd-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
 								value={s.accommodation}
 								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, accommodation: (e.target as HTMLInputElement).value } }; }}
 							/>
-							<label class="tiny-label" style="margin-left:0.5rem">Sonst. (€)</label>
-							<input class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
+							<label class="tiny-label" style="margin-left:0.5rem" for="misc-{emp.employee_id}">Sonst. (€)</label>
+							<input id="misc-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
 								value={s.miscCosts}
 								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, miscCosts: (e.target as HTMLInputElement).value } }; }}
 							/>
-							<label class="tiny-label" style="margin-left:0.5rem">Abzug</label>
+							<label class="tiny-label" style="margin-left:0.5rem" for="meal-{emp.employee_id}">Abzug</label>
 							<select
+								id="meal-{emp.employee_id}"
 								class="break-input"
 								style="width:90px"
 								value={s.mealDeduction}
@@ -747,10 +750,21 @@
 
 	<!-- Add employee form (modal overlay) -->
 	{#if showAddForm}
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="modal-backdrop" onclick={() => (showAddForm = false)}>
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-			<div class="modal" onclick={(e) => e.stopPropagation()}>
+		<div
+			class="modal-backdrop"
+			role="presentation"
+			onclick={() => (showAddForm = false)}
+			onkeydown={(e) => e.key === 'Escape' && (showAddForm = false)}
+			tabindex="-1"
+		>
+			<div
+				class="modal"
+				role="dialog"
+				aria-modal="true"
+				tabindex="-1"
+				onclick={(e) => e.stopPropagation()}
+				onkeydown={(e) => e.stopPropagation()}
+			>
 				<h2>Mitarbeiter zuweisen</h2>
 				<form
 					onsubmit={(e) => {
@@ -816,6 +830,7 @@
 <style>
 	.emp-panel {
 		/* Wrapper — the parent page provides the .card container */
+		display: block;
 	}
 
 	.card-header {
@@ -917,22 +932,6 @@
 		font-size: 0.75rem;
 		color: var(--dt-on-surface-variant);
 		white-space: nowrap;
-	}
-
-	.hour-input {
-		width: 64px;
-		padding: 0.25rem 0.375rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		outline: none;
-		transition: border-color var(--dt-transition);
-	}
-
-	.hour-input:focus {
-		border-bottom-color: var(--dt-primary);
 	}
 
 	.notes-input {

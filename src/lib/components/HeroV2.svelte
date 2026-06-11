@@ -55,7 +55,7 @@
         phoneHref = "tel:051217558379",
     }: Props = $props();
 
-    const srcset = `${ownerImageBase}-400w.webp 400w, ${ownerImageBase}-600w.webp 600w, ${ownerImageBase}-800w.webp 800w`;
+    const srcset = $derived(`${ownerImageBase}-400w.webp 400w, ${ownerImageBase}-600w.webp 600w, ${ownerImageBase}-800w.webp 800w`);
 
 </script>
 

@@ -9,118 +9,19 @@
 	import CapacityEditor from './_components/CapacityEditor.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import EmployeeAssignmentPanel from '$lib/components/admin/EmployeeAssignmentPanel.svelte';
-
-	// ─── Interfaces ──────────────────────────────────────────────────────────────
-
-	interface InquiryItem {
-		inquiry_id: string;
-		customer_name: string | null;
-		customer_email?: string | null;
-		customer_phone?: string | null;
-		customer_type?: string | null;
-		company_name?: string | null;
-		departure_address: string | null;
-		arrival_address: string | null;
-		volume_m3: number | null;
-		status: string;
-		notes: string | null;
-		employee_notes: string | null;
-		offer_price_cents: number | null;
-		service_type: string | null;
-		start_time: string;
-		end_time: string;
-		employees_assigned: number;
-		employee_names: string | null;
-		day_number?: number | null;
-		total_days?: number | null;
-		day_notes?: string | null;
-		
-		scheduled_date?: string | null;
-	}
-
-	interface CalendarItem {
-		id: string;
-		title: string;
-		category: string;
-		location: string | null;
-		description?: string | null;
-		scheduled_date: string;
-		start_time: string;
-		end_time: string | null;
-		duration_hours: number;
-		status: string;
-		customer_id?: string | null;
-		customer_name?: string | null;
-	}
-
-	interface ScheduleCalendarItem {
-		calendar_item_id: string;
-		title: string;
-		category: string;
-		location: string | null;
-		start_time: string | null;
-		end_time: string | null;
-		employees_assigned: number;
-		employee_names: string | null;
-		day_number?: number | null;
-		total_days?: number | null;
-		day_notes?: string | null;
-		description?: string | null;
-	}
-
-	interface DaySchedule {
-		date: string;
-		available: boolean;
-		capacity: number;
-		booked: number;
-		remaining: number;
-		inquiries: InquiryItem[];
-		calendar_items?: ScheduleCalendarItem[];
-	}
-
-	interface DayEmployee {
-		employee_id: string;
-		first_name: string;
-		last_name: string;
-		notes: string | null;
-		start_time: string | null;
-		end_time: string | null;
-		clock_in: string | null;
-		clock_out: string | null;
-		break_minutes: number;
-	}
-
-	interface InquiryDay {
-		day_date: string;
-		day_number: number;
-		notes: string | null;
-		/** Per-day start time ("HH:MM") — null means inherit from parent. */
-		start_time: string | null;
-		/** Per-day end time ("HH:MM") — null means inherit from parent. */
-		end_time: string | null;
-		employees: DayEmployee[];
-	}
-
-	// Identical shape to InquiryDay; alias for clarity in termin context.
-	type TerminDay = InquiryDay;
-
-	interface PanelDay {
-		kind: 'day';
-		date: string;
-		schedule: DaySchedule;
-	}
-
-	interface PanelInquiry {
-		kind: 'inquiry';
-		item: InquiryItem;
-	}
-
-	interface PanelTermin {
-		kind: 'termin';
-		item: CalendarItem;
-	}
-
-	type PanelSelection = PanelDay | PanelInquiry | PanelTermin | null;
+	import type {
+		InquiryItem,
+		CalendarItem,
+		ScheduleCalendarItem,
+		DaySchedule,
+		DayEmployee,
+		InquiryDay,
+		TerminDay,
+		PanelDay,
+		PanelInquiry,
+		PanelTermin,
+		PanelSelection
+	} from '$lib/types/calendar';
 
 	// ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -1252,10 +1153,11 @@
 					{#if inqDaysLoading}
 						<p class="panel-loading">Laden...</p>
 					{:else}
-						{@const originStr = panelSelection.item.scheduled_date?.slice(0,10) ?? ''}
+						{@const inqSel = panelSelection as PanelInquiry}
+						{@const originStr = inqSel.item.scheduled_date?.slice(0,10) ?? ''}
 						<div class="field-row">
 							<div class="field">
-								<label>Von</label>
+								<span class="field-label">Von</span>
 								<span class="day-origin-label">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
 							</div>
 							<div class="field">
@@ -1272,12 +1174,12 @@
 										</div>
 										<div class="field-row">
 											<div class="field">
-												<label>Start</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_in', (e.target as HTMLInputElement).value)} />
+												<label for="inq-start-{i}">Start</label>
+												<input id="inq-start-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_in', (e.target as HTMLInputElement).value)} />
 											</div>
 											<div class="field">
-												<label>Ende</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_out', (e.target as HTMLInputElement).value)} />
+												<label for="inq-end-{i}">Ende</label>
+												<input id="inq-end-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_out', (e.target as HTMLInputElement).value)} />
 											</div>
 										</div>
 										{#if day.employees.length > 0}
@@ -1287,11 +1189,11 @@
 														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
 														<span class="day-time-group">
 															<span class="day-time-label">Ist</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_in} oninput={(e) => inqDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', panelSelection.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_in', norm); }} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_in} oninput={(e) => inqDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_in', norm); }} />
 															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_out} oninput={(e) => inqDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', panelSelection.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_out', norm); }} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_out} oninput={(e) => inqDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_out', norm); }} />
 															<span class="day-time-label">P:</span>
-															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={inqDays[i].employees[ei].break_minutes} oninput={(e) => inqDays[i].employees[ei].break_minutes = (e.target as HTMLInputElement).value} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; inqDays[i].employees[ei].break_minutes = v; saveMultiDayField('inquiry', panelSelection.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'break_minutes', v); }} />
+															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={inqDays[i].employees[ei].break_minutes} oninput={(e) => inqDays[i].employees[ei].break_minutes = parseInt((e.target as HTMLInputElement).value) || 0} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; inqDays[i].employees[ei].break_minutes = v; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'break_minutes', v); }} />
 														</span>
 														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
 													</div>
@@ -1432,10 +1334,11 @@
 					{#if termDaysLoading}
 						<p class="panel-loading">Laden...</p>
 					{:else}
-						{@const originStr = panelSelection.item.scheduled_date ?? ''}
+						{@const termSel = panelSelection as PanelTermin}
+						{@const originStr = termSel.item.scheduled_date ?? ''}
 						<div class="field-row">
 							<div class="field">
-								<label>Von</label>
+								<span class="field-label">Von</span>
 								<span class="day-origin-label">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
 							</div>
 							<div class="field">
@@ -1452,12 +1355,12 @@
 										</div>
 										<div class="field-row">
 											<div class="field">
-												<label>Start</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_in', (e.target as HTMLInputElement).value)} />
+												<label for="term-start-{i}">Start</label>
+												<input id="term-start-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_in', (e.target as HTMLInputElement).value)} />
 											</div>
 											<div class="field">
-												<label>Ende</label>
-												<input type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_out', (e.target as HTMLInputElement).value)} />
+												<label for="term-end-{i}">Ende</label>
+												<input id="term-end-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_out', (e.target as HTMLInputElement).value)} />
 											</div>
 										</div>
 										{#if day.employees.length > 0}
@@ -1467,11 +1370,11 @@
 														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
 														<span class="day-time-group">
 															<span class="day-time-label">Ist</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_in} oninput={(e) => termDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', panelSelection.item.id, emp.employee_id, termDays[i].day_date, 'clock_in', norm); }} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_in} oninput={(e) => termDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'clock_in', norm); }} />
 															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_out} oninput={(e) => termDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', panelSelection.item.id, emp.employee_id, termDays[i].day_date, 'clock_out', norm); }} />
+															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_out} oninput={(e) => termDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'clock_out', norm); }} />
 															<span class="day-time-label">P:</span>
-															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={termDays[i].employees[ei].break_minutes} oninput={(e) => termDays[i].employees[ei].break_minutes = (e.target as HTMLInputElement).value} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; termDays[i].employees[ei].break_minutes = v; saveMultiDayField('calendar_item', panelSelection.item.id, emp.employee_id, termDays[i].day_date, 'break_minutes', v); }} />
+															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={termDays[i].employees[ei].break_minutes} oninput={(e) => termDays[i].employees[ei].break_minutes = parseInt((e.target as HTMLInputElement).value) || 0} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; termDays[i].employees[ei].break_minutes = v; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'break_minutes', v); }} />
 														</span>
 														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
 													</div>
@@ -1730,7 +1633,7 @@
 
 	/* ─── Form field layout ────────────────────────────────────────────────────── */
 	.field { display: flex; flex-direction: column; gap: 0.2rem; }
-	.field label { font-size: 0.6875rem; font-weight: 600; color: var(--dt-on-surface-variant); text-transform: uppercase; }
+	.field label, .field .field-label { font-size: 0.6875rem; font-weight: 600; color: var(--dt-on-surface-variant); text-transform: uppercase; }
 	.field-row { display: flex; gap: 0.5rem; }
 	.field-row .field { flex: 1; }
 
@@ -1784,7 +1687,6 @@
 	/* ─── Multi-day editor ─────────────────────────────────────────────────────── */
 	.days-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
 	.day-origin-label { font-size: 0.875rem; font-weight: 600; color: var(--dt-on-surface); display: block; padding: 0.25rem 0; }
-	.day-range-summary { font-size: 0.75rem; color: var(--dt-on-surface-variant); margin: 0.25rem 0 0; }
 	.day-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
 	.day-row { background: var(--dt-surface-variant); border-radius: 8px; padding: 0.5rem 0.625rem; }
 	.day-row-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.375rem; }
@@ -1802,7 +1704,6 @@
 	.time-sep { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
 	.day-time-group { display: flex; align-items: center; gap: 0.2rem; }
 	.day-time-label { font-size: 0.6875rem; color: var(--dt-on-surface-variant); font-weight: 600; flex-shrink: 0; }
-	.hours-input { width: 4.5rem; padding: 0.2rem 0.375rem; font-size: 0.75rem; border: 1px solid var(--dt-outline-variant); border-radius: 6px; background: var(--dt-surface); color: var(--dt-on-surface); }
 
 	/* ─── Mobile: bottom sheet handle ─────────────────────────────────────────── */
 	.sheet-handle-bar {
@@ -1861,23 +1762,4 @@
 		margin-right: 0.3rem;
 	}
 	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
-	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
-	.svc-badge {
-		display: inline-block;
-		padding: 0.1rem 0.35rem;
-		border-radius: 4px;
-		font-size: 0.68rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		margin-right: 0.3rem;
-		background: #e8eef6;
-		color: #1a3a5c;
-	}
-	.svc-badge[data-type="firmenumzug"] { background: #d1fae5; color: #065f46; }
-	.svc-badge[data-type="entruempelung"] { background: #fce7f3; color: #9d174d; }
-	.svc-badge[data-type="haushaltsaufloesung"] { background: #fef3c7; color: #92400e; }
-	.svc-badge[data-type="lagerung"] { background: #e0e7ff; color: #3730a3; }
-	.svc-badge[data-type="montage"] { background: #fef9c3; color: #854d0e; }
-	.svc-badge[data-type="umzugshelfer"] { background: #f0fdf4; color: #166534; }
-	.svc-badge[data-type="seniorenumzug"] { background: #fce7f3; color: #9d174d; }
 </style>

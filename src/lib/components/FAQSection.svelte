@@ -28,7 +28,7 @@
 	}
 
 	// Generate FAQPage schema
-	const faqSchema = {
+	const faqSchema = $derived({
 		"@type": "FAQPage",
 		mainEntity: faqs.map((faq) => ({
 			"@type": "Question",
@@ -38,7 +38,7 @@
 				text: faq.answer
 			}
 		}))
-	};
+	});
 </script>
 
 <StructuredData schema={faqSchema} />

@@ -426,15 +426,6 @@
         justify-content: center;
     }
 
-    .divider {
-        margin: var(--space-3) 0;
-        color: #1a202c;
-        font-size: var(--text-sm);
-        font-weight: var(--font-semibold);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
     .hook-box {
         background-color: #eff6ff;
         border-left: 4px solid var(--color-nav-accent);

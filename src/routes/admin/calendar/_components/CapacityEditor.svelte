@@ -21,6 +21,7 @@
 
 	let { date, currentCapacity, onSaved }: Props = $props();
 
+	// svelte-ignore state_referenced_locally -- intentional initial seed; the $effect below re-seeds on prop change
 	let capacityInput = $state(String(currentCapacity));
 	let saving = $state(false);
 

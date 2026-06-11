@@ -10,4 +10,13 @@ declare global {
 	}
 }
 
+declare module 'svelte/elements' {
+	export interface HTMLAttributes<T extends EventTarget> {
+		toolparamtitle?: string;
+		toolparamdescription?: string;
+		toolname?: string;
+		tooldescription?: string;
+	}
+}
+
 export {};

@@ -301,7 +301,7 @@
 
                     <div class="angebot-page__form-grid">
                         <div class="angebot-page__form-group angebot-page__form-group--full">
-                            <label>Anrede</label>
+                            <span class="angebot-page__field-label">Anrede</span>
                             <div class="angebot-page__radio-group">
                                 <label class="angebot-page__radio">
                                     <input type="radio" name="anrede" value="Herr" bind:group={formData.salutation} />
@@ -385,7 +385,7 @@
                         </div>
 
                         <div class="angebot-page__form-group">
-                            <label>Auszugsadresse *</label>
+                            <span class="angebot-page__field-label">Auszugsadresse *</span>
                             <div class="angebot-page__address-row">
                                 <input
                                     type="text"
@@ -503,7 +503,7 @@
                             </div>
 
                             <div class="angebot-page__form-group">
-                                <label>Zwischenstopp-Adresse</label>
+                                <span class="angebot-page__field-label">Zwischenstopp-Adresse</span>
                                 <div class="angebot-page__address-row">
                                     <input
                                         type="text"
@@ -592,7 +592,7 @@
                         {/if}
 
                         <div class="angebot-page__form-group">
-                            <label>Einzugsadresse *</label>
+                            <span class="angebot-page__field-label">Einzugsadresse *</span>
                             <div class="angebot-page__address-row">
                                 <input
                                     type="text"
@@ -912,7 +912,8 @@
         flex-wrap: wrap;
     }
 
-    .angebot-page__form-group label {
+    .angebot-page__form-group label,
+    .angebot-page__field-label {
         color: #4a5568;
         font-size: var(--text-sm);
         font-weight: var(--font-medium);

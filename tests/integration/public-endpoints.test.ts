@@ -1,14 +1,18 @@
 /**
- * Round-trip: the public lead-capture endpoints — flash-contact (quick
- * callback) and /submit/manual — write real rows that the admin API reads back.
+ * Round-trip: the public /submit/manual lead-capture endpoint writes a real
+ * customer + inquiry + addresses that the admin API reads back.
+ *
+ * NOTE: the flash-contact ("Schneller Rückruf") tests live in
+ * `flash-contact.manual.test.ts` — they fire a real Telegram ping per POST and
+ * are excluded from the default run. Execute them with
+ * `npm run test:integration:manual`.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { apiGet, apiPost, apiDelete } from '$lib/utils/api.svelte';
-import { adminLogin, cleanup, newRefs, publicPost } from './helpers';
+import { apiGet } from '$lib/utils/api.svelte';
+import { adminLogin, cleanup, newRefs } from './helpers';
 import { TEST_DOMAIN, API_BASE } from './config';
 
 const refs = newRefs();
-const MARKER = `Integration Flash ${Date.now()}`;
 
 beforeAll(async () => {
 	await adminLogin();
@@ -16,55 +20,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await cleanup(refs);
-});
-
-describe('flash-contact (Schneller Rückruf)', () => {
-	it('accepts all three documented time preferences and shows up in the admin list', async () => {
-		for (const pref of ['gleich', 'vormittag', 'nachmittag'] as const) {
-			const res = await publicPost('/api/v1/flash-contact', {
-				name: `${MARKER} ${pref}`,
-				phone: '0151 2222222',
-				time_preference: pref,
-			});
-			expect(res.status, `time_preference=${pref}`).toBe(201);
-		}
-
-		const list = await apiGet<Array<{ id: string; name: string; time_preference: string }>>(
-			'/api/v1/admin/flash-contacts'
-		);
-		const mine = list.filter((c) => c.name.startsWith(MARKER));
-		expect(mine).toHaveLength(3);
-		expect(mine.map((c) => c.time_preference).sort()).toEqual([
-			'gleich',
-			'nachmittag',
-			'vormittag',
-		]);
-
-		// mark handled so they don't linger as open callbacks in the staging UI
-		for (const c of mine) {
-			await apiPost(`/api/v1/admin/flash-contacts/${c.id}/handle`).catch(() => {});
-		}
-	});
-
-	it('rejects the legacy Hero values (any_time / 08-10) — enum contract regression', async () => {
-		for (const bad of ['any_time', '08-10']) {
-			const res = await publicPost('/api/v1/flash-contact', {
-				name: `${MARKER} invalid`,
-				phone: '0151 2222222',
-				time_preference: bad,
-			});
-			expect(res.ok, `"${bad}" darf nicht akzeptiert werden`).toBe(false);
-		}
-	});
-
-	it('rejects empty name or phone', async () => {
-		const res = await publicPost('/api/v1/flash-contact', {
-			name: '   ',
-			phone: '0151 333',
-			time_preference: 'gleich',
-		});
-		expect(res.status).toBe(400);
-	});
 });
 
 describe('POST /submit/manual (public inquiry without media)', () => {

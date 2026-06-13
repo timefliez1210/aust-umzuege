@@ -12,10 +12,16 @@ import { API_BASE, MAILPIT_BASE, TEST_DOMAIN, ADMIN_EMAIL, ADMIN_PASSWORD } from
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 
-/** Logs in through the frontend auth store; fails the test run if rejected. */
+/** Logs in through the frontend auth store; fails the test run if rejected.
+ *  Retries once after 65 s if the auth rate-limiter returns 429 (10 req/60 s
+ *  shared across all integration test files). */
 export async function adminLogin(): Promise<void> {
 	if (auth.isAuthenticated) return;
-	const ok = await auth.login(ADMIN_EMAIL, ADMIN_PASSWORD);
+	let ok = await auth.login(ADMIN_EMAIL, ADMIN_PASSWORD);
+	if (!ok && auth.error?.includes('Zu viele Anfragen')) {
+		await new Promise((r) => setTimeout(r, 65_000));
+		ok = await auth.login(ADMIN_EMAIL, ADMIN_PASSWORD);
+	}
 	expect(ok, `Admin-Login fehlgeschlagen: ${auth.error ?? 'unbekannt'}`).toBe(true);
 }
 
@@ -127,6 +133,64 @@ export async function publicPost(path: string, body: unknown): Promise<Response>
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
+}
+
+/**
+ * Generic OTP login: request → wait for mail → verify, against the given
+ * endpoint pair. The auth rate-limiter shares a 10 req/60 s bucket across the
+ * whole suite, and the trailing OTP-using files cluster against it, so a single
+ * retry is not always enough — retry up to 3 times, waiting 65 s (one bucket
+ * window) on each 429 before giving up. Both employee and customer OTP emails
+ * use the same body template, so `extractOtp` works for both.
+ */
+async function otpLogin(
+	requestPath: string,
+	verifyPath: string,
+	email: string,
+	label: string
+): Promise<Response> {
+	const attempt = async (): Promise<Response> => {
+		const reqRes = await publicPost(requestPath, { email });
+		if (reqRes.status === 429) return reqRes;
+		const mail = await waitForMail(email, { subjectContains: 'Zugangscode' });
+		const code = extractOtp(mail.text);
+		return publicPost(verifyPath, { email, code });
+	};
+
+	const maxAttempts = 3;
+	let res = await attempt();
+	for (let i = 1; i < maxAttempts && res.status === 429; i++) {
+		await new Promise((r) => setTimeout(r, 65_000));
+		res = await attempt();
+	}
+	expect(res.status, `${label} fehlgeschlagen: ${res.status}`).toBeLessThan(300);
+	return res;
+}
+
+/** Full worker OTP login (employee endpoints). See {@link otpLogin}. */
+export async function workerOtpLogin(
+	email: string
+): Promise<{ token: string; employee: { id: string; first_name: string } }> {
+	const res = await otpLogin(
+		'/api/v1/employee/auth/request',
+		'/api/v1/employee/auth/verify',
+		email,
+		'OTP-Verify'
+	);
+	return res.json() as Promise<{ token: string; employee: { id: string; first_name: string } }>;
+}
+
+/** Full customer OTP login (customer endpoints). See {@link otpLogin}. */
+export async function customerOtpLogin(
+	email: string
+): Promise<{ token: string; customer: { id: string; email: string } }> {
+	const res = await otpLogin(
+		'/api/v1/customer/auth/request',
+		'/api/v1/customer/auth/verify',
+		email,
+		'Customer-OTP-Verify'
+	);
+	return res.json() as Promise<{ token: string; customer: { id: string; email: string } }>;
 }
 
 export async function workerGetRaw<T>(path: string, token: string): Promise<T> {

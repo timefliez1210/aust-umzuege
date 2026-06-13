@@ -12,8 +12,7 @@ import {
 	cleanup,
 	newRefs,
 	publicPost,
-	waitForMail,
-	extractOtp,
+	workerOtpLogin,
 	workerGetRaw,
 	workerPatchRaw,
 } from './helpers';
@@ -61,22 +60,7 @@ afterAll(async () => {
 
 describe('worker portal', () => {
 	it('requests an OTP, reads the 6-digit code from the email, and logs in', async () => {
-		const reqRes = await publicPost('/api/v1/employee/auth/request', { email: employeeEmail });
-		expect(reqRes.ok).toBe(true);
-
-		const mail = await waitForMail(employeeEmail);
-		const code = extractOtp(mail.text);
-		expect(code).toMatch(/^\d{6}$/);
-
-		const verifyRes = await publicPost('/api/v1/employee/auth/verify', {
-			email: employeeEmail,
-			code,
-		});
-		expect(verifyRes.status).toBeLessThan(300);
-		const data = (await verifyRes.json()) as {
-			token: string;
-			employee: { id: string; first_name: string };
-		};
+		const data = await workerOtpLogin(employeeEmail);
 		expect(data.token).toBeTruthy();
 		expect(data.employee.id).toBe(employeeId);
 		sessionToken = data.token;

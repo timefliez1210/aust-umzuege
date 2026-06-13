@@ -8,6 +8,7 @@ Disallow: /api/
 Disallow: /send-mail.php
 Disallow: /_forms.html
 Disallow: /admin/
+Disallow: /worker
 Disallow: /foto-angebot
 Disallow: /cookie-einstellungen
 

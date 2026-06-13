@@ -15,7 +15,8 @@
 		"lighthouse:open": "open lighthouse-reports/index.html || xdg-open lighthouse-reports/index.html",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:integration": "vitest run --config vitest.integration.config.ts"
+		"test:integration": "vitest run --config vitest.integration.config.ts",
+		"test:integration:manual": "vitest run --config vitest.integration.manual.config.ts"
 	},
 	"devDependencies": {
 		"@lhci/cli": "^0.15.1",

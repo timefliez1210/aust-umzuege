@@ -290,6 +290,19 @@
 					bind:value={clockIn}
 				/>
 			</div>
+			<div class="clock-row">
+				<label for="clock-out">Ende</label>
+				<input
+					id="clock-out"
+					type="text"
+					inputmode="decimal"
+					placeholder="17:00"
+					maxlength="5"
+					pattern="[0-9]{2}:[0-5][0-9]"
+					class="clock-input"
+					bind:value={clockOut}
+				/>
+			</div>
 			<button
 				class="btn-save"
 				class:saved={clockSaved}

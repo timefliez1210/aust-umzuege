@@ -107,6 +107,14 @@ RewriteRule ^(.*)$ $1.html [L]
     <FilesMatch "\.html$">
         Header set Cache-Control "public, max-age=3600, must-revalidate"
     </FilesMatch>
+
+    # version.json must NEVER be cached — SvelteKit's stale-deploy recovery
+    # (hard reload when a lazy chunk 404s after a redeploy) compares against
+    # it. A heuristically cached copy makes stale worker/admin sessions
+    # unable to navigate to not-yet-loaded routes after every deploy.
+    <Files "version.json">
+        Header set Cache-Control "no-store"
+    </Files>
 </IfModule>
 
 # ============================

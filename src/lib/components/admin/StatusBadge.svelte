@@ -6,6 +6,8 @@
 		open: { bg: '#dbeafe', color: '#2563eb', text: 'Offen' },
 		new: { bg: '#dbeafe', color: '#2563eb', text: 'Neu' },
 		pending: { bg: '#fef3c7', color: '#b45309', text: 'Ausstehend' },
+		info_requested: { bg: '#fef3c7', color: '#b45309', text: 'Info angefragt' },
+		expired: { bg: '#f1f5f9', color: '#64748b', text: 'Abgelaufen' },
 		estimating: { bg: '#ede9fe', color: '#7c3aed', text: 'Schaetzung' },
 		estimated: { bg: '#ede9fe', color: '#7c3aed', text: 'Volumen' },
 		offer_ready: { bg: '#e0e7ff', color: '#4338ca', text: 'Angebot' },

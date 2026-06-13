@@ -63,12 +63,15 @@ if ($formName === 'kontakt') {
     $date = clean($_POST['wunschtermin'] ?? '');
     $startAddress = clean($_POST['auszugsadresse'] ?? '');
     $startFloor = clean($_POST['etage-auszug'] ?? '');
+    $aufzugAuszug = isset($_POST['aufzug-auszug']) ? 'Ja' : 'Nein';
     $halteverbotAuszug = isset($_POST['halteverbot-auszug']) ? 'Ja' : 'Nein';
     $zwischenstoppAddress = clean($_POST['zwischenstopp-adresse'] ?? '');
     $zwischenstoppFloor = clean($_POST['etage-zwischenstopp'] ?? '');
+    $aufzugZwischenstopp = isset($_POST['aufzug-zwischenstopp']) ? 'Ja' : 'Nein';
     $halteverbotZwischenstopp = isset($_POST['halteverbot-zwischenstopp']) ? 'Ja' : 'Nein';
     $endAddress = clean($_POST['einzugsadresse'] ?? '');
     $endFloor = clean($_POST['etage-einzug'] ?? '');
+    $aufzugEinzug = isset($_POST['aufzug-einzug']) ? 'Ja' : 'Nein';
     $halteverbotEinzug = isset($_POST['halteverbot-einzug']) ? 'Ja' : 'Nein';
     $volume = clean($_POST['umzugsvolumen-m3'] ?? '');
     $items = clean($_POST['gegenstaende-liste'] ?? '');
@@ -87,16 +90,19 @@ if ($formName === 'kontakt') {
     $body .= "--- Auszugsadresse ---\n";
     $body .= "Adresse: $startAddress\n";
     $body .= "Etage: $startFloor\n";
+    $body .= "Aufzug: $aufzugAuszug\n";
     $body .= "Halteverbot: $halteverbotAuszug\n\n";
     if (!empty($zwischenstoppAddress)) {
         $body .= "--- Zwischenstopp ---\n";
         $body .= "Adresse: $zwischenstoppAddress\n";
         $body .= "Etage: $zwischenstoppFloor\n";
+        $body .= "Aufzug: $aufzugZwischenstopp\n";
         $body .= "Halteverbot: $halteverbotZwischenstopp\n\n";
     }
     $body .= "--- Einzugsadresse ---\n";
     $body .= "Adresse: $endAddress\n";
     $body .= "Etage: $endFloor\n";
+    $body .= "Aufzug: $aufzugEinzug\n";
     $body .= "Halteverbot: $halteverbotEinzug\n\n";
     $body .= "--- Umzugsdetails ---\n";
     $body .= "Geschätztes Volumen: $volume m³\n";

@@ -28,7 +28,6 @@
 
     // Form state
     let formData = $state({
-        name: "",
         salutation: "",
         first_name: "",
         last_name: "",
@@ -110,7 +109,7 @@
     ];
 
     const isFormValid = $derived(
-        (formData.last_name !== "" || formData.name !== "") &&
+        formData.last_name !== "" &&
             formData.email !== "" &&
             formData.phone !== "" &&
             formData.startStrasse !== "" &&
@@ -171,7 +170,6 @@
                 submitSuccess = true;
                 // Reset form
                 formData = {
-                    name: "",
                     salutation: "",
                     first_name: "",
                     last_name: "",
@@ -266,6 +264,13 @@
                 tooldescription="Kostenloses Umzugsangebot anfordern bei Aust Umzüge Hildesheim. Kontaktdaten, Auszugs-/Einzugsadresse mit Etage, Wunschtermin und Zusatzleistungen angeben."
             >
                 <input type="hidden" name="form-name" value="kostenloses-angebot" />
+                <!-- Honeypot: send-mail.php silently discards submissions where this is filled -->
+                <p class="angebot-page__hp" aria-hidden="true">
+                    <label>
+                        Bitte dieses Feld freilassen
+                        <input type="text" name="bot-field" tabindex="-1" autocomplete="off" />
+                    </label>
+                </p>
                 <!-- Hidden fields for volume calculator data -->
                 <input
                     type="hidden"
@@ -378,6 +383,7 @@
                                 id="date"
                                 name="wunschtermin"
                                 bind:value={formData.date}
+                                min={new Date().toISOString().slice(0, 10)}
                                 required
                                 toolparamtitle="Wunschtermin"
                                 toolparamdescription="Gewünschtes Umzugsdatum im Format JJJJ-MM-TT"
@@ -800,6 +806,16 @@
         font-size: var(--text-sm);
         margin: 0;
         text-align: center;
+    }
+
+    /* Honeypot — visually removed, still in the submitted form data */
+    .angebot-page__hp {
+        position: absolute;
+        left: -10000px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        margin: 0;
     }
 
     .angebot-page__container {

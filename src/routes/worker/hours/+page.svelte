@@ -24,7 +24,14 @@
 		assignments: HoursEntry[];
 	}
 
-	let selectedMonth = $state(new Date().toISOString().slice(0, 7));
+	/** Current month in the device's local time — toISOString() would be UTC and
+	 *  show the previous month during the first hours of a new month in Berlin. */
+	function localMonth(): string {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+	}
+
+	let selectedMonth = $state(localMonth());
 	let summary = $state<HoursSummary | null>(null);
 	let loading = $state(true);
 
@@ -38,16 +45,21 @@
 	 * Called by: $effect on mount and whenever selectedMonth changes.
 	 * Purpose: Fetches GET /employee/hours?month=YYYY-MM for the authenticated employee.
 	 *
+	 * Ignores out-of-order responses when the user flips months quickly.
+	 *
 	 * @param month - ISO month string (YYYY-MM)
 	 */
 	async function loadHours(month: string) {
 		loading = true;
 		try {
-			summary = await workerGet<HoursSummary>(`/api/v1/employee/hours?month=${month}`);
+			const res = await workerGet<HoursSummary>(`/api/v1/employee/hours?month=${month}`);
+			if (month !== selectedMonth) return; // stale response — a newer month is selected
+			summary = res;
 		} catch {
+			if (month !== selectedMonth) return;
 			summary = null;
 		} finally {
-			loading = false;
+			if (month === selectedMonth) loading = false;
 		}
 	}
 
@@ -188,7 +200,7 @@
 
 	.summary-cards {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(2, 1fr);
 		gap: 0.625rem;
 		margin-bottom: 1.25rem;
 	}

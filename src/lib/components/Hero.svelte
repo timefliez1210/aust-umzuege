@@ -1,11 +1,8 @@
 <script lang="ts">
-    // Hero — redesigned: two-column navy hero with static accent word,
-    // testimonial carousel, and inline Schneller Rückruf form.
-    // Posts to /api/v1/flash-contact (same backend as Blitzkontakt).
+    // Hero — two-column navy hero with static accent word, testimonial
+    // carousel, and the site-wide contact flow CTA (same as the homepage).
     import { onMount, onDestroy } from "svelte";
-    import { API_BASE } from "$lib/utils/api.svelte";
-
-    type TimePref = "any_time" | "08-10" | "10-12" | "14-16" | "16-18";
+    import AnchorCTA from "$lib/components/contact/AnchorCTA.svelte";
 
     interface Testimonial {
         initial: string;
@@ -92,52 +89,6 @@
         if (timer) clearInterval(timer);
     });
 
-    // ---- Schneller Rückruf form ----
-    let name = $state("");
-    let phone = $state("");
-    let timePref = $state<TimePref>("any_time");
-    let submitting = $state(false);
-    let done = $state(false);
-    let error = $state<string | null>(null);
-
-    const slots: { value: TimePref; label: string }[] = [
-        { value: "any_time", label: "Jederzeit" },
-        { value: "08-10", label: "08–10" },
-        { value: "10-12", label: "10–12" },
-        { value: "14-16", label: "14–16" },
-        { value: "16-18", label: "16–18" },
-    ];
-
-    async function submit(e: Event) {
-        e.preventDefault();
-        error = null;
-        if (!name.trim() || !phone.trim()) {
-            error = "Bitte Name und Telefonnummer angeben.";
-            return;
-        }
-        submitting = true;
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/flash-contact`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: name.trim(),
-                    phone: phone.trim(),
-                    time_preference: timePref,
-                }),
-            });
-            if (!res.ok) {
-                const body = await res.text().catch(() => "");
-                throw new Error(body || `HTTP ${res.status}`);
-            }
-            done = true;
-        } catch (e) {
-            error = (e as Error).message || "Senden fehlgeschlagen.";
-        } finally {
-            submitting = false;
-        }
-    }
-
     const srcset = $derived(`${imageBase}-400w.webp 400w, ${imageBase}-600w.webp 600w, ${imageBase}-800w.webp 800w`);
 </script>
 
@@ -176,7 +127,7 @@
                             <div class="avatar" aria-hidden="true">{t.initial}</div>
                             <div class="hero__testimonial-body">
                                 <blockquote>
-                                    „{t.quote}"
+                                    „{t.quote}“
                                     <cite>— {t.author}</cite>
                                 </blockquote>
                                 <a class="review-link" href={reviewLink} target="_blank" rel="noopener noreferrer">
@@ -203,55 +154,13 @@
                 </div>
             </div>
 
-            <form class="callback" onsubmit={submit}>
-                {#if done}
-                    <div class="callback__success">
-                        <h3>Vielen Dank!</h3>
-                        <p>Wir melden uns in der gewählten Zeit bei Ihnen.</p>
-                    </div>
-                {:else}
-                    <h3 class="callback__title">Schneller Rückruf</h3>
-                    <div class="callback__row">
-                        <input
-                            type="text"
-                            bind:value={name}
-                            placeholder="Name"
-                            required
-                            maxlength="120"
-                            autocomplete="name"
-                        />
-                        <input
-                            type="tel"
-                            bind:value={phone}
-                            placeholder="Telefonnummer"
-                            required
-                            maxlength="40"
-                            autocomplete="tel"
-                        />
-                    </div>
-                    <fieldset class="callback__times">
-                        <legend>Wunschzeit</legend>
-                        <div class="callback__time-grid">
-                            {#each slots as slot (slot.value)}
-                                <label class:active={timePref === slot.value}>
-                                    <input
-                                        type="radio"
-                                        bind:group={timePref}
-                                        value={slot.value}
-                                    />
-                                    {slot.label}
-                                </label>
-                            {/each}
-                        </div>
-                    </fieldset>
-                    {#if error}
-                        <p class="callback__error">{error}</p>
-                    {/if}
-                    <button class="callback__submit" type="submit" disabled={submitting}>
-                        {submitting ? "Wird gesendet …" : "Rückruf anfordern"}
-                    </button>
-                {/if}
-            </form>
+            <div class="hero__callback">
+                <AnchorCTA
+                    variant="primary"
+                    title="Reden wir 5 Minuten."
+                    sub="Anruf, Rückruf, WhatsApp oder Nachricht — Sie entscheiden."
+                />
+            </div>
         </div>
 
         <div class="hero__right">
@@ -458,140 +367,10 @@
         width: 18px;
     }
 
-    /* Callback form */
-    .callback {
-        background: #fff;
-        border-radius: 1.25rem;
-        padding: 1.5rem;
-        color: var(--hero-navy);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    /* Callback CTA — opens the site-wide contact flow (same as homepage) */
+    .hero__callback {
         display: flex;
         flex-direction: column;
-        gap: 1.1rem;
-    }
-    .callback__title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        margin: 0;
-    }
-    .callback__row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.8rem;
-    }
-    @media (max-width: 600px) {
-        .callback__row { grid-template-columns: 1fr; }
-    }
-    .callback input[type="text"],
-    .callback input[type="tel"] {
-        width: 100%;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.65rem;
-        padding: 0.75rem 0.9rem;
-        font-family: inherit;
-        font-size: 0.95rem;
-        color: var(--hero-navy);
-        outline: none;
-        transition: box-shadow 0.15s, border-color 0.15s;
-    }
-    .callback input:focus {
-        border-color: var(--hero-orange);
-        box-shadow: 0 0 0 3px rgba(196, 65, 0, 0.18);
-    }
-    .callback__times {
-        border: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    .callback__times legend {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        padding: 0;
-    }
-    .callback__time-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 0.4rem;
-    }
-    @media (max-width: 480px) {
-        .callback__time-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    .callback__time-grid label {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.45rem 0.2rem;
-        background: #f3f4f6;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.55rem;
-        cursor: pointer;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--hero-navy);
-        transition: border-color 0.15s, color 0.15s, background 0.15s;
-        user-select: none;
-    }
-    .callback__time-grid label:hover {
-        border-color: var(--hero-orange);
-        color: var(--hero-orange);
-    }
-    .callback__time-grid label.active {
-        background: var(--hero-orange);
-        border-color: var(--hero-orange);
-        color: #fff;
-    }
-    .callback__time-grid input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-    }
-    .callback__submit {
-        width: 100%;
-        background: var(--hero-orange);
-        color: #fff;
-        font-weight: 700;
-        font-size: 1.05rem;
-        font-family: inherit;
-        padding: 0.9rem 1rem;
-        border: none;
-        border-radius: 0.7rem;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: background 0.15s, transform 0.15s;
-    }
-    .callback__submit:hover:not(:disabled) {
-        background: var(--hero-orange-hover);
-    }
-    .callback__submit:active:not(:disabled) { transform: translateY(1px); }
-    .callback__submit:disabled { opacity: 0.6; cursor: not-allowed; }
-    .callback__error {
-        color: #dc2626;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-align: center;
-        margin: 0;
-    }
-    .callback__success {
-        text-align: center;
-        padding: 1rem 0.5rem;
-    }
-    .callback__success h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 0 0 0.25rem 0;
-    }
-    .callback__success p {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin: 0;
     }
 
     /* Right column image */

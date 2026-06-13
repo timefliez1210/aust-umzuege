@@ -874,9 +874,13 @@
         },
     ];
 
-    // State
+    // State — clone per instance so two calculators never share quantity state.
+    // Spread-clone (not JSON) so the `icon` component references survive.
     let categories = $state<Category[]>(
-        JSON.parse(JSON.stringify(initialCategories)),
+        initialCategories.map((cat) => ({
+            ...cat,
+            items: cat.items.map((item) => ({ ...item })),
+        })),
     );
     let activeCategoryIndex = $state(0);
     let searchQuery = $state("");
@@ -897,7 +901,7 @@
     );
 
     // Generate item summary for form submission
-    const selectedItemsSummary = $derived(() => {
+    const selectedItemsSummary = $derived.by(() => {
         const items: string[] = [];
         categories.forEach((cat) => {
             cat.items.forEach((item) => {
@@ -912,10 +916,10 @@
     // Update bindable props when values change
     $effect(() => {
         volumeM3 = totalVolume;
-        itemSummary = selectedItemsSummary();
+        itemSummary = selectedItemsSummary;
     });
 
-    const searchResults = $derived(() => {
+    const searchResults = $derived.by(() => {
         const query = searchQuery.toLowerCase().trim();
         if (!query) return [];
         const results: { catIndex: number; itemIndex: number; item: Item }[] =
@@ -964,6 +968,7 @@
         <!-- Left Sidebar: Categories -->
         <aside class="volume-calculator__sidebar">
             {#each categories as category, index}
+                {@const Icon = category.icon}
                 <button
                     type="button"
                     class="volume-calculator__category"
@@ -972,23 +977,7 @@
                     aria-label={category.name}
                 >
                     <span class="volume-calculator__category-icon">
-                        {#if category.name === "Wohnzimmer"}
-                            <Sofa size={20} />
-                        {:else if category.name === "Schlafzimmer"}
-                            <Bed size={20} />
-                        {:else if category.name === "Esszimmer"}
-                            <UtensilsCrossed size={20} />
-                        {:else if category.name === "Küche"}
-                            <UtensilsCrossed size={20} />
-                        {:else if category.name === "Kinderzimmer"}
-                            <Baby size={20} />
-                        {:else if category.name === "Arbeitszimmer"}
-                            <Briefcase size={20} />
-                        {:else if category.name === "Bad"}
-                            <Bath size={20} />
-                        {:else if category.name === "Sonstiges"}
-                            <Package size={20} />
-                        {/if}
+                        <Icon size={20} />
                     </span>
                     <span class="volume-calculator__category-name"
                         >{category.name}</span
@@ -1001,9 +990,9 @@
         <div class="volume-calculator__items-panel">
             {#if searchQuery.trim()}
                 <!-- Search Results -->
-                {#if searchResults().length > 0}
+                {#if searchResults.length > 0}
                     <div class="volume-calculator__items-list">
-                        {#each searchResults() as result}
+                        {#each searchResults as result}
                             <div class="volume-calculator__item">
                                 <span class="volume-calculator__item-name"
                                     >{result.item.name}</span
@@ -1402,6 +1391,20 @@
 
     /* Mobile Responsive */
     @media (max-width: 767px) {
+        /* overflow:hidden on the root would break the sticky total below;
+           re-apply the corner rounding the root clipping used to provide */
+        .volume-calculator {
+            overflow: visible;
+        }
+
+        .volume-calculator__info {
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .volume-calculator__total {
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
         .volume-calculator__layout {
             grid-template-columns: 1fr;
             overflow: hidden;
@@ -1445,6 +1448,10 @@
             flex-direction: column;
             text-align: center;
             gap: var(--space-2);
+            /* Keep the running total visible while adding items on small screens */
+            position: sticky;
+            bottom: 0;
+            z-index: 1;
         }
     }
 </style>

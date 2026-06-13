@@ -38,9 +38,28 @@
 
 	onMount(() => {
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape' && contactFlow.mode) {
+			if (!contactFlow.mode) return;
+			if (e.key === 'Escape') {
 				e.preventDefault();
 				closeContactFlow();
+				return;
+			}
+			// Minimal focus trap: keep Tab cycling inside the dialog (aria-modal alone doesn't enforce it)
+			if (e.key === 'Tab' && dialogEl) {
+				const focusables = dialogEl.querySelectorAll<HTMLElement>(
+					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+				);
+				if (focusables.length === 0) return;
+				const first = focusables[0];
+				const last = focusables[focusables.length - 1];
+				const active = document.activeElement;
+				if (e.shiftKey && (active === first || !dialogEl.contains(active))) {
+					e.preventDefault();
+					last.focus();
+				} else if (!e.shiftKey && (active === last || !dialogEl.contains(active))) {
+					e.preventDefault();
+					first.focus();
+				}
 			}
 		};
 		window.addEventListener('keydown', onKey);
@@ -104,6 +123,8 @@
 		if (phone.trim()) body.set('phone', phone.trim());
 		body.set('nachricht', message.trim());
 		body.set('datenschutz-akzeptiert', '1');
+		// Server-side honeypot: send-mail.php discards submissions where 'bot-field' is filled
+		body.set('bot-field', company);
 		const res = await fetch('/send-mail.php', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -281,7 +302,8 @@
 	.backdrop {
 		position: fixed;
 		inset: 0;
-		z-index: 1000;
+		/* Above InfoBar (1001) and Navbar (1000), below the cookie banner (9998+) */
+		z-index: 1200;
 		background: rgba(15, 31, 51, 0.55);
 		backdrop-filter: blur(4px);
 		-webkit-backdrop-filter: blur(4px);

@@ -104,7 +104,9 @@ export async function workerFetch<T = unknown>(
 	if (worker.token) {
 		headers['Authorization'] = `Bearer ${worker.token}`;
 	}
-	if (!(options.body instanceof FormData)) {
+	// Only declare a JSON body when there actually is one — a Content-Type on
+	// GET requests forces an unnecessary CORS preflight.
+	if (options.body !== undefined && !(options.body instanceof FormData)) {
 		headers['Content-Type'] = 'application/json';
 	}
 

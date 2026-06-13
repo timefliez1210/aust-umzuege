@@ -34,7 +34,8 @@
 
 <svelte:head>
 	<meta name="robots" content="noindex" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<!-- viewport-fit=cover is required for env(safe-area-inset-bottom) to be non-zero on iOS -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 </svelte:head>
 
 {#if isLogin}
@@ -119,9 +120,13 @@
 		border: none;
 		color: #94a3b8;
 		cursor: pointer;
-		padding: 0.25rem;
+		/* 44px touch target (icon is 18px) */
+		min-width: 44px;
+		min-height: 44px;
+		margin: -0.75rem -0.5rem;
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		border-radius: 0.375rem;
 		transition: color 150ms;
 	}
@@ -141,6 +146,8 @@
 		border-top: 1px solid #e2e8f0;
 		background: #fff;
 		flex-shrink: 0;
+		/* Clear the iPhone home indicator / gesture bar */
+		padding-bottom: env(safe-area-inset-bottom);
 	}
 
 	.nav-item {

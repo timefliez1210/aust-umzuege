@@ -15,33 +15,7 @@
 <svelte:head>
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  {#if !$page.url.pathname.startsWith('/admin') && !$page.url.pathname.startsWith('/worker')}
-    <!-- Google Analytics (deferred until after user interaction or idle) -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-9QT7TKENKZ');
-      (function(){
-        var loaded = false;
-        function load(){
-          if (loaded) return;
-          loaded = true;
-          var s = document.createElement('script');
-          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-9QT7TKENKZ';
-          s.async = true;
-          document.head.appendChild(s);
-        }
-        var events = ['scroll','click','touchstart','keydown'];
-        events.forEach(function(e){document.addEventListener(e, load, {once:true,passive:true});});
-        if (typeof requestIdleCallback === 'function') {
-          requestIdleCallback(function(){setTimeout(load, 3000);}, {timeout: 8000});
-        } else {
-          setTimeout(load, 8000);
-        }
-      })();
-    </script>
-  {/if}
+  <!-- Google Analytics is loaded by ConsentManager — only after analytics consent (DSGVO). -->
 </svelte:head>
 
 {#if $page.url.pathname.startsWith('/admin') || $page.url.pathname.startsWith('/worker')}

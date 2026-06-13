@@ -39,7 +39,7 @@ Employee portal at `/worker/*`. 5 pages: login, schedule, hours, jobs detail, pr
 - **Pages**:
   - `/worker/login` — Email → OTP code. No sidebar, no auth guard.
   - `/worker/schedule` — Upcoming job list with day-grouped cards.
-  - `/worker/hours` — Clock in/out per job, open timer, manual entry.
+  - `/worker/hours` — Monthly hours summary: target vs. actual with per-assignment list (read-only).
   - `/worker/jobs/[id]` — Job detail, route, customer contact, notes.
   - `/worker/profile` — Employee profile view.
 

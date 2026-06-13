@@ -163,16 +163,15 @@
             />
         </a>
 
-        <!-- Desktop Navigation -->
-        <ul class="navbar__links" role="menubar">
+        <!-- Desktop Navigation (plain list semantics — dropdowns open on hover/focus-within,
+             so the ARIA menu pattern with its arrow-key contract does not apply) -->
+        <ul class="navbar__links">
             {#each links as link}
-                <li role="none" class="navbar__item">
+                <li class="navbar__item">
                     <a
                         href={link.href}
                         class="navbar__link"
                         class:active={$page.url.pathname.startsWith(link.href)}
-                        role="menuitem"
-                        aria-haspopup={link.hasDropdown ? "true" : undefined}
                     >
                         {link.label}
                         {#if link.hasDropdown}
@@ -404,7 +403,9 @@
         padding-top: var(--space-2);
     }
 
-    .navbar__item:hover .navbar__dropdown {
+    /* :focus-within keeps the dropdown open while tabbing through its links */
+    .navbar__item:hover .navbar__dropdown,
+    .navbar__item:focus-within .navbar__dropdown {
         opacity: 1;
         visibility: visible;
         transform: translateX(-50%) translateY(0);
@@ -485,6 +486,9 @@
 
     .navbar__mobile.open {
         grid-template-rows: 1fr;
+        /* Navbar is fixed; cap the menu to the remaining viewport so long
+           submenus (Leistungen has 15 entries) stay reachable by scrolling. */
+        max-height: calc(100dvh - 80px);
     }
 
     .navbar__mobile-links {
@@ -492,6 +496,12 @@
         list-style: none;
         margin: 0;
         padding: 0;
+    }
+
+    .navbar__mobile.open .navbar__mobile-links {
+        overflow-y: auto;
+        max-height: calc(100dvh - 80px);
+        -webkit-overflow-scrolling: touch;
     }
 
     .navbar__mobile.open .navbar__mobile-links {

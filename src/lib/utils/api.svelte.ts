@@ -54,7 +54,11 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
 		body: body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined
 	};
 
-	let res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions);
+	// Multipart uploads (photos/videos) can legitimately take minutes on slow
+	// connections — don't kill them with the default 15s JSON-request timeout.
+	const timeout = body instanceof FormData ? 300_000 : undefined;
+
+	let res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions, timeout);
 
 	// On 401, try refreshing the token once
 	if (res.status === 401 && auth.token) {
@@ -62,7 +66,7 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
 		if (refreshed) {
 			headers['Authorization'] = `Bearer ${auth.token}`;
 			fetchOptions.headers = headers;
-			res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions);
+			res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions, timeout);
 		} else {
 			auth.logout();
 			throw new ApiError(401, 'Sitzung abgelaufen. Bitte erneut anmelden.');

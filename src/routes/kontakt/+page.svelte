@@ -5,7 +5,6 @@
     import { contactPage, createBreadcrumbs } from "$lib/data/structuredData";
 
     let formData = $state({
-        name: "",
         salutation: "",
         first_name: "",
         last_name: "",
@@ -21,9 +20,20 @@
 
     const isFormValid = $derived(
         formData.salutation !== "" &&
-            (formData.last_name !== "" || formData.name !== "") &&
+            formData.last_name !== "" &&
             formData.email !== "" &&
             formData.message !== "" &&
+            formData.privacyAccepted,
+    );
+
+    // Only nag about missing fields once the user has started filling the form
+    const isFormDirty = $derived(
+        formData.salutation !== "" ||
+            formData.last_name !== "" ||
+            formData.first_name !== "" ||
+            formData.email !== "" ||
+            formData.phone !== "" ||
+            formData.message !== "" ||
             formData.privacyAccepted,
     );
 
@@ -48,7 +58,6 @@
                 submitSuccess = true;
                 // Reset form
                 formData = {
-                    name: "",
                     salutation: "",
                     first_name: "",
                     last_name: "",
@@ -112,8 +121,15 @@
                 tooldescription="Kontaktformular für allgemeine Anfragen an Aust Umzüge Hildesheim. Senden Sie eine Nachricht mit Name, E-Mail und Anliegen."
             >
                 <input type="hidden" name="form-name" value="kontakt" />
+                <!-- Honeypot: send-mail.php silently discards submissions where this is filled -->
+                <p class="contact-form__hp" aria-hidden="true">
+                    <label>
+                        Bitte dieses Feld freilassen
+                        <input type="text" name="bot-field" tabindex="-1" autocomplete="off" />
+                    </label>
+                </p>
                 <div class="contact-form__group contact-form__group--radio">
-                    <span class="contact-form__radio-label">Anrede:</span>
+                    <span class="contact-form__radio-label">Anrede: *</span>
                     <div class="contact-form__radio-row">
                         <label class="contact-form__radio">
                             <input type="radio" name="anrede" value="Herr" bind:group={formData.salutation} />
@@ -157,7 +173,7 @@
                         id="email"
                         name="email"
                         bind:value={formData.email}
-                        placeholder="Ihre E-Mail-Adresse:"
+                        placeholder="Ihre E-Mail-Adresse: *"
                         required
                         toolparamtitle="E-Mail"
                         toolparamdescription="E-Mail-Adresse für die Rückmeldung"
@@ -184,7 +200,7 @@
                         name="nachricht"
                         bind:value={formData.message}
                         rows="4"
-                        placeholder="Ihre Nachricht:"
+                        placeholder="Ihre Nachricht: *"
                         required
                         toolparamtitle="Nachricht"
                         toolparamdescription="Ihre Nachricht oder Anfrage an Aust Umzüge"
@@ -212,7 +228,7 @@
                     <p class="contact-form__error">{submitError}</p>
                 {/if}
 
-                {#if !isFormValid}
+                {#if isFormDirty && !isFormValid}
                     <p class="contact-form__hint">Bitte füllen Sie alle Pflichtfelder aus (*) und akzeptieren Sie die Datenschutzerklärung.</p>
                 {/if}
 
@@ -316,6 +332,16 @@
         color: #64748b;
         font-size: var(--text-sm);
         margin: 0 0 var(--space-2);
+    }
+
+    /* Honeypot — visually removed, still in the submitted form data */
+    .contact-form__hp {
+        position: absolute;
+        left: -10000px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        margin: 0;
     }
 
     .contact-page__container {

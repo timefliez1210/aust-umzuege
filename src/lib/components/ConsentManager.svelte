@@ -6,11 +6,11 @@
 		loadMetaPixel,
 		loadGoogleTagManager,
 		removeTrackingCookies,
+		deferUntilInteractionOrIdle,
 	} from '$lib/utils/analytics';
 	import { browser } from '$app/environment';
 
-	// TODO: Add your tracking IDs here when client approves
-	const GOOGLE_ANALYTICS_ID = ''; // e.g., 'G-XXXXXXXXXX'
+	const GOOGLE_ANALYTICS_ID = 'G-9QT7TKENKZ';
 	const META_PIXEL_ID = ''; // e.g., '1234567890'
 	const GOOGLE_TAG_MANAGER_ID = ''; // e.g., 'GTM-XXXXXX'
 
@@ -24,9 +24,10 @@
 
 		const { analytics, marketing } = $cookieConsent.preferences;
 
-		// Load analytics scripts if consented and not already loaded
+		// Load analytics scripts if consented and not already loaded.
+		// Deferred until first interaction/idle so gtag.js never competes with LCP.
 		if (analytics && !analyticsLoaded && GOOGLE_ANALYTICS_ID) {
-			loadGoogleAnalytics(GOOGLE_ANALYTICS_ID);
+			deferUntilInteractionOrIdle(() => loadGoogleAnalytics(GOOGLE_ANALYTICS_ID));
 			analyticsLoaded = true;
 		}
 

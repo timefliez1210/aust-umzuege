@@ -4,6 +4,30 @@
 import { browser } from '$app/environment';
 
 /**
+ * Defer a callback until the user first interacts with the page (scroll, click,
+ * touch, keydown) or the browser is idle — whichever comes first.
+ *
+ * Call this to delay third-party script injection so it never competes with
+ * LCP/hydration. Used by ConsentManager when loading Google Analytics after consent.
+ */
+export function deferUntilInteractionOrIdle(fn: () => void) {
+	if (!browser) return;
+	let done = false;
+	const run = () => {
+		if (done) return;
+		done = true;
+		fn();
+	};
+	const events: (keyof DocumentEventMap)[] = ['scroll', 'click', 'touchstart', 'keydown'];
+	events.forEach((e) => document.addEventListener(e, run, { once: true, passive: true }));
+	if (typeof requestIdleCallback === 'function') {
+		requestIdleCallback(() => setTimeout(run, 3000), { timeout: 8000 });
+	} else {
+		setTimeout(run, 8000);
+	}
+}
+
+/**
  * Load Google Analytics
  * Call this when user accepts analytics cookies
  */

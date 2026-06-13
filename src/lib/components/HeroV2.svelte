@@ -4,6 +4,7 @@
     // chips, one full testimonial, dual CTA (Vor-Ort-Termin + phone tap).
     import { Phone, MapPin, ExternalLink, CalendarCheck, FileCheck2, ShieldCheck } from "lucide-svelte";
     import AnchorCTA from "$lib/components/contact/AnchorCTA.svelte";
+    import { PHONE_DISPLAY, PHONE_HREF } from "$lib/components/contact/constants";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type IconComponent = any;
@@ -51,8 +52,8 @@
         testimonialAuthor = "Bea",
         testimonialMeta = "eine von 71× ★★★★★ auf Google",
         testimonialUrl = "https://maps.app.goo.gl/KNcwFdaD9wWhzHZV9",
-        phoneDisplay = "05121 – 755 83 79",
-        phoneHref = "tel:051217558379",
+        phoneDisplay = PHONE_DISPLAY,
+        phoneHref = PHONE_HREF,
     }: Props = $props();
 
     const srcset = $derived(`${ownerImageBase}-400w.webp 400w, ${ownerImageBase}-600w.webp 600w, ${ownerImageBase}-800w.webp 800w`);

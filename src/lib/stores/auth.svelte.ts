@@ -134,6 +134,9 @@ class AuthStore {
 		}
 	}
 
+	/** In-flight refresh request, shared by concurrent 401 handlers (see refreshToken). */
+	#refreshPromise: Promise<boolean> | null = null;
+
 	/**
 	 * Attempts to obtain a new access token using the stored refresh token.
 	 *
@@ -143,11 +146,24 @@ class AuthStore {
 	 *          re-enter credentials when the short-lived access token expires;
 	 *          called internally by the API layer, never directly by UI components
 	 *
+	 * Concurrent callers share one in-flight request: refresh tokens are rotated
+	 * by the backend, so two parallel refreshes would invalidate each other and
+	 * log the admin out spuriously.
+	 *
 	 * @returns True if a new access token was successfully obtained and stored;
 	 *          false if no refresh token exists, the request fails, or in SSR context
 	 */
-	async refreshToken(): Promise<boolean> {
-		if (!browser) return false;
+	refreshToken(): Promise<boolean> {
+		if (!browser) return Promise.resolve(false);
+		if (this.#refreshPromise) return this.#refreshPromise;
+
+		this.#refreshPromise = this.#doRefresh().finally(() => {
+			this.#refreshPromise = null;
+		});
+		return this.#refreshPromise;
+	}
+
+	async #doRefresh(): Promise<boolean> {
 		const refreshToken = localStorage.getItem(REFRESH_KEY);
 		if (!refreshToken) return false;
 

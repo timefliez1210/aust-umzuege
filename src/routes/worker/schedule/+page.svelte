@@ -111,7 +111,7 @@
 					{/if}
 				</div>
 			{:else}
-				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}`)}>
+				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}${job.job_date ? `?date=${job.job_date}` : ''}`)}>
 					<div class="job-top">
 						<span class="job-date">{fmtDate(job.job_date)}</span>
 					</div>

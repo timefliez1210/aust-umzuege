@@ -45,8 +45,13 @@
 	let clockSaving = $state(false);
 	let clockSaved = $state(false);
 
+	// The day the employee tapped in the schedule. Carried through so a multi-day
+	// inquiry opens the right day instead of always resolving to its primary date.
+	let jobDate = $derived($page.url.searchParams.get('date'));
+
 	$effect(() => {
 		const id = $page.params.id;
+		void jobDate; // reload when the tapped day changes, even if the inquiry id stays the same
 		if (id) loadJob(id);
 	});
 
@@ -54,14 +59,16 @@
 	 * Loads the job logistics detail from the API.
 	 *
 	 * Called by: $effect on mount.
-	 * Purpose: Fetches GET /employee/jobs/{id} for the current inquiry.
+	 * Purpose: Fetches GET /employee/jobs/{id} for the current inquiry,
+	 *          scoped to the tapped day (?date=) for multi-day inquiries.
 	 *
 	 * @param id - Inquiry UUID from the URL
 	 */
 	async function loadJob(id: string) {
 		loading = true;
 		try {
-			job = await workerGet<JobDetail>(`/api/v1/employee/jobs/${id}`);
+			const q = jobDate ? `?date=${jobDate}` : '';
+			job = await workerGet<JobDetail>(`/api/v1/employee/jobs/${id}${q}`);
 			// Pre-fill clock inputs from existing employee times
 			clockIn  = job.employee_clock_in  ? isoToLocalTime(job.employee_clock_in)  : '';
 			clockOut = job.employee_clock_out ? isoToLocalTime(job.employee_clock_out) : '';
@@ -83,11 +90,12 @@
 		if (!job) return;
 		clockSaving = true;
 		try {
-			const jobDate = job.job_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
+			const anchorDate = jobDate ?? job.job_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
 			const toIso = (t: string) =>
-				t.length === 5 ? new Date(`${jobDate}T${t}:00`).toISOString() : null;
+				t.length === 5 ? new Date(`${anchorDate}T${t}:00`).toISOString() : null;
 
-			await workerFetch(`/api/v1/employee/jobs/${job.inquiry_id}/clock`, {
+			const q = jobDate ? `?date=${jobDate}` : '';
+			await workerFetch(`/api/v1/employee/jobs/${job.inquiry_id}/clock${q}`, {
 				method: 'PATCH',
 				body: JSON.stringify({
 					employee_clock_in:  clockIn  ? toIso(clockIn)  : null,

@@ -100,7 +100,7 @@ describe('worker schedule', () => {
 		render(SchedulePage);
 		const route = await screen.findByText(/Kaiserstr\. 32/);
 		await user.click(route.closest('button')!);
-		expect(goto).toHaveBeenCalledWith('/worker/jobs/inq-1');
+		expect(goto).toHaveBeenCalledWith('/worker/jobs/inq-1?date=2026-06-15');
 
 		// the item entry renders as a plain div, not a button
 		expect(screen.getByText('Lager aufräumen').closest('button')).toBeNull();

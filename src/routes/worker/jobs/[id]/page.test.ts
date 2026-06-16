@@ -171,3 +171,39 @@ describe('worker job detail — clock-in/out (Meine Zeiten)', () => {
 		expect(screen.getByText('Gearbeitet')).toBeInTheDocument();
 	});
 });
+
+describe('worker job detail — multi-day day scoping', () => {
+	// A multi-day inquiry lists one schedule entry per day; the tapped day arrives
+	// as ?date= so the detail/clock endpoints resolve the right day, not the
+	// inquiry's primary date. Regression: tapping the 15th opened the 5th.
+	beforeEach(() => {
+		setTestUrl('/worker/jobs/inq-1?date=2026-06-15', { id: 'inq-1' });
+	});
+
+	it('loads the tapped day by forwarding ?date= to the detail endpoint', async () => {
+		render(JobDetailPage);
+		await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+		expect(String(fetchMock.mock.calls[0][0])).toMatch(
+			/\/api\/v1\/employee\/jobs\/inq-1\?date=2026-06-15$/
+		);
+	});
+
+	it('scopes the clock PATCH and time anchor to the tapped day', async () => {
+		const user = userEvent.setup();
+		render(JobDetailPage);
+		const input = await screen.findByLabelText('Beginn');
+
+		await user.clear(input);
+		await user.type(input, '07:30');
+		await user.click(screen.getByRole('button', { name: 'Zeiten speichern' }));
+
+		await waitFor(() => {
+			const patch = fetchMock.mock.calls.find(([, o]) => o?.method === 'PATCH');
+			expect(patch).toBeDefined();
+		});
+		const [url, opts] = fetchMock.mock.calls.find(([, o]) => o?.method === 'PATCH')!;
+		expect(String(url)).toMatch(/\/api\/v1\/employee\/jobs\/inq-1\/clock\?date=2026-06-15$/);
+		const body = JSON.parse(opts.body);
+		expect(body.employee_clock_in).toBe(new Date('2026-06-15T07:30:00').toISOString());
+	});
+});

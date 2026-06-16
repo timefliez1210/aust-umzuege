@@ -14,7 +14,8 @@
 		ClipboardList,
 		Flag,
 		BookOpen,
-		PhoneCall
+		PhoneCall,
+		Truck
 	} from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 
@@ -41,6 +42,7 @@
 		{ href: '/admin/calendar-items', label: 'Termine', icon: CalendarCheck },
 		{ href: '/admin/rechnungsausgangsbuch', label: 'Rechnungsausgangsbuch', icon: BookOpen },
 		{ href: '/admin/flash-contacts', label: 'Rückrufe', icon: PhoneCall },
+		{ href: '/admin/vehicles', label: 'Fuhrpark', icon: Truck },
 		{ href: '/admin/settings', label: 'Einstellungen', icon: Settings }
 	];
 

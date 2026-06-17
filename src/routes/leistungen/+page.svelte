@@ -15,6 +15,7 @@
         BookMarked,
         Paintbrush,
         Hammer,
+        ArrowUpFromLine,
         ArrowRight,
         Mail,
     } from "lucide-svelte";
@@ -54,6 +55,12 @@
             description: "Versicherte Tragehilfe – stundenweise buchbar.",
             icon: Users,
             link: "/leistungen/umzugshelfer",
+        },
+        {
+            title: "Möbellift mieten",
+            description: "Elektrisch, leise & abgasfrei – ab 90 € pro Stunde.",
+            icon: ArrowUpFromLine,
+            link: "/leistungen/moebellift",
         },
         {
             title: "Halteverbot",

@@ -285,6 +285,34 @@ export const services = {
 			priceCurrency: "EUR"
 		}
 	},
+	moebellift: {
+		"@type": "Service",
+		serviceType: "Möbellift-Vermietung",
+		name: "Möbellift mieten in Hildesheim",
+		description:
+			"Elektrischen Möbellift mieten in Hildesheim – leise, abgasfrei und umweltfreundlich. Ab 90 € pro Stunde: zur Selbstabholung, mit Lieferung oder inklusive geschultem Bedienpersonal.",
+		provider: {
+			"@id": "https://www.aust-umzuege.de/#organization"
+		},
+		areaServed: [{ "@type": "City", name: "Hildesheim" }, { "@type": "AdministrativeArea", name: "Niedersachsen" }],
+		url: "https://www.aust-umzuege.de/leistungen/moebellift",
+		offers: {
+			"@type": "Offer",
+			availability: "https://schema.org/InStock",
+			priceCurrency: "EUR",
+			price: "90",
+			priceSpecification: {
+				"@type": "UnitPriceSpecification",
+				price: "90",
+				priceCurrency: "EUR",
+				referenceQuantity: {
+					"@type": "QuantitativeValue",
+					value: 1,
+					unitCode: "HUR"
+				}
+			}
+		}
+	},
 	montage: {
 		"@type": "Service",
 		serviceType: "Möbelmontage",
@@ -690,7 +718,7 @@ export const leistungenOverview = {
 	name: "Umzugsleistungen",
 	description: "Alle Leistungen von Aust Umzüge auf einen Blick",
 	url: "https://www.aust-umzuege.de/leistungen",
-	numberOfItems: 11,
+	numberOfItems: 12,
 	itemListElement: [
 		{
 			"@type": "ListItem",
@@ -789,6 +817,15 @@ export const leistungenOverview = {
 				"@type": "Service",
 				name: "Halteverbot",
 				url: "https://www.aust-umzuege.de/leistungen/halteverbot"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 12,
+			item: {
+				"@type": "Service",
+				name: "Möbellift mieten",
+				url: "https://www.aust-umzuege.de/leistungen/moebellift"
 			}
 		}
 	]

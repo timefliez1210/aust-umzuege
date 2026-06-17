@@ -290,7 +290,7 @@ export const services = {
 		serviceType: "Möbellift-Vermietung",
 		name: "Möbellift mieten in Hildesheim",
 		description:
-			"Elektrischen Möbellift mieten in Hildesheim – leise, abgasfrei und umweltfreundlich. Ab 90 € pro Stunde: zur Selbstabholung, mit Lieferung oder inklusive geschultem Bedienpersonal.",
+			"Elektrischen Möbellift mieten in Hildesheim – leise, abgasfrei und umweltfreundlich. Ab 95 € pro Stunde: zur Selbstabholung, mit Lieferung oder inklusive geschultem Bedienpersonal.",
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
@@ -300,10 +300,10 @@ export const services = {
 			"@type": "Offer",
 			availability: "https://schema.org/InStock",
 			priceCurrency: "EUR",
-			price: "90",
+			price: "95",
 			priceSpecification: {
 				"@type": "UnitPriceSpecification",
-				price: "90",
+				price: "95",
 				priceCurrency: "EUR",
 				referenceQuantity: {
 					"@type": "QuantitativeValue",

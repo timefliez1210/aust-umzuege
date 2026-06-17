@@ -58,7 +58,7 @@
         },
         {
             title: "Möbellift mieten",
-            description: "Elektrisch, leise & abgasfrei – ab 90 € pro Stunde.",
+            description: "Elektrisch, leise & abgasfrei – ab 95 € pro Stunde.",
             icon: ArrowUpFromLine,
             link: "/leistungen/moebellift",
         },

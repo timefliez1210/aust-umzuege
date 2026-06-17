@@ -24,11 +24,11 @@
     const faqs = [
         {
             question: "Was kostet es, einen Möbellift zu mieten?",
-            answer: "Bei uns starten die Preise für den Möbellift bei 90 € pro Stunde. Das gilt für die Selbstabholung, bei der Sie den Lift bei uns in Hildesheim abholen, selbst aufbauen und wieder zurückbringen. Wenn wir den Möbellift liefern, aufbauen und abholen, kommt eine entfernungsabhängige Anfahrtspauschale hinzu. Soll ein geschulter Mitarbeiter den Lift bedienen, rechnen wir die Bedienzeit zusätzlich ab. Abgerechnet wird stundengenau – Sie zahlen nur die tatsächliche Einsatzzeit. Nach einem kurzen Telefonat nennen wir Ihnen einen festen Preis für Ihre Situation, ohne versteckte Kosten."
+            answer: "Bei uns starten die Preise für den Möbellift bei 95 € pro Stunde. Das gilt für die Selbstabholung, bei der Sie den Lift bei uns in Hildesheim abholen, selbst aufbauen und wieder zurückbringen. Wenn wir den Möbellift liefern, aufbauen und abholen, kommt eine entfernungsabhängige Anfahrtspauschale hinzu. Soll ein geschulter Mitarbeiter den Lift bedienen, rechnen wir die Bedienzeit zusätzlich ab. Abgerechnet wird stundengenau – Sie zahlen nur die tatsächliche Einsatzzeit. Nach einem kurzen Telefonat nennen wir Ihnen einen festen Preis für Ihre Situation, ohne versteckte Kosten."
         },
         {
             question: "Kann ich den Möbellift auch ohne Bedienpersonal mieten?",
-            answer: "Ja. Sie können den Möbellift komplett allein mieten und selbst bedienen – das ist die günstigste Variante ab 90 € pro Stunde. Vor der Übergabe weisen wir Sie gründlich in die Bedienung ein und erklären Ihnen die Sicherheitsvorkehrungen. Wenn Sie sich das nicht zutrauen oder sich auf den Umzug konzentrieren möchten, stellen wir Ihnen gegen Aufpreis einen erfahrenen Bediener zur Seite."
+            answer: "Ja. Sie können den Möbellift komplett allein mieten und selbst bedienen – das ist die günstigste Variante ab 95 € pro Stunde. Vor der Übergabe weisen wir Sie gründlich in die Bedienung ein und erklären Ihnen die Sicherheitsvorkehrungen. Wenn Sie sich das nicht zutrauen oder sich auf den Umzug konzentrieren möchten, stellen wir Ihnen gegen Aufpreis einen erfahrenen Bediener zur Seite."
         },
         {
             question: "Kann ich den Möbellift selbst abholen oder wird er geliefert?",
@@ -52,7 +52,7 @@
         },
         {
             question: "Wird der Möbellift stundenweise abgerechnet?",
-            answer: "Ja. Der Möbellift wird stundengenau ab 90 € pro Stunde abgerechnet – Sie zahlen nur die tatsächliche Einsatzzeit. Das ist fair und planbar: Wenn das Hochziehen schneller geht als gedacht, zahlen Sie weniger. Für längere Einsätze über einen ganzen Umzugstag nennen wir Ihnen vorab eine realistische Gesamtspanne, damit Sie Ihr Budget jederzeit im Blick haben."
+            answer: "Ja. Der Möbellift wird stundengenau ab 95 € pro Stunde abgerechnet – Sie zahlen nur die tatsächliche Einsatzzeit. Das ist fair und planbar: Wenn das Hochziehen schneller geht als gedacht, zahlen Sie weniger. Für längere Einsätze über einen ganzen Umzugstag nennen wir Ihnen vorab eine realistische Gesamtspanne, damit Sie Ihr Budget jederzeit im Blick haben."
         },
         {
             question: "Wie wird der Möbellift mit Strom versorgt?",
@@ -66,8 +66,8 @@
 </script>
 
 <MetaTags
-    title="Möbellift mieten Hildesheim – elektrisch & ab 90 € | Aust Umzüge"
-    description="Elektrischen Möbellift mieten in Hildesheim: leise, abgasfrei & umweltfreundlich. Ab 90 €/Std. – zur Selbstabholung, mit Lieferung oder inkl. Bedienpersonal."
+    title="Möbellift mieten Hildesheim – elektrisch & ab 95 € | Aust Umzüge"
+    description="Elektrischen Möbellift mieten in Hildesheim: leise, abgasfrei & umweltfreundlich. Ab 95 €/Std. – zur Selbstabholung, mit Lieferung oder inkl. Bedienpersonal."
     keywords="Möbellift mieten Hildesheim, Möbelaufzug mieten, Umzugslift, elektrischer Möbellift, Außenaufzug Umzug"
     canonical="https://www.aust-umzuege.de/leistungen/moebellift"
 />
@@ -82,7 +82,7 @@
     "contentUrl": "https://www.aust-umzuege.de/moebellift-mieten-hildesheim-elektrisch.webp",
     "url": "https://www.aust-umzuege.de/leistungen/moebellift",
     "name": "Möbellift mieten Hildesheim – elektrischer Möbelaufzug von Aust Umzüge im Einsatz",
-    "description": "Elektrischer Möbellift von Aust Umzüge Hildesheim transportiert Möbel leise und abgasfrei in obere Stockwerke. Ab 90 € pro Stunde mietbar.",
+    "description": "Elektrischer Möbellift von Aust Umzüge Hildesheim transportiert Möbel leise und abgasfrei in obere Stockwerke. Ab 95 € pro Stunde mietbar.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -111,7 +111,7 @@
             </div>
             <h1 class="service-title">Möbellift mieten in Hildesheim</h1>
             <p class="service-subtitle">
-                Elektrisch, leise und abgasfrei – schwere Möbel mühelos in jedes Stockwerk. Ab 90 € pro Stunde.
+                Elektrisch, leise und abgasfrei – schwere Möbel mühelos in jedes Stockwerk. Ab 95 € pro Stunde.
             </p>
         </header>
 
@@ -160,7 +160,7 @@
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Schon ab 90 € pro Stunde mietbar – stundengenau abgerechnet</span>
+                        <span>Schon ab 95 € pro Stunde mietbar – stundengenau abgerechnet</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
@@ -204,7 +204,7 @@
                     <div class="tier-card">
                         <div class="tier-card__icon"><Package size={28} strokeWidth={1.5} /></div>
                         <h3 class="tier-card__title">Nur Lift – Selbstabholung</h3>
-                        <p class="tier-card__price">ab <strong>90 €</strong> / Std.</p>
+                        <p class="tier-card__price">ab <strong>95 €</strong> / Std.</p>
                         <p class="tier-card__desc">
                             Sie holen den Möbellift bei uns in Hildesheim ab,
                             bauen ihn selbst auf und bringen ihn zurück. Vor der
@@ -216,7 +216,7 @@
                         <div class="tier-card__badge">Beliebt</div>
                         <div class="tier-card__icon"><Truck size={28} strokeWidth={1.5} /></div>
                         <h3 class="tier-card__title">Lift mit Lieferung</h3>
-                        <p class="tier-card__price"><strong>90 €</strong> / Std. <span>+ Anfahrt</span></p>
+                        <p class="tier-card__price"><strong>95 €</strong> / Std. <span>+ Anfahrt</span></p>
                         <p class="tier-card__desc">
                             Wir liefern den Lift zu Ihrer Adresse, bauen ihn
                             betriebsbereit auf und holen ihn nach dem Umzug wieder
@@ -226,7 +226,7 @@
                     <div class="tier-card">
                         <div class="tier-card__icon"><UserCheck size={28} strokeWidth={1.5} /></div>
                         <h3 class="tier-card__title">Lift mit Bedienpersonal</h3>
-                        <p class="tier-card__price"><strong>90 €</strong> / Std. <span>+ Bediener</span></p>
+                        <p class="tier-card__price"><strong>95 €</strong> / Std. <span>+ Bediener</span></p>
                         <p class="tier-card__desc">
                             Ein erfahrener Mitarbeiter bedient den Möbellift und
                             nimmt Ihre Möbel sicher an. Sie konzentrieren sich
@@ -238,7 +238,7 @@
                 <div class="price-note">
                     <p>
                         <strong>Transparent kalkuliert:</strong> Die Stundenmiete
-                        des Lifts beträgt 90 € und wird stundengenau abgerechnet.
+                        des Lifts beträgt 95 € und wird stundengenau abgerechnet.
                         Anfahrt für Lieferung und Abholung berechnen wir
                         entfernungsabhängig, die Bedienzeit nach tatsächlichem
                         Aufwand. Nach einem kurzen Telefonat nennen wir Ihnen einen
@@ -341,7 +341,7 @@
                     <ul class="cta-facts">
                         <li><VolumeX size={16} /> Leiser Elektroantrieb</li>
                         <li><Leaf size={16} /> Abgasfrei & umweltfreundlich</li>
-                        <li><CheckCircle size={16} /> Ab 90 € pro Stunde</li>
+                        <li><CheckCircle size={16} /> Ab 95 € pro Stunde</li>
                     </ul>
                 </div>
             </div>

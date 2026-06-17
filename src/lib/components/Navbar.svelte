@@ -39,6 +39,7 @@
                         href: "/leistungen/seniorenumzug",
                     },
                     { label: "Umzugshelfer", href: "/leistungen/umzugshelfer" },
+                    { label: "Möbellift mieten", href: "/leistungen/moebellift" },
                     { label: "Halteverbot", href: "/leistungen/halteverbot" },
                     {
                         label: "Umzugsberatung",

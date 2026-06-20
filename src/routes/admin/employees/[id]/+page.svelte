@@ -39,6 +39,7 @@
 		end_time: string | null;
 		employee_clock_in: string | null;
 		employee_clock_out: string | null;
+		employee_break_minutes: number | null;
 		notes: string | null;
 		status: string;
 	}
@@ -57,6 +58,7 @@
 		end_time: string | null;
 		employee_clock_in: string | null;
 		employee_clock_out: string | null;
+		employee_break_minutes: number | null;
 		status: string;
 	}
 
@@ -735,6 +737,7 @@
 							<th class="num">Ist (h)</th>
 							<th class="time-col muted-col">MA-Von</th>
 							<th class="time-col muted-col">MA-Bis</th>
+							<th class="time-col muted-col">MA-Pause</th>
 							<th>Status</th>
 						</tr>
 					</thead>
@@ -801,6 +804,7 @@
 								<td class="num">{a.actual_hours?.toFixed(1) ?? '—'}</td>
 								<td class="time-col muted-col">{a.employee_clock_in ? fmtTimestamp(a.employee_clock_in) : '—'}</td>
 								<td class="time-col muted-col">{a.employee_clock_out ? fmtTimestamp(a.employee_clock_out) : '—'}</td>
+								<td class="time-col muted-col">{a.employee_break_minutes != null ? `${a.employee_break_minutes} Min` : '—'}</td>
 								<td><StatusBadge status={a.status} /></td>
 							</tr>
 						{/each}
@@ -863,6 +867,7 @@
 								<td class="num">{ci.actual_hours?.toFixed(1) ?? '—'}</td>
 								<td class="time-col muted-col">{ci.employee_clock_in ? fmtTimestamp(ci.employee_clock_in) : '—'}</td>
 								<td class="time-col muted-col">{ci.employee_clock_out ? fmtTimestamp(ci.employee_clock_out) : '—'}</td>
+								<td class="time-col muted-col">{ci.employee_break_minutes != null ? `${ci.employee_break_minutes} Min` : '—'}</td>
 								<td><StatusBadge status={ci.status} /></td>
 							</tr>
 						{/each}

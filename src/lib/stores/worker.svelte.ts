@@ -123,7 +123,11 @@ export async function workerFetch<T = unknown>(
 		throw new Error((err as { message?: string }).message ?? res.statusText);
 	}
 
-	return res.json() as Promise<T>;
+	// 204 No Content (e.g. the clock PATCH) has an empty body — calling
+	// res.json() on it throws, so return undefined for empty responses.
+	if (res.status === 204) return undefined as T;
+	const text = await res.text();
+	return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export function workerGet<T = unknown>(path: string): Promise<T> {

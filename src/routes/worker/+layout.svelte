@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { worker } from '$lib/stores/worker.svelte';
-	import { CalendarDays, Clock, LogOut, User } from 'lucide-svelte';
+	import { CalendarDays, LogOut, User } from 'lucide-svelte';
 
 	let { children } = $props();
 
@@ -25,9 +25,11 @@
 		goto('/worker/login');
 	}
 
+	// No "Stunden" tab: workers do not get a digital record of their accumulated
+	// hours. They still log times per job (read-only in the admin dashboard), but
+	// the portal shows no running total.
 	const navItems = [
 		{ href: '/worker/schedule', label: 'Einsätze', icon: CalendarDays },
-		{ href: '/worker/hours', label: 'Stunden', icon: Clock },
 		{ href: '/worker/profile', label: 'Profil', icon: User },
 	];
 </script>

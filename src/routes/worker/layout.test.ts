@@ -50,21 +50,22 @@ describe('worker layout — authenticated shell', () => {
 		setTestUrl('/worker/schedule');
 	});
 
-	it('renders header, page content, and the three-tab bottom nav', () => {
+	it('renders header, page content, and the two-tab bottom nav (no Stunden record)', () => {
 		render(WorkerLayout, { children });
 		expect(screen.getByText('Aust Mitarbeiter')).toBeInTheDocument();
 		expect(screen.getByTestId('page-content')).toBeInTheDocument();
 
 		expect(screen.getByRole('link', { name: /Einsätze/ })).toHaveAttribute('href', '/worker/schedule');
-		expect(screen.getByRole('link', { name: /Stunden/ })).toHaveAttribute('href', '/worker/hours');
 		expect(screen.getByRole('link', { name: /Profil/ })).toHaveAttribute('href', '/worker/profile');
+		// workers must not have a digital hours record — no Stunden tab
+		expect(screen.queryByRole('link', { name: /Stunden/ })).not.toBeInTheDocument();
 	});
 
 	it('highlights the active tab from the current route', () => {
-		setTestUrl('/worker/hours');
+		setTestUrl('/worker/profile');
 		const { container } = render(WorkerLayout, { children });
 		const active = container.querySelector('.nav-item.active');
-		expect(active).toHaveTextContent('Stunden');
+		expect(active).toHaveTextContent('Profil');
 	});
 
 	it('logout clears the session and navigates to login', async () => {

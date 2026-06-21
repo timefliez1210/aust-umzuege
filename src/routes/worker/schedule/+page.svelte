@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { workerGet } from '$lib/stores/worker.svelte';
-	import { worker } from '$lib/stores/worker.svelte';
+	import { worker, workerData } from '$lib/stores/worker.svelte';
 	import { MapPin, Package, Users, ChevronRight } from 'lucide-svelte';
 
 	interface ScheduleJob {
@@ -28,6 +28,7 @@
 	let loading = $state(true);
 
 	$effect(() => {
+		void workerData.refresh; // re-fetch after the worker logs pending hours
 		loadSchedule(selectedMonth);
 	});
 

@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { workerGet, workerFetch } from '$lib/stores/worker.svelte';
+	import { normalizeTime } from '$lib/utils/time';
 	import { ArrowLeft, MapPin, Users, Clock, ClipboardList } from 'lucide-svelte';
 
 	interface ItemDetail {
@@ -77,8 +78,12 @@
 		clockSaving = true;
 		try {
 			const anchorDate = jobDate ?? item.job_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
-			const toIso = (t: string) =>
-				t.length === 5 ? new Date(`${anchorDate}T${t}:00`).toISOString() : null;
+			// Movers type "7.30" / "730" / "7" on a phone keypad — normalize before
+			// building a timezone-correct ISO timestamp from the local wall-clock time.
+			const toIso = (t: string) => {
+				const norm = normalizeTime(t);
+				return norm ? new Date(`${anchorDate}T${norm}:00`).toISOString() : null;
+			};
 
 			const q = jobDate ? `?date=${jobDate}` : '';
 			await workerFetch(`/api/v1/employee/items/${item.calendar_item_id}/clock${q}`, {
@@ -211,11 +216,11 @@
 					id="clock-in"
 					type="text"
 					inputmode="decimal"
-					placeholder="08:00"
+					placeholder="z.B. 8 oder 7.30"
 					maxlength="5"
-					pattern="[0-9]{2}:[0-5][0-9]"
 					class="clock-input"
 					bind:value={clockIn}
+					onblur={() => { const n = normalizeTime(clockIn); if (n) clockIn = n; }}
 				/>
 			</div>
 			<div class="clock-row">
@@ -224,11 +229,11 @@
 					id="clock-out"
 					type="text"
 					inputmode="decimal"
-					placeholder="17:00"
+					placeholder="z.B. 17 oder 17.00"
 					maxlength="5"
-					pattern="[0-9]{2}:[0-5][0-9]"
 					class="clock-input"
 					bind:value={clockOut}
+					onblur={() => { const n = normalizeTime(clockOut); if (n) clockOut = n; }}
 				/>
 			</div>
 			<div class="clock-row">

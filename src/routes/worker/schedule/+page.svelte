@@ -90,7 +90,7 @@
 	<div class="job-list">
 		{#each jobs as job}
 			{#if job.entry_type === 'item'}
-				<div class="job-card item-card">
+				<button class="job-card item-card" onclick={() => goto(`/worker/items/${job.calendar_item_id}${job.job_date ? `?date=${job.job_date}` : ''}`)}>
 					<div class="job-top">
 						<span class="job-date">{fmtDate(job.job_date)}</span>
 						<span class="badge badge-item">{job.category ?? 'Termin'}</span>
@@ -109,7 +109,9 @@
 					{#if job.employee_notes}
 						<p class="sched-notes">{job.employee_notes}</p>
 					{/if}
-				</div>
+
+					<ChevronRight size={16} class="chevron" />
+				</button>
 			{:else}
 				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}${job.job_date ? `?date=${job.job_date}` : ''}`)}>
 					<div class="job-top">
@@ -252,12 +254,7 @@
 	.badge-item   { background: #fef3c7; color: #92400e; }
 
 	.item-card {
-		cursor: default;
 		border-left: 3px solid #f59e0b;
-	}
-
-	.item-card:hover {
-		box-shadow: none;
 	}
 
 	.item-title {

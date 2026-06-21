@@ -21,6 +21,7 @@ const clockInIso = new Date('2026-06-15T08:00:00').toISOString();
 const job = {
 	inquiry_id: 'inq-1',
 	job_date: '2026-06-15',
+	start_time: '08:30:00',
 	status: 'scheduled',
 	origin_street: 'Kaiserstr. 32',
 	origin_city: 'Hildesheim',
@@ -43,6 +44,7 @@ const job = {
 	employee_notes: 'Früh anfangen.',
 	employee_clock_in: clockInIso,
 	employee_clock_out: null,
+	employee_break_minutes: null,
 	employee_actual_hours: null,
 	colleague_names: ['Anna', 'Ben'],
 };
@@ -105,6 +107,12 @@ describe('worker job detail — logistics view', () => {
 		expect(screen.getByText('1.20 m³')).toBeInTheDocument();
 	});
 
+	it('shows the planned start time as a chip', async () => {
+		render(JobDetailPage);
+		// the planned start renders as "08:30 Uhr"; the end time is never shown
+		expect(await screen.findByText('08:30 Uhr')).toBeInTheDocument();
+	});
+
 	it('shows job notes and office hints', async () => {
 		render(JobDetailPage);
 		expect(await screen.findByText('Klavier im Wohnzimmer.')).toBeInTheDocument();
@@ -139,13 +147,14 @@ describe('worker job detail — clock-in/out (Meine Zeiten)', () => {
 		expect(screen.getByLabelText('Ende')).toBeInTheDocument();
 	});
 
-	it('saves the entered time as an ISO timestamp on the job date and refreshes', async () => {
+	it('saves start time and break as an ISO timestamp + minutes on the job date and refreshes', async () => {
 		const user = userEvent.setup();
 		render(JobDetailPage);
 		const input = await screen.findByLabelText('Beginn');
 
 		await user.clear(input);
 		await user.type(input, '07:30');
+		await user.type(screen.getByLabelText('Pause (Min.)'), '45');
 		await user.click(screen.getByRole('button', { name: 'Zeiten speichern' }));
 
 		await waitFor(() => {
@@ -156,6 +165,7 @@ describe('worker job detail — clock-in/out (Meine Zeiten)', () => {
 		expect(String(url)).toMatch(/\/api\/v1\/employee\/jobs\/inq-1\/clock$/);
 		const body = JSON.parse(opts.body);
 		expect(body.employee_clock_in).toBe(new Date('2026-06-15T07:30:00').toISOString());
+		expect(body.employee_break_minutes).toBe(45);
 
 		// the job is reloaded afterwards to refresh computed hours
 		const gets = fetchMock.mock.calls.filter(([, o]) => !o?.method || o.method === 'GET');

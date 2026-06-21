@@ -13,6 +13,7 @@
 	interface JobDetail {
 		inquiry_id: string;
 		job_date: string | null;
+		start_time: string | null;
 		status: string;
 		origin_street: string | null;
 		origin_city: string | null;
@@ -32,6 +33,7 @@
 		employee_notes: string | null;
 		employee_clock_in: string | null;
 		employee_clock_out: string | null;
+		employee_break_minutes: number | null;
 		employee_actual_hours: number | null;
 		colleague_names: string[];
 	}
@@ -39,9 +41,10 @@
 	let job = $state<JobDetail | null>(null);
 	let loading = $state(true);
 
-	// Clock-in/out editing state
+	// Clock-in/out + break editing state
 	let clockIn = $state('');
 	let clockOut = $state('');
+	let breakMin = $state('');
 	let clockSaving = $state(false);
 	let clockSaved = $state(false);
 
@@ -72,6 +75,7 @@
 			// Pre-fill clock inputs from existing employee times
 			clockIn  = job.employee_clock_in  ? isoToLocalTime(job.employee_clock_in)  : '';
 			clockOut = job.employee_clock_out ? isoToLocalTime(job.employee_clock_out) : '';
+			breakMin = job.employee_break_minutes != null ? String(job.employee_break_minutes) : '';
 		} catch {
 			job = null;
 		} finally {
@@ -100,6 +104,7 @@
 				body: JSON.stringify({
 					employee_clock_in:  clockIn  ? toIso(clockIn)  : null,
 					employee_clock_out: clockOut ? toIso(clockOut) : null,
+					employee_break_minutes: breakMin ? parseInt(breakMin, 10) : null,
 				}),
 			});
 			clockSaved = true;
@@ -162,6 +167,15 @@
 		const f = !isNaN(num) ? (num === 0 ? 'EG' : `${num}. OG`) : floor;
 		return f + (elevator ? ' · Aufzug' : '');
 	}
+
+	/**
+	 * Formats a HH:MM:SS time string to HH:MM, or "" when absent.
+	 *
+	 * Called by: Template (planned start time).
+	 */
+	function hhmm(t: string | null): string {
+		return t ? t.slice(0, 5) : '';
+	}
 </script>
 
 <svelte:head>
@@ -181,6 +195,14 @@
 	<div class="empty">Einsatz nicht gefunden.</div>
 {:else}
 	<h1 class="job-date">{fmtDate(job.job_date)}</h1>
+
+	<!-- Start time (planned) — end time is intentionally not shown -->
+	{#if hhmm(job.start_time)}
+		<div class="section">
+			<h2 class="section-title"><Clock size={15} /> Beginn</h2>
+			<div class="time-chip">{hhmm(job.start_time)} Uhr</div>
+		</div>
+	{/if}
 
 	<!-- Addresses -->
 	<div class="section">
@@ -311,6 +333,19 @@
 					bind:value={clockOut}
 				/>
 			</div>
+			<div class="clock-row">
+				<label for="break-min">Pause (Min.)</label>
+				<input
+					id="break-min"
+					type="text"
+					inputmode="numeric"
+					placeholder="30"
+					maxlength="3"
+					pattern="[0-9]*"
+					class="clock-input"
+					bind:value={breakMin}
+				/>
+			</div>
 			<button
 				class="btn-save"
 				class:saved={clockSaved}
@@ -422,6 +457,16 @@
 		padding: 0.25rem 0.75rem;
 		border-radius: 999px;
 		margin-bottom: 0.625rem;
+	}
+
+	.time-chip {
+		display: inline-block;
+		background: #e0e7ff;
+		color: #4338ca;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		padding: 0.3rem 0.75rem;
+		border-radius: 999px;
 	}
 
 	.item-list {

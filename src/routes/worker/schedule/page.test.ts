@@ -95,15 +95,22 @@ describe('worker schedule', () => {
 		expect(screen.getByText('Handschuhe mitbringen')).toBeInTheDocument();
 	});
 
-	it('tapping a moving job opens its detail page (items are not tappable)', async () => {
+	it('tapping a moving job opens its job detail page', async () => {
 		const user = userEvent.setup();
 		render(SchedulePage);
 		const route = await screen.findByText(/Kaiserstr\. 32/);
 		await user.click(route.closest('button')!);
 		expect(goto).toHaveBeenCalledWith('/worker/jobs/inq-1?date=2026-06-15');
+	});
 
-		// the item entry renders as a plain div, not a button
-		expect(screen.getByText('Lager aufräumen').closest('button')).toBeNull();
+	it('tapping a Termin opens its calendar-item detail page', async () => {
+		const user = userEvent.setup();
+		render(SchedulePage);
+		// the item entry is a real button that navigates to /worker/items/{id}
+		const item = (await screen.findByText('Lager aufräumen')).closest('button');
+		expect(item).not.toBeNull();
+		await user.click(item!);
+		expect(goto).toHaveBeenCalledWith('/worker/items/ci-1?date=2026-06-16');
 	});
 
 	it('re-fetches when the month is changed', async () => {

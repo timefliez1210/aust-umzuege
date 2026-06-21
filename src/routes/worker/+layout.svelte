@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { worker } from '$lib/stores/worker.svelte';
 	import { CalendarDays, LogOut, User } from 'lucide-svelte';
+	import PendingHoursModal from '$lib/components/worker/PendingHoursModal.svelte';
 
 	let { children } = $props();
 
@@ -64,6 +65,9 @@
 				</a>
 			{/each}
 		</nav>
+
+		<!-- Blocking overdue-hours prompt; renders only when the worker owes hours. -->
+		<PendingHoursModal />
 	</div>
 {/if}
 

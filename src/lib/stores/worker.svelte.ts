@@ -83,6 +83,17 @@ class WorkerStore {
 export const worker = new WorkerStore();
 
 /**
+ * Cross-view refresh signal. Bumped after the worker logs hours (e.g. via the
+ * pending-hours modal) so the schedule re-fetches and drops the now-logged job.
+ */
+export const workerData = $state({ refresh: 0 });
+
+/** Trigger a re-fetch of worker views that depend on `workerData.refresh`. */
+export function bumpWorkerData(): void {
+	workerData.refresh++;
+}
+
+/**
  * Authenticated fetch for the worker portal.
  *
  * Called by: all worker API helpers (workerGet, etc.)

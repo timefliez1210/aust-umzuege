@@ -32,6 +32,12 @@
 		destination_city: string | null;
 		booking_date: string | null;
 		actual_hours: number | null;
+		worked_hours: number | null;
+		paid_hours: number | null;
+		deactivated: boolean;
+		paid_clock_in: string | null;
+		paid_clock_out: string | null;
+		paid_break_minutes: number | null;
 		clock_in: string | null;
 		clock_out: string | null;
 		break_minutes: number;
@@ -51,6 +57,12 @@
 		location: string | null;
 		scheduled_date: string | null;
 		actual_hours: number | null;
+		worked_hours: number | null;
+		paid_hours: number | null;
+		deactivated: boolean;
+		paid_clock_in: string | null;
+		paid_clock_out: string | null;
+		paid_break_minutes: number | null;
 		clock_in: string | null;
 		clock_out: string | null;
 		break_minutes: number;
@@ -74,9 +86,23 @@
 		to: string;
 		target_hours: number;
 		actual_hours: number;
+		worked_total: number;
+		paid_total: number;
+		hour_account: number;
+		all_days_confirmed: boolean;
 		assignment_count: number;
 		assignments: Assignment[];
 		calendar_items: CalendarItemAssignment[];
+	}
+
+	/** Per-day payroll override draft, edited live in payroll edit mode. */
+	interface PayrollDraft {
+		deactivated: boolean;
+		clock_in: string;
+		clock_out: string;
+		break_minutes: number;
+		/** Recorded worked hours for this day; the fallback when no paid override is set. */
+		worked: number;
 	}
 
 	let data = $state<Employee | null>(null);
@@ -87,6 +113,14 @@
 	let showDocDeleteDialog = $state(false);
 	let hoursSummary = $state<HoursSummary | null>(null);
 	let timeDrafts = $state<Record<string, TimeDraft>>({});
+
+	// --- Payroll edit mode (Stundenkonto) ---
+	// When active, Von/Bis/Pause edit the PAID times (not the recorded worked
+	// times) and a per-day deactivate toggle appears. Nothing is persisted until
+	// "Speichern & Beenden"; totals recompute live from these drafts.
+	let payrollEditMode = $state(false);
+	let payrollDrafts = $state<Record<string, PayrollDraft>>({});
+	let savingPayroll = $state(false);
 
 	// Editable fields
 	let editSalutation = $state('');
@@ -298,6 +332,7 @@
 	 * Purpose: Reloads hours summary for the new month.
 	 */
 	function onHoursMonthChange() {
+		cancelPayrollEdit();
 		if (data) loadHours(data.id);
 	}
 
@@ -311,7 +346,115 @@
 	 */
 	function setViewMode(mode: '7d' | 'month') {
 		viewMode = mode;
+		cancelPayrollEdit();
 		if (data) loadHours(data.id);
+	}
+
+	/** Loose "HH:MM" → fractional hours, or null if incomplete. */
+	function timeToHours(t: string): number | null {
+		const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim());
+		if (!m) return null;
+		return parseInt(m[1], 10) + parseInt(m[2], 10) / 60;
+	}
+
+	/** Paid hours for one payroll draft: 0 if deactivated, derived from paid times, else worked. */
+	function paidHoursForDraft(d: PayrollDraft): number {
+		if (d.deactivated) return 0;
+		const ci = timeToHours(d.clock_in);
+		const co = timeToHours(d.clock_out);
+		if (ci != null && co != null) {
+			return Math.max(0, co - ci - (d.break_minutes || 0) / 60);
+		}
+		return d.worked;
+	}
+
+	// Live totals while editing: worked stays fixed, paid + account react to drafts.
+	const liveWorked = $derived(
+		Object.values(payrollDrafts).reduce((s, d) => s + d.worked, 0)
+	);
+	const livePaid = $derived(
+		Object.values(payrollDrafts).reduce((s, d) => s + paidHoursForDraft(d), 0)
+	);
+	const liveAccount = $derived(liveWorked - livePaid);
+
+	/**
+	 * Enters payroll edit mode, seeding drafts from the current month's rows.
+	 *
+	 * Called by: Template ("Bearbeiten" button, month view, all days confirmed).
+	 * Purpose: Prefills paid Von/Bis/Pause from any saved override, else the
+	 * recorded clock times, so Alex only changes what differs.
+	 */
+	function enterPayrollEdit() {
+		if (!hoursSummary) return;
+		const drafts: Record<string, PayrollDraft> = {};
+		const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '');
+		for (const a of hoursSummary.assignments ?? []) {
+			drafts[`inq:${a.inquiry_id}:${a.booking_date ?? ''}`] = {
+				deactivated: a.deactivated,
+				clock_in: hhmm(a.paid_clock_in ?? a.clock_in),
+				clock_out: hhmm(a.paid_clock_out ?? a.clock_out),
+				break_minutes: a.paid_break_minutes ?? a.break_minutes ?? 0,
+				worked: a.worked_hours ?? 0
+			};
+		}
+		for (const ci of hoursSummary.calendar_items ?? []) {
+			drafts[`ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`] = {
+				deactivated: ci.deactivated,
+				clock_in: hhmm(ci.paid_clock_in ?? ci.clock_in),
+				clock_out: hhmm(ci.paid_clock_out ?? ci.clock_out),
+				break_minutes: ci.paid_break_minutes ?? ci.break_minutes ?? 0,
+				worked: ci.worked_hours ?? 0
+			};
+		}
+		payrollDrafts = drafts;
+		payrollEditMode = true;
+	}
+
+	/** Discards payroll drafts and leaves edit mode without saving. */
+	function cancelPayrollEdit() {
+		payrollEditMode = false;
+		payrollDrafts = {};
+	}
+
+	/**
+	 * Persists payroll overrides for the month, then reloads and exits edit mode.
+	 *
+	 * Called by: Template ("Speichern & Beenden").
+	 * Purpose: Saves deactivations + paid-time adjustments via the adjustments
+	 * endpoint. The recorded worked hours are never touched.
+	 */
+	async function savePayroll() {
+		if (!data || savingPayroll) return;
+		savingPayroll = true;
+		try {
+			const body = Object.entries(payrollDrafts).map(([key, d]) => {
+				const [type, id, jobDate] = key.split(':');
+				const ci = toTimeStr(d.clock_in);
+				const co = toTimeStr(d.clock_out);
+				return {
+					entry_type: type === 'inq' ? 'inquiry' : 'calendar_item',
+					inquiry_id: type === 'inq' ? id : null,
+					calendar_item_id: type === 'ci' ? id : null,
+					job_date: jobDate,
+					deactivated: d.deactivated,
+					paid_clock_in: ci,
+					paid_clock_out: co,
+					paid_break_minutes: d.break_minutes
+				};
+			});
+			await apiFetch(`/api/v1/admin/employees/${data.id}/hours/adjustments?month=${selectedMonth}`, {
+				method: 'PUT',
+				body
+			});
+			payrollEditMode = false;
+			payrollDrafts = {};
+			await loadHours(data.id);
+			showToast('Stunden gespeichert', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Speichern', 'error');
+		} finally {
+			savingPayroll = false;
+		}
 	}
 
 	let exportingXlsx = $state(false);
@@ -596,49 +739,88 @@
 							onchange={onHoursMonthChange}
 							class="month-input"
 						/>
-						<button
-							class="btn btn-sm export-btn"
-							onclick={exportStundenzettel}
-							disabled={exportingXlsx}
-							title="Stundenzettel als XLSX herunterladen"
-						>
-							{#if exportingXlsx}
-								…
-							{:else}
-								<FileSpreadsheet size={14} />
-							{/if}
-						</button>
-						<button
-							class="btn btn-sm export-btn"
-							onclick={exportStundenzettelPdf}
-							disabled={exportingPdf}
-							title="Stundenzettel als PDF herunterladen"
-						>
-							{#if exportingPdf}
-								…
-							{:else}
-								<FileText size={14} />
-							{/if}
-						</button>
+						{#if payrollEditMode}
+							<button
+								class="btn btn-sm btn-primary-sm"
+								onclick={savePayroll}
+								disabled={savingPayroll}
+								title="Anpassungen speichern und Bearbeitungsmodus verlassen"
+							>
+								{savingPayroll ? 'Speichern…' : 'Speichern & Beenden'}
+							</button>
+							<button class="btn btn-sm" onclick={cancelPayrollEdit} disabled={savingPayroll}>
+								Abbrechen
+							</button>
+						{:else}
+							<button
+								class="btn btn-sm"
+								onclick={enterPayrollEdit}
+								disabled={!hoursSummary?.all_days_confirmed}
+								title={hoursSummary?.all_days_confirmed
+									? 'Stunden für die Abrechnung bearbeiten'
+									: 'Erst möglich, wenn alle Tage Von/Bis-Zeiten haben'}
+							>
+								Bearbeiten
+							</button>
+							<button
+								class="btn btn-sm export-btn"
+								onclick={exportStundenzettel}
+								disabled={exportingXlsx}
+								title="Stundenzettel als XLSX herunterladen"
+							>
+								{#if exportingXlsx}
+									…
+								{:else}
+									<FileSpreadsheet size={14} />
+								{/if}
+							</button>
+							<button
+								class="btn btn-sm export-btn"
+								onclick={exportStundenzettelPdf}
+								disabled={exportingPdf}
+								title="Stundenzettel als PDF herunterladen"
+							>
+								{#if exportingPdf}
+									…
+								{:else}
+									<FileText size={14} />
+								{/if}
+							</button>
+						{/if}
 					{/if}
 				</div>
 			</div>
 			{#if hoursSummary}
+				{@const paid = payrollEditMode ? livePaid : hoursSummary.paid_total}
+				{@const worked = payrollEditMode ? liveWorked : hoursSummary.worked_total}
+				{@const account = payrollEditMode ? liveAccount : hoursSummary.hour_account}
 				<div class="hours-summary">
 					<div class="hours-row">
 						<span class="hours-label">Ziel</span>
 						<span class="hours-value">{hoursSummary.target_hours} h</span>
 					</div>
+					{#if viewMode === 'month'}
+						<div class="hours-row muted">
+							<span class="hours-label">Gearbeitet</span>
+							<span class="hours-value">{worked.toFixed(1)} h</span>
+						</div>
+					{/if}
 					<div class="hours-row">
-						<span class="hours-label">Ist</span>
-						<span class="hours-value">{hoursSummary.actual_hours.toFixed(1)} h</span>
+						<span class="hours-label">{viewMode === 'month' ? 'Bezahlt' : 'Ist'}</span>
+						<span class="hours-value">{paid.toFixed(1)} h</span>
 					</div>
 					<div class="progress-bar">
 						<div
 							class="progress-fill actual"
-							style="width: {progressPct(hoursSummary.actual_hours, hoursSummary.target_hours)}%"
+							style="width: {progressPct(paid, hoursSummary.target_hours)}%"
 						></div>
 					</div>
+					{#if viewMode === 'month'}
+						<div class="hours-row account-row">
+							<span class="hours-label">Stundenkonto</span>
+							<span class="hours-value">{account >= 0 ? '+' : ''}{account.toFixed(1)} h</span>
+						</div>
+					{/if}
 					<div class="hours-row muted">
 						<span>{hoursSummary.assignment_count} Einsaetze</span>
 					</div>
@@ -728,13 +910,14 @@
 				<table class="data-table">
 					<thead>
 						<tr>
+							{#if payrollEditMode}<th class="time-col">Aktiv</th>{/if}
 							<th>Datum</th>
 							<th>Beschreibung</th>
 							<th>Details</th>
 							<th class="time-col">Von</th>
 							<th class="time-col">Bis</th>
 							<th class="time-col">Pause (Min.)</th>
-							<th class="num">Ist (h)</th>
+							<th class="num">{payrollEditMode ? 'Bezahlt (h)' : 'Ist (h)'}</th>
 							<th class="time-col muted-col">MA-Von</th>
 							<th class="time-col muted-col">MA-Bis</th>
 							<th class="time-col muted-col">MA-Pause</th>
@@ -745,10 +928,20 @@
 						{#each hoursSummary.assignments as a}
 							{@const key = `inq:${a.inquiry_id}:${a.booking_date ?? ''}`}
 							{@const draft = timeDrafts[key]}
+							{@const pdraft = payrollDrafts[key]}
+							{@const inactive = payrollEditMode ? pdraft?.deactivated : a.deactivated}
 							<tr
 								class="clickable-row"
-								onclick={() => { if (a.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${a.inquiry_id}`); }}
+								class:inactive-row={inactive}
+								onclick={() => { if (!payrollEditMode && a.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${a.inquiry_id}`); }}
 							>
+								{#if payrollEditMode}
+									<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+										{#if pdraft}
+											<input type="checkbox" checked={!pdraft.deactivated} onchange={(e) => (pdraft.deactivated = !e.currentTarget.checked)} title="Tag in Abrechnung aktiv" />
+										{/if}
+									</td>
+								{/if}
 								<td>{a.booking_date ? formatDate(a.booking_date) : '—'}</td>
 								<td>{a.customer_name ?? '—'}</td>
 								<td>
@@ -759,49 +952,33 @@
 									{/if}
 								</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if draft}
-										<input
-											type="text"
-											inputmode="numeric"
-											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-											placeholder="HH:MM"
-											maxlength="5"
-											class="time-input"
-											class:saving={draft.saving}
-											bind:value={draft.clock_in}
-											onblur={() => saveTime(key)}
-										/>
+									{#if payrollEditMode}
+										{#if pdraft}
+											<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_in} />
+										{/if}
+									{:else if draft}
+										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_in} onblur={() => saveTime(key)} />
 									{/if}
 								</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if draft}
-										<input
-											type="text"
-											inputmode="numeric"
-											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-											placeholder="HH:MM"
-											maxlength="5"
-											class="time-input"
-											class:saving={draft.saving}
-											bind:value={draft.clock_out}
-											onblur={() => saveTime(key)}
-										/>
+									{#if payrollEditMode}
+										{#if pdraft}
+											<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_out} />
+										{/if}
+									{:else if draft}
+										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_out} onblur={() => saveTime(key)} />
 									{/if}
 								</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if draft}
-										<input
-											type="number"
-											class="break-input"
-											class:saving={draft.saving}
-											min="0"
-											step="5"
-											bind:value={draft.break_minutes}
-											onblur={() => saveTime(key)}
-										/>
+									{#if payrollEditMode}
+										{#if pdraft}
+											<input type="number" class="break-input" min="0" step="5" disabled={pdraft.deactivated} bind:value={pdraft.break_minutes} />
+										{/if}
+									{:else if draft}
+										<input type="number" class="break-input" class:saving={draft.saving} min="0" step="5" bind:value={draft.break_minutes} onblur={() => saveTime(key)} />
 									{/if}
 								</td>
-								<td class="num">{a.actual_hours?.toFixed(1) ?? '—'}</td>
+								<td class="num">{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : (a.paid_hours ?? a.actual_hours)?.toFixed(1) ?? '—'}</td>
 								<td class="time-col muted-col">{a.employee_clock_in ? fmtTimestamp(a.employee_clock_in) : '—'}</td>
 								<td class="time-col muted-col">{a.employee_clock_out ? fmtTimestamp(a.employee_clock_out) : '—'}</td>
 								<td class="time-col muted-col">{a.employee_break_minutes != null ? `${a.employee_break_minutes} Min` : '—'}</td>
@@ -811,10 +988,20 @@
 						{#each (hoursSummary.calendar_items ?? []) as ci}
 							{@const key = `ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`}
 							{@const draft = timeDrafts[key]}
+							{@const pdraft = payrollDrafts[key]}
+							{@const inactive = payrollEditMode ? pdraft?.deactivated : ci.deactivated}
 							<tr
 								class="clickable-row item-row"
-								onclick={() => { if (!window.getSelection()?.toString()) goto(`/admin/calendar-items/${ci.calendar_item_id}`); }}
+								class:inactive-row={inactive}
+								onclick={() => { if (!payrollEditMode && !window.getSelection()?.toString()) goto(`/admin/calendar-items/${ci.calendar_item_id}`); }}
 							>
+								{#if payrollEditMode}
+									<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+										{#if pdraft}
+											<input type="checkbox" checked={!pdraft.deactivated} onchange={(e) => (pdraft.deactivated = !e.currentTarget.checked)} title="Tag in Abrechnung aktiv" />
+										{/if}
+									</td>
+								{/if}
 								<td>{ci.scheduled_date ? formatDate(ci.scheduled_date) : '—'}</td>
 								<td>
 									<span class="item-badge">Termin</span>
@@ -822,49 +1009,33 @@
 								</td>
 								<td>{ci.location ?? '—'}</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if draft}
-										<input
-											type="text"
-											inputmode="numeric"
-											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-											placeholder="HH:MM"
-											maxlength="5"
-											class="time-input"
-											class:saving={draft.saving}
-											bind:value={draft.clock_in}
-											onblur={() => saveTime(key)}
-										/>
+									{#if payrollEditMode}
+										{#if pdraft}
+											<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_in} />
+										{/if}
+									{:else if draft}
+										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_in} onblur={() => saveTime(key)} />
 									{/if}
 								</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if draft}
-										<input
-											type="text"
-											inputmode="numeric"
-											pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-											placeholder="HH:MM"
-											maxlength="5"
-											class="time-input"
-											class:saving={draft.saving}
-											bind:value={draft.clock_out}
-											onblur={() => saveTime(key)}
-										/>
+									{#if payrollEditMode}
+										{#if pdraft}
+											<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_out} />
+										{/if}
+									{:else if draft}
+										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_out} onblur={() => saveTime(key)} />
 									{/if}
 								</td>
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if draft}
-										<input
-											type="number"
-											class="break-input"
-											class:saving={draft.saving}
-											min="0"
-											step="5"
-											bind:value={draft.break_minutes}
-											onblur={() => saveTime(key)}
-										/>
+									{#if payrollEditMode}
+										{#if pdraft}
+											<input type="number" class="break-input" min="0" step="5" disabled={pdraft.deactivated} bind:value={pdraft.break_minutes} />
+										{/if}
+									{:else if draft}
+										<input type="number" class="break-input" class:saving={draft.saving} min="0" step="5" bind:value={draft.break_minutes} onblur={() => saveTime(key)} />
 									{/if}
 								</td>
-								<td class="num">{ci.actual_hours?.toFixed(1) ?? '—'}</td>
+								<td class="num">{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : (ci.paid_hours ?? ci.actual_hours)?.toFixed(1) ?? '—'}</td>
 								<td class="time-col muted-col">{ci.employee_clock_in ? fmtTimestamp(ci.employee_clock_in) : '—'}</td>
 								<td class="time-col muted-col">{ci.employee_clock_out ? fmtTimestamp(ci.employee_clock_out) : '—'}</td>
 								<td class="time-col muted-col">{ci.employee_break_minutes != null ? `${ci.employee_break_minutes} Min` : '—'}</td>
@@ -886,6 +1057,19 @@
 	.page-header {
 		justify-content: space-between;
 		margin-bottom: 1.5rem;
+	}
+
+	/* Payroll edit mode: deactivated (soft-deleted) day. */
+	.inactive-row {
+		opacity: 0.45;
+		text-decoration: line-through;
+	}
+	.inactive-row :global(input) {
+		text-decoration: none;
+	}
+
+	.account-row .hours-value {
+		font-weight: 600;
 	}
 
 	.header-actions {

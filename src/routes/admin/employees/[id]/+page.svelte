@@ -121,6 +121,8 @@
 	let payrollEditMode = $state(false);
 	let payrollDrafts = $state<Record<string, PayrollDraft>>({});
 	let savingPayroll = $state(false);
+	let showCleanupDialog = $state(false);
+	let cleaningUp = $state(false);
 
 	// Editable fields
 	let editSalutation = $state('');
@@ -457,6 +459,38 @@
 		}
 	}
 
+	// True when the month has any saved override (deactivated day or paid-time
+	// adjustment) — i.e. there is something to "säubern".
+	const hasAdjustments = $derived(
+		!!hoursSummary &&
+			[...(hoursSummary.assignments ?? []), ...(hoursSummary.calendar_items ?? [])].some(
+				(r) => r.deactivated || r.paid_clock_in != null || r.paid_clock_out != null
+			)
+	);
+
+	/**
+	 * Destructive "Stundenkonto säubern": finalize the month's overrides.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm).
+	 * Purpose: Permanently bakes the sorted-out month into the recorded data —
+	 * deactivated days remove the employee's assignment, adjusted days overwrite
+	 * the recorded clock times — then discards the override layer. Irreversible.
+	 */
+	async function cleanupStundenkonto() {
+		if (!data || cleaningUp) return;
+		cleaningUp = true;
+		try {
+			await apiPost(`/api/v1/admin/employees/${data.id}/hours/cleanup?month=${selectedMonth}`);
+			showCleanupDialog = false;
+			await loadHours(data.id);
+			showToast('Stundenkonto gesäubert', 'success');
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Säubern', 'error');
+		} finally {
+			cleaningUp = false;
+		}
+	}
+
 	let exportingXlsx = $state(false);
 	let exportingPdf = $state(false);
 
@@ -786,6 +820,15 @@
 									<FileText size={14} />
 								{/if}
 							</button>
+							{#if hasAdjustments}
+								<button
+									class="btn btn-sm btn-danger-sm"
+									onclick={() => { showCleanupDialog = true; }}
+									title="Anpassungen endgültig übernehmen und Stundenkonto leeren (destruktiv)"
+								>
+									Stundenkonto säubern
+								</button>
+							{/if}
 						{/if}
 					{/if}
 				</div>
@@ -1438,6 +1481,15 @@
 	message={data ? `Mitarbeiter „${data.first_name} ${data.last_name}" deaktivieren?` : ''}
 	confirmLabel="Deaktivieren"
 	onConfirm={handleDelete}
+/>
+
+<ConfirmationDialog
+	bind:open={showCleanupDialog}
+	title="Stundenkonto säubern"
+	message={`Achtung: Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden. Deaktivierte Tage werden aus den Einsätzen entfernt, angepasste Zeiten überschreiben die erfassten Zeiten. Für ${selectedMonth} fortfahren?`}
+	confirmLabel="Endgültig säubern"
+	loading={cleaningUp}
+	onConfirm={cleanupStundenkonto}
 />
 
 <ConfirmationDialog

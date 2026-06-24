@@ -20,6 +20,7 @@
 		phone: string | null;
 		customer_type: string | null;
 		company_name: string | null;
+		notes: string | null;
 		billing_address_id: string | null;
 		billing_address: {
 			street: string | null;
@@ -54,6 +55,7 @@
 	let editName = $state('');
 	let editPhone = $state('');
 	let editEmail = $state('');
+	let editNotes = $state('');
 	let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 
 	$effect(() => {
@@ -82,6 +84,7 @@
 			editName = data.name || '';
 			editPhone = data.phone || '';
 			editEmail = data.email ?? '';
+			editNotes = data.notes ?? '';
 			billingStreet = data.billing_address?.street ?? '';
 			billingNumber = data.billing_address?.house_number ?? '';
 			billingPostal = data.billing_address?.postal_code ?? '';
@@ -117,6 +120,7 @@
 				salutation: editSalutation || null,
 				phone: editPhone || null,
 				email: editEmail || null,
+				notes: editNotes.trim(),
 				customer_type: editCustomerType || null,
 				company_name: editCustomerType === 'business' ? (editCompanyName.trim() || null) : null,
 				...(showBillingEdit && (billingStreet.trim() || billingCity.trim()) ? {
@@ -284,6 +288,11 @@
 						<input id="company_name" type="text" bind:value={editCompanyName} placeholder="Firmenname" />
 					</div>
 					{/if}
+					<div class="form-group">
+						<label for="notes">Notizen</label>
+						<textarea id="notes" rows={4} bind:value={editNotes}
+							placeholder="Absprachen, letzte Anpassungen, Anrufbelästigungen …"></textarea>
+					</div>
 					<div class="form-group">
 						<span class="form-label">Erstellt</span>
 						<span class="form-value">{formatDate(data.created_at)}</span>
@@ -562,7 +571,8 @@
 	}
 	.form-row .form-group { flex: 1; }
 	.form-group input,
-	.form-group select {
+	.form-group select,
+	.form-group textarea {
 		width: 100%;
 		padding: 0.5rem 0.75rem;
 		background: var(--dt-surface-container-high);
@@ -575,8 +585,14 @@
 		transition: background var(--dt-transition), border-color var(--dt-transition);
 		box-sizing: border-box;
 	}
+	.form-group textarea {
+		resize: vertical;
+		font-family: inherit;
+		line-height: 1.4;
+	}
 	.form-group input:focus,
-	.form-group select:focus {
+	.form-group select:focus,
+	.form-group textarea:focus {
 		background: var(--dt-surface-container-lowest);
 		border-bottom-color: var(--dt-primary);
 	}

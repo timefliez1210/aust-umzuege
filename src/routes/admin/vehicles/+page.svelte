@@ -402,6 +402,7 @@
 	.vehicle-name h2 {
 		font-size: 1.05rem;
 		margin: 0;
+		color: var(--dt-on-surface, #191c1e);
 	}
 	.kennzeichen {
 		font-family: 'Courier New', ui-monospace, monospace;

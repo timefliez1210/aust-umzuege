@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiDelete } from '$lib/utils/api.svelte';
 	import { normalizeTimeInput } from '$lib/utils/format';
+	import { breakHoursToMinutes, breakMinutesToHours } from '$lib/utils/time';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import { Plus, Trash2, Check, X } from 'lucide-svelte';
@@ -168,7 +169,7 @@
 						notes: e.notes ?? '',
 						clockIn: fmtTime(e.clock_in),
 						clockOut: fmtTime(e.clock_out),
-						breakMin: String(e.break_minutes ?? 0),
+						breakMin: breakMinutesToHours(e.break_minutes ?? 0),
 						transportMode: e.transport_mode ?? '',
 						travelCosts: e.travel_costs_cents != null ? String(e.travel_costs_cents) : '',
 						accommodation: e.accommodation_cents != null ? String(e.accommodation_cents) : '',
@@ -325,7 +326,8 @@
 	async function updateNumericField(empId: string, field: 'break_minutes' | 'actual_hours', value: string) {
 		inquerySaving = empId;
 		try {
-			const num = field === 'break_minutes' ? (parseInt(value) || 0) : (value !== '' ? parseFloat(value) : null);
+			// Break is typed as decimal hours but persisted as integer minutes.
+			const num = field === 'break_minutes' ? breakHoursToMinutes(value) : (value !== '' ? parseFloat(value) : null);
 			const updated = await apiPatch<EmployeeAssignment>(`${baseUrl}/${empId}`, { [field]: num });
 			const idx = assignments.findIndex((e) => e.employee_id === empId);
 			if (idx !== -1) assignments[idx] = { ...assignments[idx], ...updated };
@@ -358,7 +360,7 @@
 				notes: s.notes || null,
 				clock_in: normalizeTimeInput(s.clockIn),
 				clock_out: normalizeTimeInput(s.clockOut),
-				break_minutes: parseInt(s.breakMin) || 0,
+				break_minutes: breakHoursToMinutes(s.breakMin),
 				transport_mode: s.transportMode || null,
 				travel_costs_cents: s.travelCosts !== '' ? parseInt(s.travelCosts) : null,
 				accommodation_cents: s.accommodation !== '' ? parseInt(s.accommodation) : null,
@@ -546,7 +548,7 @@
 			<div class="inq-emp-header">
 				<span>Name</span>
 				<span>Von–Bis</span>
-				<span>P.min</span>
+				<span>Pause (h)</span>
 				<span></span>
 			</div>
 			{#each assignments as emp}
@@ -588,14 +590,14 @@
 							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
 						{/if}
 					</div>
-					<!-- Break minutes -->
+					<!-- Break: typed as decimal hours (0.25 = 15 min), stored as minutes -->
 					<input
 						class="inq-input inq-break"
 						type="text"
-						inputmode="numeric"
+						inputmode="decimal"
 						placeholder="0"
-						maxlength="3"
-						value={emp.break_minutes ?? 0}
+						maxlength="5"
+						value={breakMinutesToHours(emp.break_minutes ?? 0)}
 						onblur={(e) => updateNumericField(emp.employee_id, 'break_minutes', (e.target as HTMLInputElement).value)}
 					/>
 					<button
@@ -626,7 +628,7 @@
 		<div class="emp-list">
 			{#each assignments as emp}
 				{@const s = editingEmp[emp.employee_id] ?? { actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', miscCosts: '', mealDeduction: '' }}
-				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, parseInt(s.breakMin) || 0)}
+				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, breakHoursToMinutes(s.breakMin))}
 				<div class="emp-row">
 					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
 					<div class="emp-fields">
@@ -646,8 +648,8 @@
 						{:else if derived != null}
 							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
 						{/if}
-						<label class="tiny-label" style="margin-left:0.5rem" for="brk-{emp.employee_id}">P.min</label>
-						<input id="brk-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="3"
+						<label class="tiny-label" style="margin-left:0.5rem" for="brk-{emp.employee_id}">Pause (h)</label>
+						<input id="brk-{emp.employee_id}" class="break-input" type="text" inputmode="decimal" placeholder="0" maxlength="5"
 							value={s.breakMin}
 							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, breakMin: (e.target as HTMLInputElement).value } }; }}
 						/>

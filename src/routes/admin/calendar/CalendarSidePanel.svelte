@@ -3,6 +3,7 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { INQUIRY_STATUS_LABELS } from '$lib/utils/status';
 	import { formatTime, normalizeTimeInput } from '$lib/utils/format';
+	import { breakHoursToMinutes, breakMinutesToHours } from '$lib/utils/time';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
 	import { X, Save, Trash2, Plus, Check, ExternalLink } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
@@ -1192,8 +1193,8 @@
 															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_in} oninput={(e) => inqDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_in', norm); }} />
 															<span class="time-sep">–</span>
 															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_out} oninput={(e) => inqDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_out', norm); }} />
-															<span class="day-time-label">P:</span>
-															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={inqDays[i].employees[ei].break_minutes} oninput={(e) => inqDays[i].employees[ei].break_minutes = parseInt((e.target as HTMLInputElement).value) || 0} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; inqDays[i].employees[ei].break_minutes = v; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'break_minutes', v); }} />
+															<span class="day-time-label">P (h):</span>
+															<input type="text" inputmode="decimal" placeholder="0" maxlength="5" class="neu-input time-mini break-mini" value={breakMinutesToHours(inqDays[i].employees[ei].break_minutes)} onblur={(e) => { const v = breakHoursToMinutes((e.target as HTMLInputElement).value); inqDays[i].employees[ei].break_minutes = v; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'break_minutes', v); }} />
 														</span>
 														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
 													</div>
@@ -1373,8 +1374,8 @@
 															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_in} oninput={(e) => termDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'clock_in', norm); }} />
 															<span class="time-sep">–</span>
 															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_out} oninput={(e) => termDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'clock_out', norm); }} />
-															<span class="day-time-label">P:</span>
-															<input type="text" inputmode="numeric" placeholder="0" maxlength="3" class="neu-input time-mini break-mini" bind:value={termDays[i].employees[ei].break_minutes} oninput={(e) => termDays[i].employees[ei].break_minutes = parseInt((e.target as HTMLInputElement).value) || 0} onblur={(e) => { const v = parseInt((e.target as HTMLInputElement).value) || 0; termDays[i].employees[ei].break_minutes = v; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'break_minutes', v); }} />
+															<span class="day-time-label">P (h):</span>
+															<input type="text" inputmode="decimal" placeholder="0" maxlength="5" class="neu-input time-mini break-mini" value={breakMinutesToHours(termDays[i].employees[ei].break_minutes)} onblur={(e) => { const v = breakHoursToMinutes((e.target as HTMLInputElement).value); termDays[i].employees[ei].break_minutes = v; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'break_minutes', v); }} />
 														</span>
 														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
 													</div>
@@ -1700,7 +1701,7 @@
 	.day-add-emp-btn { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--dt-surface); border: 1px dashed var(--dt-outline-variant); border-radius: 8px; cursor: pointer; color: var(--dt-on-surface-variant); }
 	.day-add-emp-btn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }
 	.time-mini { width: 3.75rem !important; padding: 0.2rem 0.25rem; font-size: 0.75rem; text-align: center; }
-	.break-mini { width: 2.5rem !important; }
+	.break-mini { width: 3.25rem !important; }
 	.time-sep { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
 	.day-time-group { display: flex; align-items: center; gap: 0.2rem; }
 	.day-time-label { font-size: 0.6875rem; color: var(--dt-on-surface-variant); font-weight: 600; flex-shrink: 0; }

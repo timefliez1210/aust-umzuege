@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPatch, apiPost, apiDownload, apiFetch, formatDate } from '$lib/utils/api.svelte';
 	import { normalizeTimeInput } from '$lib/utils/format';
+	import { breakHoursToMinutes, breakMinutesToHours } from '$lib/utils/time';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -959,7 +960,7 @@
 							<th>Details</th>
 							<th class="time-col">Von</th>
 							<th class="time-col">Bis</th>
-							<th class="time-col">Pause (Min.)</th>
+							<th class="time-col">Pause (h)</th>
 							<th class="num">{payrollEditMode ? 'Bezahlt (h)' : 'Ist (h)'}</th>
 							<th class="time-col muted-col">MA-Von</th>
 							<th class="time-col muted-col">MA-Bis</th>
@@ -1015,16 +1016,16 @@
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if payrollEditMode}
 										{#if pdraft}
-											<input type="number" class="break-input" min="0" step="5" disabled={pdraft.deactivated} bind:value={pdraft.break_minutes} />
+											<input type="text" inputmode="decimal" class="break-input" placeholder="0" maxlength="5" disabled={pdraft.deactivated} value={breakMinutesToHours(pdraft.break_minutes)} onblur={(e) => { pdraft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); }} />
 										{/if}
 									{:else if draft}
-										<input type="number" class="break-input" class:saving={draft.saving} min="0" step="5" bind:value={draft.break_minutes} onblur={() => saveTime(key)} />
+										<input type="text" inputmode="decimal" class="break-input" class:saving={draft.saving} placeholder="0" maxlength="5" value={breakMinutesToHours(draft.break_minutes)} onblur={(e) => { draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); saveTime(key); }} />
 									{/if}
 								</td>
 								<td class="num">{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : (a.paid_hours ?? a.actual_hours)?.toFixed(1) ?? '—'}</td>
 								<td class="time-col muted-col">{a.employee_clock_in ? fmtTimestamp(a.employee_clock_in) : '—'}</td>
 								<td class="time-col muted-col">{a.employee_clock_out ? fmtTimestamp(a.employee_clock_out) : '—'}</td>
-								<td class="time-col muted-col">{a.employee_break_minutes != null ? `${a.employee_break_minutes} Min` : '—'}</td>
+								<td class="time-col muted-col">{a.employee_break_minutes != null ? `${breakMinutesToHours(a.employee_break_minutes) || '0'} h` : '—'}</td>
 								<td><StatusBadge status={a.status} /></td>
 							</tr>
 						{/each}
@@ -1072,16 +1073,16 @@
 								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
 									{#if payrollEditMode}
 										{#if pdraft}
-											<input type="number" class="break-input" min="0" step="5" disabled={pdraft.deactivated} bind:value={pdraft.break_minutes} />
+											<input type="text" inputmode="decimal" class="break-input" placeholder="0" maxlength="5" disabled={pdraft.deactivated} value={breakMinutesToHours(pdraft.break_minutes)} onblur={(e) => { pdraft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); }} />
 										{/if}
 									{:else if draft}
-										<input type="number" class="break-input" class:saving={draft.saving} min="0" step="5" bind:value={draft.break_minutes} onblur={() => saveTime(key)} />
+										<input type="text" inputmode="decimal" class="break-input" class:saving={draft.saving} placeholder="0" maxlength="5" value={breakMinutesToHours(draft.break_minutes)} onblur={(e) => { draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); saveTime(key); }} />
 									{/if}
 								</td>
 								<td class="num">{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : (ci.paid_hours ?? ci.actual_hours)?.toFixed(1) ?? '—'}</td>
 								<td class="time-col muted-col">{ci.employee_clock_in ? fmtTimestamp(ci.employee_clock_in) : '—'}</td>
 								<td class="time-col muted-col">{ci.employee_clock_out ? fmtTimestamp(ci.employee_clock_out) : '—'}</td>
-								<td class="time-col muted-col">{ci.employee_break_minutes != null ? `${ci.employee_break_minutes} Min` : '—'}</td>
+								<td class="time-col muted-col">{ci.employee_break_minutes != null ? `${breakMinutesToHours(ci.employee_break_minutes) || '0'} h` : '—'}</td>
 								<td><StatusBadge status={ci.status} /></td>
 							</tr>
 						{/each}

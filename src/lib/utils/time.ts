@@ -46,3 +46,50 @@ export function normalizeTime(raw: string): string | null {
 
 	return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
+
+/**
+ * Break times are **stored** as integer minutes (the `break_minutes` DB columns),
+ * but Alex enters them as **decimal hours** (e.g. `0.25` = a 15-minute break).
+ * These two helpers are the single conversion point so every admin break input
+ * round-trips identically.
+ *
+ * Minutes is the canonical "snap": a typed decimal is rounded to the nearest
+ * whole minute before storing, then rendered back at 2 decimal places. This makes
+ * messy thirds land on clean values both ways:
+ *   0.25 → 15 min → "0.25"
+ *   0.33 → 20 min → "0.33"   (0.33 × 60 = 19.8, rounds to 20; 20 / 60 = 0.333… → "0.33")
+ * and every whole-minute value 0–60 round-trips exactly (see time.test.ts).
+ */
+
+/**
+ * Parse a user-typed decimal-hours break into integer minutes for the API/DB.
+ *
+ * Tolerant: accepts a German comma ("0,25"), surrounding whitespace, a plain
+ * number, or an empty/garbage value (→ 0). Negatives clamp to 0.
+ *
+ * @param raw - Whatever sits in the break input ("0.25", "0,25", 1.5, "", null).
+ * @returns Whole minutes, rounded to the nearest minute.
+ */
+export function breakHoursToMinutes(raw: string | number | null | undefined): number {
+	if (raw == null) return 0;
+	const s = (typeof raw === 'number' ? String(raw) : raw).trim().replace(',', '.');
+	if (!s) return 0;
+	const hours = parseFloat(s);
+	if (!Number.isFinite(hours) || hours <= 0) return 0;
+	return Math.round(hours * 60);
+}
+
+/**
+ * Render stored break minutes as a decimal-hours string for an input field.
+ *
+ * Returns "" for 0 / null so the field shows its "0" placeholder instead of a
+ * literal zero. Otherwise a 2-decimal value with trailing zeros stripped
+ * ("0.25", "0.33", "1.5", "1").
+ *
+ * @param min - Stored break minutes.
+ * @returns Decimal-hours string, or "" when empty.
+ */
+export function breakMinutesToHours(min: number | null | undefined): string {
+	if (min == null || min === 0) return '';
+	return String(Math.round((min / 60) * 100) / 100);
+}

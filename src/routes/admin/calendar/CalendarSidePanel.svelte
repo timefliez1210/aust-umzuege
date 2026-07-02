@@ -14,6 +14,7 @@
 		InquiryItem,
 		CalendarItem,
 		ScheduleCalendarItem,
+		ScheduleAppointment,
 		DaySchedule,
 		DayEmployee,
 		InquiryDay,
@@ -55,13 +56,16 @@
 		panelSelection = $bindable<PanelSelection>(null),
 		schedule,
 		onLoadSchedule,
-		onAddAppointment
+		onAddAppointment,
+		onOpenAppointment
 	}: {
 		panelSelection: PanelSelection;
 		schedule: DaySchedule[];
 		onLoadSchedule: () => Promise<void>;
 		/** Opens the calendar's appointment quick-create pre-linked to this inquiry. */
 		onAddAppointment?: (inquiryId: string, label: string, dateStr?: string) => void;
+		/** Opens the inquiry that a day-panel appointment belongs to. */
+		onOpenAppointment?: (a: ScheduleAppointment) => void;
 	} = $props();
 
 	// ─── Helper functions ─────────────────────────────────────────────────────────
@@ -1059,9 +1063,10 @@
 					}}
 				/>
 
-				{#if ds.inquiries.length > 0 || dayTermine.length > 0}
+				{@const dayAppts = ds.appointments ?? []}
+					{#if ds.inquiries.length > 0 || dayTermine.length > 0 || dayAppts.length > 0}
 					<div class="panel-section">
-						<div class="section-title">Tagesplan ({ds.inquiries.length + dayTermine.length})</div>
+						<div class="section-title">Tagesplan ({ds.inquiries.length + dayTermine.length + dayAppts.length})</div>
 						{#each ds.inquiries as inq}
 							<div class="day-entry">
 								<div class="day-entry-top">
@@ -1093,6 +1098,25 @@
 								{/if}
 								<a href="/admin/calendar-items/{ci.id}" class="entry-detail-link">
 									<ExternalLink size={11} /> Detail öffnen
+								</a>
+							</div>
+						{/each}
+						{#each dayAppts as ap}
+							<div class="day-entry day-entry-appt">
+								<div class="day-entry-top">
+									<button class="entry-link-btn" onclick={(e) => { e.stopPropagation(); onOpenAppointment?.(ap); }}>
+										{apptKindLabel(ap.kind)}{ap.customer_name ? ' · ' + ap.customer_name : ''}
+									</button>
+									<span class="cat-badge appt-badge">{apptKindLabel(ap.kind)}</span>
+									{#if ap.start_time}
+										<span class="time-badge">{formatTime(ap.start_time)}{ap.end_time ? ' – ' + formatTime(ap.end_time) : ''}</span>
+									{/if}
+								</div>
+								{#if ap.assignee_name || ap.location}
+									<span class="entry-route">{#if ap.assignee_name}👤 {ap.assignee_name}{/if}{#if ap.assignee_name && ap.location} · {/if}{#if ap.location}📍 {ap.location}{/if}</span>
+								{/if}
+								<a href="/admin/inquiries/{ap.inquiry_id}" class="entry-detail-link">
+									<ExternalLink size={11} /> Zur Anfrage
 								</a>
 							</div>
 						{/each}
@@ -1658,6 +1682,8 @@
 		gap: 0.2rem;
 	}
 	.day-entry-termin { background: rgba(168, 57, 0, 0.06); }
+	.day-entry-appt { background: rgba(8, 145, 178, 0.07); border-left: 3px solid #0891b2; }
+	.appt-badge { background: #cffafe; color: #155e75; }
 	.day-entry-top { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 	.entry-link-btn {
 		font-size: 0.8125rem;

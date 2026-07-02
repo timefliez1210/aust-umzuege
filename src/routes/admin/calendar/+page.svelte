@@ -52,8 +52,7 @@
 	 * inquiry chip). The appointment is shown there, among the inquiry's dates —
 	 * not as a disconnected floating card.
 	 */
-	async function openAppointmentInquiry(e: Event, a: ScheduleAppointment) {
-		e.stopPropagation(); // don't let the click bubble to the day cell (opens day view)
+	async function openInquiryForAppointment(a: ScheduleAppointment) {
 		// Fast path: the inquiry's move is already loaded in the current view.
 		for (const day of schedule) {
 			const found = day.inquiries.find(i => i.inquiry_id === a.inquiry_id);
@@ -82,9 +81,15 @@
 					employee_notes: inq.employee_notes ?? null,
 				},
 			};
-		} catch (e) {
-			showToast((e as Error).message, 'error');
+		} catch (err) {
+			showToast((err as Error).message, 'error');
 		}
+	}
+
+	/** Chip handler: stop the click bubbling to the day cell, then open the inquiry. */
+	function openAppointmentInquiry(e: Event, a: ScheduleAppointment) {
+		e.stopPropagation();
+		openInquiryForAppointment(a);
 	}
 
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
@@ -1594,7 +1599,7 @@
 			<div class="sheet-backdrop" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
 		{/if}
 
-		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} onAddAppointment={openAppointmentForInquiry} />
+		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} onAddAppointment={openAppointmentForInquiry} onOpenAppointment={openInquiryForAppointment} />
 	</div>
 </div>
 

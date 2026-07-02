@@ -145,6 +145,53 @@
 	let inqDaysSaving = $state(false);
 	let inqUntilDate = $state('');
 
+	// Inquiry appointments (Besichtigung etc. — separate, non-consecutive dates)
+	interface Appointment {
+		id: string;
+		kind: string;
+		scheduled_date: string;
+		start_time: string | null;
+		end_time: string | null;
+		assignee_id: string | null;
+		assignee_name: string | null;
+		location: string | null;
+		notes: string | null;
+		status: string;
+	}
+	let inqAppointments = $state<Appointment[]>([]);
+	let inqApptLoading = $state(false);
+	const APPT_KIND_LABELS: Record<string, string> = { besichtigung: 'Besichtigung', nachtermin: 'Nachtermin' };
+	function apptKindLabel(k: string): string {
+		return APPT_KIND_LABELS[k] ?? (k ? k.charAt(0).toUpperCase() + k.slice(1) : 'Termin');
+	}
+	function apptDateLabel(d: string): string {
+		return d.slice(0, 10).split('-').reverse().join('.');
+	}
+
+	/** Loads the inquiry's linked appointments for the panel's schedule section. */
+	async function loadInquiryAppointments(inqId: string) {
+		inqApptLoading = true;
+		try {
+			inqAppointments = await apiGet<Appointment[]>(`/api/v1/inquiries/${inqId}/appointments`);
+		} catch {
+			inqAppointments = [];
+		} finally {
+			inqApptLoading = false;
+		}
+	}
+
+	async function deleteInqAppointment(inqId: string, apptId: string) {
+		if (!confirm('Diesen Termin löschen?')) return;
+		try {
+			await apiDelete(`/api/v1/inquiries/${inqId}/appointments/${apptId}`);
+			showToast('Termin gelöscht', 'success');
+			await loadInquiryAppointments(inqId);
+			await onLoadSchedule();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
 	// Termin days (multi-day editor — mirrors inquiry days)
 	let termDays = $state<TerminDay[]>([]);
 	let termDaysLoading = $state(false);
@@ -207,6 +254,7 @@
 			inqEditEndTime = formatTime(sel.item.end_time);
 			addEmpDayTarget = null;
 			loadInquiryDays(sel.item.inquiry_id);
+			loadInquiryAppointments(sel.item.inquiry_id);
 			ensureEmployeesLoaded();
 		} else if (sel.kind === 'termin') {
 			termEditTitle = sel.item.title;
@@ -1130,11 +1178,6 @@
 						<a href="/admin/inquiries/{inq.inquiry_id}" class="btn btn-ghost btn-sm">
 							<ExternalLink size={13} /> Detail
 						</a>
-						{#if onAddAppointment}
-							<button class="btn btn-ghost btn-sm" onclick={() => onAddAppointment?.(inq.inquiry_id, inq.customer_name ?? 'Anfrage')}>
-								🔍 Besichtigung
-							</button>
-						{/if}
 						<button class="btn btn-danger btn-sm" onclick={deleteInquiry} disabled={deletingInquiry}>
 							{deletingInquiry ? '...' : 'Löschen'}
 						</button>
@@ -1237,6 +1280,43 @@
 								{inqDaysSaving ? '...' : 'Zeitraum speichern'}
 							</button>
 						</div>
+					{/if}
+				</div>
+
+				<!-- Besichtigungen / Zusatztermine — eigene, nicht zusammenhängende Daten -->
+				<div class="panel-section">
+					<div class="section-title">Besichtigungen &amp; Zusatztermine</div>
+					{#if inqApptLoading}
+						<p class="panel-loading">Laden...</p>
+					{:else if inqAppointments.length > 0}
+						<div class="appt-list">
+							{#each inqAppointments as ap (ap.id)}
+								<div class="appt-item">
+									<div class="appt-item-info">
+										<div class="appt-item-head">
+											<span class="appt-kind">{apptKindLabel(ap.kind)}</span>
+											<span class="appt-date">{apptDateLabel(ap.scheduled_date)}</span>
+											{#if ap.start_time}<span class="appt-time">{ap.start_time.slice(0, 5)}{ap.end_time ? '–' + ap.end_time.slice(0, 5) : ''}</span>{/if}
+										</div>
+										{#if ap.assignee_name || ap.location || ap.notes}
+											<div class="appt-meta">
+												{#if ap.assignee_name}<span>👤 {ap.assignee_name}</span>{/if}
+												{#if ap.location}<span>📍 {ap.location}</span>{/if}
+												{#if ap.notes}<span class="appt-note">{ap.notes}</span>{/if}
+											</div>
+										{/if}
+									</div>
+									<button class="appt-del" title="Löschen" aria-label="Termin löschen" onclick={() => deleteInqAppointment(inq.inquiry_id, ap.id)}>×</button>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<p class="panel-empty">Keine weiteren Termine.</p>
+					{/if}
+					{#if onAddAppointment}
+						<button class="btn btn-ghost btn-sm appt-add-btn" onclick={() => onAddAppointment?.(inq.inquiry_id, inq.customer_name ?? 'Anfrage')}>
+							🔍 Besichtigung hinzufügen
+						</button>
 					{/if}
 				</div>
 
@@ -1771,4 +1851,25 @@
 		margin-right: 0.3rem;
 	}
 	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
+
+	/* Besichtigungen / Zusatztermine list */
+	.appt-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
+	.appt-item {
+		display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;
+		padding: 0.4rem 0.55rem; border: 1px solid var(--dt-outline-variant, #e2e8f0);
+		border-left: 3px solid #0891b2; border-radius: 8px; background: var(--dt-surface-container-lowest, #fff);
+	}
+	.appt-item-info { min-width: 0; }
+	.appt-item-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+	.appt-kind { font-weight: 600; font-size: 0.8125rem; }
+	.appt-date { font-size: 0.8125rem; color: var(--dt-primary); font-variant-numeric: tabular-nums; }
+	.appt-time { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
+	.appt-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; color: var(--dt-on-surface-variant); margin-top: 0.15rem; }
+	.appt-note { font-style: italic; }
+	.appt-del {
+		flex-shrink: 0; border: none; background: transparent; color: var(--dt-on-surface-variant);
+		font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 0.2rem; border-radius: 4px;
+	}
+	.appt-del:hover { color: var(--dt-error, #b91c1c); background: var(--dt-surface-container-high, #f1f5f9); }
+	.appt-add-btn { margin-top: 0.15rem; }
 </style>

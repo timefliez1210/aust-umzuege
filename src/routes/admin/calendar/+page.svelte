@@ -176,10 +176,25 @@
 	let loadedHolidayYear = $state(0);
 
 	// Quick-create mode
-	let quickCreateMode = $state<'inquiry' | 'termin' | null>(null);
+	let quickCreateMode = $state<'inquiry' | 'termin' | 'appointment' | null>(null);
 	let quickCreateDate = $state('');
 	let quickCreateLoading = $state(false);
 	let quickCreateError = $state('');
+
+	// Quick-appointment (Besichtigung / Zusatztermin linked to an existing inquiry)
+	let qaInquirySearch = $state('');
+	let qaInquiryResults = $state<{ id: string; customer_name: string | null; origin_city: string | null; destination_city: string | null; status: string }[]>([]);
+	let qaInquirySearching = $state(false);
+	let qaInquiryId = $state<string | null>(null);
+	let qaInquiryLabel = $state('');
+	let qaKind = $state('besichtigung');
+	let qaStartTime = $state('');
+	let qaEndTime = $state('');
+	let qaAssigneeId = $state('');
+	let qaLocation = $state('');
+	let qaNotes = $state('');
+	let qaEmployees = $state<{ id: string; first_name: string; last_name: string }[]>([]);
+	let qaEmployeesLoaded = $state(false);
 
 	// Quick-inquiry form fields
 	let qiServiceType = $state<string>('privatumzug');
@@ -851,7 +866,7 @@
 	 *
 	 * @param mode - 'inquiry' or 'termin'
 	 */
-	function openQuickCreate(mode: 'inquiry' | 'termin', dateOverride?: string) {
+	function openQuickCreate(mode: 'inquiry' | 'termin' | 'appointment', dateOverride?: string) {
 		quickCreateDate = dateOverride ?? contextMenu!.dateStr;
 		contextMenu = null;
 		quickCreateMode = mode;
@@ -866,6 +881,70 @@
 		qtStartTime = '09:00'; qtEndTime = '';
 		qtCustomerMode = 'none'; qtCustomerSearch = ''; qtCustomerResults = []; qtCustomerId = null; qtCustomerLabel = '';
 		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = ''; qtNewCustSalutation = '';
+		qaInquirySearch = ''; qaInquiryResults = []; qaInquiryId = null; qaInquiryLabel = '';
+		qaKind = 'besichtigung'; qaStartTime = ''; qaEndTime = ''; qaAssigneeId = ''; qaLocation = ''; qaNotes = '';
+		if (mode === 'appointment') loadQaEmployees();
+	}
+
+	/**
+	 * Opens the appointment quick-create pre-linked to a known inquiry (e.g. from
+	 * the side panel of an inquiry you're already looking at), so Alex skips the
+	 * search step and only picks the visit date + details.
+	 */
+	function openAppointmentForInquiry(inquiryId: string, label: string, dateStr: string = '') {
+		openQuickCreate('appointment', dateStr);
+		qaInquiryId = inquiryId;
+		qaInquiryLabel = label;
+	}
+
+	/** Searches existing inquiries to link a new appointment to. */
+	async function searchQaInquiries(q: string) {
+		if (q.trim().length < 2) { qaInquiryResults = []; return; }
+		qaInquirySearching = true;
+		try {
+			const res = await apiGet<{ inquiries: { id: string; customer_name: string | null; origin_city: string | null; destination_city: string | null; status: string }[] }>(`/api/v1/inquiries?search=${encodeURIComponent(q)}&limit=8`);
+			qaInquiryResults = res.inquiries;
+		} catch { qaInquiryResults = []; }
+		finally { qaInquirySearching = false; }
+	}
+
+	/** Lazily loads active employees for the appointment assignee dropdown. */
+	async function loadQaEmployees() {
+		if (qaEmployeesLoaded) return;
+		try {
+			const res = await apiGet<{ employees: { id: string; first_name: string; last_name: string }[] }>('/api/v1/admin/employees?active=true&limit=100');
+			qaEmployees = res.employees;
+			qaEmployeesLoaded = true;
+		} catch { /* non-fatal: dropdown just stays empty */ }
+	}
+
+	/**
+	 * Creates a lightweight appointment linked to the chosen inquiry on the
+	 * pre-seeded date, then reloads the calendar so the chip appears.
+	 */
+	async function submitQuickAppointment() {
+		if (!qaInquiryId) { quickCreateError = 'Bitte eine Anfrage auswählen'; return; }
+		if (!quickCreateDate) { quickCreateError = 'Datum fehlt'; return; }
+		quickCreateError = '';
+		quickCreateLoading = true;
+		try {
+			await apiPost(`/api/v1/inquiries/${qaInquiryId}/appointments`, {
+				kind: qaKind.trim() || 'besichtigung',
+				scheduled_date: quickCreateDate,
+				start_time: qaStartTime ? normalizeTimeInput(qaStartTime) : null,
+				end_time: qaEndTime ? normalizeTimeInput(qaEndTime) : null,
+				assignee_id: qaAssigneeId || null,
+				location: qaLocation.trim() || null,
+				notes: qaNotes.trim() || null,
+			});
+			showToast('Termin angelegt', 'success');
+			quickCreateMode = null;
+			await loadSchedule();
+		} catch (err) {
+			quickCreateError = (err as Error).message;
+		} finally {
+			quickCreateLoading = false;
+		}
 	}
 
 	/**
@@ -1460,7 +1539,7 @@
 			<div class="sheet-backdrop" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
 		{/if}
 
-		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} />
+		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} onAddAppointment={openAppointmentForInquiry} />
 	</div>
 </div>
 
@@ -1475,6 +1554,9 @@
 			</button>
 			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('termin', currentContextDate); }}>
 				<span class="fab-item-icon">📅</span> Termin erstellen
+			</button>
+			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('appointment', currentContextDate); }}>
+				<span class="fab-item-icon">🔍</span> Besichtigung
 			</button>
 		</div>
 	{/if}
@@ -1493,6 +1575,9 @@
 		</button>
 		<button class="ctx-item" onclick={() => openQuickCreate('termin')}>
 			<span class="ctx-icon">📅</span> Termin erstellen
+		</button>
+		<button class="ctx-item" onclick={() => openQuickCreate('appointment')}>
+			<span class="ctx-icon">🔍</span> Besichtigung / Zusatztermin
 		</button>
 	</div>
 {/if}
@@ -1731,6 +1816,88 @@
 				<button class="btn btn-secondary" onclick={() => quickCreateMode = null}>Abbrechen</button>
 				<button class="btn btn-primary" onclick={submitQuickTermin} disabled={quickCreateLoading}>
 					{quickCreateLoading ? 'Wird erstellt...' : 'Termin erstellen'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Quick-create: appointment (Besichtigung linked to an inquiry) -->
+{#if quickCreateMode === 'appointment'}
+	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
+		<div class="modal" use:draggable>
+			<h3>Besichtigung / Zusatztermin</h3>
+			<p class="qc-hint">Ein eigener Termin zu einer bestehenden Anfrage — z.&nbsp;B. eine Besichtigung vor dem Umzug. Unabhängig vom Umzugstermin.</p>
+
+			<div class="qc-section-label">Anfrage *</div>
+			{#if qaInquiryId}
+				<div class="qt-customer-badge">
+					<span>{qaInquiryLabel}</span>
+					<button class="qt-customer-remove" onclick={() => { qaInquiryId = null; qaInquiryLabel = ''; }}>×</button>
+				</div>
+			{:else}
+				<div class="qc-row" style="flex-direction:column;gap:0.25rem">
+					<input type="text" bind:value={qaInquirySearch} oninput={(e) => searchQaInquiries((e.target as HTMLInputElement).value)} placeholder="Kunde oder Ort suchen..." />
+					{#if qaInquirySearching}<span style="font-size:0.75rem;color:#94a3b8">Suche...</span>{/if}
+					{#if qaInquiryResults.length > 0}
+						<div class="qt-results">
+							{#each qaInquiryResults as inq}
+								<button class="qt-result-item" onclick={() => { qaInquiryId = inq.id; qaInquiryLabel = (inq.customer_name ?? 'Anfrage') + (inq.origin_city ? ' · ' + inq.origin_city : ''); qaInquiryResults = []; }}>
+									<span class="cr-name">{inq.customer_name ?? 'Anfrage'}</span>
+									{#if inq.origin_city || inq.destination_city}<span class="cr-email">{inq.origin_city ?? '?'} → {inq.destination_city ?? '?'}</span>{/if}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			<div class="qc-row">
+				<div class="qc-field">
+					<label for="qa-date">Datum *</label>
+					<input id="qa-date" type="date" bind:value={quickCreateDate} />
+				</div>
+				<div class="qc-field">
+					<label for="qa-kind">Art</label>
+					<input id="qa-kind" type="text" list="qa-kinds" bind:value={qaKind} placeholder="besichtigung" />
+					<datalist id="qa-kinds"><option value="besichtigung">Besichtigung</option><option value="nachtermin">Nachtermin</option></datalist>
+				</div>
+			</div>
+			<div class="qc-row">
+				<div class="qc-field">
+					<label for="qa-start">Von</label>
+					<input id="qa-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" bind:value={qaStartTime} />
+				</div>
+				<div class="qc-field">
+					<label for="qa-end">Bis</label>
+					<input id="qa-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" bind:value={qaEndTime} />
+				</div>
+				<div class="qc-field qc-field-grow">
+					<label for="qa-assignee">Mitarbeiter</label>
+					<select id="qa-assignee" bind:value={qaAssigneeId}>
+						<option value="">— keiner —</option>
+						{#each qaEmployees as e}<option value={e.id}>{e.first_name} {e.last_name}</option>{/each}
+					</select>
+				</div>
+			</div>
+			<div class="qc-row">
+				<div class="qc-field qc-field-grow">
+					<label for="qa-loc">Ort</label>
+					<input id="qa-loc" type="text" bind:value={qaLocation} placeholder="optional (sonst Auszugsadresse)" />
+				</div>
+			</div>
+			<div class="qc-row">
+				<div class="qc-field qc-field-grow">
+					<label for="qa-notes">Notiz</label>
+					<input id="qa-notes" type="text" bind:value={qaNotes} placeholder="optional" />
+				</div>
+			</div>
+
+			{#if quickCreateError}<p class="qc-error">{quickCreateError}</p>{/if}
+			<div class="qc-actions">
+				<button class="btn btn-secondary" onclick={() => quickCreateMode = null}>Abbrechen</button>
+				<button class="btn btn-primary" onclick={submitQuickAppointment} disabled={quickCreateLoading}>
+					{quickCreateLoading ? 'Wird angelegt...' : 'Anlegen'}
 				</button>
 			</div>
 		</div>
@@ -2197,6 +2364,7 @@
 		letter-spacing: 0.05em;
 	}
 	.qc-section-label:first-of-type { margin-top: 0; }
+	.qc-hint { font-size: 0.78rem; color: var(--dt-on-surface-variant, #64748b); margin: 0 0 0.75rem; }
 	.qi-svc-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
 	.qi-svc-btn {
 		padding: 0.3rem 0.6rem;

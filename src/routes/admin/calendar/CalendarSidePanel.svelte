@@ -54,11 +54,14 @@
 	let {
 		panelSelection = $bindable<PanelSelection>(null),
 		schedule,
-		onLoadSchedule
+		onLoadSchedule,
+		onAddAppointment
 	}: {
 		panelSelection: PanelSelection;
 		schedule: DaySchedule[];
 		onLoadSchedule: () => Promise<void>;
+		/** Opens the calendar's appointment quick-create pre-linked to this inquiry. */
+		onAddAppointment?: (inquiryId: string, label: string, dateStr?: string) => void;
 	} = $props();
 
 	// ─── Helper functions ─────────────────────────────────────────────────────────
@@ -1127,6 +1130,11 @@
 						<a href="/admin/inquiries/{inq.inquiry_id}" class="btn btn-ghost btn-sm">
 							<ExternalLink size={13} /> Detail
 						</a>
+						{#if onAddAppointment}
+							<button class="btn btn-ghost btn-sm" onclick={() => onAddAppointment?.(inq.inquiry_id, inq.customer_name ?? 'Anfrage')}>
+								🔍 Besichtigung
+							</button>
+						{/if}
 						<button class="btn btn-danger btn-sm" onclick={deleteInquiry} disabled={deletingInquiry}>
 							{deletingInquiry ? '...' : 'Löschen'}
 						</button>

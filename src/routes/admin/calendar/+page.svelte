@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { apiGet, apiPatch, apiPost } from '$lib/utils/api.svelte';
+	import { apiGet, apiPatch, apiPost, apiDelete } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { buildCalendar, getISOWeek } from '$lib/utils/calendar';
 	import { draggable } from '$lib/utils/draggable';
@@ -9,7 +9,6 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
-	import { goto } from '$app/navigation';
 	import type {
 		InquiryItem,
 		CalendarItem,
@@ -27,9 +26,100 @@
 		nachtermin: 'Nachtermin'
 	};
 
+	const APPT_STATUS_LABELS: Record<string, string> = {
+		scheduled: 'Geplant', done: 'Erledigt', cancelled: 'Storniert'
+	};
+
 	/** Human label for an appointment kind (free-text; capitalised fallback). */
 	function apptKindLabel(kind: string): string {
 		return APPT_KIND_LABELS[kind] ?? (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : 'Termin');
+	}
+
+	function fmtDateDE(d: string | null): string {
+		if (!d) return '—';
+		const [y, m, dd] = d.slice(0, 10).split('-');
+		return `${dd}.${m}.${y}`;
+	}
+
+	// ── Appointment details modal ───────────────────────────────────────────────
+	interface AddressLite { street?: string | null; house_number?: string | null; city?: string | null; postal_code?: string | null }
+	interface InqDetailLite {
+		customer?: { name?: string | null; first_name?: string | null; last_name?: string | null; phone?: string | null; email?: string | null } | null;
+		origin_address?: AddressLite | null;
+		destination_address?: AddressLite | null;
+		scheduled_date?: string | null;
+		end_date?: string | null;
+		status?: string | null;
+		service_type?: string | null;
+		volume_m3?: number | null;
+	}
+	interface ApptInquiryInfo {
+		customer_name: string | null;
+		phone: string | null;
+		email: string | null;
+		origin: string | null;
+		destination: string | null;
+		scheduled_date: string | null;
+		end_date: string | null;
+		status: string | null;
+		service_type: string | null;
+		volume_m3: number | null;
+	}
+
+	let apptDetail = $state<ScheduleAppointment | null>(null);
+	let apptDetailInquiry = $state<ApptInquiryInfo | null>(null);
+	let apptDetailLoading = $state(false);
+	let apptDetailDeleting = $state(false);
+
+	function formatAddr(a: AddressLite | null | undefined): string | null {
+		if (!a) return null;
+		const line = [a.street, a.house_number].filter(Boolean).join(' ');
+		const city = [a.postal_code, a.city].filter(Boolean).join(' ');
+		return [line, city].filter(Boolean).join(', ') || null;
+	}
+
+	/** Opens the appointment details modal and pulls the linked inquiry's key info. */
+	async function openAppointmentDetails(a: ScheduleAppointment) {
+		apptDetail = a;
+		apptDetailInquiry = null;
+		apptDetailLoading = true;
+		try {
+			const inq = await apiGet<InqDetailLite>(`/api/v1/inquiries/${a.inquiry_id}`);
+			apptDetailInquiry = {
+				customer_name: inq.customer?.name ?? [inq.customer?.first_name, inq.customer?.last_name].filter(Boolean).join(' ') ?? null,
+				phone: inq.customer?.phone ?? null,
+				email: inq.customer?.email ?? null,
+				origin: formatAddr(inq.origin_address),
+				destination: formatAddr(inq.destination_address),
+				scheduled_date: inq.scheduled_date ?? null,
+				end_date: inq.end_date ?? null,
+				status: inq.status ?? null,
+				service_type: inq.service_type ?? null,
+				volume_m3: inq.volume_m3 ?? null,
+			};
+		} catch {
+			// Keep the appointment info visible; the inquiry block shows a fallback.
+		} finally {
+			apptDetailLoading = false;
+		}
+	}
+
+	function closeApptDetail() { apptDetail = null; apptDetailInquiry = null; }
+
+	async function deleteApptDetail() {
+		if (!apptDetail) return;
+		if (!confirm('Diesen Termin löschen?')) return;
+		apptDetailDeleting = true;
+		try {
+			await apiDelete(`/api/v1/inquiries/${apptDetail.inquiry_id}/appointments/${apptDetail.appointment_id}`);
+			showToast('Termin gelöscht', 'success');
+			closeApptDetail();
+			await loadSchedule();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			apptDetailDeleting = false;
+		}
 	}
 
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
@@ -1266,10 +1356,10 @@
 												title="{apptKindLabel(entry.item.kind)}: {entry.item.customer_name ?? ''}{entry.item.assignee_name ? ' · ' + entry.item.assignee_name : ''}"
 												draggable="true"
 												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
-												onclick={() => goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+												onclick={() => openAppointmentDetails(entry.item)}
 												role="button"
 												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+												onkeydown={(e) => e.key === 'Enter' && openAppointmentDetails(entry.item)}
 											>
 												{#if entry.item.start_time}<span class="entry-time">{formatTime(entry.item.start_time)}</span>{/if}{truncate(apptKindLabel(entry.item.kind), 12)}
 											</span>
@@ -1407,10 +1497,10 @@
 												class="week-card entry-appt"
 												draggable="true"
 												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
-												onclick={() => goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+												onclick={() => openAppointmentDetails(entry.item)}
 												role="button"
 												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+												onkeydown={(e) => e.key === 'Enter' && openAppointmentDetails(entry.item)}
 											>
 												<div class="wc-header">
 													<span class="wc-time">{entry.item.start_time ? formatTime(entry.item.start_time) : ''}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
@@ -1502,7 +1592,7 @@
 										{#if startH === hour}
 											<button
 												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : entry.type === 'appointment' ? 'entry-appt' : termineEntryClass(entry.item.category || 'intern')}"
-												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else if (entry.type === 'appointment') { goto(`/admin/inquiries/${entry.item.inquiry_id}`); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
+												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else if (entry.type === 'appointment') { openAppointmentDetails(entry.item); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
 												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>
@@ -1899,6 +1989,65 @@
 				<button class="btn btn-primary" onclick={submitQuickAppointment} disabled={quickCreateLoading}>
 					{quickCreateLoading ? 'Wird angelegt...' : 'Anlegen'}
 				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Appointment details -->
+{#if apptDetail}
+	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) closeApptDetail(); }} onkeydown={(e) => { if (e.key === 'Escape') closeApptDetail(); }} role="dialog" tabindex="-1">
+		<div class="modal" use:draggable>
+			<h3>{apptKindLabel(apptDetail.kind)}</h3>
+
+			<div class="ad-grid">
+				<div class="ad-cell"><span class="ad-l">Datum</span><span class="ad-v">{fmtDateDE(apptDetail.scheduled_date)}</span></div>
+				{#if apptDetail.start_time}
+					<div class="ad-cell"><span class="ad-l">Uhrzeit</span><span class="ad-v">{formatTime(apptDetail.start_time)}{apptDetail.end_time ? '–' + formatTime(apptDetail.end_time) : ''}</span></div>
+				{/if}
+				<div class="ad-cell"><span class="ad-l">Status</span><span class="ad-v">{APPT_STATUS_LABELS[apptDetail.status] ?? apptDetail.status}</span></div>
+				{#if apptDetail.assignee_name}
+					<div class="ad-cell"><span class="ad-l">Mitarbeiter</span><span class="ad-v">{apptDetail.assignee_name}</span></div>
+				{/if}
+				{#if apptDetail.location}
+					<div class="ad-cell ad-wide"><span class="ad-l">Ort</span><span class="ad-v">{apptDetail.location}</span></div>
+				{/if}
+			</div>
+			{#if apptDetail.notes}
+				<p class="ad-notes">{apptDetail.notes}</p>
+			{/if}
+
+			<div class="qc-section-label">Zugehörige Anfrage</div>
+			{#if apptDetailLoading}
+				<p class="ad-muted">Lädt…</p>
+			{:else if apptDetailInquiry}
+				<div class="ad-grid">
+					<div class="ad-cell"><span class="ad-l">Kunde</span><span class="ad-v">{apptDetailInquiry.customer_name ?? '—'}</span></div>
+					{#if apptDetailInquiry.phone}
+						<div class="ad-cell"><span class="ad-l">Telefon</span><span class="ad-v"><a href="tel:{apptDetailInquiry.phone}">{apptDetailInquiry.phone}</a></span></div>
+					{/if}
+					{#if apptDetailInquiry.email}
+						<div class="ad-cell ad-wide"><span class="ad-l">E-Mail</span><span class="ad-v">{apptDetailInquiry.email}</span></div>
+					{/if}
+					{#if apptDetailInquiry.origin || apptDetailInquiry.destination}
+						<div class="ad-cell ad-wide"><span class="ad-l">Route</span><span class="ad-v">{apptDetailInquiry.origin ?? '?'} → {apptDetailInquiry.destination ?? '?'}</span></div>
+					{/if}
+					<div class="ad-cell"><span class="ad-l">Umzugstermin</span><span class="ad-v">{fmtDateDE(apptDetailInquiry.scheduled_date)}{apptDetailInquiry.end_date && apptDetailInquiry.end_date !== apptDetailInquiry.scheduled_date ? '–' + fmtDateDE(apptDetailInquiry.end_date) : ''}</span></div>
+					{#if apptDetailInquiry.volume_m3}
+						<div class="ad-cell"><span class="ad-l">Volumen</span><span class="ad-v">{apptDetailInquiry.volume_m3.toFixed(1)} m³</span></div>
+					{/if}
+					{#if apptDetailInquiry.status}
+						<div class="ad-cell"><span class="ad-l">Status</span><span class="ad-v"><StatusBadge status={apptDetailInquiry.status} /></span></div>
+					{/if}
+				</div>
+			{:else}
+				<p class="ad-muted">Anfrageinfos konnten nicht geladen werden.</p>
+			{/if}
+
+			<div class="qc-actions">
+				<button class="btn btn-danger btn-sm" onclick={deleteApptDetail} disabled={apptDetailDeleting}>{apptDetailDeleting ? '…' : 'Löschen'}</button>
+				<a href="/admin/inquiries/{apptDetail.inquiry_id}" class="btn btn-ghost btn-sm">Zur Anfrage</a>
+				<button class="btn btn-primary btn-sm" onclick={closeApptDetail}>Schließen</button>
 			</div>
 		</div>
 	</div>
@@ -2365,6 +2514,13 @@
 	}
 	.qc-section-label:first-of-type { margin-top: 0; }
 	.qc-hint { font-size: 0.78rem; color: var(--dt-on-surface-variant, #64748b); margin: 0 0 0.75rem; }
+	.ad-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
+	.ad-cell { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+	.ad-wide { grid-column: 1 / -1; }
+	.ad-l { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dt-on-surface-variant, #64748b); }
+	.ad-v { font-size: 0.9rem; color: var(--dt-on-surface); overflow-wrap: anywhere; }
+	.ad-notes { font-size: 0.85rem; font-style: italic; color: var(--dt-on-surface-variant, #64748b); margin: 0.25rem 0 0.5rem; }
+	.ad-muted { font-size: 0.85rem; color: var(--dt-on-surface-variant, #94a3b8); margin: 0.25rem 0; }
 	.qi-svc-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
 	.qi-svc-btn {
 		padding: 0.3rem 0.6rem;

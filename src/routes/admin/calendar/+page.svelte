@@ -52,7 +52,8 @@
 	 * inquiry chip). The appointment is shown there, among the inquiry's dates —
 	 * not as a disconnected floating card.
 	 */
-	async function openAppointmentInquiry(a: ScheduleAppointment) {
+	async function openAppointmentInquiry(e: Event, a: ScheduleAppointment) {
+		e.stopPropagation(); // don't let the click bubble to the day cell (opens day view)
 		// Fast path: the inquiry's move is already loaded in the current view.
 		for (const day of schedule) {
 			const found = day.inquiries.find(i => i.inquiry_id === a.inquiry_id);
@@ -1320,10 +1321,10 @@
 												title="{apptKindLabel(entry.item.kind)}: {entry.item.customer_name ?? ''}{entry.item.assignee_name ? ' · ' + entry.item.assignee_name : ''}"
 												draggable="true"
 												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
-												onclick={() => openAppointmentInquiry(entry.item)}
+												onclick={(e) => openAppointmentInquiry(e, entry.item)}
 												role="button"
 												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openAppointmentInquiry(entry.item)}
+												onkeydown={(e) => e.key === 'Enter' && openAppointmentInquiry(e, entry.item)}
 											>
 												{#if entry.item.start_time}<span class="entry-time">{formatTime(entry.item.start_time)}</span>{/if}{truncate(apptKindLabel(entry.item.kind), 12)}
 											</span>
@@ -1461,10 +1462,10 @@
 												class="week-card entry-appt"
 												draggable="true"
 												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
-												onclick={() => openAppointmentInquiry(entry.item)}
+												onclick={(e) => openAppointmentInquiry(e, entry.item)}
 												role="button"
 												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openAppointmentInquiry(entry.item)}
+												onkeydown={(e) => e.key === 'Enter' && openAppointmentInquiry(e, entry.item)}
 											>
 												<div class="wc-header">
 													<span class="wc-time">{entry.item.start_time ? formatTime(entry.item.start_time) : ''}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
@@ -1556,7 +1557,7 @@
 										{#if startH === hour}
 											<button
 												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : entry.type === 'appointment' ? 'entry-appt' : termineEntryClass(entry.item.category || 'intern')}"
-												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else if (entry.type === 'appointment') { openAppointmentInquiry(entry.item); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
+												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else if (entry.type === 'appointment') { openAppointmentInquiry(e, entry.item); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
 												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>

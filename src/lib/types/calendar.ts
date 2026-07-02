@@ -59,6 +59,21 @@ export interface ScheduleCalendarItem {
 	description?: string | null;
 }
 
+/** Per-day lightweight appointment (Besichtigung etc.) from the schedule API. */
+export interface ScheduleAppointment {
+	appointment_id: string;
+	inquiry_id: string;
+	kind: string;
+	customer_name: string | null;
+	start_time: string | null;
+	end_time: string | null;
+	assignee_name: string | null;
+	location: string | null;
+	notes: string | null;
+	status: string;
+	scheduled_date: string;
+}
+
 export interface DaySchedule {
 	date: string;
 	available: boolean;
@@ -67,6 +82,7 @@ export interface DaySchedule {
 	remaining: number;
 	inquiries: InquiryItem[];
 	calendar_items: ScheduleCalendarItem[];
+	appointments: ScheduleAppointment[];
 }
 
 export interface DayEmployee {

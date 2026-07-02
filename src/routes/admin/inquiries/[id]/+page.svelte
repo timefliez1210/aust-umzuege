@@ -7,6 +7,7 @@
 		apiPost,
 		apiDelete,
 		apiDownload,
+		apiPreview,
 		formatDate,
 		formatDateTime,
 		formatEuro,
@@ -38,6 +39,7 @@
 		Download,
 		Send,
 		GripVertical,
+		Paperclip,
 	} from "lucide-svelte";
 
 	interface AddressSnapshot {
@@ -166,6 +168,22 @@
 		end_date?: string | null;
 		is_multi_day?: boolean;
 		has_pauschale?: boolean;
+		appointments?: Appointment[];
+	}
+
+	/** Lightweight appointment (Besichtigung etc.) linked to this inquiry. */
+	interface Appointment {
+		id: string;
+		kind: string;
+		scheduled_date: string;
+		start_time: string | null;
+		end_time: string | null;
+		assignee_id: string | null;
+		assignee_name: string | null;
+		location: string | null;
+		notes: string | null;
+		status: string;
+		created_at: string;
 	}
 
 	interface EmployeeAssignment {
@@ -262,12 +280,129 @@
 		positions: false,
 		offer: false,
 		employees: false,
+		appointments: false,
 		invoices: false,
 		route: false,
 		photos: false,
 		items: false,
 	});
 	const toggleCard = (k: keyof typeof cardOpen) => { cardOpen[k] = !cardOpen[k]; };
+
+	// ── Appointments (Besichtigung etc.) ─────────────────────────────────────
+	const APPT_KIND_LABELS: Record<string, string> = { besichtigung: 'Besichtigung', nachtermin: 'Nachtermin' };
+	const APPT_STATUS_LABELS: Record<string, string> = { scheduled: 'Geplant', done: 'Erledigt', cancelled: 'Storniert' };
+	function apptKindLabel(k: string): string {
+		return APPT_KIND_LABELS[k] ?? (k ? k.charAt(0).toUpperCase() + k.slice(1) : 'Termin');
+	}
+	function formatApptDate(d: string): string {
+		const [y, m, dd] = d.slice(0, 10).split('-');
+		return `${dd}.${m}.${y}`;
+	}
+
+	let apptEmployees = $state<EmployeeOption[]>([]);
+	let apptEmployeesLoaded = $state(false);
+	let editingApptId = $state<string | null>(null);
+	let apptSaving = $state(false);
+	let apptForm = $state({
+		kind: 'besichtigung',
+		scheduled_date: '',
+		start_time: '',
+		end_time: '',
+		assignee_id: '',
+		location: '',
+		notes: '',
+		status: 'scheduled',
+	});
+
+	async function loadApptEmployees() {
+		if (apptEmployeesLoaded) return;
+		try {
+			const res = await apiGet<{ employees: EmployeeOption[] }>('/api/v1/admin/employees?active=true&limit=100');
+			apptEmployees = res.employees;
+			apptEmployeesLoaded = true;
+		} catch {
+			showToast('Mitarbeiterliste konnte nicht geladen werden', 'error');
+		}
+	}
+
+	/** Prepares the appointments card on open: loads staff, seeds a sensible date. */
+	function onOpenAppointments() {
+		toggleCard('appointments');
+		if (cardOpen.appointments) {
+			loadApptEmployees();
+			if (!editingApptId && !apptForm.scheduled_date) {
+				apptForm.scheduled_date = data?.scheduled_date?.slice(0, 10) ?? '';
+			}
+		}
+	}
+
+	function resetApptForm() {
+		editingApptId = null;
+		apptForm = {
+			kind: 'besichtigung',
+			scheduled_date: data?.scheduled_date?.slice(0, 10) ?? '',
+			start_time: '', end_time: '', assignee_id: '', location: '', notes: '', status: 'scheduled',
+		};
+	}
+
+	function editAppt(a: Appointment) {
+		editingApptId = a.id;
+		apptForm = {
+			kind: a.kind,
+			scheduled_date: a.scheduled_date?.slice(0, 10) ?? '',
+			start_time: a.start_time ? a.start_time.slice(0, 5) : '',
+			end_time: a.end_time ? a.end_time.slice(0, 5) : '',
+			assignee_id: a.assignee_id ?? '',
+			location: a.location ?? '',
+			notes: a.notes ?? '',
+			status: a.status,
+		};
+	}
+
+	async function saveAppt() {
+		if (!data) return;
+		if (!apptForm.scheduled_date) { showToast('Bitte ein Datum wählen', 'error'); return; }
+		apptSaving = true;
+		// `null` clears a field; times are normalised to HH:MM:SS for the backend.
+		const body = {
+			kind: apptForm.kind || 'besichtigung',
+			scheduled_date: apptForm.scheduled_date,
+			start_time: apptForm.start_time ? normalizeTimeInput(apptForm.start_time) : null,
+			end_time: apptForm.end_time ? normalizeTimeInput(apptForm.end_time) : null,
+			assignee_id: apptForm.assignee_id || null,
+			location: apptForm.location.trim() || null,
+			notes: apptForm.notes.trim() || null,
+			status: apptForm.status,
+		};
+		try {
+			if (editingApptId) {
+				await apiPatch(`/api/v1/inquiries/${data.id}/appointments/${editingApptId}`, body);
+				showToast('Termin aktualisiert', 'success');
+			} else {
+				await apiPost(`/api/v1/inquiries/${data.id}/appointments`, body);
+				showToast('Termin angelegt', 'success');
+			}
+			resetApptForm();
+			await loadInquiry();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			apptSaving = false;
+		}
+	}
+
+	async function deleteAppt(a: Appointment) {
+		if (!data) return;
+		if (!confirm(`${apptKindLabel(a.kind)} am ${formatApptDate(a.scheduled_date)} löschen?`)) return;
+		try {
+			await apiDelete(`/api/v1/inquiries/${data.id}/appointments/${a.id}`);
+			if (editingApptId === a.id) resetApptForm();
+			showToast('Termin gelöscht', 'success');
+			await loadInquiry();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
 
 	// Bindable handles to EstimationItemsTable internals
 	let openPhotoDetailFn = $state<((idx: number) => void) | null>(null);
@@ -1203,6 +1338,7 @@
 		customer_name: string | null;
 		quote_id: string | null;
 		subject: string | null;
+		offer_pdf_filename: string | null;
 		created_at: string;
 	}
 
@@ -1215,6 +1351,7 @@
 		body_text: string | null;
 		llm_generated: boolean;
 		status: string;
+		attachment_keys: string[];
 		created_at: string;
 	}
 
@@ -1790,6 +1927,42 @@
 			emailThreads = [];
 		} finally {
 			emailsLoading = false;
+		}
+	}
+
+	/**
+	 * Opens an email attachment in a new tab for preview.
+	 *
+	 * Called by: Template (attachment link click in the email section message bubble).
+	 * Purpose: Fetches through the authenticated API proxy — a plain <a href> would
+	 *          401 since the endpoint requires a Bearer token.
+	 *
+	 * @param msgId - The ID of the message the attachment belongs to
+	 * @param idx   - Zero-based attachment index
+	 */
+	async function emailPreviewAttachment(msgId: string, idx: number) {
+		try {
+			await apiPreview(`/api/v1/admin/emails/messages/${msgId}/attachments/${idx}`);
+		} catch (e) {
+			showToast((e as Error).message, "error");
+		}
+	}
+
+	/**
+	 * Opens the offer PDF that will be attached when a draft in this thread is sent.
+	 *
+	 * Called by: Template (offer-pdf banner click, shown when the thread carries
+	 *            `offer_pdf_filename`).
+	 * Purpose: `send_draft_email` on the backend silently attaches the active offer's
+	 *          PDF at send time — this lets the admin confirm it exists before hitting
+	 *          "Senden", rather than only finding out after the customer replies.
+	 */
+	async function emailPreviewOfferPdf() {
+		if (!data) return;
+		try {
+			await apiPreview(`/api/v1/inquiries/${data.id}/pdf`);
+		} catch (e) {
+			showToast((e as Error).message, "error");
 		}
 	}
 
@@ -2637,6 +2810,103 @@
 	</div>
 {/if}
 
+<!-- Termine & Besichtigungen Card -->
+{#if data}
+	<div class="appointments-section">
+		<div class="card" class:card--collapsed={!cardOpen.appointments}>
+			<div class="card-header card-header--toggleable">
+				<button class="card-toggle" onclick={onOpenAppointments} aria-expanded={cardOpen.appointments}>
+					<span class="card-toggle-chev" class:open={cardOpen.appointments}><ChevronRight size={16} /></span>
+					<h3>Termine &amp; Besichtigungen{#if (data.appointments?.length ?? 0) > 0} ({data.appointments?.length}){/if}</h3>
+				</button>
+			</div>
+			{#if cardOpen.appointments}
+			<div class="appt-body">
+				<p class="appt-hint">Zusätzliche Termine zu diesem Auftrag an eigenen Daten (z.&nbsp;B. eine Besichtigung vor dem Umzug). Unabhängig vom Umzugstermin.</p>
+
+				{#if (data.appointments?.length ?? 0) > 0}
+					<div class="appt-list">
+						{#each data.appointments ?? [] as a (a.id)}
+							<div class="appt-row" class:appt-editing={editingApptId === a.id}>
+								<div class="appt-info">
+									<div class="appt-main">
+										<span class="appt-kind">{apptKindLabel(a.kind)}</span>
+										<span class="appt-date">{formatApptDate(a.scheduled_date)}</span>
+										{#if a.start_time}<span class="appt-time">{a.start_time.slice(0, 5)}{a.end_time ? '–' + a.end_time.slice(0, 5) : ''}</span>{/if}
+										<span class="appt-status appt-status-{a.status}">{APPT_STATUS_LABELS[a.status] ?? a.status}</span>
+									</div>
+									{#if a.assignee_name || a.location || a.notes}
+										<div class="appt-sub">
+											{#if a.assignee_name}<span>👤 {a.assignee_name}</span>{/if}
+											{#if a.location}<span>📍 {a.location}</span>{/if}
+											{#if a.notes}<span class="appt-notes">{a.notes}</span>{/if}
+										</div>
+									{/if}
+								</div>
+								<div class="appt-actions">
+									<button class="btn btn-sm" onclick={() => editAppt(a)}>Bearbeiten</button>
+									<button class="btn btn-sm btn-danger" onclick={() => deleteAppt(a)}>Löschen</button>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<p class="appt-empty">Noch keine Termine.</p>
+				{/if}
+
+				<div class="appt-form">
+					<h4>{editingApptId ? 'Termin bearbeiten' : 'Neuer Termin'}</h4>
+					<div class="appt-grid">
+						<label>Art
+							<input type="text" bind:value={apptForm.kind} placeholder="besichtigung" list="appt-kinds" />
+							<datalist id="appt-kinds"><option value="besichtigung"></option><option value="nachtermin"></option></datalist>
+						</label>
+						<label>Datum
+							<input type="date" bind:value={apptForm.scheduled_date} />
+						</label>
+						<label>Von
+							<input type="time" bind:value={apptForm.start_time} />
+						</label>
+						<label>Bis
+							<input type="time" bind:value={apptForm.end_time} />
+						</label>
+						<label>Mitarbeiter
+							<select bind:value={apptForm.assignee_id}>
+								<option value="">— keiner —</option>
+								{#each apptEmployees as e}
+									<option value={e.id}>{e.first_name} {e.last_name}</option>
+								{/each}
+							</select>
+						</label>
+						<label>Status
+							<select bind:value={apptForm.status}>
+								<option value="scheduled">Geplant</option>
+								<option value="done">Erledigt</option>
+								<option value="cancelled">Storniert</option>
+							</select>
+						</label>
+						<label class="appt-wide">Ort
+							<input type="text" bind:value={apptForm.location} placeholder="Adresse (optional, sonst Auszugsadresse)" />
+						</label>
+						<label class="appt-wide">Notiz
+							<textarea rows={2} bind:value={apptForm.notes}></textarea>
+						</label>
+					</div>
+					<div class="appt-form-actions">
+						<button class="btn btn-primary btn-sm" onclick={saveAppt} disabled={apptSaving}>
+							{editingApptId ? 'Speichern' : 'Anlegen'}
+						</button>
+						{#if editingApptId}
+							<button class="btn btn-sm" onclick={resetApptForm} disabled={apptSaving}>Abbrechen</button>
+						{/if}
+					</div>
+				</div>
+			</div>
+			{/if}
+		</div>
+	</div>
+{/if}
+
 <!-- Rechnungen Card (visible for accepted+ statuses) -->
 {#if showInvoiceCard && data}
 	<div class="invoices-section">
@@ -2869,6 +3139,16 @@
 							{thread.subject}
 						</div>
 					{/if}
+					{#if thread.offer_pdf_filename}
+						<button
+							type="button"
+							class="offer-pdf-banner"
+							onclick={() => emailPreviewOfferPdf()}
+						>
+							<Paperclip size={13} />
+							Angebot wird als Anhang mitgesendet: {thread.offer_pdf_filename}
+						</button>
+					{/if}
 					<div class="email-conversation">
 						{#each messages as msg}
 							<div
@@ -2954,6 +3234,22 @@
 									<div class="email-msg__body">
 										{msg.body_text || ""}
 									</div>
+
+									{#if msg.attachment_keys.length > 0}
+										<div class="email-attachment-list">
+											{#each msg.attachment_keys as key, i}
+												{@const fname = key.split("/").pop() ?? `Anhang ${i + 1}`}
+												<button
+													type="button"
+													class="email-attachment-link"
+													onclick={() => emailPreviewAttachment(msg.id, i)}
+												>
+													<Paperclip size={11} />
+													{fname}
+												</button>
+											{/each}
+										</div>
+									{/if}
 
 									{#if msg.status === "draft"}
 										<div class="email-draft-actions">
@@ -4390,6 +4686,58 @@
 		word-break: break-word;
 	}
 
+	.offer-pdf-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+		margin-bottom: 0.75rem;
+		padding: 0.5rem 0.875rem;
+		background: var(--dt-surface-container-lowest);
+		color: var(--dt-primary);
+		font-size: 0.75rem;
+		font-weight: 600;
+		border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-md);
+		cursor: pointer;
+		text-align: left;
+		transition: background var(--dt-transition);
+	}
+
+	.offer-pdf-banner:hover {
+		background: var(--dt-surface-container-low);
+	}
+
+	.email-attachment-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 0.5rem;
+	}
+
+	.email-attachment-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3125rem;
+		padding: 0.1875rem 0.5625rem;
+		background: var(--dt-surface-container-high);
+		color: var(--dt-primary);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		border: var(--dt-ghost-border);
+		border-radius: 9999px;
+		cursor: pointer;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		transition: background var(--dt-transition);
+	}
+
+	.email-attachment-link:hover {
+		background: var(--dt-surface-container);
+	}
+
 	.email-draft-actions {
 		display: flex;
 		gap: 0.5rem;
@@ -4518,5 +4866,39 @@
 		min-width: 7rem;
 		justify-content: center;
 	}
+
+	/* ── Appointments (Besichtigung) card ─────────────────────────────────── */
+	.appt-body { padding: 0.75rem 1rem 1rem; }
+	.appt-hint { font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin: 0 0 0.75rem; }
+	.appt-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+	.appt-row {
+		display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
+		padding: 0.5rem 0.65rem; border: 1px solid var(--dt-border, #e2e8f0);
+		border-radius: 8px; border-left: 3px solid #0891b2;
+	}
+	.appt-row.appt-editing { background: #ecfeff; }
+	.appt-info { min-width: 0; }
+	.appt-main { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+	.appt-kind { font-weight: 600; }
+	.appt-date { color: var(--dt-primary, #022448); font-variant-numeric: tabular-nums; }
+	.appt-time { color: var(--dt-text-muted, #64748b); font-size: 0.85rem; }
+	.appt-status { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: #e2e8f0; color: #334155; }
+	.appt-status-scheduled { background: #cffafe; color: #155e75; }
+	.appt-status-done { background: #dcfce7; color: #14532d; }
+	.appt-status-cancelled { background: #fee2e2; color: #991b1b; }
+	.appt-sub { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin-top: 0.25rem; }
+	.appt-notes { font-style: italic; }
+	.appt-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+	.appt-empty { font-size: 0.85rem; color: var(--dt-text-muted, #64748b); margin: 0 0 1rem; }
+	.appt-form { border-top: 1px solid var(--dt-border, #e2e8f0); padding-top: 0.75rem; }
+	.appt-form h4 { margin: 0 0 0.6rem; font-size: 0.9rem; }
+	.appt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
+	.appt-grid label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--dt-text-muted, #64748b); }
+	.appt-grid input, .appt-grid select, .appt-grid textarea {
+		padding: 0.4rem 0.5rem; border: 1px solid var(--dt-border, #cbd5e1);
+		border-radius: 6px; font-size: 0.85rem; font-family: inherit;
+	}
+	.appt-grid .appt-wide { grid-column: 1 / -1; }
+	.appt-form-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
 
 </style>

@@ -9,16 +9,28 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
+	import { goto } from '$app/navigation';
 	import type {
 		InquiryItem,
 		CalendarItem,
 		ScheduleCalendarItem,
+		ScheduleAppointment,
 		DaySchedule,
 		PanelDay,
 		PanelInquiry,
 		PanelTermin,
 		PanelSelection
 	} from '$lib/types/calendar';
+
+	const APPT_KIND_LABELS: Record<string, string> = {
+		besichtigung: 'Besichtigung',
+		nachtermin: 'Nachtermin'
+	};
+
+	/** Human label for an appointment kind (free-text; capitalised fallback). */
+	function apptKindLabel(kind: string): string {
+		return APPT_KIND_LABELS[kind] ?? (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : 'Termin');
+	}
 
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
 
@@ -141,9 +153,11 @@
 
 	// Drag-and-drop state
 	let draggingId = $state<string | null>(null);
-	let draggingType = $state<'inquiry' | 'termin' | null>(null);
+	let draggingType = $state<'inquiry' | 'termin' | 'appointment' | null>(null);
 	let draggingFromDate = $state<string | null>(null);
 	let draggingDayNumber = $state<number>(1);
+	/** For appointment drags: the parent inquiry_id (appointment PATCH is nested under it). */
+	let draggingApptInquiryId = $state<string | null>(null);
 	let dragOverDate = $state<string | null>(null);
 	let navDragOver = $state<'prev' | 'next' | null>(null);
 	let navDragTimer: ReturnType<typeof setTimeout> | null = null;
@@ -352,11 +366,12 @@
 	 * @param dateStr - ISO date string YYYY-MM-DD
 	 * @returns Sorted array of discriminated-union entries
 	 */
-	function buildDayEntries(dateStr: string): Array<{ type: 'inquiry'; item: InquiryItem } | { type: 'termin'; item: CalendarItem } | { type: 'schedule-termin'; item: ScheduleCalendarItem }> {
+	function buildDayEntries(dateStr: string): Array<{ type: 'inquiry'; item: InquiryItem } | { type: 'termin'; item: CalendarItem } | { type: 'schedule-termin'; item: ScheduleCalendarItem } | { type: 'appointment'; item: ScheduleAppointment }> {
 		const sched = schedule.find(s => s.date === dateStr || s.date.startsWith(dateStr));
 		const inqEntries = (sched?.inquiries ?? []).map(i => ({ type: 'inquiry' as const, item: i }));
 		const schedTermEntries = (sched?.calendar_items ?? []).map(ci => ({ type: 'schedule-termin' as const, item: ci }));
-		return [...inqEntries, ...schedTermEntries].sort((a, b) =>
+		const apptEntries = (sched?.appointments ?? []).map(a => ({ type: 'appointment' as const, item: a }));
+		return [...inqEntries, ...schedTermEntries, ...apptEntries].sort((a, b) =>
 			(a.item.start_time || '').localeCompare(b.item.start_time || '')
 		);
 	}
@@ -469,7 +484,7 @@
 			}
 			const schedRes = await apiGet<DaySchedule[] | { dates: DaySchedule[] }>(`/api/v1/calendar/schedule?from=${from}&to=${to}`);
 			if (myToken !== loadToken) return;
-			schedule = (Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? [])).map(d => ({ ...d, calendar_items: d.calendar_items ?? [] }));
+			schedule = (Array.isArray(schedRes) ? schedRes : ((schedRes as { dates?: DaySchedule[] }).dates ?? [])).map(d => ({ ...d, calendar_items: d.calendar_items ?? [], appointments: d.appointments ?? [] }));
 		} catch {
 			if (myToken !== loadToken) return;
 			schedule = [];
@@ -539,7 +554,7 @@
 			? `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
 			: null);
 		if (!dateStr) return;
-		const schedule = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1, calendar_items: [] };
+		const schedule = day || { date: dateStr, inquiries: [], available: true, capacity: 1, booked: 0, remaining: 1, calendar_items: [], appointments: [] };
 		panelSelection = { kind: 'day', date: dateStr, schedule };
 	}
 
@@ -595,11 +610,12 @@
 	 * @param type - 'inquiry' or 'termin'
 	 * @param fromDate - ISO date string of the source cell
 	 */
-	function onEntryDragStart(e: DragEvent, id: string, type: 'inquiry' | 'termin', fromDate: string, dayNumber: number = 1) {
+	function onEntryDragStart(e: DragEvent, id: string, type: 'inquiry' | 'termin' | 'appointment', fromDate: string, dayNumber: number = 1, apptInquiryId: string | null = null) {
 		draggingId = id;
 		draggingType = type;
 		draggingFromDate = fromDate;
 		draggingDayNumber = dayNumber;
+		draggingApptInquiryId = apptInquiryId;
 		e.dataTransfer!.effectAllowed = 'move';
 	}
 
@@ -678,10 +694,12 @@
 		const type = draggingType;
 		const fromDate = draggingFromDate;
 		const dayNumber = draggingDayNumber;
+		const apptInquiryId = draggingApptInquiryId;
 		draggingId = null;
 		draggingType = null;
 		draggingFromDate = null;
 		draggingDayNumber = 1;
+		draggingApptInquiryId = null;
 		if (!id || fromDate === dateStr) return;
 
 		// Multi-day items: grabbing day N and dropping on D means the whole span shifts so
@@ -699,7 +717,7 @@
 		const ensureDay = (d: string): DaySchedule => {
 			let day = schedule.find(s => s.date === d);
 			if (!day) {
-				day = { date: d, available: true, capacity: 1, booked: 0, remaining: 1, inquiries: [], calendar_items: [] };
+				day = { date: d, available: true, capacity: 1, booked: 0, remaining: 1, inquiries: [], calendar_items: [], appointments: [] };
 				schedule = [...schedule, day];
 			}
 			return day;
@@ -710,6 +728,7 @@
 			...d,
 			inquiries: [...d.inquiries],
 			calendar_items: [...d.calendar_items],
+			appointments: [...(d.appointments ?? [])],
 		}));
 		const byStartTime = <T extends { start_time?: string | null }>(a: T, b: T) =>
 			(a.start_time || '').localeCompare(b.start_time || '');
@@ -733,6 +752,18 @@
 				toDay.calendar_items = [...toDay.calendar_items, moved].sort(byStartTime);
 				schedule = [...schedule];
 			}
+		} else if (type === 'appointment') {
+			// Appointments are single-date and live independently of the move — moving
+			// one never touches the inquiry's move day(s) or any other appointment.
+			const fromDay = fromDate ? schedule.find(s => s.date === fromDate) : undefined;
+			const idx = fromDay?.appointments.findIndex(a => a.appointment_id === id) ?? -1;
+			if (fromDay && idx >= 0) {
+				const moved = { ...fromDay.appointments[idx], scheduled_date: dateStr };
+				fromDay.appointments = fromDay.appointments.filter((_, i) => i !== idx);
+				const toDay = ensureDay(dateStr);
+				toDay.appointments = [...toDay.appointments, moved].sort(byStartTime);
+				schedule = [...schedule];
+			}
 		}
 
 		// If the drop target falls outside the currently-viewed month, jump to that month
@@ -744,19 +775,19 @@
 			currentDate = new Date(dy, dm - 1, 1);
 		}
 
+		// Appointments PATCH their own nested endpoint; moves/termine patch the entity.
+		const patchUrl = type === 'termin'
+			? `/api/v1/admin/calendar-items/${id}`
+			: type === 'appointment'
+				? `/api/v1/inquiries/${apptInquiryId}/appointments/${id}`
+				: `/api/v1/inquiries/${id}`;
 		try {
-			if (type === 'termin') {
-				await apiPatch(`/api/v1/admin/calendar-items/${id}`, { scheduled_date: newScheduledDate });
-			} else {
-				await apiPatch(`/api/v1/inquiries/${id}`, { scheduled_date: newScheduledDate });
-			}
+			await apiPatch(patchUrl, { scheduled_date: newScheduledDate });
 			// Offer a 5s undo window — PATCHes the entity back to its original
 			// scheduled_date. The end_date-shift logic on the backend preserves
 			// the span on the way back as well.
 			if (fromDate && fromDate !== newScheduledDate) {
-				const undoUrl = type === 'termin'
-					? `/api/v1/admin/calendar-items/${id}`
-					: `/api/v1/inquiries/${id}`;
+				const undoUrl = patchUrl;
 				const originalDate = fromDate;
 				showToast('Verschoben', 'success', {
 					durationMs: 5000,
@@ -1149,6 +1180,20 @@
 											>
 												<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.title, 14)}
 											</span>
+										{:else if entry.type === 'appointment'}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<span
+												class="cal-entry entry-appt"
+												title="{apptKindLabel(entry.item.kind)}: {entry.item.customer_name ?? ''}{entry.item.assignee_name ? ' · ' + entry.item.assignee_name : ''}"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
+												onclick={() => goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+											>
+												{#if entry.item.start_time}<span class="entry-time">{formatTime(entry.item.start_time)}</span>{/if}{truncate(apptKindLabel(entry.item.kind), 12)}
+											</span>
 										{:else}
 											<!-- schedule-termin from schedule API -->
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1277,6 +1322,32 @@
 													<div class="wc-notes">{truncate(entry.item.description, 70)}</div>
 												{/if}
 											</div>
+										{:else if entry.type === 'appointment'}
+											<!-- svelte-ignore a11y_no_static_element_interactions -->
+											<div
+												class="week-card entry-appt"
+												draggable="true"
+												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
+												onclick={() => goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && goto(`/admin/inquiries/${entry.item.inquiry_id}`)}
+											>
+												<div class="wc-header">
+													<span class="wc-time">{entry.item.start_time ? formatTime(entry.item.start_time) : ''}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+													<span class="cat-badge">{apptKindLabel(entry.item.kind)}</span>
+												</div>
+												<div class="wc-name">{entry.item.customer_name ?? '—'}</div>
+												{#if entry.item.assignee_name}
+													<div class="wc-employees">👤 {entry.item.assignee_name}</div>
+												{/if}
+												{#if entry.item.location}
+													<div class="wc-route">📍 {entry.item.location}</div>
+												{/if}
+												{#if entry.item.notes}
+													<div class="wc-notes">{truncate(entry.item.notes, 70)}</div>
+												{/if}
+											</div>
 										{:else}
 											<!-- schedule-termin from schedule API -->
 											<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1351,12 +1422,12 @@
 										{@const endH = parseInt((entry.item.end_time || (String(startH + 1).padStart(2, '0') + ':00')).slice(0, 2))}
 										{#if startH === hour}
 											<button
-												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : termineEntryClass(entry.item.category || 'intern')}"
-												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
+												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : entry.type === 'appointment' ? 'entry-appt' : termineEntryClass(entry.item.category || 'intern')}"
+												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else if (entry.type === 'appointment') { goto(`/admin/inquiries/${entry.item.inquiry_id}`); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
 												style="height:{Math.max(1, endH - startH) * 48}px"
 											>
 												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>
-												<span class="tl-block-name">{entry.type === 'inquiry' ? (entry.item.customer_name ?? '—') : entry.item.title}</span>
+												<span class="tl-block-name">{entry.type === 'inquiry' ? (entry.item.customer_name ?? '—') : entry.type === 'appointment' ? apptKindLabel(entry.item.kind) : entry.item.title}</span>
 												{#if entry.type === 'inquiry' && entry.item.employee_names}
 													<span class="tl-block-emp">👥 {entry.item.employee_names}</span>
 												{/if}
@@ -1829,6 +1900,8 @@
 	.entry-orange { background: #ffedd5; color: #9a3412; }
 	.entry-blue   { background: #dbeafe; color: #1e40af; }
 	.entry-pink   { background: #fce7f3; color: #9d174d; }
+	/* Besichtigung / Zusatztermin — visually distinct from move days (dashed cyan). */
+	.entry-appt   { background: #cffafe; color: #155e75; border-left: 3px solid #0891b2; }
 
 	.entry-id { font-weight: 400; opacity: 0.7; font-size: 0.55rem; }
 	.cal-more { font-size: 0.6rem; color: var(--dt-on-surface-variant); font-weight: 500; padding: 1px 3px; }
@@ -1870,7 +1943,7 @@
 	/* ─── Week view grid ───────────────────────────────────────────────────────── */
 	.week-grid {
 		display: grid;
-		grid-template-columns: repeat(7, 1fr);
+		grid-template-columns: repeat(7, minmax(0, 1fr));
 		gap: 1px;
 		background: var(--dt-surface-container);
 		border-radius: var(--dt-radius-lg);

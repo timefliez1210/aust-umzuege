@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { apiGet, apiPost, apiPatch, formatDateTime } from '$lib/utils/api.svelte';
-	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save } from 'lucide-svelte';
+	import { apiGet, apiPost, apiPatch, apiPreview, formatDateTime } from '$lib/utils/api.svelte';
+	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save, Paperclip } from 'lucide-svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 
@@ -14,6 +14,7 @@
 		body_text: string | null;
 		llm_generated: boolean;
 		status: string;
+		attachment_keys: string[];
 		created_at: string;
 	}
 
@@ -22,8 +23,9 @@
 		customer_id: string;
 		customer_email: string;
 		customer_name: string | null;
-		quote_id: string | null;
+		inquiry_id: string | null;
 		subject: string | null;
+		offer_pdf_filename: string | null;
 		created_at: string;
 	}
 
@@ -266,6 +268,44 @@
 	 *
 	 * @returns void
 	 */
+	/**
+	 * Opens an email attachment in a new tab for preview.
+	 *
+	 * Called by: Template (attachment link click on a message bubble).
+	 * Purpose: Fetches the attachment through the authenticated API proxy
+	 *          (GET /api/v1/admin/emails/messages/{msgId}/attachments/{idx})
+	 *          and opens it as a blob URL, rather than a plain <a href> which
+	 *          would 401 since the endpoint requires a Bearer token.
+	 *
+	 * @param msgId - The ID of the message the attachment belongs to
+	 * @param idx   - Zero-based attachment index
+	 */
+	async function previewAttachment(msgId: string, idx: number) {
+		try {
+			await apiPreview(`/api/v1/admin/emails/messages/${msgId}/attachments/${idx}`);
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	/**
+	 * Opens the offer PDF that will be attached when a draft in this thread is sent.
+	 *
+	 * Called by: Template (offer-pdf banner click, shown when the thread's inquiry
+	 *            has an active offer with a generated PDF).
+	 * Purpose: `send_draft_email` on the backend silently attaches this PDF at send
+	 *          time (see admin_emails.rs) — this lets the admin confirm it exists
+	 *          and see its contents before hitting "Senden".
+	 */
+	async function previewOfferPdf() {
+		if (!data?.thread.inquiry_id) return;
+		try {
+			await apiPreview(`/api/v1/inquiries/${data.thread.inquiry_id}/pdf`);
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
 	async function saveReply() {
 		if (!replyBody.trim()) return;
 		replying = true;
@@ -304,12 +344,23 @@
 					<span class="thread-subject">{data.thread.subject}</span>
 				{/if}
 			</div>
-			{#if data.thread.quote_id}
-				<a href="/admin/inquiries/{data.thread.quote_id}" class="link-quote">
+			{#if data.thread.inquiry_id}
+				<a href="/admin/inquiries/{data.thread.inquiry_id}" class="link-quote">
 					<ExternalLink size={14} /> Zur Anfrage
 				</a>
 			{/if}
 		</div>
+
+		{#if data.thread.offer_pdf_filename}
+			<button
+				type="button"
+				class="offer-pdf-banner"
+				onclick={() => previewOfferPdf()}
+			>
+				<Paperclip size={14} />
+				Angebot wird als Anhang mitgesendet: {data.thread.offer_pdf_filename}
+			</button>
+		{/if}
 
 		<div class="conversation">
 			{#each data.messages as msg}
@@ -385,6 +436,22 @@
 							<div class="message-subject">{msg.subject}</div>
 						{/if}
 						<div class="message-body">{msg.body_text || ''}</div>
+
+						{#if msg.attachment_keys.length > 0}
+							<div class="attachment-list">
+								{#each msg.attachment_keys as key, i}
+									{@const fname = key.split('/').pop() ?? `Anhang ${i + 1}`}
+									<button
+										type="button"
+										class="attachment-link"
+										onclick={() => previewAttachment(msg.id, i)}
+									>
+										<Paperclip size={12} />
+										{fname}
+									</button>
+								{/each}
+							</div>
+						{/if}
 
 						{#if msg.status === 'draft'}
 							<div class="draft-actions">
@@ -563,6 +630,28 @@
 	}
 	.empty { text-align: center; color: var(--dt-on-surface-variant); padding: 3rem; font-size: 0.875rem; }
 
+	.offer-pdf-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+		margin-bottom: 1rem;
+		padding: 0.625rem 1rem;
+		background: var(--dt-surface-container-lowest);
+		color: var(--dt-primary);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-md);
+		cursor: pointer;
+		text-align: left;
+		transition: background var(--dt-transition);
+	}
+
+	.offer-pdf-banner:hover {
+		background: var(--dt-surface-container-low);
+	}
+
 	.conversation {
 		display: flex;
 		flex-direction: column;
@@ -655,6 +744,36 @@
 		line-height: 1.6;
 		white-space: pre-wrap;
 		word-break: break-word;
+	}
+
+	.attachment-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 0.625rem;
+	}
+
+	.attachment-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3125rem;
+		padding: 0.25rem 0.625rem;
+		background: var(--dt-surface-container-high);
+		color: var(--dt-primary);
+		font-size: 0.75rem;
+		font-weight: 500;
+		border: var(--dt-ghost-border);
+		border-radius: 9999px;
+		cursor: pointer;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		transition: background var(--dt-transition);
+	}
+
+	.attachment-link:hover {
+		background: var(--dt-surface-container);
 	}
 
 	.edit-fields {

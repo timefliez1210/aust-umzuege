@@ -217,6 +217,51 @@ export async function apiDownload(path: string, filename: string): Promise<void>
 	URL.revokeObjectURL(url);
 }
 
+/**
+ * Opens a protected binary resource (e.g. an email attachment) in a new browser
+ * tab for inline preview, instead of forcing a save-as download.
+ *
+ * Called by: emails/[id]/+page.svelte (attachment preview links)
+ * Purpose: Same authenticated-fetch-then-blob-URL flow as apiDownload, but
+ *          without `a.download`, so the browser renders images/PDFs directly
+ *          rather than saving them.
+ *
+ * @param path - API path relative to API_BASE for the file resource
+ * @returns Resolves once the new tab has been opened
+ *
+ * Auth flow: attaches Bearer token; on 401 calls auth.refreshToken() once and
+ * retries; if refresh fails, calls auth.logout() and throws ApiError(401).
+ */
+export async function apiPreview(path: string): Promise<void> {
+	const headers: Record<string, string> = {};
+	if (auth.token) {
+		headers['Authorization'] = `Bearer ${auth.token}`;
+	}
+
+	let res = await fetchWithTimeout(`${API_BASE}${path}`, { headers });
+
+	if (res.status === 401 && auth.token) {
+		const refreshed = await auth.refreshToken();
+		if (refreshed) {
+			headers['Authorization'] = `Bearer ${auth.token}`;
+			res = await fetchWithTimeout(`${API_BASE}${path}`, { headers });
+		} else {
+			auth.logout();
+			throw new ApiError(401, 'Sitzung abgelaufen. Bitte erneut anmelden.');
+		}
+	}
+
+	if (!res.ok) {
+		throw new ApiError(res.status, `Vorschau fehlgeschlagen (${res.status})`);
+	}
+
+	const blob = await res.blob();
+	const url = URL.createObjectURL(blob);
+	window.open(url, '_blank');
+	// Give the new tab time to load the blob before revoking it.
+	setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+
 export { formatEuro, formatDate, formatDateTime, formatTime } from '$lib/utils/format';
 
 /**

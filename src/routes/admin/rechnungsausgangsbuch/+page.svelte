@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiGet } from '$lib/utils/api.svelte';
+	import { apiGet, apiPatch } from '$lib/utils/api.svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+
+	const PAYMENT_METHODS = ['Überweisung', 'Bar', 'EC-Karte', 'PayPal'];
 
 	interface RechnungsausgangItem {
 		id: string;
@@ -106,6 +108,18 @@
 		const d = new Date(iso);
 		return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 	}
+
+	async function updatePaymentMethod(item: RechnungsausgangItem, value: string) {
+		const payment_method = value || null;
+		const prev = item.payment_method;
+		item.payment_method = payment_method;
+		try {
+			await apiPatch(`/api/v1/admin/rechnungsausgangsbuch/${item.id}/payment-method`, { payment_method });
+		} catch (e: any) {
+			item.payment_method = prev;
+			error = e?.message || 'Zahlungsart konnte nicht gespeichert werden';
+		}
+	}
 </script>
 
 <div class="page">
@@ -180,7 +194,18 @@
 								<td>{fmtDate(item.due_date)}</td>
 								<td>{fmtDate(item.paid_at)}</td>
 								<td class="num offen">{fmtEur(item.offene_zahlungen_cents)}</td>
-								<td>{item.payment_method || '\u2014'}</td>
+								<td>
+									<select
+										class="payment-method-select"
+										value={item.payment_method ?? ''}
+										onchange={(e) => updatePaymentMethod(item, e.currentTarget.value)}
+									>
+										<option value="">\u2014</option>
+										{#each PAYMENT_METHODS as pm}
+											<option value={pm}>{pm}</option>
+										{/each}
+									</select>
+								</td>
 								<td class="notes-cell">{item.notes || ''}</td>
 							</tr>
 						{/each}
@@ -286,6 +311,11 @@
 	tbody tr.paid td.offen { color: var(--admin-success); }
 
 	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
+	.payment-method-select {
+		background: transparent; color: var(--dt-on-surface);
+		border: var(--dt-ghost-border); border-radius: var(--dt-radius-sm);
+		padding: 2px 4px; font-size: 0.8125rem; cursor: pointer;
+	}
 	.notes-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
 
 	tfoot { background: var(--dt-surface-container-high); }

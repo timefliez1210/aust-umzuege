@@ -9,6 +9,8 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
+	import KnownAddressPicker from '$lib/components/admin/KnownAddressPicker.svelte';
+	import { fetchKnownAddresses, knownAddressStreetLine, type KnownAddress } from '$lib/utils/addressBook';
 	import type {
 		InquiryItem,
 		CalendarItem,
@@ -277,6 +279,30 @@
 	let qiDestCity = $state('');
 	let qiDestPostal = $state('');
 	let qiNotes = $state('');
+
+	// Known addresses of the linked customer, for the quick-inquiry address picker.
+	let qiKnownAddresses = $state<KnownAddress[]>([]);
+	$effect(() => {
+		if (qiCustomerId) {
+			fetchKnownAddresses(qiCustomerId).then((list) => { qiKnownAddresses = list; });
+		} else {
+			qiKnownAddresses = [];
+		}
+	});
+
+	/** Pre-fill the quick-inquiry origin fields from a picked known address. */
+	function applyQiOrigin(a: KnownAddress) {
+		qiOriginStreet = knownAddressStreetLine(a);
+		qiOriginCity = a.city;
+		qiOriginPostal = a.postal_code ?? '';
+	}
+
+	/** Pre-fill the quick-inquiry destination fields from a picked known address. */
+	function applyQiDestination(a: KnownAddress) {
+		qiDestStreet = knownAddressStreetLine(a);
+		qiDestCity = a.city;
+		qiDestPostal = a.postal_code ?? '';
+	}
 
 	// Quick-termin form fields
 	let qtTitle = $state('');
@@ -1715,6 +1741,7 @@
 
 			{#if qiAddrCfg.showOrigin}
 				<div class="qc-section-label">{qiAddrCfg.originLabel} *</div>
+				<KnownAddressPicker addresses={qiKnownAddresses} onselect={applyQiOrigin} />
 				<div class="qc-row">
 					<div class="qc-field qc-field-grow">
 						<label for="qi-os">Straße</label>
@@ -1733,6 +1760,7 @@
 
 			{#if qiAddrCfg.showDestination}
 				<div class="qc-section-label">{qiAddrCfg.destinationLabel} *</div>
+				<KnownAddressPicker addresses={qiKnownAddresses} onselect={applyQiDestination} />
 				<div class="qc-row">
 					<div class="qc-field qc-field-grow">
 						<label for="qi-ds">Straße</label>

@@ -9,6 +9,7 @@
 	import { CUSTOMER_TYPE_LABELS } from '$lib/utils/constants';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import LoadingButton from '$lib/components/admin/LoadingButton.svelte';
+	import { formatKnownAddress, type KnownAddress } from '$lib/utils/addressBook';
 
 	interface CustomerDetail {
 		id: string;
@@ -32,6 +33,7 @@
 		quotes: { id: string; status: string; estimated_volume_m3: number | null; scheduled_date: string | null; created_at: string }[];
 		offers: { id: string; quote_id: string; price_cents: number; status: string; created_at: string; sent_at: string | null }[];
 		termine: { id: string; title: string; category: string; scheduled_date: string | null; status: string }[];
+		addresses: KnownAddress[];
 	}
 
 	let data = $state<CustomerDetail | null>(null);
@@ -49,6 +51,16 @@
 	let billingPostal = $state('');
 	let billingCity = $state('');
 	let billingSaving = $state(false);
+	// Address-book (known addresses) editor state
+	let showAddAddress = $state(false);
+	let addrStreet = $state('');
+	let addrNumber = $state('');
+	let addrPostal = $state('');
+	let addrCity = $state('');
+	let addrLabel = $state('');
+	let addrSaving = $state(false);
+	let deletingAddressId = $state<string | null>(null);
+
 	let editSalutation = $state('');
 	let editFirstName = $state('');
 	let editLastName = $state('');
@@ -210,6 +222,46 @@
 			billingSaving = false;
 		}
 	}
+
+	/** Add a known address to the customer's address book. */
+	async function addAddress() {
+		if (!addrStreet.trim() || !addrCity.trim()) {
+			message = { type: 'error', text: 'Straße und Ort sind erforderlich' };
+			return;
+		}
+		addrSaving = true;
+		try {
+			await apiPost(`/api/v1/admin/customers/${$page.params.id}/addresses`, {
+				street: addrStreet.trim(),
+				house_number: addrNumber.trim() || null,
+				postal_code: addrPostal.trim() || null,
+				city: addrCity.trim(),
+				label: addrLabel.trim() || null,
+			});
+			addrStreet = addrNumber = addrPostal = addrCity = addrLabel = '';
+			showAddAddress = false;
+			message = { type: 'success', text: 'Adresse hinzugefügt' };
+			await loadCustomer();
+		} catch (e) {
+			message = { type: 'error', text: (e as Error).message };
+		} finally {
+			addrSaving = false;
+		}
+	}
+
+	/** Remove a known address from the customer's address book. */
+	async function deleteAddress(addressId: string) {
+		deletingAddressId = addressId;
+		try {
+			await apiPost(`/api/v1/admin/customers/${$page.params.id}/addresses/${addressId}/delete`);
+			message = { type: 'success', text: 'Adresse entfernt' };
+			await loadCustomer();
+		} catch (e) {
+			message = { type: 'error', text: (e as Error).message };
+		} finally {
+			deletingAddressId = null;
+		}
+	}
 </script>
 
 <div class="page">
@@ -340,6 +392,62 @@
 									<button class="btn-danger" onclick={clearBillingAddress} disabled={billingSaving}>Zurücksetzen</button>
 								{/if}
 								<button class="btn-cancel" onclick={() => showBillingEdit = false}>Abbrechen</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Known addresses (address book) -->
+			<div class="card">
+				<div class="card-header card-header--action">
+					<h2>Bekannte Adressen ({data.addresses.length})</h2>
+					<button class="btn-edit" onclick={() => showAddAddress = !showAddAddress}>
+						{showAddAddress ? 'Schließen' : 'Hinzufügen'}
+					</button>
+				</div>
+				<div class="card-body">
+					{#if data.addresses.length === 0}
+						<p class="form-hint">
+							Noch keine hinterlegt. Adressen aus Anfragen werden automatisch gesammelt; hier kannst du auch manuell welche ergänzen.
+						</p>
+					{:else}
+						<div class="addr-list">
+							{#each data.addresses as a}
+								<div class="addr-item">
+									<div class="addr-item__text">
+										{#if a.label}<span class="addr-item__label">{a.label}</span>{/if}
+										<span class="addr-item__line">{formatKnownAddress(a)}</span>
+									</div>
+									<button
+										class="addr-item__delete"
+										title="Adresse entfernen"
+										disabled={deletingAddressId === a.id}
+										onclick={() => deleteAddress(a.id)}
+									>
+										<Trash2 size={15} />
+									</button>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					{#if showAddAddress}
+						<div class="billing-form">
+							<input type="text" placeholder="Bezeichnung (optional, z.B. Alte Wohnung)" bind:value={addrLabel} class="billing-form__input" />
+							<div class="billing-form__row billing-form__row--street">
+								<input type="text" placeholder="Straße" bind:value={addrStreet} class="billing-form__input" />
+								<input type="text" placeholder="Nr." bind:value={addrNumber} class="billing-form__input billing-form__input--short" />
+							</div>
+							<div class="billing-form__row">
+								<input type="text" placeholder="PLZ" bind:value={addrPostal} class="billing-form__input billing-form__input--short" />
+								<input type="text" placeholder="Ort" bind:value={addrCity} class="billing-form__input" />
+							</div>
+							<div class="billing-form__actions">
+								<button class="btn-save" onclick={addAddress} disabled={addrSaving}>
+									{addrSaving ? 'Speichert…' : 'Speichern'}
+								</button>
+								<button class="btn-cancel" onclick={() => showAddAddress = false}>Abbrechen</button>
 							</div>
 						</div>
 					{/if}
@@ -651,4 +759,39 @@
 	}
 	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
 	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
+
+	/* Known addresses (address book) */
+	.addr-list { display: flex; flex-direction: column; gap: 0.5rem; }
+	.addr-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		background: var(--dt-surface-container);
+		border-radius: var(--dt-radius-sm);
+	}
+	.addr-item__text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+	.addr-item__label {
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--dt-primary);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.addr-item__line { font-size: 0.875rem; color: var(--dt-on-surface); }
+	.addr-item__delete {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		padding: 0.35rem;
+		background: transparent;
+		color: var(--dt-on-surface-variant);
+		border: none;
+		border-radius: var(--dt-radius-sm);
+		cursor: pointer;
+		transition: color var(--dt-transition), background var(--dt-transition);
+	}
+	.addr-item__delete:hover:not(:disabled) { color: #dc2626; background: rgba(220, 38, 38, 0.08); }
+	.addr-item__delete:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>

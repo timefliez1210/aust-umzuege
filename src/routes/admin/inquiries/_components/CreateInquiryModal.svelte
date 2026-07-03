@@ -7,6 +7,8 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { X, Camera, List, Upload, Video } from 'lucide-svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
+	import KnownAddressPicker from '$lib/components/admin/KnownAddressPicker.svelte';
+	import { fetchKnownAddresses, knownAddressStreetLine, type KnownAddress } from '$lib/utils/addressBook';
 
 	/**
 	 * Props for the create-inquiry modal/form.
@@ -50,6 +52,9 @@
 	let newCustomerName = $state('');
 	let newCustomerPhone = $state('');
 	let newCustomerSalutation = $state('');
+
+	// Known addresses (address book of the selected existing customer)
+	let knownAddresses = $state<KnownAddress[]>([]);
 
 	// Addresses
 	let originStreet = $state('');
@@ -127,6 +132,37 @@
 	let showBillingSection = $derived(addrCfg.showBilling || customerType === 'business' || !bookingForSelf);
 
 	const floorOptions = ['EG', '1. OG', '2. OG', '3. OG', '4. OG', '5. OG', 'DG', 'UG'];
+
+	// Load the selected customer's known addresses so they can be picked to
+	// pre-fill the origin/destination fields. Cleared when no customer is chosen.
+	$effect(() => {
+		const id = selectedCustomer?.id;
+		if (id) {
+			fetchKnownAddresses(id).then((list) => { knownAddresses = list; });
+		} else {
+			knownAddresses = [];
+		}
+	});
+
+	/** Pre-fill the origin fields from a picked known address. */
+	function applyToOrigin(a: KnownAddress) {
+		originStreet = knownAddressStreetLine(a);
+		originCity = a.city;
+		originPostal = a.postal_code ?? '';
+		if (a.floor && floorOptions.includes(a.floor)) originFloor = a.floor;
+		originElevator = a.elevator ?? false;
+		originHalteverbot = a.parking_ban;
+	}
+
+	/** Pre-fill the destination fields from a picked known address. */
+	function applyToDestination(a: KnownAddress) {
+		destStreet = knownAddressStreetLine(a);
+		destCity = a.city;
+		destPostal = a.postal_code ?? '';
+		if (a.floor && floorOptions.includes(a.floor)) destFloor = a.floor;
+		destElevator = a.elevator ?? false;
+		destHalteverbot = a.parking_ban;
+	}
 
 	let customerSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -516,6 +552,7 @@
 			{#if addrCfg.showOrigin}
 				<div class="address-col">
 					<h4>{addrCfg.originLabel}</h4>
+					<KnownAddressPicker addresses={knownAddresses} onselect={applyToOrigin} />
 					<input type="text" placeholder="Straße *" bind:value={originStreet} class="form-input" />
 					<div class="address-row">
 						<input type="text" placeholder="PLZ" bind:value={originPostal} class="form-input form-input--short" />
@@ -541,6 +578,7 @@
 			{#if addrCfg.showDestination}
 				<div class="address-col">
 					<h4>{addrCfg.destinationLabel}</h4>
+					<KnownAddressPicker addresses={knownAddresses} onselect={applyToDestination} />
 					<input type="text" placeholder={addrCfg.optionalDestination ? 'Straße' : 'Straße *'} bind:value={destStreet} class="form-input" />
 					<div class="address-row">
 						<input type="text" placeholder="PLZ" bind:value={destPostal} class="form-input form-input--short" />

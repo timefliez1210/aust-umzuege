@@ -46,7 +46,7 @@
 
 <MetaTags
     title="Lagerung & Einlagerung Hildesheim | Aust Umzüge"
-    description="Sichere Möbellagerung in Hildesheim: Zwischenlagerung beim Umzug oder Langzeitlagerung mit flexiblen Laufzeiten. Abholung und Lieferung inklusive möglich."
+    description="Einlagerung in Hildesheim: sichere Möbellagerung mit flexiblen Laufzeiten – Zwischen- oder Langzeitlagerung, Abholung und Lieferung möglich."
     keywords="Möbellagerung Hildesheim, Einlagerung, Zwischenlagerung, Lagerhalle, Langzeitlagerung"
     canonical="https://www.aust-umzuege.de/leistungen/lagerung"
 />
@@ -56,10 +56,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/einlagerung-lagerung-hildesheim-moebel-stapler.webp",
+    "contentUrl": "https://www.aust-umzuege.de/einlagerung-hildesheim-kartons-decken.webp",
     "url": "https://www.aust-umzuege.de/leistungen/lagerung",
-    "name": "Einlagerung & Lagerung Hildesheim – Aust Umzüge Möbel einlagern",
-    "description": "Aust Umzüge Mitarbeiter lagern Möbel mit einem Stapler sicher ein. Professionelle Einlagerung und Lagerung in Hildesheim – flexibel und trocken.",
+    "name": "Einlagerung Hildesheim – Möbel geschützt verpackt für die Lagerung",
+    "description": "Umzugskartons und Möbel werden mit Packdecken geschützt transportiert und eingelagert – Lagerung bei Aust Umzüge Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -71,7 +71,7 @@
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
     "width": 1500,
-    "height": 1058
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -93,15 +93,15 @@
 
         <div class="hero-image">
             <img
-                src="/einlagerung-lagerung-hildesheim-moebel-stapler.webp"
-                srcset="/einlagerung-lagerung-hildesheim-moebel-stapler-400w.webp 400w,
-                        /einlagerung-lagerung-hildesheim-moebel-stapler-600w.webp 600w,
-                        /einlagerung-lagerung-hildesheim-moebel-stapler-800w.webp 800w,
-                        /einlagerung-lagerung-hildesheim-moebel-stapler.webp 1500w"
+                src="/einlagerung-hildesheim-kartons-decken.webp"
+                srcset="/einlagerung-hildesheim-kartons-decken-400w.webp 400w,
+                        /einlagerung-hildesheim-kartons-decken-600w.webp 600w,
+                        /einlagerung-hildesheim-kartons-decken-800w.webp 800w,
+                        /einlagerung-hildesheim-kartons-decken.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Mitarbeiter lagern Möbel mit Stapler ein – Einlagerung und Lagerung in Hildesheim"
+                alt="Umzugskartons und Möbel mit Decken geschützt im Umzugswagen – Einlagerung in Hildesheim"
                 width="1500"
-                height="1058"
+                height="844"
                 fetchpriority="high"
             />
         </div>

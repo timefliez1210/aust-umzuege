@@ -13,7 +13,7 @@
 
 <MetaTags
 	title="Küche beim Umzug: Abbau, Transport & Montage | Aust Umzüge"
-	description="Küche umziehen: Spülmaschine & Waschmaschine richtig abklemmen, Einbauküche demontieren, Granit transportieren. Fehler kosten oft mehr als der Profi."
+	description="Küche umziehen: Einbauküche demontieren, Spül- und Waschmaschine abklemmen, Arbeitsplatten transportieren – was Sie selbst können und wo Profis helfen."
 	keywords="Küche umziehen, Einbauküche abbauen, Küche transportieren, Spülmaschine abklemmen Umzug, Küchenabbau Umzug, Küchendemontage, Küchenmontage Hildesheim"
 	canonical="https://www.aust-umzuege.de/ratgeber/kueche-umzug"
 	ogType="article"

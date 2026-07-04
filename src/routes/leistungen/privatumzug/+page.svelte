@@ -56,7 +56,7 @@
 
 <MetaTags
     title="Umzug Hildesheim · Privatumzug zum Festpreis | Aust Umzüge"
-    description="Umzug in Hildesheim zum Festpreis — Privatumzug, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. Bis 4.000 € steuerlich absetzbar (§35a EStG)."
+    description="Privatumzug in Hildesheim zum Festpreis: kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h – bis 4.000 € steuerlich absetzbar (§35a EStG)."
     keywords="Umzug Hildesheim, Umziehen Hildesheim, Privatumzug Hildesheim, Wohnungsumzug Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen/privatumzug"
 />
@@ -90,10 +90,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/umzug-hildesheim-umzugshelfer-moebel-tragen.webp",
+    "contentUrl": "https://www.aust-umzuege.de/privatumzug-hildesheim-team-beladen.webp",
     "url": "https://www.aust-umzuege.de/leistungen/privatumzug",
-    "name": "Umzug Hildesheim – Aust Umzüge Mitarbeiter beim Möbeltransport",
-    "description": "Zwei Mitarbeiter von Aust Umzüge tragen Möbel beim Privatumzug in Hildesheim. Professioneller Umzugsservice mit Festpreisgarantie.",
+    "name": "Privatumzug Hildesheim – Aust Umzüge Team beim Beladen des Umzugswagens",
+    "description": "Aust Umzüge Mitarbeiter verladen einen Fernseher in den Umzugswagen – Privatumzug mit Möbellift in Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -104,8 +104,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 916,
-    "height": 610
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -127,15 +127,15 @@
 
         <div class="hero-image">
             <img
-                src="/umzug-hildesheim-umzugshelfer-moebel-tragen.webp"
-                srcset="/umzug-hildesheim-umzugshelfer-moebel-tragen-400w.webp 400w,
-                        /umzug-hildesheim-umzugshelfer-moebel-tragen-600w.webp 600w,
-                        /umzug-hildesheim-umzugshelfer-moebel-tragen-800w.webp 800w,
-                        /umzug-hildesheim-umzugshelfer-moebel-tragen.webp 916w"
+                src="/privatumzug-hildesheim-team-beladen.webp"
+                srcset="/privatumzug-hildesheim-team-beladen-400w.webp 400w,
+                        /privatumzug-hildesheim-team-beladen-600w.webp 600w,
+                        /privatumzug-hildesheim-team-beladen-800w.webp 800w,
+                        /privatumzug-hildesheim-team-beladen.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Mitarbeiter tragen Möbel beim Privatumzug in Hildesheim"
-                width="916"
-                height="610"
+                alt="Aust Umzüge Team belädt den Umzugswagen mit Möbellift beim Privatumzug in Hildesheim"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

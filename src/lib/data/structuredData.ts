@@ -499,7 +499,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		image: "https://www.aust-umzuege.de/privatumzug-hildesheim-team-beladen.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/umzugs-checkliste",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -528,7 +528,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig-600w.webp",
+		image: "https://www.aust-umzuege.de/montage-demontage-hildesheim-bett-verpackt.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/verpackungstipps",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -557,7 +557,7 @@ export const articles = {
 		},
 		datePublished: "2026-02-13",
 		dateModified: "2026-02-26",
-		image: "https://www.aust-umzuege.de/Haushaltsaufloesungen-Entruempelungen-carousel-3-800w.webp",
+		image: "https://www.aust-umzuege.de/haushaltsaufloesung-hildesheim-hausrat-lkw.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -615,7 +615,7 @@ export const articles = {
 		},
 		datePublished: "2026-04-23",
 		dateModified: "2026-04-23",
-		image: "https://www.aust-umzuege.de/Haushaltsaufloesungen-Entruempelungen-carousel-3-800w.webp",
+		image: "https://www.aust-umzuege.de/haushaltsaufloesung-hildesheim-hausrat-lkw.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -644,7 +644,7 @@ export const articles = {
 		},
 		datePublished: "2026-04-23",
 		dateModified: "2026-04-23",
-		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		image: "https://www.aust-umzuege.de/einlagerung-hildesheim-kartons-decken.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/moebel-einlagern",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -673,7 +673,7 @@ export const articles = {
 		},
 		datePublished: "2026-04-25",
 		dateModified: "2026-04-25",
-		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		image: "https://www.aust-umzuege.de/montage-demontage-hildesheim-bett-verpackt.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/kueche-umzug",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -702,7 +702,7 @@ export const articles = {
 		},
 		datePublished: "2026-04-23",
 		dateModified: "2026-04-23",
-		image: "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		image: "https://www.aust-umzuege.de/privatumzug-hildesheim-team-beladen.webp",
 		url: "https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern",
 		mainEntityOfPage: {
 			"@type": "WebPage",
@@ -718,7 +718,7 @@ export const leistungenOverview = {
 	name: "Umzugsleistungen",
 	description: "Alle Leistungen von Aust Umzüge auf einen Blick",
 	url: "https://www.aust-umzuege.de/leistungen",
-	numberOfItems: 12,
+	numberOfItems: 16,
 	itemListElement: [
 		{
 			"@type": "ListItem",
@@ -827,6 +827,42 @@ export const leistungenOverview = {
 				name: "Möbellift mieten",
 				url: "https://www.aust-umzuege.de/leistungen/moebellift"
 			}
+		},
+		{
+			"@type": "ListItem",
+			position: 13,
+			item: {
+				"@type": "Service",
+				name: "Praxisumzug",
+				url: "https://www.aust-umzuege.de/leistungen/praxisumzug"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 14,
+			item: {
+				"@type": "Service",
+				name: "Malerarbeiten",
+				url: "https://www.aust-umzuege.de/leistungen/malerarbeiten"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 15,
+			item: {
+				"@type": "Service",
+				name: "Renovierungsarbeiten",
+				url: "https://www.aust-umzuege.de/leistungen/renovierungsarbeiten"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 16,
+			item: {
+				"@type": "Service",
+				name: "Archiv-Montage",
+				url: "https://www.aust-umzuege.de/leistungen/archiv-montage"
+			}
 		}
 	]
 };
@@ -836,7 +872,7 @@ export const ratgeberOverview = {
 	name: "Umzugsratgeber",
 	description: "Nützliche Tipps und Checklisten rund um den Umzug",
 	url: "https://www.aust-umzuege.de/ratgeber",
-	numberOfItems: 4,
+	numberOfItems: 10,
 	itemListElement: [
 		{
 			"@type": "ListItem",
@@ -872,6 +908,60 @@ export const ratgeberOverview = {
 				"@type": "Article",
 				name: "Woran erkenne ich eine seriöse Umzugsfirma?",
 				url: "https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 5,
+			item: {
+				"@type": "Article",
+				name: "Messie-Wohnung entrümpeln – Schritt für Schritt",
+				url: "https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 6,
+			item: {
+				"@type": "Article",
+				name: "Umzug mit Kindern",
+				url: "https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 7,
+			item: {
+				"@type": "Article",
+				name: "Möbel einlagern – Kosten & Optionen",
+				url: "https://www.aust-umzuege.de/ratgeber/moebel-einlagern"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 8,
+			item: {
+				"@type": "Article",
+				name: "Küche beim Umzug: Abbau, Transport & Montage",
+				url: "https://www.aust-umzuege.de/ratgeber/kueche-umzug"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 9,
+			item: {
+				"@type": "Article",
+				name: "Umzugskosten steuerlich absetzen",
+				url: "https://www.aust-umzuege.de/ratgeber/umzugskosten-steuerlich-absetzen"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 10,
+			item: {
+				"@type": "Article",
+				name: "Umzug mit Bürgergeld",
+				url: "https://www.aust-umzuege.de/ratgeber/umzug-mit-buergergeld"
 			}
 		}
 	]

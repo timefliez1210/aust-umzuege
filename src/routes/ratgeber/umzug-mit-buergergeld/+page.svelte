@@ -33,7 +33,7 @@
         },
         datePublished: "2026-05-04",
         dateModified: "2026-05-04",
-        image: "https://www.aust-umzuege.de/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig-600w.webp",
+        image: "https://www.aust-umzuege.de/privatumzug-hildesheim-team-beladen.webp",
         url: "https://www.aust-umzuege.de/ratgeber/umzug-mit-buergergeld",
         mainEntityOfPage: {
             "@type": "WebPage",
@@ -97,8 +97,8 @@
 </script>
 
 <MetaTags
-    title="Umzug mit Bürgergeld 2026 – Jobcenter zahlt? § 22 SGB II erklärt"
-    description="Jobcenter übernimmt Umzugskosten, Kaution & Wohnungsbeschaffungskosten nach § 22 SGB II – aber nur mit vorheriger Zusicherung. Voraussetzungen, Antrag & Fallstricke."
+    title="Umzug mit Bürgergeld 2026 – zahlt das Jobcenter?"
+    description="Umzug mit Bürgergeld: Wann das Jobcenter Umzugskosten, Kaution und Wohnungsbeschaffung nach § 22 SGB II übernimmt – Zusicherung, Antrag, Fallstricke."
     keywords="Umzug Bürgergeld, Jobcenter Umzugskosten, Mietkaution Jobcenter, § 22 SGB II, Zusicherung Umzug, Wohnungsbeschaffungskosten, Bürgergeld Umzug 2026"
     canonical="https://www.aust-umzuege.de/ratgeber/umzug-mit-buergergeld"
     ogType="article"

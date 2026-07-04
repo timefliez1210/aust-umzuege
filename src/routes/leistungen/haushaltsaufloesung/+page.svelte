@@ -56,7 +56,7 @@
 
 <MetaTags
     title="Haushaltsauflösung Hildesheim · Diskret & Festpreis | Aust"
-    description="Haushaltsauflösung in Hildesheim — diskret, Festpreis nach Vor-Ort-Termin, mit Wertanrechnung. Im Erbfall als Nachlassverbindlichkeit steuerlich absetzbar (§10 ErbStG)."
+    description="Haushaltsauflösung in Hildesheim: diskret und besenrein, Festpreis nach Vor-Ort-Termin, mit Wertanrechnung. Im Erbfall steuerlich absetzbar (§10 ErbStG)."
     keywords="Haushaltsauflösung Hildesheim, Wohnungsauflösung, Nachlassräumung, besenreine Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/haushaltsaufloesung"
 />
@@ -90,10 +90,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/haushaltsaufloesung-hildesheim-entrumpeln-container.webp",
+    "contentUrl": "https://www.aust-umzuege.de/haushaltsaufloesung-hildesheim-hausrat-lkw.webp",
     "url": "https://www.aust-umzuege.de/leistungen/haushaltsaufloesung",
-    "name": "Haushaltsauflösung Hildesheim – Aust Umzüge Team bei der Arbeit",
-    "description": "Drei Mitarbeiter von Aust Umzüge beladen einen Container bei einer Haushaltsauflösung in Hildesheim. Professionelle Wohnungsauflösung und Nachlassräumung aus einer Hand.",
+    "name": "Haushaltsauflösung Hildesheim – Aust Umzüge Team beim Beladen des LKW",
+    "description": "Drei Mitarbeiter von Aust Umzüge beladen den LKW mit Hausrat bei einer Haushaltsauflösung in Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -105,7 +105,7 @@
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
     "width": 1500,
-    "height": 845
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -127,15 +127,15 @@
 
         <div class="hero-image">
             <img
-                src="/haushaltsaufloesung-hildesheim-entrumpeln-container.webp"
-                srcset="/haushaltsaufloesung-hildesheim-entrumpeln-container-400w.webp 400w,
-                        /haushaltsaufloesung-hildesheim-entrumpeln-container-600w.webp 600w,
-                        /haushaltsaufloesung-hildesheim-entrumpeln-container-800w.webp 800w,
-                        /haushaltsaufloesung-hildesheim-entrumpeln-container.webp 1500w"
+                src="/haushaltsaufloesung-hildesheim-hausrat-lkw.webp"
+                srcset="/haushaltsaufloesung-hildesheim-hausrat-lkw-400w.webp 400w,
+                        /haushaltsaufloesung-hildesheim-hausrat-lkw-600w.webp 600w,
+                        /haushaltsaufloesung-hildesheim-hausrat-lkw-800w.webp 800w,
+                        /haushaltsaufloesung-hildesheim-hausrat-lkw.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Team bei einer Haushaltsauflösung in Hildesheim – drei Mitarbeiter beim Beladen eines Containers"
+                alt="Aust Umzüge Team belädt den LKW bei einer Haushaltsauflösung in Hildesheim"
                 width="1500"
-                height="845"
+                height="844"
                 fetchpriority="high"
             />
         </div>
@@ -227,7 +227,34 @@
                     In diesen Situationen geht es oft darum, das Richtige zu behalten und den Rest würdevoll loszulassen. Wir helfen Ihnen dabei: Was mit in die neue Wohnung soll, transportieren wir. Was gut erhalten ist, spenden wir oder rechnen es gegen die Kosten auf. Den Rest entsorgen wir fachgerecht. Sie entscheiden, wir kümmern uns um die Ausführung – in Ihrem Tempo.
                 </p>
 
-                <h2 class="section-title">Haushaltsauflösung in Hildesheim und Umgebung</h2>
+                <h2 class="section-title" style="margin-top: var(--space-16);">Gut vorbereitet: kleine Checkliste vor der Haushaltsauflösung</h2>
+                <p>
+                    Sie müssen nichts vorbereiten – aber ein paar Dinge machen die Abwicklung für alle Beteiligten leichter:
+                </p>
+                <ul class="feature-list">
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Erinnerungsstücke, Schmuck und Dokumente kennzeichnen oder beiseitelegen – wir sichern zusätzlich alles Persönliche</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Im Erbfall klären, ob Erbschein oder Vollmacht vorliegt – wichtig für Vermieter und Verträge</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Übergabetermin mit dem Vermieter abstimmen – wir richten den Räumtermin danach aus</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Laufende Verträge (Strom, Telefon, Versicherungen) kündigen – das gehört nicht zur Räumung</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Fragen für die Besichtigung notieren: Wertanrechnung, Entsorgungsnachweis, Zeitplan</span>
+                    </li>
+                </ul>
+
+                <h2 class="section-title" style="margin-top: var(--space-16);">Haushaltsauflösung in Hildesheim und Umgebung</h2>
                 <p>
                     Als lokales Unternehmen kennen wir die Gegebenheiten in Hildesheim genau. Enge Altstadtgassen, Häuser ohne Aufzug, verwinkelte Treppenhäuser – für uns kein Problem. Wir wissen, wo wir mit dem LKW parken können und welche Zufahrtswege möglich sind.
                 </p>
@@ -236,6 +263,14 @@
                 </p>
                 <p>
                     Besonders bei Haushaltsauflösungen nach einem Todesfall arbeiten wir diskret und respektvoll. Wir wissen, wie emotional belastend diese Situation ist – und geben Ihnen die Zeit, die Sie brauchen. Unser Team geht behutsam mit den Hinterlassenschaften um und behandelt jeden Gegenstand mit der Sorgfalt, die er verdient.
+                </p>
+
+                <h2 class="section-title" style="margin-top: var(--space-16);">Für Vermieter, Notare und Nachlassverwalter</h2>
+                <p>
+                    Wohnungsauflösungen wickeln wir regelmäßig direkt mit Nachlassverwaltern, Notaren und Vermietern ab – auch wenn die Angehörigen weit entfernt wohnen. Nach der Schlüsselübergabe stimmen wir jeden Schritt telefonisch ab; persönliche Dokumente werden gesichert und persönlich oder auf dem Postweg übergeben.
+                </p>
+                <p>
+                    Für Ihre Unterlagen erhalten Sie eine detaillierte Rechnung mit ausgewiesenem Leistungsumfang und auf Wunsch Entsorgungsnachweise – verwendbar für die Nachlassabrechnung, die Erbschaftsteuererklärung (§10 ErbStG) oder die Vermieterakte.
                 </p>
 
                 <h3 class="highlight-title">Entrümpelung, Haushaltsauflösung oder Nachlassverwertung – was ist der Unterschied?</h3>
@@ -247,7 +282,7 @@
 
                 <h3 class="highlight-title">Verwandte Leistungen</h3>
                 <p>
-                    Oft kombinieren Kunden die Haushaltsauflösung mit einem <a href="/leistungen/seniorenumzug">Seniorenumzug</a>, wenn nicht alles entsorgt, sondern ein Teil in ein neues, kleineres Zuhause gebracht werden soll. Falls Sie einzelne Räume wie Keller, Dachboden oder Garage räumen möchten, ist unsere <a href="/leistungen/entruempelung">Entrümpelung</a> die richtige Wahl. Möbel, die vorübergehend untergebracht werden müssen, lagern wir sicher in unseren <a href="/leistungen/lagerung">Lagerräumen</a>.
+                    Oft kombinieren Kunden die Haushaltsauflösung mit einem <a href="/leistungen/seniorenumzug">Seniorenumzug</a>, wenn nicht alles entsorgt, sondern ein Teil in ein neues, kleineres Zuhause gebracht werden soll. Falls Sie einzelne Räume wie Keller, Dachboden oder Garage räumen möchten, ist unsere <a href="/leistungen/entruempelung">Entrümpelung</a> die richtige Wahl. Möbel, die vorübergehend untergebracht werden müssen, lagern wir sicher in unseren <a href="/leistungen/lagerung">Lagerräumen</a>. Und wenn Sie zunächst selbst planen möchten: Unser Ratgeber <a href="/ratgeber/haushaltsaufloesungen-entruempelungen">Haushaltsauflösungen und Entrümpelungen</a> führt Sie durch Zeitplanung, Sortieren und Entsorgung.
                 </p>
             </div>
 

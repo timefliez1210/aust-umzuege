@@ -47,7 +47,7 @@
 
 <MetaTags
     title="Seniorenumzug Hildesheim – Einfühlsam umziehen | Aust Umzüge"
-    description="Einfühlsamer Seniorenumzug in Hildesheim und Umgebung. Full-Service für den Umzug ins betreute Wohnen. Bis zu 4.180 € Zuschuss von der Pflegekasse möglich."
+    description="Seniorenumzug in Hildesheim und Umgebung: einfühlsamer Full-Service für den Umzug ins betreute Wohnen – bis zu 4.180 € Zuschuss der Pflegekasse möglich."
     keywords="Seniorenumzug Hildesheim, Umzug Senioren, betreutes Wohnen, Seniorenheim Umzug"
     canonical="https://www.aust-umzuege.de/leistungen/seniorenumzug"
 />
@@ -73,10 +73,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/seniorenumzug-hildesheim-umzugskartons-tragen.webp",
+    "contentUrl": "https://www.aust-umzuege.de/seniorenumzug-hildesheim-moebel-treppe.webp",
     "url": "https://www.aust-umzuege.de/leistungen/seniorenumzug",
-    "name": "Seniorenumzug Hildesheim – Aust Umzüge Mitarbeiter beim Kartons tragen",
-    "description": "Aust Umzüge Mitarbeiter trägt Umzugskartons beim einfühlsamen Seniorenumzug in Hildesheim. Full-Service für den Umzug ins betreute Wohnen oder Pflegeheim.",
+    "name": "Seniorenumzug Hildesheim – sorgfältiger Möbeltransport über die Treppe",
+    "description": "Zwei Aust Umzüge Mitarbeiter tragen ein Möbelstück behutsam über eine Wendeltreppe. Einfühlsamer Seniorenumzug in Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -87,8 +87,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 921,
-    "height": 724
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -110,15 +110,15 @@
 
         <div class="hero-image">
             <img
-                src="/seniorenumzug-hildesheim-umzugskartons-tragen.webp"
-                srcset="/seniorenumzug-hildesheim-umzugskartons-tragen-400w.webp 400w,
-                        /seniorenumzug-hildesheim-umzugskartons-tragen-600w.webp 600w,
-                        /seniorenumzug-hildesheim-umzugskartons-tragen-800w.webp 800w,
-                        /seniorenumzug-hildesheim-umzugskartons-tragen.webp 921w"
+                src="/seniorenumzug-hildesheim-moebel-treppe.webp"
+                srcset="/seniorenumzug-hildesheim-moebel-treppe-400w.webp 400w,
+                        /seniorenumzug-hildesheim-moebel-treppe-600w.webp 600w,
+                        /seniorenumzug-hildesheim-moebel-treppe-800w.webp 800w,
+                        /seniorenumzug-hildesheim-moebel-treppe.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Mitarbeiter trägt Umzugskartons beim Seniorenumzug in Hildesheim"
-                width="921"
-                height="724"
+                alt="Aust Umzüge Mitarbeiter tragen ein Möbelstück vorsichtig über eine Wendeltreppe – Seniorenumzug in Hildesheim"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

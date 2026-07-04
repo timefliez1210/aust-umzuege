@@ -12,8 +12,8 @@
 </script>
 
 <MetaTags
-	title="Messie-Wohnung entrümpeln – Kosten, Risiken & Schritt für Schritt | Aust Umzüge"
-	description="Messie-Wohnung entrümpeln: DIY-Ratgeber mit Gesundheits-Check, Schutzausrüstung und Sortiersystem. Kosten DIY: 100–300 €, Profi: ab 800 €. Mit Vermieter-Sonderfall."
+	title="Messie-Wohnung entrümpeln – Kosten & Anleitung 2026"
+	description="Messie-Wohnung selbst entrümpeln: Anleitung mit Gesundheits-Check, Schutzausrüstung und Sortiersystem. Kostenvergleich: DIY 100–300 €, Profi ab 800 €."
 	keywords="Messie Wohnung, Messie Syndrom, Wohnungsverwahrlosung, Entrümpelung Messie, Messie Wohnung räumen, extreme Unordnung, Messie Haushaltsauflösung, Messie Wohnung Vermieter, Messie Wohnung Kosten"
 	canonical="https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen"
 	ogType="article"

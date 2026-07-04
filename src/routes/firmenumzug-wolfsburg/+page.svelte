@@ -51,7 +51,7 @@
 
 <MetaTags
 	title="Firmenumzug Wolfsburg – Büro & Betrieb | Aust Umzüge"
-	description="Professioneller Firmenumzug in Wolfsburg: minimale Ausfallzeit, sicherer IT-Transport, Wochenendservice. Festpreisgarantie nach Besichtigung – für Büros, Praxen und Gewerbebetriebe."
+	description="Firmenumzug in Wolfsburg: minimale Ausfallzeit, sicherer IT-Transport und Wochenendservice für Büros, Praxen und Gewerbe. Festpreis nach Besichtigung."
 	keywords="Firmenumzug Wolfsburg, Büroumzug Wolfsburg, Betriebsumzug Wolfsburg, Gewerbeumzug Wolfsburg, IT-Umzug Wolfsburg, Firmensitz verlegen Wolfsburg, Büroumzug Wolfsburg Festpreis"
 	canonical="https://www.aust-umzuege.de/firmenumzug-wolfsburg"
 	ogType="website"

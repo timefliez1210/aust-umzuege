@@ -24,49 +24,49 @@
         ctaHref = "/leistungen",
         services = [
             {
-                image: "/privatumzuege-hildesheim-carousel-1.webp",
+                image: "/privatumzug-hildesheim-beladen-moebellift.webp",
                 title: "Privatumzüge",
-                alt: "Privatumzug Hildesheim – Umzugshelfer beim Beladen des Transporters",
+                alt: "Privatumzug Hildesheim – Team belädt den Umzugswagen mit Möbellift",
                 description:
                     "Ihr Privatumzug in professionellen Händen – von der Planung bis zum Einräumen. Von Hildesheim aus bundesweit und europaweit.",
                 href: "/leistungen/privatumzug",
             },
             {
-                image: "/umzuege-hildesheim-carousel-1.webp",
+                image: "/firmenumzug-hildesheim-team-verladung.webp",
                 title: "Gewerbe & Firmenumzüge",
-                alt: "Firmenumzug Hildesheim – Büromöbel werden verladen",
+                alt: "Firmenumzug Hildesheim – vier Mitarbeiter verladen große Möbelteile",
                 description:
                     "Firmenumzüge mit minimaler Ausfallzeit. Wir planen und koordinieren den Umzug Ihres Unternehmens – termingerecht und zuverlässig.",
                 href: "/leistungen/firmenumzug",
             },
             {
-                image: "/montagen-demontagen-carousel-2.webp",
+                image: "/montage-demontage-hildesheim-moebel-verpackung.webp",
                 title: "Montagen & Demontagen",
-                alt: "Küchenmontage Hildesheim – Fachgerechter Möbelaufbau durch Monteur",
+                alt: "Möbelmontage Hildesheim – demontiertes Bett wird fachgerecht verpackt",
                 description:
                     "Unsere Monteure bauen auch komplexe Küchen und Möbelsysteme fachgerecht ab und am neuen Standort wieder auf – inklusive Anpassungen.",
                 href: "/leistungen/montage",
             },
             {
-                image: "/Haushaltsaufloesungen-Entruempelungen-carousel-3.webp",
+                image: "/haushaltsaufloesung-hildesheim-lkw-wird-beladen.webp",
                 title: "Haushaltsauflösungen",
-                alt: "Diskrete Wohnungsauflösung – Aust Umzüge Team beim Räumen",
+                alt: "Haushaltsauflösung Hildesheim – Aust Umzüge Team belädt den LKW",
                 description:
                     "Wir lösen Haushalte diskret auf und räumen Keller, Dachboden oder Garage. Mit Wertanrechnung, fachgerechter Entsorgung und besenreiner Übergabe.",
                 href: "/leistungen/haushaltsaufloesung",
             },
             {
-                image: "/einlagerung-service-hildesheim-carousel-4.webp",
+                image: "/einlagerung-hildesheim-moebel-geschuetzt-lkw.webp",
                 title: "Lagerung & Einlagerung",
-                alt: "Einlagerung Hildesheim – Sicherer Lagerraum für Möbel und Umzugsgut",
+                alt: "Einlagerung Hildesheim – Möbel geschützt verpackt für die Lagerung",
                 description:
                     "Sichere Lagerung für Ihre Möbel – ob kurzfristig oder langfristig. Flexible Laufzeiten, faire Konditionen.",
                 href: "/leistungen/lagerung",
             },
             {
-                image: "/seniorenumzuege-hildesheim-carousel-6.webp",
+                image: "/seniorenumzug-hildesheim-treppe-sorgfalt.webp",
                 title: "Seniorenumzüge",
-                alt: "Seniorenumzug Hildesheim – Sorgfältiger Umzug ins betreute Wohnen",
+                alt: "Seniorenumzug Hildesheim – sorgfältiges Tragen über die Wendeltreppe",
                 description:
                     "Wir begleiten den Umzug ins betreute Wohnen mit Geduld und Sorgfalt. Vom Einpacken bis zum Einrichten – alles aus einer Hand.",
                 href: "/leistungen/seniorenumzug",

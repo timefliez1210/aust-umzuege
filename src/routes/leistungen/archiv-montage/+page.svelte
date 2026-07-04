@@ -80,8 +80,8 @@
 </script>
 
 <MetaTags
-    title="Archiv-Montage & Demontage – Ausführungspartner deutschlandweit | Aust Umzüge"
-    description="Fachgerechte Montage, Demontage und Verlagerung von Archivregalen – Standregale, Fachregale, mobile Rollregale. Ausführungspartner für Umzugsunternehmen, Regalbauer und Generalunternehmer, DGUV-konforme Dokumentation."
+    title="Archiv-Montage & Regalverlagerung deutschlandweit | Aust"
+    description="Archivregale montieren, demontieren & verlagern: deutschlandweiter Ausführungspartner für Umzugsfirmen und Regalbauer – DGUV-konforme Dokumentation."
     keywords="Archiv Montage, Archiv Demontage, Archivregale montieren, Rollregale Montage, DGUV 208-043, Regalmontage Subunternehmer, Archivumzug deutschlandweit"
     canonical="https://www.aust-umzuege.de/leistungen/archiv-montage"
 />

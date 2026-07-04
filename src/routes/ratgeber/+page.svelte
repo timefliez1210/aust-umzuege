@@ -86,7 +86,7 @@
 
 <MetaTags
     title="Umzugsratgeber & Checklisten | Aust Umzüge Hildesheim"
-    description="Umzugstipps und Checklisten von Ihrem Umzugsunternehmen in Hildesheim. Verpackungstipps, Umzugs-Checkliste und Ratgeber für Haushaltsauflösungen – kostenlos."
+    description="Umzugsratgeber mit Checklisten, Verpackungstipps, Kosten- und Steuer-Guides: kostenloses Praxiswissen vom Umzugsprofi aus Hildesheim."
     keywords="Umzugstipps, Umzugsratgeber, Umzugscheckliste, Verpackungstipps, Haushaltsauflösung, Umzugsfirma auswählen"
     canonical="https://www.aust-umzuege.de/ratgeber"
 />

@@ -47,7 +47,7 @@
 
 <MetaTags
     title="Kostenlose Umzugsberatung in Hildesheim | Aust Umzüge"
-    description="Kostenlose Umzugsberatung in Hildesheim: Vor-Ort-Besichtigung mit individueller Planung und verbindlichem Festpreisangebot. Jetzt Ihren Termin vereinbaren."
+    description="Kostenlose Umzugsberatung in Hildesheim: Vor-Ort-Besichtigung, individuelle Planung und verbindliches Festpreisangebot. Jetzt Termin vereinbaren."
     keywords="Umzugsberatung Hildesheim, kostenlose Beratung, Festpreis Umzug, Umzugsplanung"
     canonical="https://www.aust-umzuege.de/leistungen/umzugsberatung"
 />
@@ -65,10 +65,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/umzugsberatung-hildesheim-kostenlos-vor-ort.webp",
+    "contentUrl": "https://www.aust-umzuege.de/umzugsberatung-hildesheim-team-aust.webp",
     "url": "https://www.aust-umzuege.de/leistungen/umzugsberatung",
-    "name": "Umzugsberatung Hildesheim – Aust Umzüge kostenloser Vor-Ort-Termin",
-    "description": "Aust Umzüge Berater beim kostenlosen Vor-Ort-Termin in Hildesheim. Unverbindliche Umzugsberatung mit Festpreisangebot direkt vor Ort.",
+    "name": "Umzugsberatung Hildesheim – das Team von Aust Umzüge",
+    "description": "Fünf festangestellte Mitarbeiter von Aust Umzüge vor dem Umzugswagen. Kostenlose Umzugsberatung mit Vor-Ort-Besichtigung in Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -79,8 +79,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 828,
-    "height": 524
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -102,15 +102,15 @@
 
         <div class="hero-image">
             <img
-                src="/umzugsberatung-hildesheim-kostenlos-vor-ort.webp"
-                srcset="/umzugsberatung-hildesheim-kostenlos-vor-ort-400w.webp 400w,
-                        /umzugsberatung-hildesheim-kostenlos-vor-ort-600w.webp 600w,
-                        /umzugsberatung-hildesheim-kostenlos-vor-ort-800w.webp 800w,
-                        /umzugsberatung-hildesheim-kostenlos-vor-ort.webp 828w"
+                src="/umzugsberatung-hildesheim-team-aust.webp"
+                srcset="/umzugsberatung-hildesheim-team-aust-400w.webp 400w,
+                        /umzugsberatung-hildesheim-team-aust-600w.webp 600w,
+                        /umzugsberatung-hildesheim-team-aust-800w.webp 800w,
+                        /umzugsberatung-hildesheim-team-aust.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Berater beim kostenlosen Vor-Ort-Termin zur Umzugsberatung in Hildesheim"
-                width="828"
-                height="524"
+                alt="Das Aust Umzüge Team vor dem Umzugswagen – Ihre Ansprechpartner bei der Umzugsberatung in Hildesheim"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

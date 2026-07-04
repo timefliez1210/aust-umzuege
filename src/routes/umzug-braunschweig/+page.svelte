@@ -51,7 +51,7 @@
 
 <MetaTags
 	title="Umzugsfirma Braunschweig – Festpreis | Aust Umzüge"
-	description="Umzug in Braunschweig mit Festpreisgarantie: sorgfältiger Transport, Möbelmontage, Halteverbotszone – alles aus einer Hand. Kostenlose Vor-Ort-Besichtigung, keine Überraschungen."
+	description="Umzug in Braunschweig mit Festpreisgarantie: sorgfältiger Transport, Möbelmontage und Demontage – kostenlose Besichtigung, verbindliches Angebot."
 	keywords="Umzugsfirma Braunschweig, Umzug Braunschweig, Privatumzug Braunschweig, Wohnungsumzug Braunschweig, zuverlässige Umzugsfirma Braunschweig, Umzug Braunschweig Festpreis, seriöse Umzugsfirma Braunschweig"
 	canonical="https://www.aust-umzuege.de/umzug-braunschweig"
 	ogType="website"

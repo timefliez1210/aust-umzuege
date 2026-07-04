@@ -13,7 +13,7 @@
 
 <MetaTags
 	title="Seriöse Umzugsfirma erkennen – Checkliste | Aust Umzüge"
-	description="Seriöse Umzugsfirma finden: Erkennen Sie Red Flags, stellen Sie die richtigen Fragen und vermeiden Sie schwarze Schafe. Praktischer Ratgeber mit Checkliste."
+	description="Seriöse Umzugsfirma erkennen: Red Flags, die richtigen Fragen und eine Checkliste für den Angebotsvergleich – so vermeiden Sie schwarze Schafe."
 	keywords="seriöse Umzugsfirma, gute Umzugsfirma finden, Festpreis Umzug, Umzugsunternehmen Checkliste, professioneller Umzug"
 	canonical="https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma"
 	ogType="article"

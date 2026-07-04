@@ -25,7 +25,7 @@
 
 <MetaTags
     title="Über Aust Umzüge – Umzugsunternehmen aus Hildesheim"
-    description="Inhabergeführtes Umzugsunternehmen aus Hildesheim, gegründet 2019 von Alex Aust. 7 festangestellte Mitarbeiter, eigener Fuhrpark, voll versichert. 5,0 Sterne aus über 70 Bewertungen."
+    description="Lernen Sie Aust Umzüge kennen: inhabergeführt, seit 2019 in Hildesheim, 7 festangestellte Mitarbeiter, eigener Fuhrpark – 5,0 Sterne aus über 70 Bewertungen."
     keywords="Aust Umzüge, Über uns, Umzugsunternehmen Hildesheim, Alex Aust, Umzugsfirma Geschichte"
     canonical="https://www.aust-umzuege.de/ueber-uns"
 />

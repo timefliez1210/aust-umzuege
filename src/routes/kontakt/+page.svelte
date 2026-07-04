@@ -84,7 +84,7 @@
 
 <MetaTags
     title="Kontakt – Aust Umzüge Hildesheim | Telefon & Anfahrt"
-    description="Kontaktieren Sie Aust Umzüge Hildesheim per Telefon 05121 755 83 79 oder E-Mail. Kaiserstraße 32, Mo–Fr 09–19 Uhr. Kostenlose und unverbindliche Beratung."
+    description="Aust Umzüge in Hildesheim kontaktieren: Telefon 05121 755 83 79, E-Mail oder WhatsApp. Kaiserstraße 32, Mo–Fr 9–19 Uhr. Wir melden uns schnell zurück."
     keywords="Kontakt Aust Umzüge, Umzugsfirma Hildesheim Kontakt, Umzugsanfrage, Umzugsberatung"
     canonical="https://www.aust-umzuege.de/kontakt"
 />

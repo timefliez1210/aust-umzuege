@@ -108,8 +108,8 @@
 </script>
 
 <MetaTags
-    title="Renovierungsarbeiten beim Umzug – Hildesheim & Region | Aust Umzüge"
-    description="Renovierung beim Umzug aus einer Hand: Maler, Boden, Fliesen, Trockenbau, Elektro, Sanitär – koordiniert über eingetragene Meisterbetriebe. Hildesheim, Hannover, Braunschweig."
+    title="Renovierung beim Umzug – Hildesheim & Region | Aust"
+    description="Renovierung beim Umzug aus einer Hand: Boden, Fliesen, Trockenbau, Elektro & Sanitär – Meisterbetriebe in Hildesheim, Hannover und Braunschweig."
     keywords="Renovierungsarbeiten Umzug, Renovierung Hildesheim, Komplettrenovierung Auszug, Handwerker Vermittlung Umzug, Wohnung renovieren Übergabe"
     canonical="https://www.aust-umzuege.de/leistungen/renovierungsarbeiten"
 />

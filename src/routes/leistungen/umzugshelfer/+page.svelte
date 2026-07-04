@@ -62,8 +62,8 @@
 </script>
 
 <MetaTags
-    title="Umzugshelfer in Hildesheim – stundenweise & versichert | Aust Umzüge"
-    description="Mit unseren Umzugshelfern gelingt Ihnen ein stressfreier Umzug – flexibel buchbar und passend zu jedem Budget. Profis ab 30 €/Std., Transporter ab 60 €/Tag."
+    title="Umzugshelfer Hildesheim ab 30 €/Std. | Aust Umzüge"
+    description="Umzugshelfer in Hildesheim mieten: versicherte Profis ab 30 €/Std., Transporter ab 60 €/Tag – stundenweise und flexibel für jedes Budget buchbar."
     keywords="Umzugshelfer Hildesheim, Umzugskräfte mieten, Tragehilfe Umzug, stundenweise Helfer"
     canonical="https://www.aust-umzuege.de/leistungen/umzugshelfer"
 />
@@ -73,10 +73,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/umzugshelfer-hildesheim-moebelpacker.webp",
+    "contentUrl": "https://www.aust-umzuege.de/umzugshelfer-hildesheim-transporter-beladen.webp",
     "url": "https://www.aust-umzuege.de/leistungen/umzugshelfer",
-    "name": "Umzugshelfer Hildesheim – Aust Umzüge professionelle Umzugskräfte im Einsatz",
-    "description": "Professionelle Umzugshelfer von Aust Umzüge Hildesheim beim Möbeltransport. Versicherte Umzugskräfte stundenweise mieten – zuverlässig und kurzfristig verfügbar.",
+    "name": "Umzugshelfer Hildesheim – Beladen des Transporters",
+    "description": "Umzugshelfer von Aust Umzüge tragen Möbelteile und beladen den Transporter – stundenweise buchbar in Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -87,8 +87,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 903,
-    "height": 609
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -110,15 +110,15 @@
 
         <div class="hero-image">
             <img
-                src="/umzugshelfer-hildesheim-moebelpacker.webp"
-                srcset="/umzugshelfer-hildesheim-moebelpacker-400w.webp 400w,
-                        /umzugshelfer-hildesheim-moebelpacker-600w.webp 600w,
-                        /umzugshelfer-hildesheim-moebelpacker-800w.webp 800w,
-                        /umzugshelfer-hildesheim-moebelpacker.webp 903w"
+                src="/umzugshelfer-hildesheim-transporter-beladen.webp"
+                srcset="/umzugshelfer-hildesheim-transporter-beladen-400w.webp 400w,
+                        /umzugshelfer-hildesheim-transporter-beladen-600w.webp 600w,
+                        /umzugshelfer-hildesheim-transporter-beladen-800w.webp 800w,
+                        /umzugshelfer-hildesheim-transporter-beladen.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Umzugshelfer von Aust Umzüge Hildesheim – professionelle Umzugskräfte beim Möbeltransport"
-                width="903"
-                height="609"
+                alt="Umzugshelfer von Aust Umzüge beladen den Transporter in Hildesheim"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

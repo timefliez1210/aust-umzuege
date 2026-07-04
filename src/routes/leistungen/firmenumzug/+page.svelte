@@ -52,7 +52,7 @@
 
 <MetaTags
     title="Firmenumzug Hildesheim · Wochenende & IT-Migration | Aust"
-    description="Büroumzug & Firmenumzug Hildesheim — Wochenend-/Nachteinsatz, IT- und Servertransport, Wertdeklaration nach §431 HGB. Festpreis nach kostenloser Besichtigung."
+    description="Firmenumzug & Büroumzug in Hildesheim: Wochenend- und Nachteinsatz, IT- und Servertransport, Wertdeklaration nach §431 HGB. Festpreis nach Besichtigung."
     keywords="Firmenumzug Hildesheim, Büroumzug, Geschäftsumzug, IT-Umzug, Betriebsumzug"
     canonical="https://www.aust-umzuege.de/leistungen/firmenumzug"
 />
@@ -86,10 +86,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/firmenumzug-hildesheim-umzugshelfer-bueroumzug.webp",
+    "contentUrl": "https://www.aust-umzuege.de/firmenumzug-hildesheim-buero-verladung.webp",
     "url": "https://www.aust-umzuege.de/leistungen/firmenumzug",
-    "name": "Firmenumzug Hildesheim – Aust Umzüge Team beim Büroumzug",
-    "description": "Zwei Mitarbeiter von Aust Umzüge koordinieren einen Firmenumzug in Hildesheim. Professioneller Büro- und Gewerbeumzug mit minimaler Ausfallzeit.",
+    "name": "Firmenumzug Hildesheim – Verladung durch das Aust Umzüge Team",
+    "description": "Mitarbeiter von Aust Umzüge verladen Büroeinrichtung in den Umzugswagen – Firmenumzug mit minimaler Ausfallzeit.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -100,8 +100,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 2252,
-    "height": 1643
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -123,15 +123,15 @@
 
         <div class="hero-image">
             <img
-                src="/firmenumzug-hildesheim-umzugshelfer-bueroumzug.webp"
-                srcset="/firmenumzug-hildesheim-umzugshelfer-bueroumzug-400w.webp 400w,
-                        /firmenumzug-hildesheim-umzugshelfer-bueroumzug-600w.webp 600w,
-                        /firmenumzug-hildesheim-umzugshelfer-bueroumzug-800w.webp 800w,
-                        /firmenumzug-hildesheim-umzugshelfer-bueroumzug.webp 2252w"
+                src="/firmenumzug-hildesheim-buero-verladung.webp"
+                srcset="/firmenumzug-hildesheim-buero-verladung-400w.webp 400w,
+                        /firmenumzug-hildesheim-buero-verladung-600w.webp 600w,
+                        /firmenumzug-hildesheim-buero-verladung-800w.webp 800w,
+                        /firmenumzug-hildesheim-buero-verladung.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Mitarbeiter koordinieren Firmenumzug in Hildesheim"
-                width="2252"
-                height="1643"
+                alt="Aust Umzüge Team verlädt Büromöbel beim Firmenumzug in Hildesheim"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

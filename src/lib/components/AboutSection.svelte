@@ -18,8 +18,8 @@
             "Aust Umzüge ist inhabergeführt. Bei der kostenlosen Vor-Ort-Besichtigung kommt Alex Aust selbst vorbei. Er schätzt das Volumen ein, erstellt das Festpreisangebot und koordiniert den Auftrag. Per Telefon und WhatsApp ist er direkt erreichbar – auch nach Auftragsbestätigung, auch am Umzugstag, falls unterwegs eine Frage auftaucht. Die Ausführung am Umzugstag selbst liegt in den Händen unseres festangestellten Teams: sieben Mitarbeiter, eingespielt, mit denselben Standards – kein Tagelöhner-Karussell.",
             "Ein Umzugstag ist hektisch genug. Unser Team bringt die Ruhe mit, die ein guter Umzug braucht – nicht weil wir es eilig haben, sondern weil wir wissen, wie es geht. Sie kümmern sich um Ihr neues Zuhause; wir kümmern uns um alles, was bis zur Schlüsselübergabe dazwischen liegt.",
         ],
-        imageSrc = "/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig.webp",
-        imageAlt = "Aust Umzüge Mitarbeiter beim Umzug",
+        imageSrc = "/umzugsunternehmen-hildesheim-moebel-verladen.webp",
+        imageAlt = "Aust Umzüge Mitarbeiter laden ein Möbelstück aus dem Umzugswagen",
         reversed = false,
     }: Props = $props();
 </script>
@@ -47,7 +47,7 @@
                     loading="lazy"
                     decoding="async"
                     width="500"
-                    height="375"
+                    height="667"
                 />
                 <div class="about-section__image-accent"></div>
             </div>

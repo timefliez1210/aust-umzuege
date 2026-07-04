@@ -46,7 +46,7 @@
 
 <MetaTags
     title="Halteverbot einrichten Hildesheim | Aust Umzüge"
-    description="Offizielle Halteverbotszonen für Ihren Umzug in Hildesheim. Wir kümmern uns um Antrag, Aufstellung und Abbau der Schilder – stressfrei und zuverlässig."
+    description="Halteverbotszone für Ihren Umzug in Hildesheim beantragen: Wir übernehmen Antrag, Aufstellung und Abbau der Schilder – rechtzeitig und zuverlässig."
     keywords="Halteverbot Umzug Hildesheim, Halteverbotszone, Parkplatz Umzug, Halteverbotsschilder"
     canonical="https://www.aust-umzuege.de/leistungen/halteverbot"
 />
@@ -56,10 +56,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/halteverbot-umzug-hildesheim-lkw-beladung.webp",
+    "contentUrl": "https://www.aust-umzuege.de/halteverbot-hildesheim-umzugswagen-strasse.webp",
     "url": "https://www.aust-umzuege.de/leistungen/halteverbot",
-    "name": "Halteverbot Umzug Hildesheim – Aust Umzüge LKW HI-AU 999",
-    "description": "Aust Umzüge LKW mit Hildesheimer Kennzeichen beim Umzugseinsatz. Halteverbotszone beantragen und aufstellen für einen reibungslosen Umzug in Hildesheim.",
+    "name": "Halteverbotszone Hildesheim – Umzugswagen direkt vor der Haustür",
+    "description": "Umzugswagen und Möbellift stehen dank Halteverbotszone direkt vor dem Gebäude – eingerichtet von Aust Umzüge Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -70,8 +70,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 1200,
-    "height": 925
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -94,15 +94,15 @@
 
         <div class="hero-image">
             <img
-                src="/halteverbot-umzug-hildesheim-lkw-beladung.webp"
-                srcset="/halteverbot-umzug-hildesheim-lkw-beladung-400w.webp 400w,
-                        /halteverbot-umzug-hildesheim-lkw-beladung-600w.webp 600w,
-                        /halteverbot-umzug-hildesheim-lkw-beladung-800w.webp 800w,
-                        /halteverbot-umzug-hildesheim-lkw-beladung.webp 1200w"
+                src="/halteverbot-hildesheim-umzugswagen-strasse.webp"
+                srcset="/halteverbot-hildesheim-umzugswagen-strasse-400w.webp 400w,
+                        /halteverbot-hildesheim-umzugswagen-strasse-600w.webp 600w,
+                        /halteverbot-hildesheim-umzugswagen-strasse-800w.webp 800w,
+                        /halteverbot-hildesheim-umzugswagen-strasse.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge LKW mit Hildesheimer Kennzeichen HI-AU beim beladenen Umzugseinsatz mit Halteverbotszone"
-                width="1200"
-                height="925"
+                alt="Umzugswagen und Möbellift von Aust Umzüge in abgesicherter Halteverbotszone in Hildesheim"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

@@ -132,7 +132,7 @@
 
 <MetaTags
     title="Leistungen — Umzug, Seniorenumzug & Entrümpelung Hildesheim"
-    description="Privatumzug, Firmenumzug, Seniorenumzug, Haushaltsauflösung & Entrümpelung in Hildesheim — alle Leistungen zum Festpreis nach kostenloser Vor-Ort-Besichtigung."
+    description="Alle Leistungen im Überblick: Privat- & Firmenumzug, Seniorenumzug, Haushaltsauflösung, Montage und Lagerung – zum Festpreis in Hildesheim und Umgebung."
     keywords="Umzugsservice Hildesheim, Umzugsleistungen Hildesheim"
     canonical="https://www.aust-umzuege.de/leistungen"
 />

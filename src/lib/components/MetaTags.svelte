@@ -20,7 +20,7 @@
 		keywords,
 		canonical,
 		ogType = "website",
-		ogImage = "https://www.aust-umzuege.de/umzuege-haushaltsaufloesungen-hildesheim-umgebung-1024w.webp",
+		ogImage = "https://www.aust-umzuege.de/og-aust-umzuege-hildesheim.jpg",
 		noindex = false
 	}: Props = $props();
 </script>

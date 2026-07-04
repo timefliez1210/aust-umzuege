@@ -51,7 +51,7 @@
 
 <MetaTags
 	title="Umzugsfirma Hannover – Festpreis & Professionell | Aust Umzüge"
-	description="Umzug in Hannover mit Festpreisgarantie: professionelles Team, sorgfältiger Transport, Möbelmontage und Halteverbotszone aus einer Hand. Jetzt kostenlos Angebot anfordern."
+	description="Ihre Umzugsfirma für Hannover: Umzug zum Festpreis inklusive Möbelmontage und Halteverbotszone – kostenlose Vor-Ort-Besichtigung in Hannover und Region."
 	keywords="Umzugsfirma Hannover, Umzug Hannover, Privatumzug Hannover, Wohnungsumzug Hannover, zuverlässige Umzugsfirma Hannover, Umzug Hannover Festpreis, seriöse Umzugsfirma Hannover"
 	canonical="https://www.aust-umzuege.de/umzug-hannover"
 	ogType="website"

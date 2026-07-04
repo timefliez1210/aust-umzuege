@@ -12,8 +12,8 @@
 </script>
 
 <MetaTags
-	title="Möbel einlagern Hildesheim: Kosten, Optionen & Tipps | Aust Umzüge"
-	description="Möbel einlagern in Hildesheim: Self-Storage vs. Full-Service im Vergleich, Kosten ab 15 €/m² (Jahresvertrag) bis 28 €/m² kurzfristig – und wie Möbel die Lagerung unbeschadet überstehen."
+	title="Möbel einlagern – Kosten, Optionen & Tipps | Aust Umzüge"
+	description="Möbel einlagern – was kostet es? Self-Storage und Full-Service im Vergleich, Preise pro Quadratmeter und Checkliste für die richtige Vorbereitung."
 	keywords="Möbel einlagern, Möbellagerung Hildesheim, Einlagerung Möbel, Zwischenlagerung Umzug, Self-Storage Hildesheim, Möbel einlagern Kosten, Möbel lagern lassen, Möbel einlagern zwischen Umzug"
 	canonical="https://www.aust-umzuege.de/ratgeber/moebel-einlagern"
 	ogType="article"

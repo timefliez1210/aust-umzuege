@@ -55,7 +55,7 @@
 
 <MetaTags
     title="Praxisumzug Hildesheim – Arzt & Zahnarzt | Aust Umzüge"
-    description="Nach einem Praxisumzug schreibt die MPBetreibV eine Sicherheitsprüfung vor – wir koordinieren STK-Termine mit Ihrem Geräteservice. Festpreis, DSGVO-konform, Wochenendservice."
+    description="Praxisumzug in Hildesheim für Arzt- und Zahnarztpraxen: STK-Termine nach MPBetreibV koordiniert, DSGVO-konformer Aktentransport, Wochenendservice."
     keywords="Praxisumzug Hildesheim, Arztpraxis umziehen, Zahnarztpraxis umziehen, medizinische Geräte transportieren, Praxisverlegung, MPBetreibV STK Praxisumzug"
     canonical="https://www.aust-umzuege.de/leistungen/praxisumzug"
 />

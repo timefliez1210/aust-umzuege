@@ -66,8 +66,8 @@
 </script>
 
 <MetaTags
-    title="Möbellift mieten Hildesheim – elektrisch & ab 95 € | Aust Umzüge"
-    description="Elektrischen Möbellift mieten in Hildesheim: leise, abgasfrei & umweltfreundlich. Ab 95 €/Std. – zur Selbstabholung, mit Lieferung oder inkl. Bedienpersonal."
+    title="Möbellift mieten Hildesheim – elektrisch, ab 95 € | Aust"
+    description="Möbellift mieten in Hildesheim: elektrisch, leise und abgasfrei – ab 95 €/Std. zur Selbstabholung, mit Lieferung oder inklusive Bedienpersonal."
     keywords="Möbellift mieten Hildesheim, Möbelaufzug mieten, Umzugslift, elektrischer Möbellift, Außenaufzug Umzug"
     canonical="https://www.aust-umzuege.de/leistungen/moebellift"
 />
@@ -75,8 +75,6 @@
 <StructuredData schema={businessInfoSlim} />
 <StructuredData schema={services.moebellift} />
 <StructuredData schema={breadcrumbs} />
-<!-- TODO: re-enable once the hero images exist in static/
-     (moebellift-mieten-hildesheim-elektrisch[-400w|-600w|-800w].webp)
 <StructuredData schema={{
     "@type": "ImageObject",
     "contentUrl": "https://www.aust-umzuege.de/moebellift-mieten-hildesheim-elektrisch.webp",
@@ -96,7 +94,6 @@
     "width": 1200,
     "height": 675
 }} />
--->
 
 <main class="service-detail">
     <div class="service-detail__container">
@@ -115,8 +112,6 @@
             </p>
         </header>
 
-        <!-- TODO: re-enable once the hero images exist in static/
-             (moebellift-mieten-hildesheim-elektrisch[-400w|-600w|-800w].webp)
         <div class="hero-image">
             <img
                 src="/moebellift-mieten-hildesheim-elektrisch.webp"
@@ -131,7 +126,6 @@
                 fetchpriority="high"
             />
         </div>
-        -->
 
         <div class="service-content">
             <div class="text-column">

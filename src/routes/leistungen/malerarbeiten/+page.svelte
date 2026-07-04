@@ -86,7 +86,7 @@
 
 <MetaTags
     title="Malerarbeiten beim Umzug – Hildesheim & Region | Aust Umzüge"
-    description="Kleine Übergabe-Ausbesserungen erledigen wir im Rahmen Ihres Umzugs. Komplette Streich-, Tapezier- und Spachtelarbeiten koordinieren wir über eingetragene Meisterbetriebe. Hildesheim, Hannover, Braunschweig."
+    description="Malerarbeiten bei Auszug & Übergabe: Ausbesserungen direkt vom Umzugsteam, Streichen und Tapezieren über Meisterbetriebe in der Region Hildesheim."
     keywords="Malerarbeiten Umzug, Schönheitsreparaturen Auszug, Wohnungsübergabe streichen, Maler Hildesheim, Malermeister Hannover, Renovierung Umzug"
     canonical="https://www.aust-umzuege.de/leistungen/malerarbeiten"
 />

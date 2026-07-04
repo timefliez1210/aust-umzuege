@@ -33,7 +33,7 @@
         },
         datePublished: "2026-04-25",
         dateModified: "2026-04-25",
-        image: "https://www.aust-umzuege.de/umziehen-leicht-gemacht-hildesheim-hannover-braunschweig-600w.webp",
+        image: "https://www.aust-umzuege.de/privatumzug-hildesheim-team-beladen.webp",
         url: "https://www.aust-umzuege.de/ratgeber/umzugskosten-steuerlich-absetzen",
         mainEntityOfPage: {
             "@type": "WebPage",
@@ -82,8 +82,8 @@
 </script>
 
 <MetaTags
-    title="Umzugskosten steuerlich absetzen 2026 – §35a, Werbungskosten & Pauschale"
-    description="Umzugskosten steuerlich absetzen: §35a für jeden Umzug (bis 4.000 € Bonus) + Werbungskosten bei beruflichem Anlass. Pauschale, doppelte HF & Formulare erklärt."
+    title="Umzugskosten steuerlich absetzen 2026 – §35a & Pauschale"
+    description="Umzugskosten von der Steuer absetzen: §35a-Bonus bis 4.000 €, Werbungskosten und Umzugskostenpauschale 2026 – alle Regeln verständlich erklärt."
     keywords="Umzugskosten steuerlich absetzen, §35a EStG Umzug, Umzugskostenpauschale, beruflich veranlasster Umzug, doppelte Haushaltsführung, Werbungskosten Umzug"
     canonical="https://www.aust-umzuege.de/ratgeber/umzugskosten-steuerlich-absetzen"
     ogType="article"

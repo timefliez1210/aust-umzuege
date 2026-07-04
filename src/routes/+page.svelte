@@ -29,7 +29,7 @@
 
 <MetaTags
   title="Umzugsunternehmen Hildesheim · Umzugsfirma mit Festpreis | Aust"
-  description="Ihr Umzugsunternehmen in Hildesheim — Festpreis, kostenlose Vor-Ort-Besichtigung, verbindliches Angebot in 48 h. Jetzt unverbindlich anfragen."
+  description="Ihr Umzugsunternehmen für Hildesheim & Umgebung: Umzüge, Haushaltsauflösungen und Montagen zum fairen Festpreis. Jetzt kostenloses Angebot anfordern."
   keywords="Umzugsunternehmen Hildesheim, Umzugsfirma Hildesheim, Aust Umzüge"
   canonical="https://www.aust-umzuege.de/"
   ogType="website"

@@ -221,7 +221,7 @@
 
 <MetaTags
     title="Kostenloses Umzugsangebot anfordern | Aust Umzüge Hildesheim"
-    description="Kostenloses Umzugsangebot von Aust Umzüge Hildesheim. Volumenrechner nutzen und unverbindliches Festpreisangebot erhalten – mit schneller Rückmeldung."
+    description="Umzugskosten online berechnen: Mit dem Volumenrechner in wenigen Minuten zum kostenlosen, unverbindlichen Festpreisangebot – für Hildesheim und Umgebung."
     keywords="Kostenloses Umzugsangebot, Umzugsrechner, Umzugskosten berechnen, Angebot Umzug Hildesheim"
     canonical="https://www.aust-umzuege.de/kostenloses-angebot"
 />

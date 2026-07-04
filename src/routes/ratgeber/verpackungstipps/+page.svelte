@@ -14,7 +14,7 @@
 
 <MetaTags
     title="Verpackungstipps für den Umzug | Aust Umzüge Ratgeber"
-    description="Verpackungstipps vom Profi: Geschirr, Elektronik und Möbel sicher verpacken. Bewährte Tricks von Ihrem Umzugsunternehmen in Hildesheim. Jetzt Ratgeber lesen!"
+    description="Richtig packen beim Umzug: Geschirr, Gläser, Elektronik und Möbel sicher verpacken – bewährte Tricks vom Umzugsprofi aus Hildesheim."
     keywords="Verpackungstipps Umzug, Umzugskartons packen, Geschirr verpacken, Möbel schützen"
     canonical="https://www.aust-umzuege.de/ratgeber/verpackungstipps"
     ogType="article"

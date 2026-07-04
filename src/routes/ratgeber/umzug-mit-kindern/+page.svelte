@@ -12,8 +12,8 @@
 </script>
 
 <MetaTags
-	title="Umzug mit Kindern – Familienumzug richtig planen | Aust Umzüge Hildesheim"
-	description="Umzug mit Kindern & Baby in Hildesheim: Altersgerechte Vorbereitung, Schulwechsel meistern und Abschiedsrituale gestalten – praktische Tipps für jede Altersgruppe."
+	title="Umzug mit Kindern – so gelingt der Familienumzug | Aust"
+	description="Umzug mit Kindern: altersgerechte Vorbereitung, Abschiedsrituale und Schulwechsel in Niedersachsen – praktische Tipps für jede Altersgruppe."
 	keywords="Umzug mit Kindern, Umzug mit Baby, Umzug mit Kleinkind, Schulwechsel Hildesheim, Umzug Kinder beteiligen, Kinder Umzug vorbereiten, Umzug Familie Hildesheim"
 	canonical="https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern"
 	ogType="article"

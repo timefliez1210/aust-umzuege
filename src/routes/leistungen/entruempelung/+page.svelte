@@ -46,13 +46,17 @@
         {
             question: "Bekomme ich einen Entsorgungsnachweis?",
             answer: "Ja, auf Wunsch erhalten Sie Entsorgungsnachweise für alle fachgerecht entsorgten Materialien – Sperrmüll, Elektrogeräte, Sondermüll. Besonders für Vermieter, Behörden oder Nachlasspfleger ist das häufig wichtig. Sprechen Sie uns bei der Besichtigung einfach darauf an."
+        },
+        {
+            question: "Muss ich bei der Entrümpelung vor Ort sein?",
+            answer: "Nein, nicht zwingend. Nach der gemeinsamen Besichtigung und dem Festpreisangebot genügt uns die Schlüsselübergabe. Auf Wunsch koordinieren wir direkt mit Vermieter oder Hausverwaltung und halten Sie telefonisch auf dem Laufenden. Viele Kunden kommen erst zur besenreinen Übergabe wieder dazu."
         }
     ];
 </script>
 
 <MetaTags
     title="Entrümpelung Hildesheim · Festpreis & Messie-Wohnung | Aust"
-    description="Entrümpelung in Hildesheim — Keller, Dachboden, Messie-Wohnung. Festpreis nach Vor-Ort-Termin, Wertanrechnung & Entsorgungsnachweis inklusive."
+    description="Entrümpelung in Hildesheim: Keller, Dachboden, Garage und Messie-Wohnung entrümpeln lassen – Festpreis, Wertanrechnung und Entsorgungsnachweis inklusive."
     keywords="Entrümpelung Hildesheim, Keller entrümpeln, Dachboden entrümpeln, Messie Wohnung, Garage entrümpeln"
     canonical="https://www.aust-umzuege.de/leistungen/entruempelung"
 />
@@ -199,11 +203,42 @@
                     <strong>5. Besenreine Übergabe:</strong> Der Raum ist leer, gefegt und bereit für die nächste Nutzung – ob Vermieterübergabe, Renovierung oder neuer Zweck.
                 </p>
 
+                <h2 class="section-title" style="margin-top: var(--space-16);">Keller, Dachboden, Garage – was wir entrümpeln</h2>
+                <p>
+                    <strong>Keller entrümpeln:</strong> Jahrzehntelang gelagerte Kartons, feucht gewordene Möbel, alte Farben und Lösungsmittel – Kellerräume sind selten mit einer Sperrmüllfahrt erledigt. Wir tragen alles über enge Treppen nach oben, trennen Sondermüll direkt vor Ort und entsorgen ihn über zertifizierte Annahmestellen.
+                </p>
+                <p>
+                    <strong>Dachboden entrümpeln:</strong> Wenig Licht, niedrige Balken, schmale Luken – auf dem Dachboden zählt Sorgfalt. Was nach Erinnerung aussieht, legen wir zur Durchsicht beiseite, statt es ungefragt zu entsorgen.
+                </p>
+                <p>
+                    <strong>Garage und Abstellraum:</strong> Reifen, Altmetall, Werkzeug und Gartengeräte sind oft noch verwertbar – das senkt über die Wertanrechnung Ihren Endpreis.
+                </p>
+                <p>
+                    <strong>Messie-Wohnung:</strong> Hier arbeiten wir mit Schutzausrüstung, absoluter Diskretion und ohne Wertung – bis zur hygienisch einwandfreien Übergabe. Wenn Sie zunächst selbst anpacken möchten: Unser Ratgeber <a href="/ratgeber/messie-wohnung-raeumen">Messie-Wohnung selbst entrümpeln</a> zeigt Schritt für Schritt, wie Sie vorgehen – und woran Sie erkennen, dass der Fall in Profihände gehört.
+                </p>
+                <p>
+                    <strong>Wohnung zwischen zwei Mietverhältnissen:</strong> Für Vermieter räumen wir zügig und dokumentiert – mit Entsorgungsnachweis für die Unterlagen und einer Rechnung, die sich als Werbungskosten ansetzen lässt.
+                </p>
+
                 <PriceCards
                     service="entruempelung"
                     title="Was kostet eine Entrümpelung? Unsere Pakete"
                     intro="Der eigentliche Räumaufwand richtet sich nach diesen Crew-Paketen. Hinzu kommen Entsorgungs- und Containerkosten nach tatsächlichem Aufwand – verkaufsfähige Möbel rechnen wir transparent dagegen. Den verbindlichen Festpreis legen wir nach der kostenlosen Besichtigung fest."
                 />
+
+                <h2 class="section-title">Wovon der Preis einer Entrümpelung abhängt</h2>
+                <p>
+                    Zur groben Orientierung: Ein einzelner Keller liegt meist zwischen 200 und 600 Euro, eine komplette Wohnungsentrümpelung zwischen 800 und 2.500 Euro. Den genauen Preis bestimmen vier Faktoren:
+                </p>
+                <p>
+                    <strong>Menge und Füllgrad:</strong> Ein halb leerer Abstellraum ist schneller geräumt als ein deckenhoch gefüllter Keller – die Kubikmeter bestimmen Crew-Größe und Containerbedarf.<br />
+                    <strong>Zugänglichkeit:</strong> Etage, Aufzug, Länge des Tragewegs und Parkmöglichkeiten vor dem Haus beeinflussen den Zeitaufwand spürbar.<br />
+                    <strong>Sondermüll-Anteil:</strong> Farben, Chemikalien und Elektrogeräte müssen getrennt entsorgt werden und kosten in der Entsorgung mehr als Sperrmüll.<br />
+                    <strong>Verwertbares:</strong> Gut erhaltene Möbel und Geräte rechnen wir gegen – je mehr sich verkaufen oder spenden lässt, desto niedriger Ihr Festpreis.
+                </p>
+                <p>
+                    Genau deshalb schätzen wir nicht am Telefon, sondern kommen kostenlos vorbei – und Sie bekommen einen Festpreis, der hält.
+                </p>
 
                 <h2 class="section-title">Entrümpelung in Hildesheim und Umgebung</h2>
                 <p>
@@ -218,7 +253,7 @@
 
                 <h3 class="highlight-title">Verwandte Leistungen</h3>
                 <p>
-                    Wenn ein gesamter Haushalt aufgelöst werden soll – zum Beispiel nach einem Todesfall oder beim Umzug ins Pflegeheim – ist unsere <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösung</a> die richtige Wahl. Möbel, die nach der Räumung vorübergehend untergebracht werden müssen, lagern wir sicher in unseren <a href="/leistungen/lagerung">Lagerräumen</a>.
+                    Wenn ein gesamter Haushalt aufgelöst werden soll – zum Beispiel nach einem Todesfall oder beim Umzug ins Pflegeheim – ist unsere <a href="/leistungen/haushaltsaufloesung">Haushaltsauflösung</a> die richtige Wahl. Möbel, die nach der Räumung vorübergehend untergebracht werden müssen, lagern wir sicher in unseren <a href="/leistungen/lagerung">Lagerräumen</a>. Praktische Tipps zum Selbermachen – von der Zeitplanung bis zur Entsorgung – finden Sie in unserem Ratgeber <a href="/ratgeber/haushaltsaufloesungen-entruempelungen">Haushaltsauflösungen und Entrümpelungen</a>.
                 </p>
             </div>
 

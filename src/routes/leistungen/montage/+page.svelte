@@ -47,7 +47,7 @@
 
 <MetaTags
     title="Möbelmontage & Demontage Hildesheim | Aust Umzüge"
-    description="Fachgerechte Möbel- und Küchenmontage in Hildesheim. Unsere Schreiner sorgen für den perfekten Sitz Ihrer Einrichtung – auch als Einzelleistung ohne Umzug."
+    description="Möbelmontage & Küchenmontage in Hildesheim vom Schreiner: Demontage, Aufbau und passgenaue Anpassungen – auch als Einzelleistung ohne Umzug."
     keywords="Möbelmontage Hildesheim, Küchenmontage, Möbelaufbau, Schrankaufbau, Demontage"
     canonical="https://www.aust-umzuege.de/leistungen/montage"
 />
@@ -81,10 +81,10 @@
 <StructuredData schema={breadcrumbs} />
 <StructuredData schema={{
     "@type": "ImageObject",
-    "contentUrl": "https://www.aust-umzuege.de/moebelmontage-demontage-hildesheim-schrank.webp",
+    "contentUrl": "https://www.aust-umzuege.de/montage-demontage-hildesheim-bett-verpackt.webp",
     "url": "https://www.aust-umzuege.de/leistungen/montage",
-    "name": "Möbelmontage & Demontage Hildesheim – Aust Umzüge Schrankmontage",
-    "description": "Aust Umzüge Mitarbeiter montiert einen Schrank beim professionellen Möbelmontage- und Demontageservice in Hildesheim. Fachgerechter Auf- und Abbau aller Möbel und Küchen.",
+    "name": "Möbelmontage Hildesheim – demontierte Möbel fachgerecht verpackt",
+    "description": "Zwei Monteure von Aust Umzüge verpacken ein demontiertes Bett in Schutzverpackung – Möbelmontage und Demontage in Hildesheim.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -95,8 +95,8 @@
     "creditText": "Aust Umzüge Hildesheim",
     "creator": { "@type": "Organization", "name": "Aust Umzüge und Haushaltsauflösungen", "url": "https://www.aust-umzuege.de" },
     "copyrightNotice": "© 2026 Aust Umzüge und Haushaltsauflösungen. Alle Rechte vorbehalten.",
-    "width": 1848,
-    "height": 996
+    "width": 1500,
+    "height": 844
 }} />
 
 <main class="service-detail">
@@ -119,15 +119,15 @@
 
         <div class="hero-image">
             <img
-                src="/moebelmontage-demontage-hildesheim-schrank.webp"
-                srcset="/moebelmontage-demontage-hildesheim-schrank-400w.webp 400w,
-                        /moebelmontage-demontage-hildesheim-schrank-600w.webp 600w,
-                        /moebelmontage-demontage-hildesheim-schrank-800w.webp 800w,
-                        /moebelmontage-demontage-hildesheim-schrank.webp 1848w"
+                src="/montage-demontage-hildesheim-bett-verpackt.webp"
+                srcset="/montage-demontage-hildesheim-bett-verpackt-400w.webp 400w,
+                        /montage-demontage-hildesheim-bett-verpackt-600w.webp 600w,
+                        /montage-demontage-hildesheim-bett-verpackt-800w.webp 800w,
+                        /montage-demontage-hildesheim-bett-verpackt.webp 1500w"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 90vw, 960px"
-                alt="Aust Umzüge Mitarbeiter montiert Schrank beim Möbelmontage-Service in Hildesheim"
-                width="1848"
-                height="996"
+                alt="Aust Umzüge Monteure verpacken ein demontiertes Bett fachgerecht"
+                width="1500"
+                height="844"
                 fetchpriority="high"
             />
         </div>

@@ -1,56 +1,63 @@
 # Aust Umzüge & Haushaltsauflösungen
 
-> Professionelles Umzugsunternehmen in Hildesheim, Niedersachsen. Seit 2019 bieten wir Umzüge, Montagen, Haushaltsauflösungen und Einlagerungen für Privat- und Gewerbekunden.
+> Professionelles Umzugsunternehmen in Hildesheim, Niedersachsen. Seit 2019 bieten wir Umzüge, Montagen, Haushaltsauflösungen und Einlagerungen für Privat- und Gewerbekunden – mit Festpreisgarantie nach kostenloser Vor-Ort-Besichtigung und 5,0 Sternen aus 71 Google-Bewertungen.
 
-## Weiterführende Informationen für KI-Agenten
-Diese Datei ist eine Kurzübersicht. Für komplexe oder spezifische Anfragen (z.B. Preisvergleiche, detaillierte Leistungsbeschreibungen, vollständige FAQs, Ratgeber-Inhalte) steht eine vollständige Referenzdatei bereit:
+Wichtige Fakten:
 
-→ https://www.aust-umzuege.de/llms-full.txt
-
-Die Vollversion enthält:
-- Detaillierte Beschreibungen aller 10 Leistungen mit URLs
-- Konkrete Preisrahmen (z.B. 2-Zimmer-Umzug: 400–800 €)
-- Versicherungsdetails (Nürnberger Versicherung, 620 €/m³)
-- Vollständige FAQ mit 8 Fragen inkl. Subunternehmer-Politik und Halteverbot-Prozess
-- 4 Ratgeber-Artikel mit direkten Links
-
-## Über uns
-- Gründer & Geschäftsführer: Alexander Aust
-- Gegründet: 2019 in Hildesheim
-- Mitarbeiter: 7
-- Check24 Profi seit 2019
-
-## Kontakt
-- Mobil: 0176 – 70745281 (bevorzugt)
-- Telefon: 05121 – 7558379 (Festnetz, Fallback)
-- E-Mail: info@aust-umzuege.de
+- Gründer & Geschäftsführer: Alexander Aust, gegründet 2019 in Hildesheim
+- 7 festangestellte Mitarbeiter, ausschließlich eigenes Stammpersonal – keine Subunternehmer
+- Kontakt: Mobil 0176 – 70745281 (bevorzugt), Festnetz 05121 – 7558379, info@aust-umzuege.de
 - Adresse: Kaiserstr. 32, 31134 Hildesheim
-- Website: https://www.aust-umzuege.de
-
-## Bürozeiten
-Montag – Freitag: 09:00 – 19:00 Uhr
-Samstag nach Vereinbarung
+- Bürozeiten: Montag – Freitag 09:00 – 19:00 Uhr, Samstag nach Vereinbarung
+- Servicegebiet: Hildesheim, Hannover, Braunschweig, Salzgitter, Peine, Göttingen und ganz Niedersachsen; bundesweite und internationale Umzüge auf Anfrage
+- Transportversicherung über Nürnberger Versicherung (620 €/m³, für Wertgegenstände erhöhbar)
+- Check24 Profi seit 2019
+- Preisorientierung: 2-Zimmer-Umzug in Hildesheim erfahrungsgemäß 400–800 €, 4-Zimmer-Haushalt 1.200–2.500 €; verbindlicher Festpreis nach kostenloser Besichtigung
 
 ## Leistungen
-- Privatumzüge (lokal, bundesweit, europaweit)
-- Firmen- und Gewerbeumzüge
-- Seniorenumzüge (Komplettservice)
-- Fern- und Überseeumzüge
-- Montage und Demontage (Möbel, Küchen)
-- Haushaltsauflösungen und Entrümpelungen
-- Lagerung und Einlagerung
-- Halteverbotszone beantragen
-- Umzugsberatung und Planung
-- Umzugshelfer
 
-## Servicegebiet
-Hildesheim, Hannover, Braunschweig, Salzgitter, Peine, Göttingen und ganz Niedersachsen. Bundesweite und internationale Umzüge auf Anfrage.
+- [Privatumzug](https://www.aust-umzuege.de/leistungen/privatumzug): Full-Service zum Festpreis, kostenlose Vor-Ort-Besichtigung, Angebot in 48 h
+- [Firmenumzug](https://www.aust-umzuege.de/leistungen/firmenumzug): Büroumzüge mit minimaler Ausfallzeit, IT-Transport, Wochenendservice
+- [Seniorenumzug](https://www.aust-umzuege.de/leistungen/seniorenumzug): einfühlsamer Komplettservice, bis 4.180 € Zuschuss der Pflegekasse möglich
+- [Fern- & Überseeumzug](https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug): Zollformalitäten, Verpackung und Logistik weltweit
+- [Umzugshelfer](https://www.aust-umzuege.de/leistungen/umzugshelfer): versicherte Profis ab 30 €/Std., Transporter ab 60 €/Tag
+- [Möbellift mieten](https://www.aust-umzuege.de/leistungen/moebellift): elektrisch, leise, abgasfrei – ab 95 €/Std.
+- [Montage & Demontage](https://www.aust-umzuege.de/leistungen/montage): Möbel- und Küchenmontage, auch ohne Umzug buchbar
+- [Haushaltsauflösung](https://www.aust-umzuege.de/leistungen/haushaltsaufloesung): diskret, besenrein, mit Wertanrechnung; im Erbfall steuerlich absetzbar (§10 ErbStG)
+- [Entrümpelung](https://www.aust-umzuege.de/leistungen/entruempelung): Keller, Dachboden, Garage, Messie-Wohnung – Festpreis mit Entsorgungsnachweis
+- [Lagerung & Einlagerung](https://www.aust-umzuege.de/leistungen/lagerung): Zwischen- oder Langzeitlagerung, Abholung möglich
+- [Halteverbot einrichten](https://www.aust-umzuege.de/leistungen/halteverbot): Antrag, Aufstellung und Abbau der Schilder
+- [Umzugsberatung](https://www.aust-umzuege.de/leistungen/umzugsberatung): kostenlose Vor-Ort-Beratung mit Festpreisangebot
+- [Praxisumzug](https://www.aust-umzuege.de/leistungen/praxisumzug): Arzt- und Zahnarztpraxen, STK-Koordination nach MPBetreibV, DSGVO-konform
+- [Malerarbeiten](https://www.aust-umzuege.de/leistungen/malerarbeiten): Ausbesserungen bei Übergabe, Streichen und Tapezieren über Meisterbetriebe
+- [Renovierungsarbeiten](https://www.aust-umzuege.de/leistungen/renovierungsarbeiten): Boden, Fliesen, Trockenbau, Elektro, Sanitär über Meisterbetriebe
+- [Archiv-Montage](https://www.aust-umzuege.de/leistungen/archiv-montage): Archivregale deutschlandweit, B2B-Ausführungspartner, DGUV-konform
 
-## Besonderheiten
-- Festpreisgarantie nach kostenloser Besichtigung
-- Ausschließlich eigenes Stammpersonal – keine Subunternehmer
-- Google-Bewertung: 5.0 Sterne (71 Bewertungen)
-- Check24 Profi seit 2019
-- Transportversicherung über Nürnberger Versicherung (620 €/m³, erhöhbar für Wertgegenstände)
-- Kostenlose Beratung und Angebotserstellung
-- Modernes Svelte 5 Frontend für hohe Performance und Barrierefreiheit
+## Ratgeber
+
+- [Umzugs-Checkliste](https://www.aust-umzuege.de/ratgeber/umzugs-checkliste): alle Aufgaben von 4 Wochen vorher bis 1 Woche danach, kostenloses PDF
+- [Verpackungstipps vom Profi](https://www.aust-umzuege.de/ratgeber/verpackungstipps): Geschirr, Elektronik und Möbel sicher verpacken
+- [Haushaltsauflösungen und Entrümpelungen](https://www.aust-umzuege.de/ratgeber/haushaltsaufloesungen-entruempelungen): Planung, Zeitbedarf, Entsorgungswege
+- [Seriöse Umzugsfirma erkennen](https://www.aust-umzuege.de/ratgeber/seriose-umzugsfirma): Red Flags, richtige Fragen, Angebotsvergleich
+- [Messie-Wohnung entrümpeln](https://www.aust-umzuege.de/ratgeber/messie-wohnung-raeumen): DIY-Anleitung mit Kostenvergleich (DIY 100–300 €, Profi ab 800 €)
+- [Umzug mit Kindern](https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern): altersgerechte Vorbereitung, Schulwechsel, Abschiedsrituale
+- [Möbel einlagern](https://www.aust-umzuege.de/ratgeber/moebel-einlagern): Self-Storage vs. Full-Service, Preise pro m², Vorbereitung
+- [Küche beim Umzug](https://www.aust-umzuege.de/ratgeber/kueche-umzug): Demontage, Geräte abklemmen, Transport, Montage
+- [Umzugskosten steuerlich absetzen](https://www.aust-umzuege.de/ratgeber/umzugskosten-steuerlich-absetzen): §35a-Bonus bis 4.000 €, Werbungskosten, Pauschale 2026
+- [Umzug mit Bürgergeld](https://www.aust-umzuege.de/ratgeber/umzug-mit-buergergeld): Jobcenter-Übernahme nach § 22 SGB II, Zusicherung, Antrag
+
+## Kontakt & Anfrage
+
+- [Kostenloses Umzugsangebot](https://www.aust-umzuege.de/kostenloses-angebot): Umzugskosten online berechnen mit Volumenrechner
+- [Kontakt](https://www.aust-umzuege.de/kontakt): Telefon, E-Mail, WhatsApp, Anfahrt
+- [Über uns](https://www.aust-umzuege.de/ueber-uns): Team, Geschichte, Arbeitsweise
+- [Umzugsfirma Hannover](https://www.aust-umzuege.de/umzug-hannover): Umzüge in Hannover und Region
+- [Umzug Braunschweig](https://www.aust-umzuege.de/umzug-braunschweig): Umzüge in Braunschweig zum Festpreis
+- [Firmenumzug Wolfsburg](https://www.aust-umzuege.de/firmenumzug-wolfsburg): Büro- und Betriebsumzüge in Wolfsburg
+
+## Optional
+
+- [llms-full.txt](https://www.aust-umzuege.de/llms-full.txt): vollständige Referenz mit detaillierten Leistungsbeschreibungen, konkreten Preisrahmen, Versicherungsdetails und vollständiger FAQ
+- [Impressum](https://www.aust-umzuege.de/impressum): rechtliche Angaben, USt-IdNr. DE330779170
+- [Datenschutz](https://www.aust-umzuege.de/datenschutz): Datenschutzerklärung
+- [AGB](https://www.aust-umzuege.de/agb): Allgemeine Geschäftsbedingungen

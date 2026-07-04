@@ -46,7 +46,7 @@
 
 <MetaTags
     title="Fernumzug & Auslandsumzug Hildesheim | Aust Umzüge"
-    description="Sicherer Umzug ins Ausland oder Übersee ab Hildesheim. Zollformalitäten, professionelle Verpackung und weltweite Logistik aus einer Hand. Kostenlose Beratung."
+    description="Fernumzug & Auslandsumzug ab Hildesheim: Zollformalitäten, professionelle Verpackung und weltweite Logistik aus einer Hand. Kostenlose Erstberatung."
     keywords="Fernumzug, Überseeumzug, Auslandsumzug, internationaler Umzug, Umzug weltweit"
     canonical="https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug"
 />

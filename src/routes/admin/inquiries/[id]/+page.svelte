@@ -20,6 +20,7 @@
 	import RouteMap from "$lib/components/admin/RouteMap.svelte";
 	import { floorLabel, parseFloor } from "$lib/utils/floor";
 	import AddressEditor from "./_components/AddressEditor.svelte";
+	import ManualInvoiceEditor from "./_components/ManualInvoiceEditor.svelte";
 	import EmployeeAssignmentPanel from "$lib/components/admin/EmployeeAssignmentPanel.svelte";
 	import { normalizeFlatTotalItem, calculateBruttoCents, bruttoCentsToNetto } from "$lib/utils/pricing";
 	import EstimationItemsTable from "$lib/components/admin/EstimationItemsTable.svelte";
@@ -1399,6 +1400,13 @@
 		price_cents: number;
 	}
 
+	interface InvoiceLineItem {
+		description: string;
+		quantity: number;
+		unit_price_cents: number;
+		remark?: string | null;
+	}
+
 	interface Invoice {
 		id: string;
 		inquiry_id: string;
@@ -1408,6 +1416,8 @@
 		partial_percent: number | null;
 		status: string;
 		extra_services: InvoiceExtraService[];
+		is_manual: boolean;
+		line_items: InvoiceLineItem[];
 		total_netto_cents: number;
 		total_brutto_cents: number;
 		pdf_s3_key: string | null;
@@ -1646,6 +1656,54 @@
 		} catch {
 			showToast('Zusatzleistungen konnten nicht gespeichert werden', 'error');
 		}
+	}
+
+	// ─── Manual invoice mode (Stunden ausweisen) ──────────────────────────────
+	// Which full invoices currently have the manual editor open. An invoice that
+	// is already `is_manual` always shows the editor; this tracks the transient
+	// "opened but not yet saved" state for a not-yet-manual invoice.
+	let manualOpen = $state<Record<string, boolean>>({});
+
+	/** Whether to render the manual editor for this invoice. */
+	function isManualEditorOpen(inv: Invoice): boolean {
+		return inv.is_manual || manualOpen[inv.id] === true;
+	}
+
+	/**
+	 * Toggle the "Manuelle Rechnung" switch for a full invoice.
+	 *
+	 * Turning ON just opens the editor (nothing persists until Speichern).
+	 * Turning OFF an already-manual invoice reverts it to the offer-derived form
+	 * via PATCH `{ is_manual: false }` (with confirmation, since it discards the
+	 * hand-edited lines). Turning OFF a not-yet-saved editor just closes it.
+	 */
+	async function toggleManual(inv: Invoice, on: boolean) {
+		if (on) {
+			manualOpen[inv.id] = true;
+			return;
+		}
+		if (inv.is_manual) {
+			if (!confirm('Manuelle Positionen verwerfen und Rechnung wieder aus dem Angebot erzeugen?')) {
+				return;
+			}
+			try {
+				const updated = await apiPatch(`/api/v1/inquiries/${data!.id}/invoices/${inv.id}`, {
+					is_manual: false,
+				});
+				invoices = invoices.map((i) => (i.id === inv.id ? (updated as Invoice) : i));
+				showToast('Rechnung aus Angebot neu erzeugt', 'success');
+			} catch {
+				showToast('Umstellung fehlgeschlagen', 'error');
+				return;
+			}
+		}
+		manualOpen[inv.id] = false;
+	}
+
+	/** Apply the saved invoice returned by the manual editor and close it. */
+	function onManualSaved(invId: string, updated: Invoice) {
+		invoices = invoices.map((i) => (i.id === invId ? updated : i));
+		manualOpen[invId] = false;
 	}
 
 	$effect(() => {
@@ -3040,8 +3098,31 @@
 								</div>
 							</div>
 
-							<!-- Extra services (only on full / partial_final) -->
-							{#if inv.invoice_type !== 'partial_first'}
+							<!-- Manual invoice mode (full invoices only): free line-item editing -->
+							{#if inv.invoice_type === 'full'}
+								<div class="manual-section">
+									<label class="manual-toggle">
+										<input
+											type="checkbox"
+											checked={isManualEditorOpen(inv)}
+											disabled={inv.status === 'paid'}
+											onchange={(e) => toggleManual(inv, (e.currentTarget as HTMLInputElement).checked)}
+										/>
+										<span>Manuelle Rechnung — Positionen frei bearbeiten (z.B. Stunden ausweisen)</span>
+									</label>
+									{#if isManualEditorOpen(inv)}
+										<ManualInvoiceEditor
+											inquiryId={inv.inquiry_id}
+											invoice={inv}
+											onSaved={(u) => onManualSaved(inv.id, u as Invoice)}
+											onCancel={() => toggleManual(inv, false)}
+										/>
+									{/if}
+								</div>
+							{/if}
+
+							<!-- Extra services (full / partial_final) — hidden while manual editor is open -->
+							{#if inv.invoice_type !== 'partial_first' && !isManualEditorOpen(inv)}
 								<div class="extras-section">
 									{#if !editingExtras[inv.id]}
 										<div class="extras-header">
@@ -4446,6 +4527,27 @@
 	.inv-status--orange { background: var(--dt-surface-container-high); color: var(--dt-secondary); }
 	.inv-status--blue   { background: var(--dt-info-bg); color: var(--dt-info-text); }
 	.inv-status--green  { background: var(--dt-success-bg); color: var(--dt-success-text); }
+
+	.manual-section {
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--dt-surface-container-high);
+	}
+
+	.manual-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.manual-toggle input {
+		width: 1rem;
+		height: 1rem;
+		cursor: pointer;
+	}
 
 	.extras-section {
 		margin-top: 0.75rem;

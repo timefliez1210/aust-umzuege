@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed, Receipt, HandCoins } from "lucide-svelte";
+    import { ClipboardList, Package, Home, ShieldCheck, ArrowRight, Users, UtensilsCrossed, Receipt, HandCoins, GraduationCap } from "lucide-svelte";
     import CTASection from "$lib/components/CTASection.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
     import StructuredData from "$lib/components/StructuredData.svelte";
@@ -68,6 +68,13 @@
                 "Wann das Jobcenter Umzugskosten, Mietkaution und Wohnungsbeschaffungskosten übernimmt. Zusicherung richtig beantragen, Fallstricke vermeiden, mit den Originalzitaten aus § 22 SGB II.",
             icon: HandCoins,
             link: "/ratgeber/umzug-mit-buergergeld",
+        },
+        {
+            title: "Studentenstadt Hildesheim – Ankommen, Wohnen, Weiterziehen",
+            description:
+                "Der Umzugsguide für Studierende: WG-Viertel und Wohnheime, Umzug mit kleinem Budget, Möbel einlagern im Auslandssemester und die WG-Auflösung nach dem Abschluss.",
+            icon: GraduationCap,
+            link: "/ratgeber/studentenstadt-hildesheim",
         },
         {
             title: "Umzugskosten steuerlich absetzen",

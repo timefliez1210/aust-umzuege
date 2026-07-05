@@ -872,7 +872,7 @@ export const ratgeberOverview = {
 	name: "Umzugsratgeber",
 	description: "Nützliche Tipps und Checklisten rund um den Umzug",
 	url: "https://www.aust-umzuege.de/ratgeber",
-	numberOfItems: 10,
+	numberOfItems: 11,
 	itemListElement: [
 		{
 			"@type": "ListItem",
@@ -962,6 +962,15 @@ export const ratgeberOverview = {
 				"@type": "Article",
 				name: "Umzug mit Bürgergeld",
 				url: "https://www.aust-umzuege.de/ratgeber/umzug-mit-buergergeld"
+			}
+		},
+		{
+			"@type": "ListItem",
+			position: 11,
+			item: {
+				"@type": "Article",
+				name: "Studentenstadt Hildesheim – der Umzugsguide für Studierende",
+				url: "https://www.aust-umzuege.de/ratgeber/studentenstadt-hildesheim"
 			}
 		}
 	]

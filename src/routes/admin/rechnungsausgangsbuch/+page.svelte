@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiGet, apiPatch } from '$lib/utils/api.svelte';
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { apiGet, apiPatch, apiPost } from '$lib/utils/api.svelte';
+	import { showToast } from '$lib/components/admin/Toast.svelte';
+	import ReviewRequestModal from '$lib/components/admin/ReviewRequestModal.svelte';
+	import { ChevronLeft, ChevronRight, Check } from 'lucide-svelte';
 
 	const PAYMENT_METHODS = ['Überweisung', 'Bar', 'EC-Karte', 'PayPal'];
 
 	interface RechnungsausgangItem {
 		id: string;
+		kind: string; // "umzug" | "lagerung"
+		/** null for Lagerung — storage invoices hang off a contract, not an inquiry. */
+		inquiry_id: string | null;
 		invoice_number: string;
 		customer_name: string | null;
 		scheduled_date: string | null;
@@ -20,6 +25,17 @@
 		offene_zahlungen_cents: number | null;
 		payment_method: string | null;
 		notes: string | null;
+	}
+
+	/** Response of POST /rechnungsausgangsbuch/{id}/paid. */
+	interface PaidOutcome {
+		kind: string;
+		paid_at: string;
+		inquiry_id: string | null;
+		customer_name: string | null;
+		inquiry_settled: boolean;
+		/** True when the job is fully settled and nobody has answered the review question yet. */
+		review_prompt: boolean;
 	}
 
 	interface MonthGroup {
@@ -120,6 +136,42 @@
 			error = e?.message || 'Zahlungsart konnte nicht gespeichert werden';
 		}
 	}
+
+	// ── Bezahlt ──────────────────────────────────────────────────────────────
+
+	/** Invoice id currently being booked — disables just that row's button. */
+	let payingId = $state<string | null>(null);
+
+	/** Inquiry whose review question the modal is currently asking about. */
+	let reviewFor = $state<{ inquiryId: string; customerName: string | null } | null>(null);
+
+	async function markPaid(item: RechnungsausgangItem) {
+		payingId = item.id;
+		try {
+			const outcome = await apiPost<PaidOutcome>(
+				`/api/v1/admin/rechnungsausgangsbuch/${item.id}/paid`,
+				{}
+			);
+
+			// Patch the row in place rather than refetching the whole register — the
+			// table is grouped by month and a reload would jump the user back to today.
+			item.paid_at = outcome.paid_at;
+			item.offene_zahlungen_cents = 0;
+			showToast(`Rechnung ${item.invoice_number} als bezahlt gebucht`, 'success');
+
+			// Only for a fully settled Umzug whose review question is still open.
+			if (outcome.review_prompt && outcome.inquiry_id) {
+				reviewFor = {
+					inquiryId: outcome.inquiry_id,
+					customerName: outcome.customer_name ?? item.customer_name
+				};
+			}
+		} catch (e: any) {
+			showToast(e?.message || 'Konnte nicht als bezahlt gebucht werden', 'error');
+		} finally {
+			payingId = null;
+		}
+	}
 </script>
 
 <div class="page">
@@ -168,6 +220,7 @@
 					<thead>
 						<tr>
 							<th>Rg-Nr.</th>
+							<th>Typ</th>
 							<th>Leistungsdatum</th>
 							<th>Kunde</th>
 							<th class="num">Netto</th>
@@ -185,6 +238,7 @@
 						{#each active.items as item}
 							<tr class:paid={item.paid_at != null}>
 								<td class="mono">{item.invoice_number}</td>
+								<td>{item.kind === 'lagerung' ? 'Lagerung' : 'Umzug'}</td>
 								<td>{fmtDate(item.scheduled_date)}</td>
 								<td>{item.customer_name || '\u2014'}</td>
 								<td class="num">{fmtEur(item.netto_cents)}</td>
@@ -192,7 +246,22 @@
 								<td class="num">{fmtEur(item.brutto_cents)}</td>
 								<td>{fmtDate(item.sent_at)}</td>
 								<td>{fmtDate(item.due_date)}</td>
-								<td>{fmtDate(item.paid_at)}</td>
+								<td>
+									{#if item.paid_at}
+										{fmtDate(item.paid_at)}
+									{:else}
+										<button
+											type="button"
+											class="paid-btn"
+											onclick={() => markPaid(item)}
+											disabled={payingId === item.id}
+											title="Als bezahlt buchen"
+										>
+											<Check size={13} />
+											{payingId === item.id ? '…' : 'Bezahlt'}
+										</button>
+									{/if}
+								</td>
 								<td class="num offen">{fmtEur(item.offene_zahlungen_cents)}</td>
 								<td>
 									<select
@@ -212,7 +281,7 @@
 					</tbody>
 					<tfoot>
 						<tr>
-							<th colspan="3">Summe {active.label}</th>
+							<th colspan="4">Summe {active.label}</th>
 							<th class="num">{fmtEur(active.netto)}</th>
 							<th class="num">{fmtEur(active.mwst)}</th>
 							<th class="num">{fmtEur(active.brutto)}</th>
@@ -236,6 +305,15 @@
 		</div>
 	{/if}
 </div>
+
+{#if reviewFor}
+	<ReviewRequestModal
+		inquiryId={reviewFor.inquiryId}
+		customerName={reviewFor.customerName}
+		onDecided={() => (reviewFor = null)}
+		onClose={() => (reviewFor = null)}
+	/>
+{/if}
 
 <style>
 	.page { padding: var(--dt-space-6); }
@@ -311,6 +389,20 @@
 	tbody tr.paid td.offen { color: var(--admin-success); }
 
 	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
+
+	.paid-btn {
+		display: inline-flex; align-items: center; gap: 0.2rem;
+		padding: 2px 8px; font-size: 0.75rem; font-weight: 600;
+		color: var(--admin-success, #2e7d32);
+		background: color-mix(in srgb, var(--admin-success, #2e7d32) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--admin-success, #2e7d32) 35%, transparent);
+		border-radius: var(--dt-radius-sm); cursor: pointer; white-space: nowrap;
+		transition: background var(--dt-transition);
+	}
+	.paid-btn:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--admin-success, #2e7d32) 20%, transparent);
+	}
+	.paid-btn:disabled { opacity: 0.5; cursor: default; }
 	.payment-method-select {
 		background: transparent; color: var(--dt-on-surface);
 		border: var(--dt-ghost-border); border-radius: var(--dt-radius-sm);

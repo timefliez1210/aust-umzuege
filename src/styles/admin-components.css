@@ -410,6 +410,10 @@
 		min-height: 44px;
 	}
 
+	.pagination {
+		flex-wrap: wrap;
+	}
+
 	.pagination button {
 		min-height: 44px;
 		min-width: 44px;
@@ -431,5 +435,136 @@
 
 	.form-grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+/* ─── Table Scroll Wrapper ───────────────────────────────────── */
+
+/* For any page-local <table> not using DataTable: wrap it in
+ * <div class="table-scroll"> so only the wrapper scrolls horizontally,
+ * never the page itself. Safe at any width (no-op unless content overflows). */
+.table-scroll {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* ─── Mobile Stack Utility ───────────────────────────────────── */
+
+@media (max-width: 768px) {
+	/* Add to any multi-column grid (besides .form-grid, which already collapses)
+	 * to force a single column on mobile without restructuring the page. */
+	.mobile-stack {
+		grid-template-columns: 1fr !important;
+	}
+}
+
+/* ─── Mobile Form Foundation ─────────────────────────────────── */
+
+@media (max-width: 768px) {
+	/* iOS Safari auto-zooms on focus when an input's font-size is < 16px. */
+	input,
+	select,
+	textarea {
+		font-size: 16px;
+	}
+
+	/* 44px minimum touch target for all form controls and buttons admin-wide
+	 * (checkboxes/radios excluded — stretching those looks broken). */
+	input:not([type='checkbox']):not([type='radio']),
+	select,
+	textarea,
+	button {
+		min-height: 44px;
+	}
+}
+
+/* ─── Modal → Sheet (default behavior for the shared .modal/.modal-backdrop) ── */
+
+@media (max-width: 768px) {
+	/* Bottom-sheet anchoring for any backdrop using the shared modal classes. */
+	.modal-backdrop,
+	.modal-overlay {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	/* Full-width bottom sheet with top-only radius and an internally scrolling body. */
+	.modal {
+		width: 100%;
+		max-width: 100%;
+		max-height: 92vh;
+		margin: 0;
+		border-radius: var(--dt-radius-lg) var(--dt-radius-lg) 0 0;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* Action buttons stick to the bottom of the sheet and wrap if needed. */
+	.modal-actions {
+		position: sticky;
+		bottom: 0;
+		background: var(--dt-surface-container-lowest);
+		padding-top: 0.75rem;
+		margin-top: 0.75rem;
+		flex-wrap: wrap;
+	}
+}
+
+/* ─── Modal Sheet (opt-in explicit header/body/footer structure) ────────────
+ * For pages that want a dedicated body-scroll region separate from a fixed
+ * header/footer, rather than the whole-.modal-scrolls default above. Desktop:
+ * behaves like a centered .modal card. Mobile: true full-screen sheet
+ * (position: fixed; inset: 0). Usage:
+ *   <div class="modal-sheet">
+ *     <h2>…</h2>
+ *     <div class="modal-sheet-body">…scrollable content…</div>
+ *     <div class="modal-sheet-actions">…buttons…</div>
+ *   </div>
+ * ────────────────────────────────────────────────────────────────────── */
+
+.modal-sheet {
+	background: var(--dt-surface-container-lowest);
+	border-radius: var(--dt-radius-lg);
+	box-shadow: var(--dt-shadow-ambient);
+	padding: 1.5rem;
+	width: 90%;
+	max-width: 520px;
+	max-height: 85vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.modal-sheet-body {
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	flex: 1;
+}
+
+.modal-sheet-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	padding-top: 0.75rem;
+	flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+	.modal-sheet {
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		max-height: 100%;
+		position: fixed;
+		inset: 0;
+		border-radius: 0;
+	}
+
+	.modal-sheet-actions {
+		position: sticky;
+		bottom: 0;
+		background: var(--dt-surface-container-lowest);
+		border-top: var(--dt-ghost-border);
+		padding: 0.75rem 0 0;
+		flex-wrap: wrap;
 	}
 }

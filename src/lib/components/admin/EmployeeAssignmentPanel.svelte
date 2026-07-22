@@ -523,8 +523,9 @@
 				{#each employeeSummaries() as emp}
 					<div class="inq-summary-row">
 						<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
-						<span class="inq-days">{emp.day_count}</span>
+						<span class="inq-days"><span class="mobile-only-label">Tage</span>{emp.day_count}</span>
 						<span class="inq-hours">
+							<span class="mobile-only-label">Stunden Ist</span>
 							{#if emp.total_hours != null}
 								<span class="hours-badge">{fmtHours(emp.total_hours)}</span>
 							{:else}
@@ -557,6 +558,7 @@
 					<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
 					<!-- Von–Bis (clock_in/clock_out) -->
 					<div class="inq-times">
+						<span class="mobile-only-label">Von</span>
 						<input
 							class="inq-input inq-time"
 							type="text"
@@ -571,6 +573,7 @@
 							}}
 						/>
 						<span class="inq-sep">–</span>
+						<span class="mobile-only-label">Bis</span>
 						<input
 							class="inq-input inq-time"
 							type="text"
@@ -591,15 +594,18 @@
 						{/if}
 					</div>
 					<!-- Break: typed as decimal hours (0.25 = 15 min), stored as minutes -->
-					<input
-						class="inq-input inq-break"
-						type="text"
-						inputmode="decimal"
-						placeholder="0"
-						maxlength="5"
-						value={breakMinutesToHours(emp.break_minutes ?? 0)}
-						onblur={(e) => updateNumericField(emp.employee_id, 'break_minutes', (e.target as HTMLInputElement).value)}
-					/>
+					<div class="inq-break-wrap">
+						<span class="mobile-only-label">Pause (h)</span>
+						<input
+							class="inq-input inq-break"
+							type="text"
+							inputmode="decimal"
+							placeholder="0"
+							maxlength="5"
+							value={breakMinutesToHours(emp.break_minutes ?? 0)}
+							onblur={(e) => updateNumericField(emp.employee_id, 'break_minutes', (e.target as HTMLInputElement).value)}
+						/>
+					</div>
 					<button
 						class="btn-icon danger"
 						title="Entfernen"
@@ -1161,5 +1167,126 @@
 	.hours-badge--derived {
 		background: #f0fdf4;
 		color: #15803d;
+	}
+
+	.mobile-only-label {
+		display: none;
+	}
+
+	.inq-break-wrap {
+		display: contents;
+	}
+
+	/* ── Mobile: stack single-day + multi-day rows into per-employee cards ── */
+	@media (max-width: 768px) {
+		.mobile-only-label {
+			display: block;
+			font-size: 0.6875rem;
+			font-weight: 600;
+			color: var(--dt-on-surface-variant);
+			margin-bottom: 0.125rem;
+		}
+
+		.inq-emp-header,
+		.inq-summary-header {
+			display: none;
+		}
+
+		.inq-emp-row {
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.5rem;
+			padding: 0.75rem;
+			background: var(--dt-surface-container-low);
+			border-radius: var(--dt-radius-md);
+			margin-bottom: 0.5rem;
+		}
+
+		.inq-emp-row .inq-name {
+			font-size: 0.9375rem;
+			white-space: normal;
+		}
+
+		.inq-times {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: flex-end;
+			gap: 0.5rem;
+		}
+
+		.inq-times .inq-time {
+			width: auto;
+			flex: 1;
+			min-width: 90px;
+		}
+
+		.inq-sep {
+			display: none;
+		}
+
+		.inq-break-wrap {
+			display: block;
+			width: 40%;
+		}
+
+		.inq-break-wrap .inq-break {
+			width: 100%;
+		}
+
+		.inq-emp-row .btn-icon.danger {
+			align-self: flex-end;
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.inq-summary-row {
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.25rem;
+			padding: 0.75rem;
+			background: var(--dt-surface-container-low);
+			border-radius: var(--dt-radius-md);
+			margin-bottom: 0.5rem;
+		}
+
+		.inq-summary-row .inq-name {
+			font-size: 0.9375rem;
+			white-space: normal;
+		}
+
+		.inq-days,
+		.inq-hours {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			text-align: left;
+		}
+
+		/* ── Calendar-item mode: card per employee ── */
+		.emp-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.emp-name {
+			min-width: 0;
+			font-size: 1rem;
+		}
+
+		.emp-fields {
+			gap: 0.5rem 0.75rem;
+		}
+
+		.emp-actions {
+			justify-content: flex-end;
+			margin-top: 0.25rem;
+		}
+
+		.emp-actions .btn-icon {
+			min-width: 44px;
+			min-height: 44px;
+		}
 	}
 </style>

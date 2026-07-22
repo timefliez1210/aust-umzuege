@@ -744,6 +744,11 @@
 		.grid { gap: 0.75rem; }
 		.card-body { padding: 1rem; }
 		.list-item { padding: 0.75rem 1rem; }
+		.form-row { flex-direction: column; gap: 0; }
+		.billing-form__row,
+		.billing-form__row--street {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.cust-type-badge {

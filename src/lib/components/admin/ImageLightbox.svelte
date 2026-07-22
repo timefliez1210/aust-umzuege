@@ -295,4 +295,46 @@
 		from { opacity: 0; }
 		to { opacity: 1; }
 	}
+
+	/* ── Mobile: touch-friendly controls, image fits viewport ── */
+	@media (max-width: 768px) {
+		.close-btn {
+			top: 0.75rem;
+			right: 0.75rem;
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.nav-btn {
+			padding: 0.625rem;
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.nav-prev {
+			left: 0.5rem;
+		}
+
+		.nav-next {
+			right: 0.5rem;
+		}
+
+		.lightbox-content {
+			max-width: 100vw;
+			max-height: 100vh;
+			width: 100vw;
+			height: 100vh;
+			border-radius: 0;
+		}
+
+		.lightbox-image {
+			max-width: 100vw;
+			max-height: calc(100vh - 3rem);
+		}
+
+		.caption {
+			flex-wrap: wrap;
+			gap: 0.375rem 0.75rem;
+		}
+	}
 </style>

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { createRawSnippet } from 'svelte';
@@ -91,5 +91,54 @@ describe('DataTable', () => {
 		});
 		expect(screen.getByText(/Hannover/).closest('tr')!.classList.contains('highlight')).toBe(true);
 		expect(screen.getByText(/Hildesheim/).closest('tr')!.classList.contains('highlight')).toBe(false);
+	});
+
+	describe('mobile card mode', () => {
+		// NB: real page callers render one <td> per column (verified against
+		// src/routes/admin/customers/+page.svelte etc.), which is what the
+		// data-label indexing in DataTable relies on. createRawSnippet can only
+		// produce a single root element for a test double, so — same as the
+		// colspan rowSnippet above — this exercises index 0 (first column) only.
+		function mockMobileMatchMedia(matches: boolean) {
+			vi.stubGlobal('matchMedia', (query: string) => ({
+				matches,
+				media: query,
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			}));
+		}
+
+		afterEach(() => {
+			vi.unstubAllGlobals();
+		});
+
+		it('sets data-label from the first column on each row td when below the mobile breakpoint', async () => {
+			mockMobileMatchMedia(true);
+			render(DataTable, { columns, rows, row: rowSnippet });
+
+			const nameCell = (await screen.findByText(/Muster \| Hildesheim/)).closest('td')!;
+			expect(nameCell).toHaveAttribute('data-label', 'Name');
+		});
+
+		it('does not set data-label above the mobile breakpoint', () => {
+			mockMobileMatchMedia(false);
+			render(DataTable, { columns, rows, row: rowSnippet });
+			expect(screen.getByText(/Muster \| Hildesheim/).closest('td')).not.toHaveAttribute('data-label');
+		});
+
+		it('shows a compact sort select for sortable columns on mobile', async () => {
+			mockMobileMatchMedia(true);
+			render(DataTable, { columns, rows, row: rowSnippet });
+
+			const select = await screen.findByRole('combobox', { name: 'Sortieren nach' });
+			expect(within(select).getByRole('option', { name: 'Name' })).toBeInTheDocument();
+			expect(within(select).queryByRole('option', { name: 'Stadt' })).not.toBeInTheDocument();
+		});
+
+		it('does not show the mobile sort select above the mobile breakpoint', () => {
+			mockMobileMatchMedia(false);
+			render(DataTable, { columns, rows, row: rowSnippet });
+			expect(screen.queryByRole('combobox', { name: 'Sortieren nach' })).not.toBeInTheDocument();
+		});
 	});
 });

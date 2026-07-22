@@ -351,8 +351,8 @@
 		onclick={() => { showForm = false; }}
 		onkeydown={(e) => e.key === 'Escape' && (showForm = false)}
 		tabindex="-1"
-	></div>
-	<div class="modal">
+	>
+	<div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
 		<div class="modal-header">
 			<h2>Neuer Report</h2>
 			<button class="btn-close" onclick={() => { showForm = false; }}><X size={18} /></button>
@@ -432,6 +432,7 @@
 				{/if}
 			</button>
 		</div>
+	</div>
 	</div>
 {/if}
 
@@ -666,27 +667,15 @@
 	.s-progress { background: #fef3c7; color: #92400e; }
 	.s-resolved { background: #dcfce7; color: #166534; }
 
-	/* Modal */
-	.modal-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.4);
-		z-index: 400;
-	}
-
-	.modal {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		z-index: 401;
-		background: var(--dt-surface);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.5rem;
-		width: min(560px, calc(100vw - 2rem));
-		max-height: calc(100vh - 4rem);
-		overflow-y: auto;
-		box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+	/* Modal — backdrop/card sizing now comes from the shared .modal-backdrop/.modal
+	 * foundation (admin-components.css), which also handles the mobile bottom-sheet.
+	 * The desktop max-width is widened here (this form is a bit larger than the shared
+	 * 520px default); scoped to desktop only so it can't out-specificity the shared
+	 * mobile full-width sheet rule. */
+	@media (min-width: 769px) {
+		.modal {
+			max-width: 560px;
+		}
 	}
 
 	.modal-header {

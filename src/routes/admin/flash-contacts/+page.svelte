@@ -370,4 +370,33 @@
 		color: var(--dt-on-surface-variant, #5b6478);
 		font-size: 0.9rem;
 	}
+
+	@media (max-width: 768px) {
+		.page {
+			padding: 1rem;
+		}
+
+		.page-header {
+			flex-wrap: wrap;
+			gap: 0.75rem;
+		}
+
+		.btn-refresh {
+			min-height: 44px;
+		}
+
+		.card {
+			flex-wrap: wrap;
+		}
+
+		.btn-handle {
+			min-height: 44px;
+			width: 100%;
+			justify-content: center;
+		}
+
+		.card-phone {
+			min-height: 44px;
+		}
+	}
 </style>

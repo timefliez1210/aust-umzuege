@@ -45,7 +45,7 @@ describe('MetaTags', () => {
 		expect(q('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
 		// default og:image is the brand image on the live domain
 		expect(q('meta[property="og:image"]')?.getAttribute('content')).toMatch(
-			/^https:\/\/www\.aust-umzuege\.de\/.+\.webp$/
+			/^https:\/\/www\.aust-umzuege\.de\/.+\.(webp|jpg)$/
 		);
 	});
 

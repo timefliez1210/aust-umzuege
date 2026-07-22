@@ -419,4 +419,27 @@
 		opacity: 0.75;
 		text-decoration: underline;
 	}
+
+	@media (max-width: 768px) {
+		.login-card {
+			padding: 1.5rem;
+		}
+
+		/* Local font-size (0.9375rem) would otherwise beat the shared 16px
+		 * mobile rule via scoped-selector specificity and trigger iOS zoom-on-focus. */
+		input {
+			font-size: 16px;
+			min-height: 44px;
+		}
+
+		.login-btn {
+			min-height: 44px;
+		}
+
+		.forgot-link {
+			min-height: 44px;
+			display: inline-flex;
+			align-items: center;
+		}
+	}
 </style>

@@ -586,6 +586,64 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!-- Shared mobile card row — reused by Sections A/B/C so the stacked-card
+     layout stays in one place instead of being duplicated per section. -->
+{#snippet itemCard(item: EditableItem, showVolume: boolean)}
+	<div class="item-card">
+		<div class="item-card-top">
+			<div class="item-card-crop">
+				{#if item.crop_url}
+					<button class="crop-btn card-crop-btn" onclick={() => openReview(item)}>
+						<img src={API_BASE + item.crop_url} alt={item.name} class="crop-thumb" />
+					</button>
+				{:else}
+					<span class="no-crop">—</span>
+				{/if}
+			</div>
+			<input
+				type="text"
+				class="edit-input edit-name card-name-input"
+				bind:value={item.name}
+				oninput={markDirty}
+				placeholder="Bezeichnung"
+			/>
+			<button class="del-btn card-del-btn" onclick={() => deleteItem(item)} title="Entfernen">
+				<X size={16} />
+			</button>
+		</div>
+		<div class="item-card-fields">
+			<label class="card-field">
+				<span class="card-field-label">Anzahl</span>
+				<input
+					type="number"
+					class="edit-input edit-num"
+					min="1"
+					step="1"
+					bind:value={item.quantity}
+					oninput={markDirty}
+				/>
+			</label>
+			{#if showVolume}
+				<label class="card-field">
+					<span class="card-field-label">Volumen (m3)</span>
+					<input
+						type="number"
+						class="edit-input edit-num"
+						min="0"
+						step="0.01"
+						bind:value={item.volume_m3}
+						oninput={markDirty}
+					/>
+				</label>
+			{/if}
+			<div class="card-field card-field-readonly">
+				<span class="card-field-label">Konfidenz</span>
+				<span class="confidence-cell">{Math.round(item.confidence * 100)}%</span>
+			</div>
+		</div>
+	</div>
+{/snippet}
+
 <!-- ── Section A: Main moveable items ──────────────────────────────────── -->
 <div class="card full-width">
 	<div class="card-header">
@@ -680,6 +738,16 @@
 					</tr>
 				</tbody>
 			</table>
+		</div>
+		<div class="items-cards">
+			{#each sortedItems as item}
+				{@render itemCard(item, true)}
+			{/each}
+			<div class="items-cards-total">
+				<span>Gesamt</span>
+				<span>{mainItems.reduce((s, i) => s + i.quantity, 0)} St&uuml;ck</span>
+				<span>{computedTotal.toFixed(2)} m&#x00B3;</span>
+			</div>
 		</div>
 	{:else}
 		<p class="empty-items">Noch keine Gegenstaende erfasst.</p>
@@ -789,6 +857,16 @@
 				</tbody>
 			</table>
 		</div>
+		<div class="items-cards">
+			{#each filteredBoxItems as item}
+				{@render itemCard(item, true)}
+			{/each}
+			<div class="items-cards-total">
+				<span>Rohvolumen</span>
+				<span>{filteredBoxItems.reduce((s, i) => s + i.quantity, 0)} St&uuml;ck</span>
+				<span>{filteredBoxItems.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m&#x00B3;</span>
+			</div>
+		</div>
 		<p class="section-note">
 			Das Rohvolumen dieser Kleinteile wird automatisch in Umzugskartons umgerechnet und im
 			Gesamtvolumen ber&#x00FC;cksichtigt.
@@ -867,6 +945,11 @@
 						{/each}
 					</tbody>
 				</table>
+			</div>
+			<div class="items-cards">
+				{#each filteredNonMoveableItems as item}
+					{@render itemCard(item, false)}
+				{/each}
 			</div>
 			<p class="section-note">
 				Diese Gegenst&#x00E4;nde wurden als nicht transportierbar eingestuft (z.&nbsp;B.
@@ -1135,6 +1218,12 @@
 
 	.items-table-wrap {
 		overflow-x: auto;
+	}
+
+	/* Mobile card list — hidden on desktop, shown instead of .items-table-wrap
+	 * below the 768px breakpoint (see the mobile media query at the bottom). */
+	.items-cards {
+		display: none;
 	}
 
 	.items-table {
@@ -1921,6 +2010,113 @@
 
 		.btn-sm {
 			min-height: 44px;
+		}
+
+		/* ── Item tables → stacked cards ──────────────────────────────── */
+
+		.items-table-wrap {
+			display: none;
+		}
+
+		.items-cards {
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.item-card {
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+			padding: 0.75rem;
+			background: var(--dt-surface-container-low);
+			border-radius: var(--dt-radius-md);
+		}
+
+		.item-card-top {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.item-card-crop {
+			width: 48px;
+			height: 48px;
+			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.card-crop-btn {
+			width: 48px;
+			height: 48px;
+		}
+
+		.card-name-input {
+			flex: 1;
+			font-weight: 600;
+			font-size: 0.9375rem;
+		}
+
+		.card-del-btn {
+			flex-shrink: 0;
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.item-card-fields {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+
+		.card-field {
+			display: flex;
+			flex-direction: column;
+			gap: 0.2rem;
+			flex: 1;
+			min-width: 90px;
+		}
+
+		.card-field-readonly {
+			justify-content: flex-end;
+			padding-bottom: 0.375rem;
+		}
+
+		.card-field-label {
+			font-size: 0.6875rem;
+			font-weight: 600;
+			color: var(--dt-on-surface-variant);
+			text-transform: uppercase;
+			letter-spacing: 0.03em;
+		}
+
+		.items-cards-total {
+			display: flex;
+			justify-content: space-between;
+			padding: 0.625rem 0.75rem;
+			font-weight: 700;
+			color: var(--dt-on-surface);
+			background: var(--dt-surface-container-high);
+			border-radius: var(--dt-radius-md);
+		}
+
+		/* ── Other icon-button touch targets ──────────────────────────── */
+
+		.del-btn {
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.review-close,
+		.review-nav {
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.photo-detail-item {
+			grid-template-columns: 52px 1fr 44px;
 		}
 	}
 </style>

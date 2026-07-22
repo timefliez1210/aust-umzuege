@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiDelete, formatDate } from '$lib/utils/api.svelte';
-	import { Truck, Wrench, Plus, Trash2, Bell, Check, RotateCcw } from 'lucide-svelte';
+	import { Truck, Wrench, Plus, Trash2, Bell, Check, RotateCcw, Pencil, X } from 'lucide-svelte';
 
 	interface Reminder {
 		id: string;
@@ -29,6 +29,11 @@
 	// New-vehicle form
 	let newVehicleLabel = $state('');
 	let newVehicleKennzeichen = $state('');
+
+	// Inline vehicle-edit draft, keyed by vehicle id being edited (only one at a time)
+	let editingId = $state<string | null>(null);
+	let editLabel = $state('');
+	let editKennzeichen = $state('');
 
 	// Per-vehicle new-reminder drafts, keyed by vehicle id
 	let reminderDrafts = $state<Record<string, { label: string; due_date: string }>>({});
@@ -64,6 +69,32 @@
 			await load();
 		} catch {
 			error = 'Fahrzeug konnte nicht angelegt werden.';
+		} finally {
+			busy = false;
+		}
+	}
+
+	function startEdit(v: Vehicle) {
+		editingId = v.id;
+		editLabel = v.label;
+		editKennzeichen = v.kennzeichen;
+	}
+
+	function cancelEdit() {
+		editingId = null;
+	}
+
+	async function saveEdit(v: Vehicle) {
+		const label = editLabel.trim();
+		const kennzeichen = editKennzeichen.trim();
+		if (!label || !kennzeichen || busy) return;
+		busy = true;
+		try {
+			await apiPatch(`/api/v1/admin/vehicles/${v.id}`, { label, kennzeichen });
+			editingId = null;
+			await load();
+		} catch {
+			error = 'Fahrzeug konnte nicht gespeichert werden.';
 		} finally {
 			busy = false;
 		}
@@ -151,6 +182,13 @@
 		return 'upcoming';
 	}
 
+	/** The earliest still-active reminder for a vehicle, or null if none. */
+	function nextReminder(v: Vehicle): Reminder | null {
+		const active = v.reminders.filter((r) => r.active);
+		if (active.length === 0) return null;
+		return active.reduce((soonest, r) => (r.due_date < soonest.due_date ? r : soonest));
+	}
+
 	$effect(() => {
 		load();
 	});
@@ -205,16 +243,40 @@
 			{#each vehicles as v (v.id)}
 				<section class="vehicle-card">
 					<header class="vehicle-head">
-						<div class="vehicle-name">
-							<Truck size={18} />
-							<h2>{v.label}</h2>
-							{#if v.kennzeichen}
-								<span class="kennzeichen">{v.kennzeichen}</span>
-							{/if}
-						</div>
-						<button class="icon-btn danger" title="Fahrzeug löschen" onclick={() => deleteVehicle(v)}>
-							<Trash2 size={16} />
-						</button>
+						{#if editingId === v.id}
+							<form class="edit-vehicle" onsubmit={(e) => { e.preventDefault(); saveEdit(v); }}>
+								<input type="text" class="vehicle-label-input" bind:value={editLabel} maxlength="120" placeholder="Bezeichnung" />
+								<input type="text" class="vehicle-kennzeichen-input" bind:value={editKennzeichen} maxlength="20" placeholder="Kennzeichen" />
+								<button type="submit" class="icon-btn" title="Speichern" disabled={busy || !editLabel.trim() || !editKennzeichen.trim()}>
+									<Check size={16} />
+								</button>
+								<button type="button" class="icon-btn" title="Abbrechen" onclick={cancelEdit}>
+									<X size={16} />
+								</button>
+							</form>
+						{:else}
+							{@const upcoming = nextReminder(v)}
+							<div class="vehicle-name">
+								<Truck size={18} />
+								<h2>{v.label}</h2>
+								{#if v.kennzeichen}
+									<span class="kennzeichen">{v.kennzeichen}</span>
+								{/if}
+								{#if upcoming}
+									<span class="badge badge--{urgency(upcoming)}" title={upcoming.label}>
+										{dueLabel(upcoming.due_date)}
+									</span>
+								{/if}
+							</div>
+							<div class="vehicle-head-actions">
+								<button class="icon-btn" title="Fahrzeug bearbeiten" onclick={() => startEdit(v)}>
+									<Pencil size={16} />
+								</button>
+								<button class="icon-btn danger" title="Fahrzeug löschen" onclick={() => deleteVehicle(v)}>
+									<Trash2 size={16} />
+								</button>
+							</div>
+						{/if}
 					</header>
 
 					{#if v.reminders.length === 0}
@@ -393,11 +455,30 @@
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 0.75rem;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.vehicle-head-actions {
+		display: flex;
+		gap: 0.2rem;
+		flex-shrink: 0;
 	}
 	.vehicle-name {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+	.edit-vehicle {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex: 1;
+		flex-wrap: wrap;
+	}
+	.edit-vehicle .vehicle-label-input,
+	.edit-vehicle .vehicle-kennzeichen-input {
+		padding: 0.4rem 0.6rem;
 	}
 	.vehicle-name h2 {
 		font-size: 1.05rem;
@@ -518,7 +599,10 @@
 		flex-shrink: 0;
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: 768px) {
+		.page {
+			padding: 1rem;
+		}
 		.reminder {
 			grid-template-columns: auto 1fr auto;
 			grid-template-areas:
@@ -543,6 +627,17 @@
 		}
 		.add-reminder {
 			flex-wrap: wrap;
+		}
+		.add-vehicle {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.add-vehicle .btn-primary {
+			width: 100%;
+		}
+		.edit-vehicle .vehicle-label-input,
+		.edit-vehicle .vehicle-kennzeichen-input {
+			flex: 1 1 100%;
 		}
 	}
 </style>

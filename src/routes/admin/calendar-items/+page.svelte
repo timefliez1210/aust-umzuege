@@ -259,7 +259,7 @@
 		<p>Keine Termine in diesem Monat.</p>
 	</div>
 {:else}
-	<div class="table-wrapper">
+	<div class="table-wrapper table-scroll">
 		<table class="data-table">
 			<thead>
 				<tr>

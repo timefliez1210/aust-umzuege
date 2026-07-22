@@ -945,4 +945,42 @@
 		opacity: 0.6;
 		cursor: wait;
 	}
+
+	/* ── Mobile: 2-col thumbnail grid, ≥44px touch targets, no overflow ── */
+	@media (max-width: 768px) {
+		.photo-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.photo-delete-btn {
+			/* Hover-to-reveal doesn't work on touch — always show, and grow to a
+			 * proper touch target (min-height:44px is applied globally to all
+			 * <button> elements here, so width/min-width must match explicitly
+			 * or the circle ends up 22px wide × 44px tall). */
+			opacity: 1;
+			top: 0;
+			right: 0;
+			width: 44px;
+			height: 44px;
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.video-gallery {
+			grid-template-columns: 1fr;
+		}
+
+		.upload-queue-actions {
+			flex-wrap: wrap;
+		}
+
+		.card-header {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.download-all-btn {
+			justify-content: center;
+		}
+	}
 </style>

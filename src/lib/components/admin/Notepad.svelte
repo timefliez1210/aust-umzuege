@@ -543,18 +543,39 @@
 
 	/* ─── Mobile ─────────────────────────────────────────────────── */
 	@media (max-width: 768px) {
-		.notepad-panel {
-			width: calc(100vw - 2rem);
-			right: 1rem;
-			bottom: 4.5rem;
-			max-height: calc(100vh - 6rem);
-		}
-
+		/* Collapsed state is just the FAB — must never cover the viewport. */
 		.notepad-fab {
 			bottom: 1rem;
 			right: 1rem;
 			width: 48px;
 			height: 48px;
+		}
+
+		/* Open state becomes a bottom sheet instead of a floating desktop panel. */
+		.notepad-panel {
+			position: fixed;
+			inset: auto 0 0 0;
+			width: 100%;
+			max-height: 85vh;
+			border-radius: var(--dt-radius-lg, 16px) var(--dt-radius-lg, 16px) 0 0;
+			border-bottom: none;
+		}
+
+		.notepad-header {
+			position: sticky;
+			top: 0;
+			background: inherit;
+			border-radius: inherit;
+		}
+
+		.notepad-add {
+			width: 44px;
+			height: 44px;
+		}
+
+		.note-btn {
+			width: 44px;
+			height: 44px;
 		}
 	}
 </style>

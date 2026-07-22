@@ -7,40 +7,29 @@
 		apiPost,
 		apiDelete,
 		apiDownload,
-		apiPreview,
-		formatDate,
-		formatDateTime,
-		formatEuro,
-		API_BASE,
 	} from "$lib/utils/api.svelte";
 	import { normalizeTimeInput } from "$lib/utils/format";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 	import StatusBadge from "$lib/components/admin/StatusBadge.svelte";
-	import PriceInput from "$lib/components/admin/PriceInput.svelte";
-	import RouteMap from "$lib/components/admin/RouteMap.svelte";
 	import { floorLabel, parseFloor } from "$lib/utils/floor";
 	import AddressEditor from "./_components/AddressEditor.svelte";
-	import ManualInvoiceEditor from "./_components/ManualInvoiceEditor.svelte";
-	import EmployeeAssignmentPanel from "$lib/components/admin/EmployeeAssignmentPanel.svelte";
+	import ReviewRequestModal from "./_components/ReviewRequestModal.svelte";
+	import AppointmentsSection from "./_components/AppointmentsSection.svelte";
+	import EmailThreadSection from "./_components/EmailThreadSection.svelte";
+	import InvoicesSection from "./_components/InvoicesSection.svelte";
+	import EmployeesSection from "./_components/EmployeesSection.svelte";
+	import CustomerSection from "./_components/CustomerSection.svelte";
+	import DetailsSection from "./_components/DetailsSection.svelte";
 	import { normalizeFlatTotalItem, calculateBruttoCents, bruttoCentsToNetto } from "$lib/utils/pricing";
-	import EstimationItemsTable from "$lib/components/admin/EstimationItemsTable.svelte";
-	import PhotoVideoUpload from "$lib/components/admin/PhotoVideoUpload.svelte";
+	import PhotoEstimationSection from "./_components/PhotoEstimationSection.svelte";
+	import PricingSection from "./_components/PricingSection.svelte";
 	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
 	import {
 		ArrowLeft,
-		Save,
 		FileOutput,
 		RotateCcw,
 		Trash2,
-		X,
-		Pencil,
-		Plus,
 		ChevronLeft,
-		ChevronRight,
-		Download,
-		Send,
-		GripVertical,
-		Paperclip,
 	} from "lucide-svelte";
 
 	interface AddressSnapshot {
@@ -219,26 +208,6 @@
 	let loading = $state(true);
 	let saving = $state(false);
 
-	// Billing address editor state
-	let billingSaving = $state(false);
-	let billingEditing = $state(false);
-	let billingStreet = $state('');
-	let billingNumber = $state('');
-	let billingPostal = $state('');
-	let billingCity = $state('');
-	let billingLoadedForId = $state<string | null>(null);
-
-	// Pre-fill billing fields once per loaded inquiry so admin edits aren't clobbered on reload.
-	$effect(() => {
-		if (data && data.id !== billingLoadedForId) {
-			billingStreet = data.billing_address?.street ?? '';
-			billingNumber = data.billing_address?.house_number ?? '';
-			billingPostal = data.billing_address?.postal_code ?? '';
-			billingCity = data.billing_address?.city ?? '';
-			billingLoadedForId = data.id;
-		}
-	});
-
 	// Route map coordinates
 	let routeCoordinates = $state<[number, number][] | null>(null);
 
@@ -268,9 +237,6 @@
 	let rateText = $state("30.00");
 	let rateEditing = $state(false);
 
-	let editingCustomer = $state(false);
-	let editCustomer = $state({ salutation: "", first_name: "", last_name: "", email: "", phone: "", customer_type: "private", company_name: "" });
-
 	let cardOpen = $state({
 		customer: false,
 		recipient: false,
@@ -289,124 +255,8 @@
 	});
 	const toggleCard = (k: keyof typeof cardOpen) => { cardOpen[k] = !cardOpen[k]; };
 
-	// ── Appointments (Besichtigung etc.) ─────────────────────────────────────
-	const APPT_KIND_LABELS: Record<string, string> = { besichtigung: 'Besichtigung', nachtermin: 'Nachtermin' };
-	const APPT_STATUS_LABELS: Record<string, string> = { scheduled: 'Geplant', done: 'Erledigt', cancelled: 'Storniert' };
-	function apptKindLabel(k: string): string {
-		return APPT_KIND_LABELS[k] ?? (k ? k.charAt(0).toUpperCase() + k.slice(1) : 'Termin');
-	}
-	function formatApptDate(d: string): string {
-		const [y, m, dd] = d.slice(0, 10).split('-');
-		return `${dd}.${m}.${y}`;
-	}
-
-	let apptEmployees = $state<EmployeeOption[]>([]);
-	let apptEmployeesLoaded = $state(false);
-	let editingApptId = $state<string | null>(null);
-	let apptSaving = $state(false);
-	let apptForm = $state({
-		kind: 'besichtigung',
-		scheduled_date: '',
-		start_time: '',
-		end_time: '',
-		assignee_id: '',
-		location: '',
-		notes: '',
-		status: 'scheduled',
-	});
-
-	async function loadApptEmployees() {
-		if (apptEmployeesLoaded) return;
-		try {
-			const res = await apiGet<{ employees: EmployeeOption[] }>('/api/v1/admin/employees?active=true&limit=100');
-			apptEmployees = res.employees;
-			apptEmployeesLoaded = true;
-		} catch {
-			showToast('Mitarbeiterliste konnte nicht geladen werden', 'error');
-		}
-	}
-
-	/** Prepares the appointments card on open: loads staff, seeds a sensible date. */
-	function onOpenAppointments() {
-		toggleCard('appointments');
-		if (cardOpen.appointments) {
-			loadApptEmployees();
-			if (!editingApptId && !apptForm.scheduled_date) {
-				apptForm.scheduled_date = data?.scheduled_date?.slice(0, 10) ?? '';
-			}
-		}
-	}
-
-	function resetApptForm() {
-		editingApptId = null;
-		apptForm = {
-			kind: 'besichtigung',
-			scheduled_date: data?.scheduled_date?.slice(0, 10) ?? '',
-			start_time: '', end_time: '', assignee_id: '', location: '', notes: '', status: 'scheduled',
-		};
-	}
-
-	function editAppt(a: Appointment) {
-		editingApptId = a.id;
-		apptForm = {
-			kind: a.kind,
-			scheduled_date: a.scheduled_date?.slice(0, 10) ?? '',
-			start_time: a.start_time ? a.start_time.slice(0, 5) : '',
-			end_time: a.end_time ? a.end_time.slice(0, 5) : '',
-			assignee_id: a.assignee_id ?? '',
-			location: a.location ?? '',
-			notes: a.notes ?? '',
-			status: a.status,
-		};
-	}
-
-	async function saveAppt() {
-		if (!data) return;
-		if (!apptForm.scheduled_date) { showToast('Bitte ein Datum wählen', 'error'); return; }
-		apptSaving = true;
-		// `null` clears a field; times are normalised to HH:MM:SS for the backend.
-		const body = {
-			kind: apptForm.kind || 'besichtigung',
-			scheduled_date: apptForm.scheduled_date,
-			start_time: apptForm.start_time ? normalizeTimeInput(apptForm.start_time) : null,
-			end_time: apptForm.end_time ? normalizeTimeInput(apptForm.end_time) : null,
-			assignee_id: apptForm.assignee_id || null,
-			location: apptForm.location.trim() || null,
-			notes: apptForm.notes.trim() || null,
-			status: apptForm.status,
-		};
-		try {
-			if (editingApptId) {
-				await apiPatch(`/api/v1/inquiries/${data.id}/appointments/${editingApptId}`, body);
-				showToast('Termin aktualisiert', 'success');
-			} else {
-				await apiPost(`/api/v1/inquiries/${data.id}/appointments`, body);
-				showToast('Termin angelegt', 'success');
-			}
-			resetApptForm();
-			await loadInquiry();
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		} finally {
-			apptSaving = false;
-		}
-	}
-
-	async function deleteAppt(a: Appointment) {
-		if (!data) return;
-		if (!confirm(`${apptKindLabel(a.kind)} am ${formatApptDate(a.scheduled_date)} löschen?`)) return;
-		try {
-			await apiDelete(`/api/v1/inquiries/${data.id}/appointments/${a.id}`);
-			if (editingApptId === a.id) resetApptForm();
-			showToast('Termin gelöscht', 'success');
-			await loadInquiry();
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		}
-	}
-
-	// Bindable handles to EstimationItemsTable internals
-	let openPhotoDetailFn = $state<((idx: number) => void) | null>(null);
+	// Bindable handle to EstimationItemsTable, needed by generateOffer/reEstimateOffer
+	// to flush unsaved item edits before regenerating the offer.
 	let saveIfDirtyFn = $state<(() => Promise<void>) | null>(null);
 
 	type ItemKind = 'labor' | 'fahrt' | 'insurance' | 'item';
@@ -671,134 +521,9 @@
 		}
 	}
 
-	// PDF download state
-	let downloadingPdf = $state(false);
-
-	/**
-	 * Downloads the offer PDF for the current inquiry via authenticated fetch.
-	 *
-	 * Called by: Template (onclick on the "PDF herunterladen" button in the offer card)
-	 * Purpose: Uses apiDownload so the Authorization header is included — a plain <a href> tag
-	 *          cannot attach the Bearer token required by the protected endpoint.
-	 *          Calls GET /api/v1/inquiries/{id}/pdf and triggers a browser file download.
-	 *
-	 * @returns void (side-effect: triggers browser PDF download, shows error toast on failure)
-	 */
-	async function downloadPdf() {
-		if (!data) return;
-		downloadingPdf = true;
-		try {
-			// Build "{seq}-{year} {last_name}.pdf", e.g. "1113-2026 Spatz.pdf"
-			// offer_number format from backend: "{year}-{seq:04}" e.g. "2026-1113"
-			const offerNum = data.offer?.offer_number ?? '';
-			const [year, seqStr] = offerNum.includes('-') ? offerNum.split('-') : ['', offerNum];
-			const seq = seqStr ? String(parseInt(seqStr, 10)) : data.id.slice(0, 8);
-			const lastName = data.customer?.last_name ?? data.customer?.name?.split(' ').pop() ?? 'Angebot';
-			const filename = year ? `${seq}-${year} ${lastName}.pdf` : `angebot_${offerNum || data.id.slice(0, 8)}.pdf`;
-			await apiDownload(
-				`/api/v1/inquiries/${data.id}/pdf`,
-				filename,
-			);
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			downloadingPdf = false;
-		}
-	}
-
-	// Travel expense download state
-	let downloadingTravelExpense = $state(false);
-
-	/**
-	 * Downloads the travel-expense XLSX for the first assigned employee.
-	 *
-	 * Called by: Template (download button in pauschale section).
-	 * Purpose: Calls GET /api/v1/inquiries/{id}/employees/{emp_id}/travel-expenses
-	 *          and triggers a browser file download.
-	 */
-	async function downloadTravelExpense(empId: string) {
-		if (!data) return;
-		downloadingTravelExpense = true;
-		try {
-			await apiDownload(
-				`/api/v1/inquiries/${data.id}/employees/${empId}/travel-expenses`,
-				`Reisekosten_${data.id.slice(0, 8)}.xlsx`,
-			);
-		} catch (e) {
-			showToast((e as Error).message, 'error');
-		} finally {
-			downloadingTravelExpense = false;
-		}
-	}
-
-	// Photo filter: click a photo to filter items table
+	// Photo filter: click a photo to filter items table. Owned at page level because
+	// handleKeydown (svelte:window) clears it on Escape; bound down into PhotoEstimationSection.
 	let filterPhotoIndex = $state<number | null>(null);
-
-	// Normalize estimation snapshot into an array for gallery/upload UI compatibility
-	interface EstimationEntry {
-		id: string;
-		method: string;
-		status: string;
-		total_volume_m3: number | null;
-		item_count: number;
-		created_at: string;
-		source_video_url: string | null;
-		source_image_urls: string[];
-	}
-
-	let estimationsList = $derived.by((): EstimationEntry[] => {
-		// Prefer the full estimations array (all statuses: processing, failed, completed).
-		// Fall back to the single completed estimation for backward compatibility.
-		const ests = data?.estimations;
-		if (ests && ests.length > 0) {
-			return ests.map((est) => ({
-				id: est.id,
-				method: est.method,
-				status: est.status,
-				total_volume_m3: est.total_volume_m3,
-				item_count: est.item_count,
-				created_at: est.created_at,
-				source_video_url: est.source_video ?? null,
-				source_image_urls: est.source_images ?? [],
-			}));
-		}
-		const est = data?.estimation;
-		if (!est) return [];
-		return [
-			{
-				id: est.id,
-				method: est.method,
-				status: est.status,
-				total_volume_m3: est.total_volume_m3,
-				item_count: est.item_count,
-				created_at: est.created_at,
-				source_video_url: est.source_video ?? null,
-				source_image_urls: est.source_images ?? [],
-			},
-		];
-	});
-
-	/** Full-URL photo list — index-aligned so EstimationItemsTable can resolve filterPhotoIndex. */
-	let galleryImages = $derived(
-		estimationsList
-			.filter((e) => e.source_image_urls.length > 0)
-			.flatMap((e) => e.source_image_urls.map((url) => API_BASE + url)),
-	);
-
-	/**
-	 * Toggles a photo-index filter that narrows the items table to only items seen in a given source photo.
-	 *
-	 * Called by: Template (onclick on each photo thumbnail in the gallery)
-	 * Purpose: Allows the admin to cross-reference a specific photo with the items detected in it,
-	 *          making it easy to verify or correct the AI's output for that image.
-	 *          Clicking the same photo again clears the filter and shows all items.
-	 *
-	 * @param idx - Zero-based index of the source photo in `galleryImages`
-	 * @returns void (side-effect: sets or clears `filterPhotoIndex`)
-	 */
-	function togglePhotoFilter(idx: number) {
-		filterPhotoIndex = filterPhotoIndex === idx ? null : idx;
-	}
 
 	/**
 	 * Calculates suggested persons, hours, rate, and line items for the offer pricing section.
@@ -904,9 +629,7 @@
 			editEndTime = data.end_time ? data.end_time.slice(0, 5) : '';
 			editHeadlineOverride = (data as any).custom_fields?.offer_headline_override ?? "";
 			computePricingDefaults();
-
-			// Load emails non-blocking so the inquiry renders first
-			loadEmails();
+			// Email thread loads itself (EmailThreadSection $effect on inquiryId)
 
 			// Fetch route geometry from distance calculator (non-blocking)
 			if (data.origin_address && data.destination_address) {
@@ -993,53 +716,6 @@
 			showToast((e as Error).message, "error");
 		} finally {
 			saving = false;
-		}
-	}
-
-	/** Save or update the billing address for this inquiry. */
-	async function saveBillingAddress() {
-		if (!data) return;
-		billingSaving = true;
-		try {
-			const patch: Record<string, unknown> = {};
-			if (billingStreet.trim() || billingCity.trim()) {
-				patch.billing_address = {
-					street: billingStreet.trim() || null,
-					house_number: billingNumber.trim() || null,
-					postal_code: billingPostal.trim() || null,
-					city: billingCity.trim() || null,
-				};
-			} else {
-				patch.clear_billing_address = true;
-			}
-			await apiPatch(`/api/v1/inquiries/${data.id}`, patch);
-			showToast("Rechnungsadresse gespeichert", "success");
-			billingLoadedForId = null;
-			await loadInquiry();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			billingSaving = false;
-		}
-	}
-
-	/** Clear the billing address override (fall back to auto-resolution). */
-	async function clearBillingAddress() {
-		if (!data) return;
-		billingSaving = true;
-		try {
-			await apiPatch(`/api/v1/inquiries/${data.id}`, { clear_billing_address: true });
-			showToast("Rechnungsadresse zurückgesetzt", "success");
-			billingStreet = '';
-			billingNumber = '';
-			billingPostal = '';
-			billingCity = '';
-			billingLoadedForId = null;
-			await loadInquiry();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			billingSaving = false;
 		}
 	}
 
@@ -1185,36 +861,8 @@
 
 	let changingStatus = $state(false);
 
-	// --- Review request popup ---
+	// Review request popup — opened after marking an inquiry as "Erledigt"; see ReviewRequestModal
 	let showReviewPopup = $state(false);
-	let reviewReminderDays = $state(3);
-	let sendingReview = $state(false);
-
-	/**
-	 * Submits the review request action chosen by Alex in the popup.
-	 *
-	 * Called by: Template (popup buttons: Jetzt / Später / Nicht)
-	 * Purpose: POSTs to /api/v1/admin/inquiries/{id}/review-request with action + optional days.
-	 *
-	 * @param action - "now" | "later" | "skip"
-	 */
-	async function submitReviewAction(action: 'now' | 'later' | 'skip') {
-		if (!data) return;
-		sendingReview = true;
-		try {
-			await apiPost(`/api/v1/admin/inquiries/${data.id}/review-request`, {
-				action,
-				...(action === 'later' ? { remind_after_days: reviewReminderDays } : {}),
-			});
-			showReviewPopup = false;
-			if (action === 'now') showToast('Bewertungsanfrage gesendet', 'success');
-			else if (action === 'later') showToast(`Erinnerung in ${reviewReminderDays} Tagen`, 'success');
-		} catch (e) {
-			showToast((e as Error).message ?? 'Fehler', 'error');
-		} finally {
-			sendingReview = false;
-		}
-	}
 
 	/**
 	 * Updates the inquiry's workflow status via the API using the status dropdown.
@@ -1281,667 +929,10 @@
 	}
 
 	/**
-	 * Copies the origin address fields into the inline edit form and activates origin edit mode.
-	 *
-	 * Called by: Template (onclick on the "Bearbeiten" button in the Kunde card)
-	 * Purpose: Seeds the inline customer editor with the current values.
-	 *
-	 * @returns void (side-effect: populates `editCustomer`, sets `editingCustomer = true`)
-	 */
-	function startEditCustomer() {
-		if (!data?.customer) return;
-		const c = data.customer;
-		editCustomer = {
-			salutation: c.salutation ?? "",
-			first_name: c.first_name ?? "",
-			last_name: c.last_name ?? c.name ?? "",
-			email: c.email,
-			phone: c.phone ?? "",
-			customer_type: c.customer_type ?? "private",
-			company_name: c.company_name ?? "",
-		};
-		editingCustomer = true;
-	}
-
-	/**
-	 * Saves the edited customer fields to the API and exits edit mode.
-	 *
-	 * Called by: Template (onclick on the "Speichern" button in the Kunde card)
-	 * Purpose: Persists name, email and phone corrections via PATCH /api/v1/admin/customers/{id}.
-	 *
-	 * @returns void (side-effect: shows toast, sets editingCustomer = false, reloads inquiry)
-	 */
-	async function saveCustomer() {
-		if (!data?.customer) return;
-		try {
-			await apiPatch(`/api/v1/admin/customers/${data.customer.id}`, {
-				salutation: editCustomer.salutation || null,
-				first_name: editCustomer.first_name || null,
-				last_name: editCustomer.last_name || null,
-				email: editCustomer.email || null,
-				phone: editCustomer.phone || null,
-				customer_type: editCustomer.customer_type || null,
-				company_name: editCustomer.company_name || null,
-			});
-			showToast("Kunde gespeichert", "success");
-			editingCustomer = false;
-			await loadInquiry();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		}
-	}
-
-	// ─── Email thread (inline, for this inquiry) ───────────────────────────
-
-	interface InquiryEmailThread {
-		id: string;
-		customer_email: string;
-		customer_name: string | null;
-		quote_id: string | null;
-		subject: string | null;
-		offer_pdf_filename: string | null;
-		created_at: string;
-	}
-
-	interface InquiryEmailMessage {
-		id: string;
-		direction: string;
-		from_address: string;
-		to_address: string;
-		subject: string | null;
-		body_text: string | null;
-		llm_generated: boolean;
-		status: string;
-		attachment_keys: string[];
-		created_at: string;
-	}
-
-	interface InquiryThreadWithMessages {
-		thread: InquiryEmailThread;
-		messages: InquiryEmailMessage[];
-	}
-
-	let emailsLoading = $state(false);
-	let emailThreads = $state<InquiryThreadWithMessages[]>([]);
-
-	// Employee assignment state
-	let showAssignModal = $state(false);
-	let availableEmployees = $state<EmployeeOption[]>([]);
-	let assignEmployeeId = $state('');
-	let assignNotes = $state('');
-	let assignLoading = $state(false);
-	let employeeSaving = $state<string | null>(null);
-
-	// Draft editing state
-	let emailEditingId = $state<string | null>(null);
-	let emailEditSubject = $state("");
-	let emailEditBody = $state("");
-	let emailSaving = $state(false);
-	let emailActionLoading = $state<string | null>(null);
-
-	// --- Employee assignment functions ---
-
-	const employeeStatuses = ['accepted', 'scheduled', 'completed', 'invoiced', 'paid'];
-
-	/**
-	 * Whether the Mitarbeiter card should be visible.
-	 *
-	 * Called by: Template (conditional rendering)
-	 * Purpose: Only show employee assignments for inquiries past offer_sent.
-	 */
-	let showEmployeeCard = $derived(
-		data != null && employeeStatuses.includes(data.status)
-	);
-
-	// ── Rechnungen ────────────────────────────────────────────────────────
-
-	interface InvoiceExtraService {
-		description: string;
-		price_cents: number;
-	}
-
-	interface InvoiceLineItem {
-		description: string;
-		quantity: number;
-		unit_price_cents: number;
-		remark?: string | null;
-	}
-
-	interface Invoice {
-		id: string;
-		inquiry_id: string;
-		invoice_number: string;
-		invoice_type: string;
-		partial_group_id: string | null;
-		partial_percent: number | null;
-		status: string;
-		extra_services: InvoiceExtraService[];
-		is_manual: boolean;
-		line_items: InvoiceLineItem[];
-		total_netto_cents: number;
-		total_brutto_cents: number;
-		pdf_s3_key: string | null;
-		sent_at: string | null;
-		paid_at: string | null;
-		created_at: string;
-	}
-
-	const invoiceStatuses = ['accepted', 'scheduled', 'completed', 'invoiced', 'paid'];
-	let showInvoiceCard = $derived(data != null && invoiceStatuses.includes(data.status));
-
-	let invoices = $state<Invoice[]>([]);
-	let invoicesLoading = $state(false);
-	let invoiceCreating = $state(false);
-	let showPartialForm = $state(false);
-	let partialPercent = $state(30);
-
-	// Extra services editor state — keyed by invoice id
-	let editingExtras = $state<Record<string, boolean>>({});
-	let extrasDraft = $state<Record<string, InvoiceExtraService[]>>({});
-
-	/**
-	 * Load all invoices for the current inquiry.
-	 *
-	 * Called by: $effect (on mount when showInvoiceCard becomes true)
-	 * Purpose: Populates the Rechnungen card with existing invoices.
-	 */
-	async function loadInvoices() {
-		if (!data) return;
-		invoicesLoading = true;
-		try {
-			const result = await apiGet(`/api/v1/inquiries/${data.id}/invoices`);
-			invoices = (result ?? []) as Invoice[];
-		} catch {
-			showToast('Rechnungen konnten nicht geladen werden', 'error');
-		} finally {
-			invoicesLoading = false;
-		}
-	}
-
-	/**
-	 * Create a single full invoice for the inquiry.
-	 *
-	 * Called by: Template ("Rechnung Erstellen" button)
-	 * Purpose: Triggers XLSX + PDF generation for the full job amount.
-	 */
-	async function createFullInvoice() {
-		if (!data) return;
-		invoiceCreating = true;
-		try {
-			const result = await apiPost(`/api/v1/inquiries/${data.id}/invoices`, { invoice_type: 'full' });
-			invoices = (result ?? []) as Invoice[];
-			showToast('Rechnung erstellt', 'success');
-		} catch {
-			showToast('Rechnung konnte nicht erstellt werden', 'error');
-		} finally {
-			invoiceCreating = false;
-		}
-	}
-
-	/**
-	 * Create a partial invoice pair (Anzahlung + Restbetrag).
-	 *
-	 * Called by: Template (Partielle Rechnung form submit)
-	 * Purpose: Creates two linked invoices — partial_first sendable immediately,
-	 *          partial_final sendable after inquiry is completed.
-	 *
-	 * @param e - Submit event (prevented by caller)
-	 */
-	async function createPartialInvoice(e: Event) {
-		e.preventDefault();
-		if (!data) return;
-		if (partialPercent < 1 || partialPercent > 99) {
-			showToast('Prozentsatz muss zwischen 1 und 99 liegen', 'error');
-			return;
-		}
-		invoiceCreating = true;
-		try {
-			const result = await apiPost(`/api/v1/inquiries/${data.id}/invoices`, {
-				invoice_type: 'partial',
-				partial_percent: partialPercent,
-			});
-			invoices = (result ?? []) as Invoice[];
-			showPartialForm = false;
-			showToast('Teilrechnungen erstellt', 'success');
-		} catch {
-			showToast('Teilrechnungen konnten nicht erstellt werden', 'error');
-		} finally {
-			invoiceCreating = false;
-		}
-	}
-
-	/**
-	 * Send a specific invoice by email to the customer.
-	 *
-	 * Called by: Template ("Senden" button per invoice)
-	 * Purpose: Attaches the invoice PDF and sends via SMTP.
-	 *          Gated by sendability rules (partial_final requires completed status).
-	 *
-	 * @param invId - UUID of the invoice to send
-	 */
-	async function sendInvoice(invId: string) {
-		if (!data) return;
-		try {
-			const updated = await apiPost(`/api/v1/inquiries/${data.id}/invoices/${invId}/send`);
-			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
-			showToast('Rechnung gesendet', 'success');
-			// Reload inquiry to pick up status transition (→ invoiced)
-			await reloadInquiry();
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : 'Rechnung konnte nicht gesendet werden';
-			showToast(msg, 'error');
-		}
-	}
-
-	/**
-	 * Mark a specific invoice as paid.
-	 *
-	 * Called by: Template ("Als bezahlt markieren" button)
-	 * Purpose: Sets paid_at and updates status to 'paid'.
-	 *          Auto-transitions inquiry to 'paid' when all invoices are paid.
-	 *
-	 * @param invId - UUID of the invoice to mark as paid
-	 */
-	async function markInvoicePaid(invId: string) {
-		if (!data) return;
-		try {
-			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/invoices/${invId}`, { status: 'paid' });
-			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
-			showToast('Rechnung als bezahlt markiert', 'success');
-			await reloadInquiry();
-		} catch {
-			showToast('Konnte nicht als bezahlt markiert werden', 'error');
-		}
-	}
-
-	/**
-	 * Overwrite an invoice's number (recovery path).
-	 *
-	 * Called by: Template (number edit control per invoice)
-	 * Purpose: When the in-system counter falls out of sync with manually-sent
-	 *          invoices, lets Alex correct the number on a generated invoice. The
-	 *          server regenerates the PDF with the new number and nudges the counter
-	 *          forward so the next generated number won't collide.
-	 */
-	let editingNumberId = $state<string | null>(null);
-	let numberDraft = $state('');
-	let numberSaving = $state(false);
-
-	function startEditNumber(inv: Invoice) {
-		editingNumberId = inv.id;
-		numberDraft = inv.invoice_number;
-	}
-
-	function cancelEditNumber() {
-		editingNumberId = null;
-		numberDraft = '';
-	}
-
-	async function saveInvoiceNumber(invId: string) {
-		if (!data) return;
-		const next = numberDraft.trim();
-		if (!next) { showToast('Rechnungsnummer darf nicht leer sein', 'error'); return; }
-		numberSaving = true;
-		try {
-			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/invoices/${invId}/number`, {
-				invoice_number: next,
-			});
-			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
-			editingNumberId = null;
-			numberDraft = '';
-			showToast('Rechnungsnummer aktualisiert', 'success');
-		} catch (e) {
-			showToast((e as Error).message || 'Rechnungsnummer konnte nicht geändert werden', 'error');
-		} finally {
-			numberSaving = false;
-		}
-	}
-
-	/**
-	 * Begin editing extra services for a specific invoice.
-	 *
-	 * Called by: Template ("Zusatzleistungen bearbeiten" toggle)
-	 * Purpose: Copies current extra_services into draft state for inline editing.
-	 *
-	 * @param inv - Invoice object whose extras are being edited
-	 */
-	function startEditExtras(inv: Invoice) {
-		extrasDraft[inv.id] = inv.extra_services.map((e) => ({ ...e }));
-		editingExtras[inv.id] = true;
-	}
-
-	/**
-	 * Add an empty row to the extras draft for a given invoice.
-	 *
-	 * Called by: Template ("+ Zusatzleistung" button)
-	 * Purpose: Lets admin add a new on-site extra service line.
-	 *
-	 * @param invId - Invoice ID
-	 */
-	function addExtraRow(invId: string) {
-		if (!extrasDraft[invId]) extrasDraft[invId] = [];
-		extrasDraft[invId] = [...extrasDraft[invId], { description: '', price_cents: 0 }];
-	}
-
-	/**
-	 * Remove an extra service row from the draft.
-	 *
-	 * Called by: Template (× button per row)
-	 * Purpose: Removes a single extra service from the pending edit.
-	 *
-	 * @param invId - Invoice ID
-	 * @param idx - Row index to remove
-	 */
-	function removeExtraRow(invId: string, idx: number) {
-		extrasDraft[invId] = extrasDraft[invId].filter((_, i) => i !== idx);
-	}
-
-	/**
-	 * Save the edited extra services for an invoice and regenerate the PDF.
-	 *
-	 * Called by: Template ("Speichern" button in extras editor)
-	 * Purpose: Persists the updated extras list and triggers server-side PDF regeneration.
-	 *
-	 * @param invId - Invoice ID
-	 */
-	async function saveExtras(invId: string) {
-		if (!data) return;
-		try {
-			const updated = await apiPatch(`/api/v1/inquiries/${data.id}/invoices/${invId}`, {
-				extra_services: extrasDraft[invId] ?? [],
-			});
-			invoices = invoices.map((inv) => (inv.id === invId ? (updated as Invoice) : inv));
-			editingExtras[invId] = false;
-			showToast('Zusatzleistungen gespeichert', 'success');
-		} catch {
-			showToast('Zusatzleistungen konnten nicht gespeichert werden', 'error');
-		}
-	}
-
-	// ─── Manual invoice mode (Stunden ausweisen) ──────────────────────────────
-	// Which full invoices currently have the manual editor open. An invoice that
-	// is already `is_manual` always shows the editor; this tracks the transient
-	// "opened but not yet saved" state for a not-yet-manual invoice.
-	let manualOpen = $state<Record<string, boolean>>({});
-
-	/** Whether to render the manual editor for this invoice. */
-	function isManualEditorOpen(inv: Invoice): boolean {
-		return inv.is_manual || manualOpen[inv.id] === true;
-	}
-
-	/**
-	 * Toggle the "Manuelle Rechnung" switch for a full invoice.
-	 *
-	 * Turning ON just opens the editor (nothing persists until Speichern).
-	 * Turning OFF an already-manual invoice reverts it to the offer-derived form
-	 * via PATCH `{ is_manual: false }` (with confirmation, since it discards the
-	 * hand-edited lines). Turning OFF a not-yet-saved editor just closes it.
-	 */
-	async function toggleManual(inv: Invoice, on: boolean) {
-		if (on) {
-			manualOpen[inv.id] = true;
-			return;
-		}
-		if (inv.is_manual) {
-			if (!confirm('Manuelle Positionen verwerfen und Rechnung wieder aus dem Angebot erzeugen?')) {
-				return;
-			}
-			try {
-				const updated = await apiPatch(`/api/v1/inquiries/${data!.id}/invoices/${inv.id}`, {
-					is_manual: false,
-				});
-				invoices = invoices.map((i) => (i.id === inv.id ? (updated as Invoice) : i));
-				showToast('Rechnung aus Angebot neu erzeugt', 'success');
-			} catch {
-				showToast('Umstellung fehlgeschlagen', 'error');
-				return;
-			}
-		}
-		manualOpen[inv.id] = false;
-	}
-
-	/** Apply the saved invoice returned by the manual editor and close it. */
-	function onManualSaved(invId: string, updated: Invoice) {
-		invoices = invoices.map((i) => (i.id === invId ? updated : i));
-		manualOpen[invId] = false;
-	}
-
-	$effect(() => {
-		if (showInvoiceCard) loadInvoices();
-	});
-
-	/**
-	 * Returns a human-readable German label for an invoice status.
-	 *
-	 * Called by: Template (status badge rendering)
-	 * Purpose: Maps internal status strings to display labels.
-	 *
-	 * @param status - Invoice status string
-	 * @returns German label
-	 */
-	function invoiceStatusLabel(status: string): string {
-		return { draft: 'Entwurf', ready: 'Offen', sent: 'Gesendet', paid: 'Bezahlt' }[status] ?? status;
-	}
-
-	/**
-	 * Returns a CSS class suffix for an invoice status badge.
-	 *
-	 * Called by: Template (class binding on status badge)
-	 * Purpose: Colours the badge: grey=draft, orange=ready, blue=sent, green=paid.
-	 *
-	 * @param status - Invoice status string
-	 * @returns CSS class suffix
-	 */
-	function invoiceStatusClass(status: string): string {
-		return { draft: 'grey', ready: 'orange', sent: 'blue', paid: 'green' }[status] ?? 'grey';
-	}
-
-	/**
-	 * Returns true if a given invoice can be sent right now.
-	 * partial_first: always sendable; full / partial_final: require completed status.
-	 *
-	 * Called by: Template (Senden button disabled state)
-	 * Purpose: Enforces business rule that final invoices are only sent after job completion.
-	 *
-	 * @param inv - Invoice object
-	 * @returns Whether sending is currently allowed
-	 */
-	function canSendInvoice(inv: Invoice): boolean {
-		if (inv.invoice_type === 'partial_first') return true;
-		return data?.status === 'completed';
-	}
-
-	/**
-	 * Compute a preview of Anzahlung / Restbetrag amounts for the partial form.
-	 * Uses the active offer's brutto price.
-	 *
-	 * Called by: Template (partial invoice preview)
-	 * Purpose: Shows Alex what the split will look like before confirming.
-	 *
-	 * @returns { first, remaining } in cents, or null if no offer
-	 *
-	 * Math: first = round(offer_brutto * percent / 100)
-	 *       remaining = offer_brutto - first
-	 */
-	function partialPreview(): { first: number; remaining: number } | null {
-		const offerNetto = data?.offer?.total_netto_cents;
-		if (!offerNetto) return null;
-		// offer total_netto_cents is netto; brutto = netto * VAT_RATE
-		const brutto = calculateBruttoCents(offerNetto);
-		const first = Math.round(brutto * partialPercent / 100);
-		return { first, remaining: brutto - first };
-	}
-
-	/**
-	 * Opens the browser PDF download for a specific invoice.
-	 *
-	 * Called by: Template ("PDF" button per invoice)
-	 * Purpose: Triggers authenticated download of the invoice PDF.
-	 *
-	 * @param inv - Invoice whose PDF should be downloaded
-	 */
-	async function downloadInvoicePdf(inv: Invoice) {
-		if (!data) return;
-		await apiDownload(
-			`/api/v1/inquiries/${data.id}/invoices/${inv.id}/pdf`,
-			`Rechnung_${inv.invoice_number}.pdf`
-		);
-	}
-
-	/**
-	 * Opens the assign modal and loads available employees.
-	 *
-	 * Called by: Template (Zuweisen button)
-	 * Purpose: Fetches active employees for the dropdown.
-	 */
-	async function openAssignModal() {
-		try {
-			const res = await apiGet<{ employees: EmployeeOption[] }>(
-				'/api/v1/admin/employees?active=true&limit=100'
-			);
-			// Filter out already-assigned employees
-			const assignedIds = new Set((data?.employees ?? []).map((e: EmployeeAssignment) => e.employee_id));
-			availableEmployees = res.employees.filter((e) => !assignedIds.has(e.id));
-			assignEmployeeId = availableEmployees[0]?.id ?? '';
-			assignNotes = '';
-			showAssignModal = true;
-		} catch {
-			showToast('Mitarbeiterliste konnte nicht geladen werden', 'error');
-		}
-	}
-
-	/**
-	 * Assigns an employee to the current inquiry.
-	 *
-	 * Called by: Template (assign modal submit)
-	 * Purpose: POST /api/v1/inquiries/{id}/employees with employee_id and planned_hours.
-	 */
-	async function handleAssign() {
-		if (!data || !assignEmployeeId) return;
-		assignLoading = true;
-		try {
-			await apiPost(`/api/v1/inquiries/${data.id}/employees`, {
-				employee_id: assignEmployeeId,
-				notes: assignNotes || null
-			});
-			showToast('Mitarbeiter zugewiesen', 'success');
-			showAssignModal = false;
-			await reloadInquiry();
-		} catch (e: unknown) {
-			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
-		} finally {
-			assignLoading = false;
-		}
-	}
-
-	async function updatePlannedHours(_empId: string, _value: string) { /* no-op: planned_hours removed */ }
-
-	/**
-	 * Updates clock_in or clock_out for an assignment.
-	 *
-	 * Called by: Template (time input blur)
-	 * Purpose: PATCH /api/v1/inquiries/{id}/employees/{emp_id} with ISO timestamp.
-	 *
-	 * Math: combines the inquiry's scheduled_date with the HH:MM time input,
-	 * converts to UTC ISO via new Date(...).toISOString().
-	 *
-	 * @param empId - Employee UUID
-	 * @param field - 'clock_in' or 'clock_out'
-	 * @param time - HH:MM string from the time input
-	 */
-	async function updateEmployeeClock(empId: string, field: 'clock_in' | 'clock_out', time: string) {
-		if (!data) return;
-		if (!time) return;
-		const date = data.scheduled_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
-		const iso = new Date(`${date}T${time}:00`).toISOString();
-		employeeSaving = empId;
-		try {
-			const updated = await apiPatch<EmployeeAssignment>(`/api/v1/inquiries/${data.id}/employees/${empId}`, { [field]: iso });
-			// Update local state so actual_hours badge and planned_hours reflect immediately
-			if (data.employees) {
-				const idx = data.employees.findIndex((e: EmployeeAssignment) => e.employee_id === empId);
-				if (idx !== -1) {
-					data.employees[idx] = { ...data.employees[idx], ...updated };
-				}
-			}
-		} catch (e: unknown) {
-			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
-		} finally {
-			employeeSaving = null;
-		}
-	}
-
-	/**
-	 * Extracts local HH:MM time string from an ISO timestamp for display in time inputs.
-	 *
-	 * Called by: Template (time input value binding)
-	 * Purpose: Convert UTC ISO back to local HH:MM for the time input.
-	 *
-	 * @param iso - ISO 8601 timestamp or null
-	 * @returns HH:MM string or empty string
-	 */
-	function isoToLocalTime(iso: string | null): string {
-		if (!iso) return '';
-		const d = new Date(iso);
-		return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-	}
-
-	/**
-	 * Formats actual hours derived from clock_in/clock_out as "Xh Ym".
-	 *
-	 * Called by: Template (actual hours display cell)
-	 * Purpose: Show human-readable duration instead of decimal hours.
-	 *
-	 * Math: totalMinutes = actual_hours * 60; h = floor(totalMinutes / 60); m = totalMinutes % 60
-	 *
-	 * @param hours - Decimal hours (e.g. 3.75) or null
-	 * @returns Formatted string like "3h 45m" or "—"
-	 */
-	function fmtActualHours(hours: number | null): string {
-		if (hours == null) return '—';
-		const totalMin = Math.round(hours * 60);
-		const h = Math.floor(totalMin / 60);
-		const m = totalMin % 60;
-		return m > 0 ? `${h}h ${m}m` : `${h}h`;
-	}
-
-	/**
-	 * Returns true when admin-set and employee-reported hours differ by >15 min.
-	 *
-	 * Called by: Template (discrepancy highlight on employee time cells).
-	 * Purpose: Visual flag so Alex can quickly spot when an employee's self-reported
-	 *          hours don't match the admin-entered times.
-	 *
-	 * @param emp - Employee assignment record
-	 * @returns True if both sets of hours exist and differ by more than 0.25h
-	 */
-	function hasDiscrepancy(emp: EmployeeAssignment): boolean {
-		if (emp.actual_hours == null || emp.employee_actual_hours == null) return false;
-		return Math.abs(emp.actual_hours - emp.employee_actual_hours) > 0.25;
-	}
-
-	/**
-	 * Removes an employee from the current inquiry.
-	 *
-	 * Called by: Template (remove button)
-	 * Purpose: DELETE /api/v1/inquiries/{id}/employees/{emp_id}.
-	 */
-	async function removeEmployee(empId: string) {
-		if (!data || !confirm('Mitarbeiter von dieser Anfrage entfernen?')) return;
-		try {
-			await apiDelete(`/api/v1/inquiries/${data.id}/employees/${empId}`);
-			showToast('Mitarbeiter entfernt', 'success');
-			await reloadInquiry();
-		} catch (e: unknown) {
-			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
-		}
-	}
-
-	/**
 	 * Reloads the inquiry data without full page reload.
 	 *
-	 * Called by: handleAssign, removeEmployee
-	 * Purpose: Refreshes data after employee assignment changes.
+	 * Called by: EmployeesSection (assign/remove), InvoicesSection (send/mark paid)
+	 * Purpose: Refreshes data after employee assignment or invoice status changes.
 	 */
 	async function reloadInquiry() {
 		if (!data) return;
@@ -1951,207 +942,6 @@
 		} catch { /* keep existing data */ }
 	}
 
-	/**
-	 * Loads all email threads for this inquiry plus their messages.
-	 *
-	 * Called by: loadInquiry (after inquiry data is fetched)
-	 * Purpose: Fetches GET /api/v1/inquiries/{id}/emails to get thread list,
-	 *          then fetches GET /api/v1/admin/emails/{threadId} for each thread to get messages.
-	 *
-	 * @returns void (side-effect: sets `emailThreads`, `emailsLoading`)
-	 */
-	async function loadEmails() {
-		if (!data) return;
-		emailsLoading = true;
-		try {
-			const threads = await apiGet<InquiryEmailThread[]>(
-				`/api/v1/inquiries/${data.id}/emails`,
-			);
-			const withMessages = await Promise.all(
-				threads.map(async (thread) => {
-					try {
-						const res = await apiGet<{
-							thread: InquiryEmailThread;
-							messages: InquiryEmailMessage[];
-						}>(`/api/v1/admin/emails/${thread.id}`);
-						return { thread: res.thread, messages: res.messages };
-					} catch {
-						return { thread, messages: [] };
-					}
-				}),
-			);
-			emailThreads = withMessages;
-		} catch {
-			emailThreads = [];
-		} finally {
-			emailsLoading = false;
-		}
-	}
-
-	/**
-	 * Opens an email attachment in a new tab for preview.
-	 *
-	 * Called by: Template (attachment link click in the email section message bubble).
-	 * Purpose: Fetches through the authenticated API proxy — a plain <a href> would
-	 *          401 since the endpoint requires a Bearer token.
-	 *
-	 * @param msgId - The ID of the message the attachment belongs to
-	 * @param idx   - Zero-based attachment index
-	 */
-	async function emailPreviewAttachment(msgId: string, idx: number) {
-		try {
-			await apiPreview(`/api/v1/admin/emails/messages/${msgId}/attachments/${idx}`);
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		}
-	}
-
-	/**
-	 * Opens the offer PDF that will be attached when a draft in this thread is sent.
-	 *
-	 * Called by: Template (offer-pdf banner click, shown when the thread carries
-	 *            `offer_pdf_filename`).
-	 * Purpose: `send_draft_email` on the backend silently attaches the active offer's
-	 *          PDF at send time — this lets the admin confirm it exists before hitting
-	 *          "Senden", rather than only finding out after the customer replies.
-	 */
-	async function emailPreviewOfferPdf() {
-		if (!data) return;
-		try {
-			await apiPreview(`/api/v1/inquiries/${data.id}/pdf`);
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		}
-	}
-
-	/**
-	 * Sends a draft email message to the customer after confirmation.
-	 *
-	 * Called by: Template (onclick on "Senden" button in the email section draft bubble)
-	 * Purpose: Calls POST /api/v1/admin/emails/messages/{id}/send to dispatch the email.
-	 *          Reloads emails on success so the message status updates to "sent".
-	 *
-	 * @param msgId - ID of the draft message to send
-	 * @returns void
-	 */
-	async function emailSendDraft(msgId: string) {
-		if (!confirm("E-Mail jetzt an den Kunden senden?")) return;
-		emailActionLoading = msgId;
-		try {
-			const res = await apiPost<{ message: string }>(
-				`/api/v1/admin/emails/messages/${msgId}/send`,
-			);
-			showToast(res.message, "success");
-			await loadEmails();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			emailActionLoading = null;
-		}
-	}
-
-	/**
-	 * Discards a draft email message after confirmation.
-	 *
-	 * Called by: Template (onclick on "Verwerfen" button in the email section draft bubble)
-	 * Purpose: Calls POST /api/v1/admin/emails/messages/{id}/discard to delete the draft.
-	 *          Reloads emails on success so the message disappears.
-	 *
-	 * @param msgId - ID of the draft message to discard
-	 * @returns void
-	 */
-	async function emailDiscardDraft(msgId: string) {
-		if (!confirm("Entwurf verwerfen?")) return;
-		emailActionLoading = msgId;
-		try {
-			await apiPost(`/api/v1/admin/emails/messages/${msgId}/discard`);
-			showToast("Entwurf verworfen", "success");
-			await loadEmails();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			emailActionLoading = null;
-		}
-	}
-
-	/**
-	 * Opens the inline editor for a draft email message pre-filling with existing content.
-	 *
-	 * Called by: Template (onclick on "Bearbeiten" button in the email section draft bubble)
-	 * Purpose: Seeds the editable subject and body fields with the draft's existing text.
-	 *
-	 * @param msg - The InquiryEmailMessage to edit
-	 * @returns void
-	 */
-	function emailStartEdit(msg: InquiryEmailMessage) {
-		emailEditingId = msg.id;
-		emailEditSubject = msg.subject || "";
-		emailEditBody = msg.body_text || "";
-	}
-
-	/**
-	 * Closes the inline email editor without saving.
-	 *
-	 * Called by: Template (onclick on "Abbrechen" inside the inline email editor)
-	 * Purpose: Resets the editing state so the message bubble reverts to read-only view.
-	 *
-	 * @returns void
-	 */
-	function emailCancelEdit() {
-		emailEditingId = null;
-		emailEditSubject = "";
-		emailEditBody = "";
-	}
-
-	/**
-	 * Saves the edited subject and body of a draft email to the API.
-	 *
-	 * Called by: Template (onclick on "Speichern" inside the inline email editor)
-	 * Purpose: PATCHes via PATCH /api/v1/admin/emails/messages/{id}.
-	 *          Closes the editor and reloads emails on success.
-	 *
-	 * @param msgId - ID of the draft message being edited
-	 * @returns void
-	 */
-	async function emailSaveEdit(msgId: string) {
-		emailSaving = true;
-		try {
-			await apiPatch(`/api/v1/admin/emails/messages/${msgId}`, {
-				subject: emailEditSubject || null,
-				body_text: emailEditBody || null,
-			});
-			showToast("Entwurf gespeichert", "success");
-			emailEditingId = null;
-			await loadEmails();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			emailSaving = false;
-		}
-	}
-
-	/**
-	 * Regenerates the LLM response for a draft email message.
-	 *
-	 * Called by: Template (onclick on "Neu generieren" in the email section draft bubble)
-	 * Purpose: Calls POST /api/v1/admin/emails/messages/{id}/regenerate to ask the LLM to
-	 *          rewrite the draft. Reloads emails on success so the updated body appears.
-	 *
-	 * @param msgId - ID of the draft message to regenerate
-	 * @returns void
-	 */
-	async function emailRegenerateLlm(msgId: string) {
-		emailActionLoading = msgId;
-		try {
-			await apiPost(`/api/v1/admin/emails/messages/${msgId}/regenerate`);
-			showToast("Antwort wird neu generiert...", "success");
-			await loadEmails();
-		} catch (e) {
-			showToast((e as Error).message, "error");
-		} finally {
-			emailActionLoading = null;
-		}
-	}
 </script>
 
 <div class="page">
@@ -2208,197 +998,21 @@
 		</div>
 
 		<div class="detail-grid">
-			<!-- Customer -->
-			<div class="card" class:card--collapsed={!cardOpen.customer}>
-				<div class="card-header card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('customer')} aria-expanded={cardOpen.customer}>
-						<span class="card-toggle-chev" class:open={cardOpen.customer}><ChevronRight size={16} /></span>
-						<h3>Kunde</h3>
-					</button>
-					{#if !editingCustomer && cardOpen.customer}
-						<button class="btn btn-sm" onclick={startEditCustomer}>
-							<Pencil size={14} />
-							Bearbeiten
-						</button>
-					{/if}
-				</div>
-				{#if cardOpen.customer}
-				{#if editingCustomer}
-					<div class="form-grid">
-						<div class="field">
-							<label for="cust-type">Kundentyp</label>
-							<select id="cust-type" bind:value={editCustomer.customer_type}>
-								<option value={null}>–</option>
-								<option value="private">Privat</option>
-								<option value="business">Gewerbe</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="cust-company">Firma</label>
-							<input id="cust-company" type="text" bind:value={editCustomer.company_name} placeholder="{editCustomer.customer_type === 'business' ? 'Firmenname' : 'optional'}" />
-						</div>
-						<div class="field">
-							<label for="cust-salutation">Anrede</label>
-							<select id="cust-salutation" bind:value={editCustomer.salutation}>
-								<option value="">–</option>
-								<option value="Herr">Herr</option>
-								<option value="Frau">Frau</option>
-								<option value="D">Divers</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="cust-first-name">Vorname</label>
-							<input id="cust-first-name" type="text" bind:value={editCustomer.first_name} />
-						</div>
-						<div class="field">
-							<label for="cust-last-name">Nachname</label>
-							<input id="cust-last-name" type="text" bind:value={editCustomer.last_name} />
-						</div>
-						<div class="field full-width">
-							<label for="cust-email">E-Mail</label>
-							<input id="cust-email" type="email" bind:value={editCustomer.email} />
-						</div>
-						<div class="field full-width">
-							<label for="cust-phone">Telefon</label>
-							<input id="cust-phone" type="tel" bind:value={editCustomer.phone} />
-						</div>
-						<div class="field-actions full-width">
-							<button class="btn btn-primary btn-sm" onclick={saveCustomer}>Speichern</button>
-							<button class="btn btn-sm" onclick={() => (editingCustomer = false)}>Abbrechen</button>
-						</div>
-					</div>
-				{:else}
-					<div class="info-grid">
-						<div class="info-item">
-							<span class="info-label">Name</span>
-							<span class="info-value name-with-salutation">
-								{#if data.customer?.customer_type === 'business'}
-									<span class="cust-type-badge" data-type="business">Gewerbe</span>
-								{:else}
-									<span class="cust-type-badge" data-type="private">Privat</span>
-								{/if}
-								{#if data.customer?.salutation}
-									<span class="salutation-badge">{data.customer.salutation === "D" ? "Divers" : data.customer.salutation}</span>
-								{/if}
-								{data.customer?.first_name && data.customer?.last_name
-									? `${data.customer.first_name} ${data.customer.last_name}`
-									: (data.customer?.last_name ?? data.customer?.name ?? "—")}
-							</span>
-						</div>
-						{#if data.customer?.company_name}
-							<div class="info-item">
-								<span class="info-label">Firma</span>
-								<span class="info-value">{data.customer.company_name}</span>
-							</div>
-						{/if}
-						<div class="info-item">
-							<span class="info-label">E-Mail</span>
-							<span class="info-value">{data.customer?.email}</span>
-						</div>
-						{#if data.customer?.phone}
-							<div class="info-item">
-								<span class="info-label">Telefon</span>
-								<span class="info-value">{data.customer?.phone}</span>
-							</div>
-						{/if}
-					</div>
-				{/if}
-				{/if}
-			</div>
-
-			{#if data.recipient}
-				<div class="card" class:card--collapsed={!cardOpen.recipient}>
-					<div class="card-header card-header--toggleable">
-						<button class="card-toggle" onclick={() => toggleCard('recipient')} aria-expanded={cardOpen.recipient}>
-							<span class="card-toggle-chev" class:open={cardOpen.recipient}><ChevronRight size={16} /></span>
-							<h3>Leistungsempfänger</h3>
-						</button>
-					</div>
-					{#if cardOpen.recipient}
-					<div class="info-grid">
-						<div class="info-item">
-							<span class="info-label">Name</span>
-							<span class="info-value">
-								{#if data.recipient.salutation}
-									<span class="salutation-badge">{data.recipient.salutation === "D" ? "Divers" : data.recipient.salutation}</span>
-								{/if}
-								{data.recipient.first_name && data.recipient.last_name
-									? `${data.recipient.first_name} ${data.recipient.last_name}`
-									: (data.recipient.last_name ?? "—")}
-							</span>
-						</div>
-						<div class="info-item">
-							<span class="info-label">E-Mail</span>
-							<span class="info-value">{data.recipient.email ?? "—"}</span>
-						</div>
-						{#if data.recipient.phone}
-							<div class="info-item">
-								<span class="info-label">Telefon</span>
-								<span class="info-value">{data.recipient.phone}</span>
-							</div>
-						{/if}
-					</div>
-					{/if}
-				</div>
-			{/if}
-
-			<!-- Billing Address -->
-			<div class="card card--compact" class:card--collapsed={!cardOpen.billing}>
-				<div class="card-header card-header--action card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('billing')} aria-expanded={cardOpen.billing}>
-						<span class="card-toggle-chev" class:open={cardOpen.billing}><ChevronRight size={16} /></span>
-						<h3>Rechnungsadresse</h3>
-					</button>
-					{#if cardOpen.billing}
-						<button class="btn-edit" onclick={() => billingEditing = !billingEditing}>
-							{billingEditing ? 'Schließen' : 'Bearbeiten'}
-						</button>
-					{/if}
-				</div>
-
-				{#if cardOpen.billing}
-				{#if data.effective_billing_address}
-					<div class="billing-addr-display">
-						<div>{data.effective_billing_address.street ?? ''} {data.effective_billing_address.house_number ?? ''}</div>
-						<div>{data.effective_billing_address.postal_code ?? ''} {data.effective_billing_address.city ?? ''}</div>
-						{#if !data.billing_address}
-							<div class="billing-addr-source">
-								{data.status === 'completed' || data.status === 'invoiced' || data.status === 'paid'
-									? 'Einzugsadresse (Standard nach Umzug)'
-									: 'Auszugsadresse (Standard)'}
-							</div>
-						{:else}
-							<div class="billing-addr-source">Abweichende Rechnungsadresse</div>
-						{/if}
-					</div>
-				{:else}
-					<p class="billing-addr-hint">Keine Adresse verfügbar.</p>
-				{/if}
-
-				{#if billingEditing}
-					<div class="billing-addr-form">
-						<div class="billing-addr-row">
-							<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input billing-input--street" />
-							<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input billing-input--nr" />
-						</div>
-						<div class="billing-addr-row">
-							<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input billing-input--plz" />
-							<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input billing-input--city" />
-						</div>
-						<div class="billing-addr-actions">
-							<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
-								{billingSaving ? 'Speichert…' : 'Speichern'}
-							</button>
-							{#if data.billing_address}
-								<button class="btn btn-sm btn-tertiary" onclick={clearBillingAddress} disabled={billingSaving}>
-									Zurücksetzen
-								</button>
-							{/if}
-						</div>
-					</div>
-				{/if}
-				{/if}
-			</div>
+			<CustomerSection
+				inquiryId={data.id}
+				inquiryStatus={data.status}
+				customer={data.customer}
+				recipient={data.recipient}
+				billingAddress={data.billing_address}
+				effectiveBillingAddress={data.effective_billing_address}
+				bind:customerOpen={cardOpen.customer}
+				bind:recipientOpen={cardOpen.recipient}
+				bind:billingOpen={cardOpen.billing}
+				onToggleCustomer={() => toggleCard('customer')}
+				onToggleRecipient={() => toggleCard('recipient')}
+				onToggleBilling={() => toggleCard('billing')}
+				onSaved={loadInquiry}
+			/>
 
 			<!-- Addresses -->
 			<AddressEditor
@@ -2409,397 +1023,84 @@
 				onSaved={loadInquiry}
 			/>
 
-			<!-- Editable Fields -->
-			<div class="card" class:card--collapsed={!cardOpen.details}>
-				<div class="card-header card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('details')} aria-expanded={cardOpen.details}>
-						<span class="card-toggle-chev" class:open={cardOpen.details}><ChevronRight size={16} /></span>
-						<h3>Details</h3>
-					</button>
-					{#if cardOpen.details}
-						<button
-							class="btn btn-sm"
-							onclick={saveInquiry}
-							disabled={saving}
-						>
-							<Save size={14} />
-							{saving ? "Speichern..." : "Speichern"}
-						</button>
-					{/if}
-				</div>
-				{#if cardOpen.details}
-				<div class="form-grid">
-					<div class="field">
-						<label for="volume">Volumen (m3){isLocked ? ' 🔒' : ''}</label>
-						<input
-							id="volume"
-							type="number"
-							step="0.1"
-							bind:value={editVolume}
-							disabled={isLocked}
-						/>
-					</div>
-					<div class="field">
-						<label for="distance">Entfernung (km){isLocked ? ' 🔒' : ''}</label>
-						<input
-							id="distance"
-							type="number"
-							step="0.1"
-							bind:value={editDistance}
-							disabled={isLocked}
-						/>
-					</div>
-					<div class="field">
-						<label for="preferred-date">Datum</label>
-						<input
-							id="preferred-date"
-							type="date"
-							bind:value={editDate}
-						/>
-					</div>
-					<div class="field">
-						<label for="start-time">Startzeit</label>
-						<input id="start-time" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editStartTime} />
-					</div>
-					<div class="field">
-						<label for="end-time">Endzeit</label>
-						<input id="end-time" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editEndTime} />
-					</div>
-					<div class="field full-width">
-						<label for="notes">Notizen / Services</label>
-						<textarea id="notes" rows={3} bind:value={editNotes}
-						></textarea>
-					</div>
-				</div>
-				{/if}
-			</div>
+			<DetailsSection
+				bind:editVolume
+				bind:editDistance
+				bind:editDate
+				bind:editStartTime
+				bind:editEndTime
+				bind:editNotes
+				{isLocked}
+				{saving}
+				{routeCoordinates}
+				customerMessage={data.customer_message}
+				bind:detailsOpen={cardOpen.details}
+				bind:routeOpen={cardOpen.route}
+				bind:messageOpen={cardOpen.message}
+				onToggleDetails={() => toggleCard('details')}
+				onToggleRoute={() => toggleCard('route')}
+				onToggleMessage={() => toggleCard('message')}
+				onSave={saveInquiry}
+			/>
 
-			<!-- Route Map -->
-			{#if routeCoordinates}
-				<div class="card" class:card--collapsed={!cardOpen.route}>
-					<div class="card-header card-header--toggleable">
-						<button class="card-toggle" onclick={() => toggleCard('route')} aria-expanded={cardOpen.route}>
-							<span class="card-toggle-chev" class:open={cardOpen.route}><ChevronRight size={16} /></span>
-							<h3>Route</h3>
-						</button>
-					</div>
-					{#if cardOpen.route}
-						<RouteMap
-							coordinates={routeCoordinates}
-							distanceKm={editDistance}
-						/>
-					{/if}
-				</div>
-			{/if}
+			<PhotoEstimationSection
+				inquiryId={data.id}
+				estimations={data.estimations}
+				estimation={data.estimation}
+				items={data.items ?? []}
+				bind:filterPhotoIndex
+				bind:saveIfDirty={saveIfDirtyFn}
+				bind:photosOpen={cardOpen.photos}
+				bind:itemsOpen={cardOpen.items}
+				onTogglePhotos={() => toggleCard('photos')}
+				onToggleItems={() => toggleCard('items')}
+				onUpdated={loadInquiry}
+			/>
 
-			<!-- Customer Message -->
-			{#if data.customer_message}
-				<div class="card" class:card--collapsed={!cardOpen.message}>
-					<div class="card-header card-header--toggleable">
-						<button class="card-toggle" onclick={() => toggleCard('message')} aria-expanded={cardOpen.message}>
-							<span class="card-toggle-chev" class:open={cardOpen.message}><ChevronRight size={16} /></span>
-							<h3>Kundennachricht</h3>
-						</button>
-					</div>
-					{#if cardOpen.message}
-						<p class="customer-message">{data.customer_message}</p>
-					{/if}
-				</div>
-			{/if}
-
-			<!-- Photo/Video Upload & Gallery -->
-			<div class="card" class:card--collapsed={!cardOpen.photos}>
-				<div class="card-header card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('photos')} aria-expanded={cardOpen.photos}>
-						<span class="card-toggle-chev" class:open={cardOpen.photos}><ChevronRight size={16} /></span>
-						<h3>Foto- &amp; Videoanalyse</h3>
-					</button>
-				</div>
-				{#if cardOpen.photos}
-					<PhotoVideoUpload
-						inquiryId={data.id}
-						{estimationsList}
-						{filterPhotoIndex}
-						openPhotoDetail={openPhotoDetailFn}
-						onTogglePhotoFilter={togglePhotoFilter}
-						onFilterClear={() => { filterPhotoIndex = null; }}
-						onUpdated={loadInquiry}
-					/>
-				{/if}
-			</div>
-
-			<!-- Estimation Items Table (Sections A / B / C) -->
-			<div class="card" class:card--collapsed={!cardOpen.items}>
-				<div class="card-header card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('items')} aria-expanded={cardOpen.items}>
-						<span class="card-toggle-chev" class:open={cardOpen.items}><ChevronRight size={16} /></span>
-						<h3>Möbel und Gegenstände</h3>
-					</button>
-				</div>
-				{#if cardOpen.items}
-					<EstimationItemsTable
-						inquiryId={data.id}
-						items={data.items ?? []}
-						{filterPhotoIndex}
-						galleryImages={galleryImages}
-						bind:openPhotoDetail={openPhotoDetailFn}
-						bind:saveIfDirty={saveIfDirtyFn}
-						onUpdated={loadInquiry}
-					/>
-				{/if}
-			</div>
-
-			<!-- Pricing Editor -->
-			<div class="card" class:card--collapsed={!cardOpen.pricing}>
-				<div class="card-header card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('pricing')} aria-expanded={cardOpen.pricing}>
-						<span class="card-toggle-chev" class:open={cardOpen.pricing}><ChevronRight size={16} /></span>
-						<h3>Preisgestaltung</h3>
-					</button>
-				</div>
-				{#if cardOpen.pricing}
-				<div class="pricing-section">
-					<PriceInput
-						bind:bruttoCents={editBruttoCents}
-						label="Gesamtpreis"
-					/>
-
-					<div class="pricing-fields">
-						<div class="field">
-							<label for="persons">Helfer</label>
-							<input
-								id="persons"
-								type="number"
-								min={1}
-								max={10}
-								bind:value={editPersons}
-							/>
-						</div>
-						<div class="field">
-							<label for="hours">Stunden</label>
-							<input
-								id="hours"
-								type="number"
-								min={1}
-								max={24}
-								step={0.5}
-								bind:value={editHours}
-							/>
-						</div>
-						<div class="field">
-							<label for="rate">Stundensatz (EUR)</label>
-							<input
-								id="rate"
-								type="number"
-								step={0.5}
-								value={rateEditing
-									? rateText
-									: (editRateCents / 100).toFixed(2)}
-								oninput={(e) => {
-									const target = e.target as HTMLInputElement;
-									rateText = target.value;
-									const val = parseFloat(target.value);
-									if (!isNaN(val))
-										editRateCents = Math.round(val * 100);
-								}}
-								onfocus={() => {
-									rateEditing = true;
-								}}
-								onblur={() => {
-									rateEditing = false;
-								}}
-							/>
-						</div>
-					</div>
-
-					<button class="btn-link" onclick={onBruttoChange}>
-						Rate aus Gesamtpreis berechnen
-					</button>
-					<span class="labor-profit" class:negative={laborProfit < 0}
-						>{laborProfit.toFixed(2)} &euro;</span
-					>
-
-					<div class="field" style="margin-top: 0.75rem">
-						<label for="kva-headline">KVA-Überschrift überschreiben</label>
-						<input
-							id="kva-headline"
-							type="text"
-							bind:value={editHeadlineOverride}
-							placeholder={editVolume != null ? `Umzugspauschale ${editVolume.toFixed(1)} m³` : "Umzugspauschale"}
-							onblur={persistInquiry}
-						/>
-						<small class="hint">Leer lassen für Standard. Praktisch für Umzugshelfer, Lagerung u.ä. ohne Volumenangabe.</small>
-					</div>
-				</div>
-				{/if}
-			</div>
-
-			<!-- Line Items (Editable) -->
-			<div class="card" class:card--collapsed={!cardOpen.positions}>
-				<div class="card-header card-header--toggleable">
-					<button class="card-toggle" onclick={() => toggleCard('positions')} aria-expanded={cardOpen.positions}>
-						<span class="card-toggle-chev" class:open={cardOpen.positions}><ChevronRight size={16} /></span>
-						<h3>Positionen</h3>
-					</button>
-					{#if cardOpen.positions}
-						<div class="header-actions">
-							<button class="btn btn-sm" onclick={addLineItem}>
-								<Plus size={14} />
-								Position
-							</button>
-						</div>
-					{/if}
-				</div>
-				{#if cardOpen.positions}
-				<div class="line-items">
-					{#each editLineItems as li, idx (li._id)}
-					<div
-						class="line-item editable"
-						class:drag-over={dragOverIdx === idx}
-						class:dragging={dragIdx === idx}
-						draggable={armedIdx === idx}
-						role="listitem"
-						ondragstart={(e) => onDragStart(e, idx)}
-						ondragover={(e) => onDragOver(e, idx)}
-						ondragleave={onDragLeave}
-						ondrop={(e) => onDrop(e, idx)}
-						ondragend={onDragEnd}
-					>
-						<span
-							role="button"
-							tabindex="-1"
-							aria-label="Ziehen zum Sortieren"
-							class="drag-handle"
-							title="Ziehen zum Sortieren"
-							onmousedown={() => armDrag(idx)}
-							onmouseup={disarmDrag}
-						>
-							<GripVertical size={14} />
-						</span>
-
-						{#if li.kind === 'labor'}
-							<div class="li-fixed">
-								<span class="li-name">{editPersons} Umzugshelfer</span>
-								<div class="li-detail">
-									<span class="li-qty">{editHours} Std.</span>
-									<span class="li-unit">&times; {(editRateCents / 100).toFixed(2)} EUR</span>
-									<span class="li-total">{formatEuro(laborCents)}</span>
-								</div>
-							</div>
-						{:else if li.kind === 'insurance'}
-							<div class="li-fixed">
-								<span class="li-name">Nürnbergerversicherung</span>
-								<div class="li-detail">
-									<span class="li-qty">{li.remark || 'Deckungssumme: 620,00 Euro / m³'}</span>
-									<span class="li-total">inklusive</span>
-								</div>
-							</div>
-							<button class="del-btn" onclick={() => removeLineItem(idx)} title="Versicherung entfernen"><X size={14} /></button>
-						{:else if li.kind === 'fahrt'}
-							<div class="li-edit-top"><span class="li-name">Fahrkostenpauschale</span></div>
-							<div class="li-edit-bottom">
-								<input type="text" class="edit-li-remark" bind:value={li.remark} placeholder="Bemerkung" />
-								<input type="number" class="edit-li-qty" min={0} step={1} bind:value={li.quantity} />
-								<span class="li-times">&times;</span>
-								<input type="number" class="edit-li-price" min={0} step={0.5} value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)} oninput={(e) => { const t = e.target as HTMLInputElement; li._priceText = t.value; const v = parseFloat(t.value); if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100); }} onfocus={() => { li._editing = true; }} onblur={() => { li._editing = false; }} />
-								<span class="li-eur">EUR</span>
-								<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
-							</div>
-						{:else}
-							<div class="li-edit-top">
-								<select bind:value={li.label} onchange={() => onCustomLabelChange(idx)}>
-									<option value="" disabled>Position wählen…</option>
-									{#each CUSTOM_LABEL_OPTIONS as opt}
-										<option value={opt}>{opt}</option>
-									{/each}
-								</select>
-								{#if li.label === '' || li.label === 'Sonstiges'}
-									<input type="text" class="edit-li-label" bind:value={li.label} placeholder="Bezeichnung" />
-								{/if}
-								<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen"><X size={14} /></button>
-							</div>
-							<div class="li-edit-bottom">
-								<input type="text" class="edit-li-remark" bind:value={li.remark} placeholder="Bemerkung" />
-								<input type="number" class="edit-li-qty" min={0} step={1} bind:value={li.quantity} />
-								<span class="li-times">&times;</span>
-								<input type="number" class="edit-li-price" min={0} step={0.5} value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)} oninput={(e) => { const t = e.target as HTMLInputElement; li._priceText = t.value; const v = parseFloat(t.value); if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100); }} onfocus={() => { li._editing = true; }} onblur={() => { li._editing = false; }} />
-								<span class="li-eur">EUR</span>
-								<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
-							</div>
-						{/if}
-					</div>
-				{/each}
-
-				{#if !editLineItems.some((li) => li.kind === 'insurance')}
-					<button class="btn-link" onclick={addInsurance}><Plus size={14} /> Versicherung hinzufügen</button>
-				{/if}
-
-					<div class="line-item total">
-						<span class="li-name">Netto</span>
-						<span class="li-total"
-							>{formatEuro(calculatedNettoCents)}</span
-						>
-					</div>
-					<div class="line-item total grand">
-						<span class="li-name">Brutto (inkl. 19% MwSt.)</span>
-						<span class="li-total"
-							>{formatEuro(calculatedBruttoCents)}</span
-						>
-					</div>
-				</div>
-				{/if}
-			</div>
-
-			<!-- Linked Offer -->
-			{#if data.offer}
-				<div class="card full-width" class:card--collapsed={!cardOpen.offer}>
-					<div class="card-header card-header--toggleable">
-						<button class="card-toggle" onclick={() => toggleCard('offer')} aria-expanded={cardOpen.offer}>
-							<span class="card-toggle-chev" class:open={cardOpen.offer}><ChevronRight size={16} /></span>
-							<h3>Angebot</h3>
-						</button>
-						{#if cardOpen.offer}
-							<button
-								class="btn btn-sm"
-								onclick={downloadPdf}
-								disabled={downloadingPdf}
-							>
-								<Download size={14} />
-								{downloadingPdf
-									? "Wird geladen..."
-									: "PDF herunterladen"}
-							</button>
-						{/if}
-					</div>
-					{#if cardOpen.offer}
-					<div class="offers-list">
-						<div class="offer-row">
-							<span class="offer-date"
-								>{formatDate(data.offer.created_at)}</span
-							>
-							<span class="offer-price"
-								>{data.offer.total_brutto_cents != null
-									? formatEuro(data.offer.total_brutto_cents)
-									: "—"}</span
-							>
-							<StatusBadge status={data.offer.status} />
-						</div>
-					</div>
-					{/if}
-				</div>
-			{/if}
-
-			{#if latestOffer}
-				<button class="btn-generate-bottom" onclick={reEstimateOffer}>
-					<RotateCcw size={20} />
-					Neu berechnen
-				</button>
-			{:else}
-				<button class="btn-generate-bottom" onclick={generateOffer}>
-					<FileOutput size={20} />
-					Angebot erstellen
-				</button>
-			{/if}
+			<PricingSection
+				bind:editBruttoCents
+				bind:editPersons
+				bind:editHours
+				bind:editRateCents
+				bind:rateText
+				bind:rateEditing
+				bind:editHeadlineOverride
+				{editVolume}
+				{laborProfit}
+				{laborCents}
+				{calculatedNettoCents}
+				{calculatedBruttoCents}
+				bind:editLineItems
+				bind:dragIdx
+				bind:dragOverIdx
+				bind:armedIdx
+				customLabelOptions={CUSTOM_LABEL_OPTIONS}
+				inquiryId={data.id}
+				customer={data.customer}
+				offer={data.offer}
+				{latestOffer}
+				bind:pricingOpen={cardOpen.pricing}
+				bind:positionsOpen={cardOpen.positions}
+				bind:offerOpen={cardOpen.offer}
+				onTogglePricing={() => toggleCard('pricing')}
+				onTogglePositions={() => toggleCard('positions')}
+				onToggleOffer={() => toggleCard('offer')}
+				{onBruttoChange}
+				{addLineItem}
+				{removeLineItem}
+				{addInsurance}
+				{onCustomLabelChange}
+				{armDrag}
+				{disarmDrag}
+				{onDragStart}
+				{onDragOver}
+				{onDragLeave}
+				{onDrop}
+				{onDragEnd}
+				onHeadlineBlur={persistInquiry}
+				{generateOffer}
+				{reEstimateOffer}
+			/>
 		</div>
 	{:else}
 		<div class="loading" style="color: var(--dt-secondary)">
@@ -2811,651 +1112,51 @@
 	{/if}
 </div>
 
-<!-- Mitarbeiter Card (visible for accepted+ statuses) -->
-{#if showEmployeeCard && data}
-	<div class="employees-section">
-		<div class="card" class:card--collapsed={!cardOpen.employees}>
-			<div class="card-header card-header--toggleable">
-				<button class="card-toggle" onclick={() => toggleCard('employees')} aria-expanded={cardOpen.employees}>
-					<span class="card-toggle-chev" class:open={cardOpen.employees}><ChevronRight size={16} /></span>
-					<h3>Mitarbeiter</h3>
-				</button>
-			</div>
-			{#if cardOpen.employees}
-			<EmployeeAssignmentPanel
-				entityId={data.id}
-				entityType="inquiry"
-				preferredDate={data.scheduled_date}
-				hasPauschale={editHasPauschale}
-			/>
-			{#if data.is_multi_day}
-				<div class="pauschale-toggle">
-					<label class="form-checkbox" style="margin-top: 0.75rem;">
-						<input
-							type="checkbox"
-							bind:checked={editHasPauschale}
-							onchange={persistInquiry}
-						/>
-						Verpflegungspauschale (Reisekosten)
-					</label>
-					{#if editHasPauschale}
-						<div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem;">
-							{#each (data.employees ?? []) as emp}
-								<button
-									class="btn btn-sm"
-									onclick={() => downloadTravelExpense(emp.employee_id)}
-									disabled={downloadingTravelExpense}
-								>
-									{downloadingTravelExpense ? 'Laden...' : `Reisekosten: ${emp.first_name} ${emp.last_name[0]}.`}
-								</button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/if}
-			<div class="emp-notes-field">
-				<label for="emp-notes-inq" class="emp-notes-label">Hinweis für Mitarbeiter</label>
-				<textarea
-					id="emp-notes-inq"
-					rows={3}
-					placeholder="Sichtbar für alle zugewiesenen Mitarbeiter im Mitarbeiterportal…"
-					bind:value={editEmployeeNotes}
-					onblur={persistInquiry}
-				></textarea>
-			</div>
-			{/if}
-		</div>
-	</div>
-{/if}
-
-<!-- Termine & Besichtigungen Card -->
 {#if data}
-	<div class="appointments-section">
-		<div class="card" class:card--collapsed={!cardOpen.appointments}>
-			<div class="card-header card-header--toggleable">
-				<button class="card-toggle" onclick={onOpenAppointments} aria-expanded={cardOpen.appointments}>
-					<span class="card-toggle-chev" class:open={cardOpen.appointments}><ChevronRight size={16} /></span>
-					<h3>Termine &amp; Besichtigungen{#if (data.appointments?.length ?? 0) > 0} ({data.appointments?.length}){/if}</h3>
-				</button>
-			</div>
-			{#if cardOpen.appointments}
-			<div class="appt-body">
-				<p class="appt-hint">Zusätzliche Termine zu diesem Auftrag an eigenen Daten (z.&nbsp;B. eine Besichtigung vor dem Umzug). Unabhängig vom Umzugstermin.</p>
-
-				{#if (data.appointments?.length ?? 0) > 0}
-					<div class="appt-list">
-						{#each data.appointments ?? [] as a (a.id)}
-							<div class="appt-row" class:appt-editing={editingApptId === a.id}>
-								<div class="appt-info">
-									<div class="appt-main">
-										<span class="appt-kind">{apptKindLabel(a.kind)}</span>
-										<span class="appt-date">{formatApptDate(a.scheduled_date)}</span>
-										{#if a.start_time}<span class="appt-time">{a.start_time.slice(0, 5)}{a.end_time ? '–' + a.end_time.slice(0, 5) : ''}</span>{/if}
-										<span class="appt-status appt-status-{a.status}">{APPT_STATUS_LABELS[a.status] ?? a.status}</span>
-									</div>
-									{#if a.assignee_name || a.location || a.notes}
-										<div class="appt-sub">
-											{#if a.assignee_name}<span>👤 {a.assignee_name}</span>{/if}
-											{#if a.location}<span>📍 {a.location}</span>{/if}
-											{#if a.notes}<span class="appt-notes">{a.notes}</span>{/if}
-										</div>
-									{/if}
-								</div>
-								<div class="appt-actions">
-									<button class="btn btn-sm" onclick={() => editAppt(a)}>Bearbeiten</button>
-									<button class="btn btn-sm btn-danger" onclick={() => deleteAppt(a)}>Löschen</button>
-								</div>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="appt-empty">Noch keine Termine.</p>
-				{/if}
-
-				<div class="appt-form">
-					<h4>{editingApptId ? 'Termin bearbeiten' : 'Neuer Termin'}</h4>
-					<div class="appt-grid">
-						<label>Art
-							<input type="text" bind:value={apptForm.kind} placeholder="besichtigung" list="appt-kinds" />
-							<datalist id="appt-kinds"><option value="besichtigung"></option><option value="nachtermin"></option></datalist>
-						</label>
-						<label>Datum
-							<input type="date" bind:value={apptForm.scheduled_date} />
-						</label>
-						<label>Von
-							<input type="time" bind:value={apptForm.start_time} />
-						</label>
-						<label>Bis
-							<input type="time" bind:value={apptForm.end_time} />
-						</label>
-						<label>Mitarbeiter
-							<select bind:value={apptForm.assignee_id}>
-								<option value="">— keiner —</option>
-								{#each apptEmployees as e}
-									<option value={e.id}>{e.first_name} {e.last_name}</option>
-								{/each}
-							</select>
-						</label>
-						<label>Status
-							<select bind:value={apptForm.status}>
-								<option value="scheduled">Geplant</option>
-								<option value="done">Erledigt</option>
-								<option value="cancelled">Storniert</option>
-							</select>
-						</label>
-						<label class="appt-wide">Ort
-							<input type="text" bind:value={apptForm.location} placeholder="Adresse (optional, sonst Auszugsadresse)" />
-						</label>
-						<label class="appt-wide">Notiz
-							<textarea rows={2} bind:value={apptForm.notes}></textarea>
-						</label>
-					</div>
-					<div class="appt-form-actions">
-						<button class="btn btn-primary btn-sm" onclick={saveAppt} disabled={apptSaving}>
-							{editingApptId ? 'Speichern' : 'Anlegen'}
-						</button>
-						{#if editingApptId}
-							<button class="btn btn-sm" onclick={resetApptForm} disabled={apptSaving}>Abbrechen</button>
-						{/if}
-					</div>
-				</div>
-			</div>
-			{/if}
-		</div>
-	</div>
+	<EmployeesSection
+		inquiryId={data.id}
+		status={data.status}
+		scheduledDate={data.scheduled_date}
+		isMultiDay={data.is_multi_day}
+		employees={data.employees ?? []}
+		bind:hasPauschale={editHasPauschale}
+		bind:employeeNotes={editEmployeeNotes}
+		bind:open={cardOpen.employees}
+		onToggle={() => toggleCard('employees')}
+		onFieldBlur={persistInquiry}
+	/>
 {/if}
 
-<!-- Rechnungen Card (visible for accepted+ statuses) -->
-{#if showInvoiceCard && data}
-	<div class="invoices-section">
-		<div class="card" class:card--collapsed={!cardOpen.invoices}>
-			<div class="card-header card-header--toggleable">
-				<button class="card-toggle" onclick={() => toggleCard('invoices')} aria-expanded={cardOpen.invoices}>
-					<span class="card-toggle-chev" class:open={cardOpen.invoices}><ChevronRight size={16} /></span>
-					<h3>Rechnungen</h3>
-				</button>
-				{#if cardOpen.invoices && invoices.length === 0}
-					<div class="invoice-create-btns">
-						<button
-							class="btn btn-sm btn-primary"
-							disabled={invoiceCreating}
-							onclick={createFullInvoice}
-						>
-							<Plus size={14} />
-							Rechnung Erstellen
-						</button>
-						<button
-							class="btn btn-sm"
-							onclick={() => (showPartialForm = !showPartialForm)}
-						>
-							<Plus size={14} />
-							Partielle Rechnung
-						</button>
-					</div>
-				{/if}
-			</div>
-			{#if cardOpen.invoices}
-
-			<!-- Partial invoice form -->
-			{#if showPartialForm && invoices.length === 0}
-				<form class="partial-form" onsubmit={createPartialInvoice}>
-					<div class="partial-form-row">
-						<label for="partial-pct">Anzahlungsprozentsatz (%)</label>
-						<input
-							id="partial-pct"
-							type="number"
-							min="1"
-							max="99"
-							class="inline-input"
-							bind:value={partialPercent}
-						/>
-					</div>
-					{#if partialPreview()}
-						{@const preview = partialPreview()!}
-						<div class="partial-preview">
-							<span>Anzahlung: <strong>{formatEuro(preview.first)}</strong></span>
-							<span>Restbetrag: <strong>{formatEuro(preview.remaining)}</strong></span>
-						</div>
-					{/if}
-					<div class="partial-form-actions">
-						<button type="button" class="btn btn-sm" onclick={() => (showPartialForm = false)}>Abbrechen</button>
-						<button type="submit" class="btn btn-sm btn-primary" disabled={invoiceCreating}>
-							{invoiceCreating ? 'Erstelle...' : 'Erstellen'}
-						</button>
-					</div>
-				</form>
-			{/if}
-
-			{#if invoicesLoading}
-				<p class="empty-hint">Rechnungen werden geladen...</p>
-			{:else if invoices.length === 0}
-				<p class="empty-hint">Noch keine Rechnung erstellt.</p>
-			{:else}
-				<div class="invoices-list">
-					{#each invoices as inv}
-						<div class="invoice-row">
-							<div class="invoice-row-header">
-								<div class="invoice-row-meta">
-									{#if editingNumberId === inv.id}
-										<span class="invoice-number">Nr.</span>
-										<input
-											class="inline-input invoice-number-input"
-											bind:value={numberDraft}
-											placeholder="z.B. 2026-0053"
-											onkeydown={(e) => { if (e.key === 'Enter') saveInvoiceNumber(inv.id); if (e.key === 'Escape') cancelEditNumber(); }}
-										/>
-										<button class="btn btn-sm btn-primary" disabled={numberSaving} onclick={() => saveInvoiceNumber(inv.id)}>
-											{numberSaving ? '...' : 'Speichern'}
-										</button>
-										<button class="btn btn-sm" onclick={cancelEditNumber}>Abbrechen</button>
-									{:else}
-										<span class="invoice-number">Nr. {inv.invoice_number}</span>
-										{#if inv.status !== 'paid'}
-											<button class="btn-icon" title="Rechnungsnummer korrigieren" onclick={() => startEditNumber(inv)}>
-												<Pencil size={13} />
-											</button>
-										{/if}
-									{/if}
-									<span class="invoice-type-label">
-										{#if inv.invoice_type === 'full'}Vollrechnung
-										{:else if inv.invoice_type === 'partial_first'}Anzahlung ({inv.partial_percent}%)
-										{:else}Restbetrag
-										{/if}
-									</span>
-									<span class="invoice-amount">{formatEuro(inv.total_brutto_cents)}</span>
-								</div>
-								<div class="invoice-row-actions">
-									<span class="inv-status inv-status--{invoiceStatusClass(inv.status)}">
-										{invoiceStatusLabel(inv.status)}
-									</span>
-									<button
-										class="btn btn-sm"
-										title="PDF herunterladen"
-										onclick={() => downloadInvoicePdf(inv)}
-									>
-										<Download size={13} />
-										PDF
-									</button>
-									{#if inv.status !== 'sent' && inv.status !== 'paid'}
-										<button
-											class="btn btn-sm btn-primary"
-											disabled={!canSendInvoice(inv)}
-											title={!canSendInvoice(inv) ? 'Erst nach Auftragsabschluss sendbar' : 'Rechnung senden'}
-											onclick={() => sendInvoice(inv.id)}
-										>
-											<Send size={13} />
-											Senden
-										</button>
-									{/if}
-									{#if inv.status === 'sent'}
-										<button
-											class="btn btn-sm"
-											onclick={() => markInvoicePaid(inv.id)}
-										>
-											Als bezahlt markieren
-										</button>
-									{/if}
-								</div>
-							</div>
-
-							<!-- Manual invoice mode (full invoices only): free line-item editing -->
-							{#if inv.invoice_type === 'full'}
-								<div class="manual-section">
-									<label class="manual-toggle">
-										<input
-											type="checkbox"
-											checked={isManualEditorOpen(inv)}
-											disabled={inv.status === 'paid'}
-											onchange={(e) => toggleManual(inv, (e.currentTarget as HTMLInputElement).checked)}
-										/>
-										<span>Manuelle Rechnung — Positionen frei bearbeiten (z.B. Stunden ausweisen)</span>
-									</label>
-									{#if isManualEditorOpen(inv)}
-										<ManualInvoiceEditor
-											inquiryId={inv.inquiry_id}
-											invoice={inv}
-											onSaved={(u) => onManualSaved(inv.id, u as Invoice)}
-											onCancel={() => toggleManual(inv, false)}
-										/>
-									{/if}
-								</div>
-							{/if}
-
-							<!-- Extra services (full / partial_final) — hidden while manual editor is open -->
-							{#if inv.invoice_type !== 'partial_first' && !isManualEditorOpen(inv)}
-								<div class="extras-section">
-									{#if !editingExtras[inv.id]}
-										<div class="extras-header">
-											<span class="extras-label">Zusatzleistungen</span>
-											<button
-												class="btn-link"
-												onclick={() => startEditExtras(inv)}
-											>Bearbeiten</button>
-										</div>
-										{#if inv.extra_services.length > 0}
-											<ul class="extras-list">
-												{#each inv.extra_services as extra}
-													<li>
-														<span>{extra.description}</span>
-														<span class="extras-price">{formatEuro(extra.price_cents)}</span>
-													</li>
-												{/each}
-											</ul>
-										{:else}
-											<p class="empty-hint extras-empty">Keine Zusatzleistungen</p>
-										{/if}
-									{:else}
-										<div class="extras-editor">
-											{#each extrasDraft[inv.id] ?? [] as extra, idx}
-												<div class="extras-editor-row">
-													<input
-														type="text"
-														placeholder="Beschreibung"
-														class="extras-input"
-														bind:value={extrasDraft[inv.id][idx].description}
-													/>
-													<input
-														type="number"
-														placeholder="Preis (Netto €)"
-														class="extras-input extras-input--price"
-														value={(extrasDraft[inv.id][idx].price_cents / 100).toFixed(2)}
-														onchange={(e) => {
-															extrasDraft[inv.id][idx].price_cents = Math.round(
-																parseFloat((e.target as HTMLInputElement).value) * 100
-															);
-														}}
-													/>
-													<button
-														class="btn-icon danger"
-														onclick={() => removeExtraRow(inv.id, idx)}
-													><X size={13} /></button>
-												</div>
-											{/each}
-											<div class="extras-editor-footer">
-												<button class="btn-link" onclick={() => addExtraRow(inv.id)}>
-													<Plus size={12} /> Hinzufügen
-												</button>
-												<div class="extras-editor-actions">
-													<button class="btn btn-sm" onclick={() => { editingExtras[inv.id] = false; }}>Abbrechen</button>
-													<button class="btn btn-sm btn-primary" onclick={() => saveExtras(inv.id)}>Speichern</button>
-												</div>
-											</div>
-										</div>
-									{/if}
-								</div>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
-			{/if}
-		</div>
-	</div>
-{/if}
-
-<!-- Email Thread Section (below the main grid) -->
 {#if data}
-	<div class="email-section">
-		<div class="email-section__header">
-			<h2 class="email-section__title">E-Mail-Verlauf</h2>
-			{#if emailThreads.length > 0}
-				<a
-					href="/admin/emails/{emailThreads[0].thread.id}"
-					class="email-section__link"
-				>
-					Vollansicht
-				</a>
-			{/if}
-		</div>
+	<AppointmentsSection
+		inquiryId={data.id}
+		scheduledDate={data.scheduled_date}
+		appointments={data.appointments ?? []}
+		bind:open={cardOpen.appointments}
+		onToggle={() => toggleCard('appointments')}
+		onSaved={loadInquiry}
+	/>
+{/if}
 
-		{#if emailsLoading}
-			<div class="email-loading">E-Mails werden geladen...</div>
-		{:else if emailThreads.length === 0}
-			<div class="email-empty">Noch keine E-Mails für diese Anfrage.</div>
-		{:else}
-			{#each emailThreads as { thread, messages }}
-				<div class="email-thread">
-					{#if thread.subject}
-						<div class="email-thread__subject">
-							{thread.subject}
-						</div>
-					{/if}
-					{#if thread.offer_pdf_filename}
-						<button
-							type="button"
-							class="offer-pdf-banner"
-							onclick={() => emailPreviewOfferPdf()}
-						>
-							<Paperclip size={13} />
-							Angebot wird als Anhang mitgesendet: {thread.offer_pdf_filename}
-						</button>
-					{/if}
-					<div class="email-conversation">
-						{#each messages as msg}
-							<div
-								class="email-msg"
-								class:email-msg--inbound={msg.direction ===
-									"inbound"}
-								class:email-msg--outbound={msg.direction ===
-									"outbound" && msg.status !== "draft"}
-								class:email-msg--draft={msg.status === "draft"}
-							>
-								<div class="email-msg__header">
-									<span class="email-msg__from">
-										{#if msg.status === "draft"}
-											Entwurf an {msg.to_address}
-										{:else if msg.direction === "inbound"}
-											{msg.from_address}
-										{:else}
-											AUST Umzuege
-										{/if}
-									</span>
-									<div class="email-msg__meta">
-										{#if msg.status === "draft"}
-											<span
-												class="email-badge email-badge--draft"
-												>Entwurf</span
-											>
-										{/if}
-										{#if msg.llm_generated}
-											<span
-												class="email-badge email-badge--ai"
-												>KI</span
-											>
-										{/if}
-										<span class="email-msg__date"
-											>{formatDateTime(
-												msg.created_at,
-											)}</span
-										>
-									</div>
-								</div>
+{#if data}
+	<InvoicesSection
+		inquiryId={data.id}
+		status={data.status}
+		offerNettoCents={data.offer?.total_netto_cents ?? null}
+		bind:open={cardOpen.invoices}
+		onToggle={() => toggleCard('invoices')}
+		onStatusChange={reloadInquiry}
+	/>
+{/if}
 
-								{#if emailEditingId === msg.id}
-									<div class="email-edit-fields">
-										<input
-											class="email-edit-subject"
-											type="text"
-											placeholder="Betreff"
-											bind:value={emailEditSubject}
-										/>
-										<textarea
-											class="email-edit-body"
-											rows="8"
-											placeholder="Nachrichtentext..."
-											bind:value={emailEditBody}
-										></textarea>
-									</div>
-									<div class="email-draft-actions">
-										<button
-											class="btn btn-sm btn-save"
-											onclick={() =>
-												emailSaveEdit(msg.id)}
-											disabled={emailSaving}
-										>
-											<Save size={14} />
-											{emailSaving
-												? "Speichere..."
-												: "Speichern"}
-										</button>
-										<button
-											class="btn btn-sm"
-											onclick={emailCancelEdit}
-											disabled={emailSaving}
-										>
-											Abbrechen
-										</button>
-									</div>
-								{:else}
-									{#if msg.subject}
-										<div class="email-msg__subject">
-											{msg.subject}
-										</div>
-									{/if}
-									<div class="email-msg__body">
-										{msg.body_text || ""}
-									</div>
-
-									{#if msg.attachment_keys.length > 0}
-										<div class="email-attachment-list">
-											{#each msg.attachment_keys as key, i}
-												{@const fname = key.split("/").pop() ?? `Anhang ${i + 1}`}
-												<button
-													type="button"
-													class="email-attachment-link"
-													onclick={() => emailPreviewAttachment(msg.id, i)}
-												>
-													<Paperclip size={11} />
-													{fname}
-												</button>
-											{/each}
-										</div>
-									{/if}
-
-									{#if msg.status === "draft"}
-										<div class="email-draft-actions">
-											<button
-												class="btn btn-sm btn-primary"
-												onclick={() =>
-													emailSendDraft(msg.id)}
-												disabled={emailActionLoading ===
-													msg.id}
-											>
-												<Send size={14} />
-												{emailActionLoading === msg.id
-													? "Bitte warten..."
-													: "Senden"}
-											</button>
-											<button
-												class="btn btn-sm"
-												onclick={() =>
-													emailStartEdit(msg)}
-												disabled={emailActionLoading ===
-													msg.id}
-											>
-												<Pencil size={14} />
-												Bearbeiten
-											</button>
-											{#if msg.llm_generated}
-												<button
-													class="btn btn-sm"
-													onclick={() =>
-														emailRegenerateLlm(
-															msg.id,
-														)}
-													disabled={emailActionLoading ===
-														msg.id}
-												>
-													<RotateCcw size={14} />
-													Neu generieren
-												</button>
-											{/if}
-											<button
-												class="btn btn-sm btn-danger"
-												onclick={() =>
-													emailDiscardDraft(msg.id)}
-												disabled={emailActionLoading ===
-													msg.id}
-											>
-												<X size={14} />
-												Verwerfen
-											</button>
-										</div>
-									{/if}
-								{/if}
-							</div>
-						{/each}
-						{#if messages.length === 0}
-							<div class="email-empty">
-								Keine Nachrichten in diesem Thread.
-							</div>
-						{/if}
-					</div>
-				</div>
-			{/each}
-		{/if}
-	</div>
+{#if data}
+	<EmailThreadSection inquiryId={data.id} />
 {/if}
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Review request popup — shown after marking an inquiry as "Erledigt" -->
-{#if showReviewPopup}
-	<div
-		class="review-overlay"
-		role="presentation"
-		onclick={() => (showReviewPopup = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showReviewPopup = false)}
-		tabindex="-1"
-	>
-		<div
-			class="review-dialog"
-			role="dialog"
-			aria-modal="true"
-			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
-			<h3>Bewertungsanfrage senden?</h3>
-			<p>
-				Möchten Sie dem Kunden jetzt eine E-Mail mit der Bitte um eine Google-Bewertung schicken?
-			</p>
-			<div class="review-later-row">
-				<label for="review-days">Bei „Später" erinnern in</label>
-				<input
-					id="review-days"
-					type="number"
-					min="1"
-					max="30"
-					bind:value={reviewReminderDays}
-				/>
-				<span>Tagen</span>
-			</div>
-			<div class="review-actions">
-				<button
-					class="btn btn-primary"
-					disabled={sendingReview}
-					onclick={() => submitReviewAction('now')}
-				>
-					Jetzt senden
-				</button>
-				<button
-					class="btn"
-					disabled={sendingReview}
-					onclick={() => submitReviewAction('later')}
-				>
-					Später ({reviewReminderDays}d)
-				</button>
-				<button
-					class="btn btn-muted"
-					disabled={sendingReview}
-					onclick={() => submitReviewAction('skip')}
-				>
-					Nicht
-				</button>
-			</div>
-		</div>
-	</div>
+{#if data}
+	<ReviewRequestModal bind:open={showReviewPopup} inquiryId={data.id} />
 {/if}
 
 <style>
@@ -3518,7 +1219,10 @@
 		gap: 1rem;
 	}
 
-	.card {
+	/* :global — the "card" chrome (background/toggle/chevron) is used by
+	   every extracted _components/*.svelte section; Svelte's scoped CSS
+	   wouldn't otherwise reach elements rendered by a child component. */
+	:global(.card) {
 		background: var(--dt-surface-container-lowest);
 		border: none;
 		border-radius: var(--dt-radius-lg);
@@ -3526,71 +1230,8 @@
 		box-shadow: var(--dt-shadow-ambient);
 	}
 
-	.card.full-width {
+	:global(.card.full-width) {
 		grid-column: 1 / -1;
-	}
-
-	.card--compact {
-		padding: var(--dt-space-4);
-	}
-
-	/* Billing address: display saved address */
-	.billing-addr-display {
-		padding: var(--dt-space-3) var(--dt-space-4);
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-md);
-		font-size: 0.9375rem;
-		color: var(--dt-on-surface);
-		line-height: 1.5;
-		margin-bottom: var(--dt-space-3);
-	}
-	.billing-addr-source {
-		margin-top: var(--dt-space-2);
-		font-size: 0.75rem;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.billing-addr-hint {
-		font-size: 0.78rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-		font-style: italic;
-	}
-
-	.billing-addr-form {
-		margin-top: 0.75rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.billing-addr-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.billing-addr-actions {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	/* Billing address input sizing — replaces inline flex styles */
-	.billing-input--street { flex: 2; }
-	.billing-input--nr     { flex: 0 0 80px; }
-	.billing-input--plz    { flex: 0 0 100px; }
-	.billing-input--city   { flex: 2; }
-
-	/* Service-info chip card — compact, no heading needed */
-	.card--svc-info {
-		padding: var(--dt-space-3) var(--dt-space-4);
-		display: flex;
-		align-items: center;
-		gap: var(--dt-space-2);
-		flex-wrap: wrap;
 	}
 
 	/* Mode badge variant */
@@ -3599,29 +1240,7 @@
 		color: var(--dt-on-surface-variant);
 	}
 
-	/* Tertiary button — amber text-only per design spec */
-	.btn-tertiary {
-		background: none;
-		border: none;
-		color: var(--dt-secondary);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		padding: 0.375rem 0.625rem;
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn-tertiary:hover:not(:disabled) {
-		background: var(--dt-surface-container-low);
-	}
-
-	.btn-tertiary:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.card h3 {
+	:global(.card h3) {
 		font-size: 1.125rem;
 		font-weight: 600;
 		color: var(--dt-on-surface);
@@ -3629,31 +1248,31 @@
 		margin-bottom: 0.75rem;
 	}
 
-	.card-header {
+	:global(.card-header) {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 0.75rem;
 	}
 
-	.card-header h3 {
+	:global(.card-header h3) {
 		margin-bottom: 0;
 	}
 
-	.card-header--toggleable {
+	:global(.card-header--toggleable) {
 		gap: 0.75rem;
 	}
 
-	.card--collapsed {
+	:global(.card--collapsed) {
 		padding-bottom: 0.75rem;
 	}
 
-	.card--collapsed .card-header,
-	.card--collapsed .card-header--toggleable {
+	:global(.card--collapsed .card-header),
+	:global(.card--collapsed .card-header--toggleable) {
 		margin-bottom: 0;
 	}
 
-	.card-toggle {
+	:global(.card-toggle) {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -3669,11 +1288,11 @@
 		font: inherit;
 	}
 
-	.card-toggle:hover h3 {
+	:global(.card-toggle:hover h3) {
 		color: var(--dt-primary);
 	}
 
-	.card-toggle-chev {
+	:global(.card-toggle-chev) {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -3682,83 +1301,19 @@
 		flex-shrink: 0;
 	}
 
-	.card-toggle-chev.open {
+	:global(.card-toggle-chev.open) {
 		transform: rotate(90deg);
 	}
 
 	/* Flatten nested card chrome when a child component already renders its own .card */
-	.card > :global(.card),
-	.card > :global(.route-map-card) {
+	:global(.card > .card),
+	:global(.card > .route-map-card) {
 		background: none;
 		border: none;
 		box-shadow: none;
 		padding: 0;
 		margin: 0;
 		border-radius: 0;
-	}
-
-	.info-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.info-item {
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
-	.info-label {
-		font-size: 0.6875rem;
-		color: var(--dt-on-surface-variant);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.info-value {
-		font-size: 0.9375rem;
-		color: var(--dt-on-surface);
-	}
-
-	.name-with-salutation {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		flex-wrap: wrap;
-	}
-
-	.salutation-badge {
-		display: inline-block;
-		padding: 0.1rem 0.45rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.75rem;
-		font-weight: 600;
-		background: var(--dt-surface-container);
-		color: var(--dt-primary);
-		letter-spacing: 0.03em;
-	}
-
-	.cust-type-badge {
-		display: inline-block;
-		padding: 0.1rem 0.4rem;
-		border-radius: 4px;
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		margin-right: 0.35rem;
-		vertical-align: middle;
-	}
-
-	.cust-type-badge[data-type="business"] {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.cust-type-badge[data-type="private"] {
-		background: #dbeafe;
-		color: #1e40af;
 	}
 
 	.svc-badge {
@@ -3781,31 +1336,34 @@
 	.svc-badge[data-type="umzugshelfer"] { background: #f0fdf4; color: #166534; }
 	.svc-badge[data-type="seniorenumzug"] { background: #fce7f3; color: #9d174d; }
 
-	.form-grid {
+	/* :global — this "field"/"form-grid" design pattern is shared by several
+	   extracted _components/*.svelte children; Svelte's scoped CSS wouldn't
+	   otherwise reach elements rendered by a child component. */
+	:global(.form-grid) {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 0.75rem;
 	}
 
-	.field {
+	:global(.field) {
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
 	}
 
-	.field.full-width {
+	:global(.field.full-width) {
 		grid-column: 1 / -1;
 	}
 
-	.field label {
+	:global(.field label) {
 		font-size: 0.75rem;
 		font-weight: 500;
 		color: var(--dt-on-surface-variant);
 	}
 
-	.field input,
-	.field textarea,
-	.form-input {
+	:global(.field input),
+	:global(.field textarea),
+	:global(.form-input) {
 		background: var(--dt-surface-container-high);
 		border: none;
 		border-bottom: 2px solid transparent;
@@ -3820,34 +1378,15 @@
 		min-width: 0;
 	}
 
-	.field input:focus,
-	.field textarea:focus,
-	.form-input:focus {
+	:global(.field input:focus),
+	:global(.field textarea:focus),
+	:global(.form-input:focus) {
 		background: var(--dt-surface-container-lowest);
 		border-bottom: 2px solid var(--dt-primary);
 	}
 
-	.customer-message {
-		color: var(--dt-on-surface);
-		font-size: 0.875rem;
-		line-height: 1.5;
-		white-space: pre-wrap;
-	}
-
-	/* Pricing */
-	.pricing-section {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.pricing-fields {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	.btn-link {
+	/* :global — used by both this page (Pricing header actions) and InvoicesSection.svelte */
+	:global(.btn-link) {
 		color: var(--dt-primary);
 		font-size: 0.75rem;
 		text-align: left;
@@ -3861,373 +1400,8 @@
 		gap: 0.25rem;
 	}
 
-	.btn-link:hover {
+	:global(.btn-link:hover) {
 		text-decoration: underline;
-	}
-
-	.labor-profit {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		font-family: "JetBrains Mono", "Fira Code", monospace;
-	}
-
-	.labor-profit.negative {
-		color: var(--dt-secondary);
-	}
-
-	/* Line Items */
-	.line-items {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.line-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.625rem 0;
-		border-bottom: 1px solid var(--dt-surface-container);
-	}
-
-	.line-item.total {
-		border-bottom: none;
-		border-top: 1px solid var(--dt-outline-variant);
-		padding-top: 0.75rem;
-	}
-
-	.line-item.grand {
-		border-top: none;
-		padding-top: 0.25rem;
-	}
-
-	.line-item.grand .li-name,
-	.line-item.grand .li-total {
-		font-size: 1rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-	}
-
-	.li-name {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		font-weight: 500;
-	}
-
-	.li-detail {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.li-qty {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.li-unit {
-		font-size: 0.8125rem;
-		color: var(--dt-outline-variant);
-	}
-
-	.li-total {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		min-width: 80px;
-		text-align: right;
-		font-family: "JetBrains Mono", "Fira Code", monospace;
-	}
-
-	.offers-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.offer-row {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		text-decoration: none;
-		transition: background var(--dt-transition);
-	}
-
-	.offer-row:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.offer-date {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.offer-price {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		flex: 1;
-	}
-
-	/* Shared button styles */
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.875rem;
-		border-radius: var(--dt-radius-md);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		border: none;
-		cursor: pointer;
-		transition: opacity var(--dt-transition), background var(--dt-transition);
-	}
-
-	.btn-sm {
-		padding: 0.375rem 0.625rem;
-		font-size: 0.75rem;
-		border: var(--dt-ghost-border);
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-lowest);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.btn-sm:hover:not(:disabled) {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-low);
-	}
-
-	.btn-primary {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.btn-primary:hover {
-		opacity: 0.88;
-	}
-
-	.btn-danger {
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface-variant);
-		border: var(--dt-ghost-border);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.btn-danger:hover {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container-low);
-	}
-
-	.status-select {
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-md);
-		border: none;
-		background: var(--dt-surface-container-high);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-surface);
-		cursor: pointer;
-		outline: none;
-		transition: background var(--dt-transition);
-	}
-
-	.status-select:focus {
-		background: var(--dt-surface-container-lowest);
-		outline: 2px solid var(--dt-primary);
-	}
-
-	.status-select:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		padding-top: 1.25rem;
-		cursor: pointer;
-	}
-
-
-	.addr-actions {
-		display: flex;
-		gap: 0.5rem;
-		padding-top: 0.25rem;
-	}
-
-	.btn-save {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container)) !important;
-		color: var(--dt-on-primary) !important;
-	}
-
-	/* Editable line items */
-	.line-item.editable {
-		padding: 0.5rem 0;
-		padding-left: 1.5rem;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.375rem;
-		transition: background var(--dt-transition), opacity var(--dt-transition);
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.line-item.editable.dragging {
-		opacity: 0.4;
-	}
-
-	.line-item.editable.drag-over {
-		background: var(--dt-surface-container-high);
-		box-shadow: inset 0 2px 0 0 var(--dt-primary);
-	}
-
-	.drag-handle {
-		position: absolute;
-		left: 0;
-		top: 0.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: transparent;
-		border: none;
-		color: var(--dt-on-surface-variant);
-		cursor: grab;
-		padding: 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.drag-handle:hover {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface);
-	}
-
-	.drag-handle:active {
-		cursor: grabbing;
-	}
-
-	.li-fixed {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		flex: 1;
-	}
-
-	.li-fixed .li-detail {
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-	}
-
-	.li-edit-top {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.li-edit-top select {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		min-width: 140px;
-		transition: background var(--dt-transition);
-	}
-
-	.li-edit-top select:focus {
-		background: var(--dt-surface-container-lowest);
-		outline: 2px solid var(--dt-primary);
-	}
-
-	.li-edit-bottom {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.edit-li-qty,
-	.edit-li-price {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		width: 70px;
-		text-align: right;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-li-qty:focus,
-	.edit-li-price:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.edit-li-label {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		flex: 1;
-		min-width: 100px;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-li-label:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.edit-li-remark {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		outline: none;
-		flex: 1;
-		min-width: 80px;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-li-remark:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.li-times {
-		color: var(--dt-outline-variant);
-		font-size: 0.8125rem;
-	}
-
-	.li-eur {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.75rem;
 	}
 
 	@media (max-width: 768px) {
@@ -4235,772 +1409,23 @@
 			grid-template-columns: 1fr;
 		}
 
-		.form-grid {
+		:global(.form-grid) {
 			grid-template-columns: 1fr;
 		}
 
-		.pricing-fields {
-			grid-template-columns: 1fr;
-		}
-
-		.li-edit-top select {
-			min-width: 0;
-			flex: 1;
-		}
-
-		.edit-li-qty,
-		.edit-li-price {
-			width: 60px;
-		}
-
-		.th-num {
-			width: 80px;
-		}
-
-		.th-foto,
-		.crop-cell {
-			width: 50px;
-		}
-
-		.card {
+		:global(.card) {
 			max-width: 100%;
 			overflow-x: auto;
 		}
 
-		.line-items {
-			max-width: 100%;
-			overflow-x: auto;
-		}
-
-		.btn {
+		:global(.btn) {
 			min-height: 44px;
 		}
-		.btn-sm {
+		:global(.btn-sm) {
 			min-height: 44px;
 		}
 		.header-actions {
 			flex-wrap: wrap;
 		}
 	}
-
-	.btn-generate-bottom {
-		grid-column: 1 / -1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 1rem;
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-primary);
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		border: none;
-		border-radius: var(--dt-radius-lg);
-		cursor: pointer;
-		box-shadow: var(--dt-shadow-ambient);
-		transition: opacity var(--dt-transition);
-	}
-
-	.btn-generate-bottom:hover {
-		opacity: 0.88;
-	}
-
-	/* ── Employees Section ─────────────────────────────────────────── */
-
-	.employees-section {
-		margin-top: 1rem;
-		margin-bottom: 1.5rem;
-	}
-
-	.emp-notes-field {
-		padding: 0.75rem 0.75rem 0;
-		border-top: 1px solid var(--dt-outline-variant);
-		margin-top: 0.75rem;
-	}
-
-	.emp-notes-label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-
-	.emp-notes-field textarea {
-		width: 100%;
-		box-sizing: border-box;
-		padding: 0.5rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		resize: vertical;
-		outline: none;
-		font-family: inherit;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.emp-notes-field textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.emp-time {
-		font-variant-numeric: tabular-nums;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.hours-badge {
-		display: inline-block;
-		font-size: 0.6875rem;
-		background: #e0e7ff;
-		color: #4338ca;
-		border-radius: 999px;
-		padding: 0.1rem 0.4rem;
-		margin-left: 0.25rem;
-		font-weight: 600;
-	}
-
-	.emp-badge {
-		background: #dcfce7;
-		color: #15803d;
-	}
-
-	.inline-input {
-		width: 60px;
-		padding: 0.25rem 0.375rem;
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-		outline: none;
-		transition: border-bottom var(--dt-transition), background var(--dt-transition);
-	}
-
-	.inline-input:focus {
-		border-bottom-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-	}
-
-	.btn-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.25rem;
-		border: none;
-		background: transparent;
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		color: var(--dt-on-surface-variant);
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-
-	.btn-icon.danger:hover {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container);
-	}
-
-	.empty-hint {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		text-align: center;
-		padding: 1rem 0;
-		margin: 0;
-	}
-
-	/* ── Rechnungen Section ─────────────────────────────────────────── */
-
-	.invoices-section {
-		margin-bottom: 1.5rem;
-	}
-
-	.invoice-create-btns {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.partial-form {
-		padding: 1rem;
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		margin-bottom: 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.partial-form-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.partial-form-row label {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.partial-preview {
-		display: flex;
-		gap: 2rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.partial-form-actions {
-		display: flex;
-		gap: 0.5rem;
-		justify-content: flex-end;
-	}
-
-	.invoices-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.invoice-row {
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		padding: 0.875rem 1rem;
-	}
-
-	.invoice-row-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.invoice-row-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.invoice-number {
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.invoice-number-input {
-		max-width: 150px;
-	}
-
-	.invoice-type-label {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.invoice-amount {
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.invoice-row-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.inv-status {
-		display: inline-block;
-		padding: 0.25rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.6875rem;
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.inv-status--grey   { background: var(--dt-surface-container); color: var(--dt-on-surface-variant); }
-	.inv-status--orange { background: var(--dt-surface-container-high); color: var(--dt-secondary); }
-	.inv-status--blue   { background: var(--dt-info-bg); color: var(--dt-info-text); }
-	.inv-status--green  { background: var(--dt-success-bg); color: var(--dt-success-text); }
-
-	.manual-section {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-surface-container-high);
-	}
-
-	.manual-toggle {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.manual-toggle input {
-		width: 1rem;
-		height: 1rem;
-		cursor: pointer;
-	}
-
-	.extras-section {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-surface-container-high);
-	}
-
-	.extras-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.4rem;
-	}
-
-	.extras-label {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.extras-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.extras-list li {
-		display: flex;
-		justify-content: space-between;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-	}
-
-	.extras-price {
-		font-weight: 500;
-	}
-
-	.extras-empty {
-		margin: 0.25rem 0 0;
-	}
-
-	.extras-editor {
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-	}
-
-	.extras-editor-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.extras-input {
-		flex: 1;
-		padding: 0.3rem 0.5rem;
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		transition: border-bottom var(--dt-transition), background var(--dt-transition);
-	}
-
-	.extras-input:focus {
-		border-bottom-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-	}
-
-	.extras-input--price {
-		flex: 0 0 9rem;
-	}
-
-	.extras-editor-footer {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-top: 0.25rem;
-	}
-
-	.extras-editor-actions {
-		display: flex;
-		gap: 0.4rem;
-	}
-
-	/* ── Email Thread Section ───────────────────────────────────────── */
-	.email-section {
-		height: 100%;
-		margin-top: 1.5rem;
-	}
-
-	.email-section__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1rem;
-	}
-
-	.email-section__title {
-		font-size: 1.125rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-	}
-
-	.email-section__link {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		text-decoration: none;
-		padding: 0.375rem 0.75rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-lowest);
-		transition: background var(--dt-transition);
-	}
-
-	.email-section__link:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.email-loading,
-	.email-empty {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		padding: 1.5rem;
-		text-align: center;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-thread {
-		margin-bottom: 1rem;
-	}
-
-	.email-thread__subject {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.5rem;
-		padding-left: 0.25rem;
-	}
-
-	.email-conversation {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.email-msg {
-		border-radius: var(--dt-radius-md);
-		padding: 1rem 1.25rem;
-		max-width: 85%;
-	}
-
-	.email-msg--inbound {
-		align-self: flex-start;
-		background: var(--dt-surface-container-lowest);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-msg--outbound {
-		align-self: flex-end;
-		background: var(--dt-surface-container);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-msg--draft {
-		align-self: flex-end;
-		background: var(--dt-surface-container-low);
-		border: 2px dashed var(--dt-outline-variant);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-msg__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.email-msg__from {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.email-msg__meta {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-	}
-
-	.email-msg__date {
-		font-size: 0.6875rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.email-badge {
-		display: inline-block;
-		padding: 0.0625rem 0.375rem;
-		border-radius: 9999px;
-		font-size: 0.625rem;
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.email-badge--draft {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.email-badge--ai {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.email-msg__subject {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-
-	.email-msg__body {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		line-height: 1.6;
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-
-	.offer-pdf-banner {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-		margin-bottom: 0.75rem;
-		padding: 0.5rem 0.875rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary);
-		font-size: 0.75rem;
-		font-weight: 600;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		text-align: left;
-		transition: background var(--dt-transition);
-	}
-
-	.offer-pdf-banner:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.email-attachment-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.375rem;
-		margin-top: 0.5rem;
-	}
-
-	.email-attachment-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3125rem;
-		padding: 0.1875rem 0.5625rem;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-primary);
-		font-size: 0.6875rem;
-		font-weight: 500;
-		border: var(--dt-ghost-border);
-		border-radius: 9999px;
-		cursor: pointer;
-		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		transition: background var(--dt-transition);
-	}
-
-	.email-attachment-link:hover {
-		background: var(--dt-surface-container);
-	}
-
-	.email-draft-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-outline-variant);
-		flex-wrap: wrap;
-	}
-
-	.email-edit-fields {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.email-edit-subject,
-	.email-edit-body {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		outline: none;
-		box-sizing: border-box;
-		font-family: inherit;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.email-edit-subject:focus,
-	.email-edit-body:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.email-edit-body {
-		resize: vertical;
-		line-height: 1.5;
-	}
-
-	.btn-save {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container)) !important;
-		color: var(--dt-on-primary) !important;
-	}
-
-	.btn-save:hover:not(:disabled) {
-		opacity: 0.88;
-	}
-
-	@media (max-width: 768px) {
-		.email-msg {
-			max-width: 100%;
-		}
-
-		.email-msg__header {
-			gap: 0.375rem;
-		}
-	}
-
-	/* === Review request popup === */
-
-	.review-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.45);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
-
-	.review-dialog {
-		background: var(--dt-surface);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.75rem 2rem;
-		width: min(420px, calc(100vw - 2rem));
-		box-shadow: var(--dt-shadow-lg, 0 8px 32px rgba(0,0,0,.18));
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
-
-	.review-dialog h3 {
-		font-size: 1rem;
-		font-weight: 700;
-		margin: 0;
-		color: var(--dt-on-surface);
-	}
-
-	.review-dialog p {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-	}
-
-	.review-later-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.review-later-row input[type="number"] {
-		width: 4rem;
-		padding: 0.25rem 0.375rem;
-		background: var(--dt-surface-container-high);
-		border: 1px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-	}
-
-	.review-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.review-actions .btn {
-		flex: 1;
-		min-width: 7rem;
-		justify-content: center;
-	}
-
-	/* ── Appointments (Besichtigung) card ─────────────────────────────────── */
-	.appt-body { padding: 0.75rem 1rem 1rem; }
-	.appt-hint { font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin: 0 0 0.75rem; }
-	.appt-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-	.appt-row {
-		display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
-		padding: 0.5rem 0.65rem; border: 1px solid var(--dt-border, #e2e8f0);
-		border-radius: 8px; border-left: 3px solid #0891b2;
-	}
-	.appt-row.appt-editing { background: #ecfeff; }
-	.appt-info { min-width: 0; }
-	.appt-main { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-	.appt-kind { font-weight: 600; }
-	.appt-date { color: var(--dt-primary, #022448); font-variant-numeric: tabular-nums; }
-	.appt-time { color: var(--dt-text-muted, #64748b); font-size: 0.85rem; }
-	.appt-status { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: #e2e8f0; color: #334155; }
-	.appt-status-scheduled { background: #cffafe; color: #155e75; }
-	.appt-status-done { background: #dcfce7; color: #14532d; }
-	.appt-status-cancelled { background: #fee2e2; color: #991b1b; }
-	.appt-sub { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin-top: 0.25rem; }
-	.appt-notes { font-style: italic; }
-	.appt-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
-	.appt-empty { font-size: 0.85rem; color: var(--dt-text-muted, #64748b); margin: 0 0 1rem; }
-	.appt-form { border-top: 1px solid var(--dt-border, #e2e8f0); padding-top: 0.75rem; }
-	.appt-form h4 { margin: 0 0 0.6rem; font-size: 0.9rem; }
-	.appt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
-	.appt-grid label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--dt-text-muted, #64748b); }
-	.appt-grid input, .appt-grid select, .appt-grid textarea {
-		padding: 0.4rem 0.5rem; border: 1px solid var(--dt-border, #cbd5e1);
-		border-radius: 6px; font-size: 0.85rem; font-family: inherit;
-	}
-	.appt-grid .appt-wide { grid-column: 1 / -1; }
-	.appt-form-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-
 </style>

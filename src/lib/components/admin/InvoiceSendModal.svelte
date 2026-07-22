@@ -1026,4 +1026,56 @@
 	.btn-link:hover {
 		text-decoration: underline;
 	}
+
+	/* ── Mobile: full-screen sheet, sticky footer, stacked rows ── */
+	@media (max-width: 768px) {
+		.overlay {
+			align-items: flex-end;
+			padding: 0;
+		}
+
+		.modal {
+			width: 100%;
+			max-width: 100%;
+			height: 100%;
+			max-height: 100%;
+			border-radius: 0;
+		}
+
+		.modal-footer {
+			position: sticky;
+			bottom: 0;
+			background: var(--dt-surface);
+			flex-wrap: wrap;
+		}
+
+		.modal-footer .btn {
+			flex: 1;
+			justify-content: center;
+		}
+
+		.close-btn,
+		.del-btn {
+			min-width: 44px;
+			justify-content: center;
+		}
+
+		.manual-amount-row,
+		.partial-row {
+			flex-wrap: wrap;
+		}
+
+		.extra-row {
+			flex-wrap: wrap;
+		}
+
+		.extra-desc {
+			flex-basis: 100%;
+		}
+
+		.invoice-summary {
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+	}
 </style>

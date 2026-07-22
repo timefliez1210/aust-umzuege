@@ -319,4 +319,27 @@
 		color: var(--dt-secondary);
 	}
 
+	@media (max-width: 768px) {
+		.page-header {
+			flex-wrap: wrap;
+		}
+
+		.tabs {
+			flex-wrap: wrap;
+		}
+
+		.tab {
+			min-height: 44px;
+		}
+
+		.search-box {
+			margin-left: 0;
+			flex: 1;
+			min-width: 0;
+		}
+
+		.search-box input {
+			width: 100%;
+		}
+	}
 </style>

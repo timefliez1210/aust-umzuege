@@ -296,12 +296,12 @@
 
 		<!-- Year grand total -->
 		<div class="grand-total">
-			<span>Gesamtsumme (Jahr)</span>
-			<span class="num">{fmtEur(totalNetto)}</span>
-			<span class="num">{fmtEur(totalMwst)}</span>
-			<span class="num">{fmtEur(totalBrutto)}</span>
+			<span class="grand-total__label">Gesamtsumme (Jahr)</span>
+			<span class="num" data-label="Netto">{fmtEur(totalNetto)}</span>
+			<span class="num" data-label="MWST">{fmtEur(totalMwst)}</span>
+			<span class="num" data-label="Brutto">{fmtEur(totalBrutto)}</span>
 			<span class="spacer"></span>
-			<span class="num">{fmtEur(totalOffen)}</span>
+			<span class="num" data-label="Offen">{fmtEur(totalOffen)}</span>
 		</div>
 	{/if}
 </div>
@@ -426,4 +426,38 @@
 	}
 	.grand-total .num { text-align: right; font-variant-numeric: tabular-nums; }
 	.grand-total .spacer { grid-column: span 3; }
+
+	@media (max-width: 768px) {
+		.page {
+			padding: var(--dt-space-4);
+		}
+
+		.paid-btn,
+		.payment-method-select,
+		.nav-btn {
+			min-height: 44px;
+		}
+
+		/* Fixed 5-column grid (label + 4×120px) overflows narrow viewports —
+		 * switch to a wrapping flex list with inline labels instead. */
+		.grand-total {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem 1rem;
+		}
+
+		.grand-total__label {
+			flex-basis: 100%;
+		}
+
+		.grand-total .spacer {
+			display: none;
+		}
+
+		.grand-total .num::before {
+			content: attr(data-label) ': ';
+			font-weight: 400;
+			opacity: 0.85;
+		}
+	}
 </style>

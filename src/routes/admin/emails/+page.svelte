@@ -149,30 +149,6 @@
 		</button>
 	</div>
 
-	{#if showCompose}
-		<div class="compose-form">
-			<h3>Neue E-Mail verfassen</h3>
-			<div class="form-field">
-				<label for="compose-email">Empfänger</label>
-				<input id="compose-email" type="email" placeholder="kunde@beispiel.de" bind:value={composeEmail} />
-			</div>
-			<div class="form-field">
-				<label for="compose-subject">Betreff</label>
-				<input id="compose-subject" type="text" placeholder="Betreff..." bind:value={composeSubject} />
-			</div>
-			<div class="form-field">
-				<label for="compose-body">Nachricht</label>
-				<textarea id="compose-body" rows="6" placeholder="Nachrichtentext..." bind:value={composeBody}></textarea>
-			</div>
-			<div class="compose-actions">
-				<button class="btn btn-create" onclick={handleCompose} disabled={composing || !composeEmail.trim() || !composeSubject.trim() || !composeBody.trim()}>
-					{composing ? 'Erstelle...' : 'Erstellen'}
-				</button>
-				<button class="btn btn-cancel" onclick={cancelCompose} disabled={composing}>Abbrechen</button>
-			</div>
-		</div>
-	{/if}
-
 	<div class="toolbar">
 		<div class="search-box">
 			<Search size={16} />
@@ -226,6 +202,45 @@
 	{/if}
 </div>
 
+{#if showCompose}
+	<div
+		class="modal-backdrop"
+		role="presentation"
+		onclick={cancelCompose}
+		onkeydown={(e) => e.key === 'Escape' && cancelCompose()}
+		tabindex="-1"
+	>
+		<div
+			class="modal"
+			role="dialog"
+			aria-labelledby="compose-title"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<h2 id="compose-title">Neue E-Mail verfassen</h2>
+			<div class="form-field">
+				<label for="compose-email">Empfänger</label>
+				<input id="compose-email" type="email" placeholder="kunde@beispiel.de" bind:value={composeEmail} />
+			</div>
+			<div class="form-field">
+				<label for="compose-subject">Betreff</label>
+				<input id="compose-subject" type="text" placeholder="Betreff..." bind:value={composeSubject} />
+			</div>
+			<div class="form-field">
+				<label for="compose-body">Nachricht</label>
+				<textarea id="compose-body" rows="6" placeholder="Nachrichtentext..." bind:value={composeBody}></textarea>
+			</div>
+			<div class="modal-actions">
+				<button class="btn btn-create" onclick={handleCompose} disabled={composing || !composeEmail.trim() || !composeSubject.trim() || !composeBody.trim()}>
+					{composing ? 'Erstelle...' : 'Erstellen'}
+				</button>
+				<button class="btn btn-cancel" onclick={cancelCompose} disabled={composing}>Abbrechen</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 <style>
 	.page {
 		height: 100%;
@@ -240,21 +255,6 @@
 		font-size: 0.8125rem;
 		color: var(--dt-on-surface-variant);
 		flex: 1;
-	}
-
-	.compose-form {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.25rem;
-		margin-bottom: 1rem;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.compose-form h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin-bottom: 1rem;
 	}
 
 	.form-field {
@@ -295,13 +295,6 @@
 		font-family: inherit;
 		line-height: 1.5;
 	}
-
-	.compose-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-	}
-
 
 	.customer-info {
 		display: flex;

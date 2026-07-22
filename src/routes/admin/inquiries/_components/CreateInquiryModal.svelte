@@ -7,8 +7,9 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { X, Camera, List, Upload, Video } from 'lucide-svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
-	import KnownAddressPicker from '$lib/components/admin/KnownAddressPicker.svelte';
 	import { fetchKnownAddresses, knownAddressStreetLine, type KnownAddress } from '$lib/utils/addressBook';
+	import AddressFields from './AddressFields.svelte';
+	import NewCustomerFields from './NewCustomerFields.svelte';
 
 	/**
 	 * Props for the create-inquiry modal/form.
@@ -429,9 +430,43 @@
 			createLoading = false;
 		}
 	}
+
+	/**
+	 * Closes the modal without saving.
+	 *
+	 * Called by: Template (backdrop click, header close button)
+	 * Purpose: Lets the admin dismiss the create-inquiry sheet the same way any
+	 *          other admin modal closes, now that this is a real overlay instead
+	 *          of an inline page panel.
+	 */
+	function handleClose() {
+		open = false;
+	}
 </script>
 
-<div class="create-section">
+<div
+	class="modal-backdrop"
+	role="presentation"
+	onclick={handleClose}
+	onkeydown={(e) => e.key === 'Escape' && handleClose()}
+	tabindex="-1"
+>
+<div
+	class="modal-sheet"
+	role="dialog"
+	aria-labelledby="create-inquiry-title"
+	tabindex="-1"
+	onclick={(e) => e.stopPropagation()}
+	onkeydown={(e) => e.stopPropagation()}
+>
+	<div class="create-header">
+		<h2 id="create-inquiry-title">Neue Anfrage</h2>
+		<button type="button" class="create-header__close" onclick={handleClose} aria-label="Schließen">
+			<X size={18} />
+		</button>
+	</div>
+
+	<div class="modal-sheet-body">
 	<!-- 0. Auftragsart -->
 	<div class="create-section__group">
 		<h3>Auftragsart</h3>
@@ -496,52 +531,20 @@
 				</div>
 			{/if}
 		{:else}
-			<div class="new-customer-form">
-				<div class="type-toggle" role="group" aria-label="Kundentyp">
-					<button type="button" class="type-btn" class:active={customerType === 'private'}
-						onclick={() => customerType = 'private'}>Privat</button>
-					<button type="button" class="type-btn" class:active={customerType === 'business'}
-						onclick={() => customerType = 'business'}>Gewerbe</button>
-				</div>
-				{#if customerType === 'business'}
-					<input type="text" placeholder="Firmenname *" bind:value={newCustomerCompanyName} class="form-input" />
-				{/if}
-				<select bind:value={newCustomerSalutation} class="form-input">
-					<option value="">Anrede</option>
-					<option value="Herr">Herr</option>
-					<option value="Frau">Frau</option>
-					<option value="D">Divers</option>
-				</select>
-				<input type="email" placeholder="E-Mail" bind:value={newCustomerEmail} class="form-input" />
-				<input type="text" placeholder="Name" bind:value={newCustomerName} class="form-input" />
-				<input type="tel" placeholder="Telefon" bind:value={newCustomerPhone} class="form-input" />
-
-				{#if customerType === 'private'}
-					<div class="booking-for-toggle" role="group" aria-label="Für wen buchen Sie?">
-						<button type="button" class="type-btn" class:active={bookingForSelf}
-							onclick={() => bookingForSelf = true}>Für mich selbst</button>
-						<button type="button" class="type-btn" class:active={!bookingForSelf}
-							onclick={() => bookingForSelf = false}>Für jemand anderen</button>
-					</div>
-					{#if !bookingForSelf}
-						<div class="recipient-fields">
-							<h4>Leistungsempfänger</h4>
-							<div class="address-row">
-								<select bind:value={recipientSalutation} class="form-select">
-									<option value="">Anrede</option>
-									<option>Herr</option><option>Frau</option><option>Divers</option>
-								</select>
-								<input type="text" placeholder="Vorname" bind:value={recipientFirstName} class="form-input" />
-								<input type="text" placeholder="Nachname *" bind:value={recipientLastName} class="form-input" />
-							</div>
-							<div class="address-row">
-								<input type="tel" placeholder="Telefon" bind:value={recipientPhone} class="form-input" />
-								<input type="email" placeholder="E-Mail" bind:value={recipientEmail} class="form-input" />
-							</div>
-						</div>
-					{/if}
-				{/if}
-			</div>
+			<NewCustomerFields
+				bind:customerType
+				bind:newCustomerCompanyName
+				bind:newCustomerSalutation
+				bind:newCustomerEmail
+				bind:newCustomerName
+				bind:newCustomerPhone
+				bind:bookingForSelf
+				bind:recipientSalutation
+				bind:recipientFirstName
+				bind:recipientLastName
+				bind:recipientPhone
+				bind:recipientEmail
+			/>
 		{/if}
 	</div>
 
@@ -550,55 +553,35 @@
 		<h3>Adressen</h3>
 		<div class="address-grid" class:address-grid--single={!addrCfg.showDestination}>
 			{#if addrCfg.showOrigin}
-				<div class="address-col">
-					<h4>{addrCfg.originLabel}</h4>
-					<KnownAddressPicker addresses={knownAddresses} onselect={applyToOrigin} />
-					<input type="text" placeholder="Straße *" bind:value={originStreet} class="form-input" />
-					<div class="address-row">
-						<input type="text" placeholder="PLZ" bind:value={originPostal} class="form-input form-input--short" />
-						<input type="text" placeholder="Stadt *" bind:value={originCity} class="form-input" />
-					</div>
-					<div class="address-row">
-						<select bind:value={originFloor} class="form-select">
-							<option value="">Stockwerk</option>
-							{#each floorOptions as f}<option value={f}>{f}</option>{/each}
-						</select>
-						<label class="form-checkbox">
-							<input type="checkbox" bind:checked={originElevator} />
-							Aufzug
-						</label>
-						<label class="form-checkbox">
-							<input type="checkbox" bind:checked={originHalteverbot} />
-							Halteverbot
-						</label>
-					</div>
-				</div>
+				<AddressFields
+					title={addrCfg.originLabel}
+					streetRequired={true}
+					bind:street={originStreet}
+					bind:city={originCity}
+					bind:postal={originPostal}
+					bind:floor={originFloor}
+					bind:elevator={originElevator}
+					bind:halteverbot={originHalteverbot}
+					{floorOptions}
+					{knownAddresses}
+					onSelect={applyToOrigin}
+				/>
 			{/if}
 
 			{#if addrCfg.showDestination}
-				<div class="address-col">
-					<h4>{addrCfg.destinationLabel}</h4>
-					<KnownAddressPicker addresses={knownAddresses} onselect={applyToDestination} />
-					<input type="text" placeholder={addrCfg.optionalDestination ? 'Straße' : 'Straße *'} bind:value={destStreet} class="form-input" />
-					<div class="address-row">
-						<input type="text" placeholder="PLZ" bind:value={destPostal} class="form-input form-input--short" />
-						<input type="text" placeholder={addrCfg.optionalDestination ? 'Stadt' : 'Stadt *'} bind:value={destCity} class="form-input" />
-					</div>
-					<div class="address-row">
-						<select bind:value={destFloor} class="form-select">
-							<option value="">Stockwerk</option>
-							{#each floorOptions as f}<option value={f}>{f}</option>{/each}
-						</select>
-						<label class="form-checkbox">
-							<input type="checkbox" bind:checked={destElevator} />
-							Aufzug
-						</label>
-						<label class="form-checkbox">
-							<input type="checkbox" bind:checked={destHalteverbot} />
-							Halteverbot
-						</label>
-					</div>
-				</div>
+				<AddressFields
+					title={addrCfg.destinationLabel}
+					streetRequired={!addrCfg.optionalDestination}
+					bind:street={destStreet}
+					bind:city={destCity}
+					bind:postal={destPostal}
+					bind:floor={destFloor}
+					bind:elevator={destElevator}
+					bind:halteverbot={destHalteverbot}
+					{floorOptions}
+					{knownAddresses}
+					onSelect={applyToDestination}
+				/>
 			{/if}
 		</div>
 	</div>
@@ -741,31 +724,74 @@
 			<textarea id="extra-notes" bind:value={extraNotes} rows="2" placeholder="Weitere Hinweise..." class="form-input form-textarea"></textarea>
 		</div>
 	</div>
+	</div>
 
-	<!-- Submit -->
-	{#if createError}
-		<p class="create-section__error">{createError}</p>
-	{/if}
-	<button
-		class="create-section__submit"
-		onclick={handleCreateInquiry}
-		disabled={createLoading}
-	>
-		{createLoading
-		? (volumeMode === 'photos' ? 'Fotos werden analysiert...' : volumeMode === 'video' ? 'Video wird analysiert...' : 'Erstelle Anfrage...')
-		: 'Anfrage erstellen'}
-	</button>
+	<div class="modal-sheet-actions">
+		{#if createError}
+			<p class="create-section__error">{createError}</p>
+		{/if}
+		<button
+			class="create-section__submit"
+			onclick={handleCreateInquiry}
+			disabled={createLoading}
+		>
+			{createLoading
+			? (volumeMode === 'photos' ? 'Fotos werden analysiert...' : volumeMode === 'video' ? 'Video wird analysiert...' : 'Erstelle Anfrage...')
+			: 'Anfrage erstellen'}
+		</button>
+	</div>
+</div>
 </div>
 
 <style>
 	/* --- Create Section --- */
 
-	.create-section {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.5rem;
-		margin-bottom: 1.25rem;
-		box-shadow: var(--dt-shadow-ambient);
+	/* Wider than the shared .modal-sheet default (520px) — this form has
+	 * two-column address/detail grids that need the extra room on desktop. */
+	.modal-sheet {
+		width: 92%;
+		max-width: 780px;
+	}
+
+	/* Stack the error message above the full-width submit button instead of
+	 * the shared row layout (this footer only ever has these two children). */
+	.modal-sheet-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.create-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+		flex-shrink: 0;
+	}
+
+	.create-header h2 {
+		font-size: 1.125rem;
+		font-weight: 700;
+		color: var(--dt-on-surface);
+		margin: 0;
+	}
+
+	.create-header__close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.375rem;
+		border: none;
+		border-radius: var(--dt-radius-sm);
+		background: transparent;
+		color: var(--dt-on-surface-variant);
+		cursor: pointer;
+		transition: background var(--dt-transition), color var(--dt-transition);
+	}
+
+	.create-header__close:hover {
+		background: var(--dt-surface-container-high);
+		color: var(--dt-on-surface);
 	}
 
 	.create-section__group {
@@ -778,13 +804,6 @@
 		font-weight: 700;
 		color: var(--dt-on-surface);
 		margin: 0 0 0.75rem;
-	}
-
-	.create-section__group h4 {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin: 0 0 0.5rem;
 	}
 
 	.form-input {
@@ -810,30 +829,9 @@
 		border-bottom: 2px solid var(--dt-primary);
 	}
 
-	.form-input--short {
-		max-width: 100px;
-	}
-
 	.form-textarea {
 		resize: vertical;
 		font-family: inherit;
-	}
-
-	.form-select {
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		border: none;
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.form-select:focus {
-		background: var(--dt-surface-container-lowest);
-		outline: 2px solid var(--dt-primary);
 	}
 
 	.form-checkbox {
@@ -875,12 +873,6 @@
 	.toggle-btn.active {
 		background: var(--dt-primary-container);
 		color: var(--dt-on-primary);
-	}
-
-	.new-customer-form {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
 	}
 
 	/* Customer search */
@@ -974,12 +966,6 @@
 
 	.address-grid--single {
 		grid-template-columns: 1fr;
-	}
-
-	.address-col {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
 	}
 
 	.address-row {
@@ -1122,52 +1108,6 @@
 		background: var(--dt-primary);
 		border-color: var(--dt-primary);
 		color: #fff;
-	}
-
-	.type-toggle {
-		display: inline-flex;
-		align-self: flex-start;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: 6px;
-		overflow: hidden;
-		margin-bottom: 0.6rem;
-	}
-
-	.type-btn {
-		padding: 0.35rem 0.85rem;
-		border: none;
-		background: var(--dt-surface-container-lowest);
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: all 0.12s;
-	}
-
-	.type-btn:not(:first-child) { border-left: 1.5px solid var(--dt-outline-variant); }
-	.type-btn.active { background: var(--dt-primary); color: #fff; }
-
-	.booking-for-toggle {
-		display: inline-flex;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: 6px;
-		overflow: hidden;
-		margin-top: 0.5rem;
-		margin-bottom: 0.6rem;
-	}
-
-	.recipient-fields {
-		background: var(--dt-surface-container);
-		border-radius: 8px;
-		padding: 0.75rem;
-		margin-top: 0.5rem;
-	}
-
-	.recipient-fields h4 {
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		margin: 0 0 0.5rem;
 	}
 
 	.form-hint {

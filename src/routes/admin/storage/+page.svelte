@@ -714,29 +714,17 @@
 	.error {
 		color: #dc2626;
 	}
-	/* Modal */
-	.modal-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.45);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1rem;
-		z-index: 50;
-	}
+	/* Modal — backdrop/card sizing now comes from the shared .modal-backdrop/.modal
+	 * foundation (admin-components.css), which also handles the mobile bottom-sheet. */
 	.modal {
-		background: var(--dt-surface, #fff);
-		color: var(--dt-on-surface, #191c1e);
-		border-radius: 12px;
-		padding: 1.25rem;
-		width: 100%;
-		max-width: 480px;
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		max-height: 90vh;
-		overflow-y: auto;
+	}
+	@media (min-width: 769px) {
+		.modal {
+			max-width: 480px;
+		}
 	}
 	.modal h2 {
 		margin: 0;
@@ -815,9 +803,24 @@
 		gap: 0.5rem;
 		margin-top: 0.25rem;
 	}
-	@media (max-width: 640px) {
+	@media (max-width: 768px) {
 		.row {
 			flex-direction: column;
+		}
+
+		.page-header {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.header-actions {
+			justify-content: flex-end;
+		}
+
+		.icon-btn,
+		.btn-refresh {
+			min-width: 44px;
+			min-height: 44px;
 		}
 	}
 </style>

@@ -161,7 +161,7 @@
 		appointments?: Appointment[];
 	}
 
-	/** Lightweight appointment (Besichtigung etc.) linked to this inquiry. */
+	/** Appointment (Besichtigung or paid Zusatztermin) linked to this inquiry. */
 	interface Appointment {
 		id: string;
 		kind: string;
@@ -171,8 +171,11 @@
 		assignee_id: string | null;
 		assignee_name: string | null;
 		location: string | null;
+		description: string | null;
+		employee_notes: string | null;
 		notes: string | null;
 		status: string;
+		employees?: { employee_id: string; first_name: string; last_name: string }[];
 		created_at: string;
 	}
 
@@ -301,6 +304,11 @@
 		unitPriceCents: number;
 		_priceText: string;
 		_editing: boolean;
+		isCustomLabel: boolean;
+	}
+
+	function isPresetItemLabel(label: string): boolean {
+		return POSITION_SKELETON.some((p) => p.kind === 'item' && p.label === label);
 	}
 
 	let _idCounter = 0;
@@ -347,6 +355,7 @@
 			unitPriceCents,
 			_priceText: (unitPriceCents / 100).toFixed(2),
 			_editing: false,
+			isCustomLabel: kind === 'item' && !isPresetItemLabel(label),
 		};
 	}
 
@@ -418,6 +427,7 @@
 
 	function onCustomLabelChange(idx: number) {
 		const item = editLineItems[idx];
+		item.isCustomLabel = !isPresetItemLabel(item.label);
 		const def = POSITION_SKELETON.find(p => p.label === item.label && p.kind === 'item');
 		if (def) {
 			item.unitPriceCents = def.defaultCents;

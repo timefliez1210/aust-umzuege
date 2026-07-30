@@ -16,6 +16,7 @@
 		unitPriceCents: number;
 		_priceText: string;
 		_editing: boolean;
+		isCustomLabel: boolean;
 	}
 
 	interface OfferSnapshot {
@@ -323,7 +324,7 @@
 							<option value={opt}>{opt}</option>
 						{/each}
 					</select>
-					{#if li.label === '' || li.label === 'Sonstiges'}
+					{#if li.isCustomLabel}
 						<input type="text" class="edit-li-label" bind:value={li.label} placeholder="Bezeichnung" />
 					{/if}
 					<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen"><X size={14} /></button>

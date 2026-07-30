@@ -161,6 +161,7 @@
 		location: string | null;
 		notes: string | null;
 		status: string;
+		employees?: { employee_id: string; first_name: string; last_name: string }[];
 	}
 	let inqAppointments = $state<Appointment[]>([]);
 	let inqApptLoading = $state(false);
@@ -196,6 +197,36 @@
 		}
 	}
 
+	/**
+	 * Opens the shared "Zusatztermin bearbeiten" editor for an appointment picked from the
+	 * inquiry panel's own list, instead of only allowing delete-and-recreate.
+	 *
+	 * Called by: Template (clicking an appointment row in the inquiry panel's appointment list)
+	 * Purpose: Switches panelSelection to the existing appointment-edit branch (reusing its
+	 *          seeding/save logic) and remembers the originating inquiry for a "back" link.
+	 */
+	function openInqAppointmentEdit(ap: Appointment) {
+		if (!panelSelection || panelSelection.kind !== 'inquiry') return;
+		const inqItem = panelSelection.item;
+		apptReturnInquiry = panelSelection;
+		panelSelection = {
+			kind: 'appointment',
+			item: {
+				appointment_id: ap.id,
+				inquiry_id: inqItem.inquiry_id,
+				kind: ap.kind,
+				customer_name: inqItem.customer_name,
+				start_time: ap.start_time,
+				end_time: ap.end_time,
+				assignee_name: ap.assignee_name,
+				location: ap.location,
+				notes: ap.notes,
+				status: ap.status,
+				scheduled_date: ap.scheduled_date,
+			},
+		};
+	}
+
 	// Termin days (multi-day editor — mirrors inquiry days)
 	let termDays = $state<TerminDay[]>([]);
 	let termDaysLoading = $state(false);
@@ -216,6 +247,24 @@
 	let deletingTermin = $state(false);
 	let showDeleteTerminDialog = $state(false);
 
+	// Appointment (Zusatztermin) panel edit state
+	// Set when the appointment editor is opened from within the inquiry panel's own
+	// appointment list, so the panel can offer a way back to that inquiry.
+	let apptReturnInquiry = $state<PanelInquiry | null>(null);
+	let apptEditKind = $state('besichtigung');
+	let apptEditStatus = $state('scheduled');
+	let apptEditDate = $state('');
+	let apptEditStartTime = $state('');
+	let apptEditEndTime = $state('');
+	let apptEditLocation = $state('');
+	let apptEditDescription = $state('');
+	let apptEditEmployeeNotes = $state('');
+	let apptEditNotes = $state('');
+	let apptDetailLoading = $state(false);
+	let savingAppt = $state(false);
+	let deletingAppt = $state(false);
+	let showDeleteApptDialog = $state(false);
+
 	// ─── Derived ─────────────────────────────────────────────────────────────────
 
 	/** Returns the inquiry customer name from panelSelection for the delete dialog message. */
@@ -226,6 +275,11 @@
 	/** Returns the termin title from panelSelection for the delete dialog message. */
 	const pendingDeleteTerminTitle = $derived(
 		panelSelection?.kind === 'termin' ? panelSelection.item.title : ''
+	);
+
+	/** Returns the appointment label from panelSelection for the delete dialog message. */
+	const pendingDeleteApptTitle = $derived(
+		panelSelection?.kind === 'appointment' ? apptKindLabel(panelSelection.item.kind) : ''
 	);
 
 	// ─── Selection change effect ──────────────────────────────────────────────────
@@ -245,6 +299,7 @@
 		const id = !sel ? ''
 		         : sel.kind === 'inquiry' ? `inq:${sel.item.inquiry_id}`
 		         : sel.kind === 'termin' ? `term:${sel.item.id}`
+		         : sel.kind === 'appointment' ? `appt:${sel.item.appointment_id}`
 		         : `day:${sel.date}`;
 		if (id === _lastSeededId) return;
 		_lastSeededId = id;
@@ -272,6 +327,20 @@
 			termEditDescription = sel.item.description ?? '';
 			addEmpDayTarget = null;
 			loadTerminDays(sel.item.id);
+			ensureEmployeesLoaded();
+		} else if (sel.kind === 'appointment') {
+			// Seed immediately from the schedule chip, then load the fields the chip
+			// doesn't carry (description, employee_notes) from the full record.
+			apptEditKind = sel.item.kind ?? 'besichtigung';
+			apptEditStatus = sel.item.status ?? 'scheduled';
+			apptEditDate = sel.item.scheduled_date?.slice(0, 10) ?? '';
+			apptEditStartTime = formatTime(sel.item.start_time);
+			apptEditEndTime = formatTime(sel.item.end_time);
+			apptEditLocation = sel.item.location ?? '';
+			apptEditNotes = sel.item.notes ?? '';
+			apptEditDescription = '';
+			apptEditEmployeeNotes = '';
+			loadAppointmentDetail(sel.item.inquiry_id, sel.item.appointment_id);
 			ensureEmployeesLoaded();
 		}
 	});
@@ -987,6 +1056,89 @@
 			deletingTermin = false;
 		}
 	}
+
+	// ─── Appointment (Zusatztermin) panel ──────────────────────────────────────
+
+	/**
+	 * Loads the full appointment record for the fields the schedule chip omits
+	 * (description, employee_notes), by fetching the inquiry's appointment list
+	 * and picking the matching entry.
+	 *
+	 * Called by: selection effect when an appointment panel opens.
+	 */
+	async function loadAppointmentDetail(inquiryId: string, apptId: string) {
+		apptDetailLoading = true;
+		try {
+			const list = await apiGet<Array<{
+				id: string; description: string | null; employee_notes: string | null; notes: string | null;
+			}>>(`/api/v1/inquiries/${inquiryId}/appointments`);
+			const full = list.find((a) => a.id === apptId);
+			if (full) {
+				apptEditDescription = full.description ?? '';
+				apptEditEmployeeNotes = full.employee_notes ?? '';
+				apptEditNotes = full.notes ?? '';
+			}
+		} catch {
+			// Non-fatal — the fields the chip already carries stay usable.
+		} finally {
+			apptDetailLoading = false;
+		}
+	}
+
+	/**
+	 * Saves the appointment's own fields (not crew — that autosaves in the panel).
+	 *
+	 * Called by: Template (Speichern button in appointment panel).
+	 * Purpose: PATCHes /api/v1/inquiries/{inquiryId}/appointments/{apptId}, reloads.
+	 */
+	async function saveAppt() {
+		if (!panelSelection || panelSelection.kind !== 'appointment') return;
+		const a = panelSelection.item;
+		if (!apptEditDate) { showToast('Bitte ein Datum wählen', 'error'); return; }
+		savingAppt = true;
+		try {
+			await apiPatch(`/api/v1/inquiries/${a.inquiry_id}/appointments/${a.appointment_id}`, {
+				kind: apptEditKind.trim() || 'besichtigung',
+				scheduled_date: apptEditDate,
+				start_time: apptEditStartTime ? normalizeTimeInput(apptEditStartTime) : null,
+				end_time: apptEditEndTime ? normalizeTimeInput(apptEditEndTime) : null,
+				location: apptEditLocation.trim() || null,
+				description: apptEditDescription.trim() || null,
+				employee_notes: apptEditEmployeeNotes.trim() || null,
+				notes: apptEditNotes.trim() || null,
+				status: apptEditStatus,
+			});
+			showToast('Zusatztermin gespeichert', 'success');
+			await onLoadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler beim Speichern', 'error');
+		} finally {
+			savingAppt = false;
+		}
+	}
+
+	/** Shows the delete confirmation for the selected appointment. */
+	function deleteAppt() {
+		if (!panelSelection || panelSelection.kind !== 'appointment') return;
+		showDeleteApptDialog = true;
+	}
+
+	/** Executes the appointment deletion after dialog confirmation. */
+	async function confirmDeleteAppt() {
+		if (!panelSelection || panelSelection.kind !== 'appointment') return;
+		const a = panelSelection.item;
+		deletingAppt = true;
+		try {
+			await apiDelete(`/api/v1/inquiries/${a.inquiry_id}/appointments/${a.appointment_id}`);
+			showToast('Zusatztermin gelöscht', 'success');
+			closePanel();
+			await onLoadSchedule();
+		} catch (e: unknown) {
+			showToast(e instanceof Error ? e.message : 'Fehler', 'error');
+		} finally {
+			deletingAppt = false;
+		}
+	}
 </script>
 
 <!-- ─── Side panel (desktop) / bottom sheet (mobile) ──────────────────────── -->
@@ -1012,6 +1164,8 @@
 						<span class="panel-subtitle">{(panelSelection.item.scheduled_date?.slice(0,10) ?? '').split('-').reverse().join('.')}</span>
 					{/if}
 				</div>
+			{:else if panelSelection.kind === 'appointment'}
+				<h2 class="panel-title">{apptKindLabel(panelSelection.item.kind)}</h2>
 			{:else}
 				<h2 class="panel-title">{panelSelection.item.title}</h2>
 			{/if}
@@ -1143,9 +1297,9 @@
 						</span>
 					</div>
 					{#if inq.departure_address || inq.arrival_address}
-						<div class="panel-kv">
+						<div class="panel-kv panel-kv-route">
 							<span class="kv-label">Route</span>
-							<span class="kv-value kv-muted">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
+							<span class="kv-value kv-route-value">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
 						</div>
 					{/if}
 					{#if inq.volume_m3}
@@ -1316,20 +1470,24 @@
 						<div class="appt-list">
 							{#each inqAppointments as ap (ap.id)}
 								<div class="appt-item">
-									<div class="appt-item-info">
+									<button class="appt-item-info appt-item-edit" title="Termin bearbeiten" onclick={() => openInqAppointmentEdit(ap)}>
 										<div class="appt-item-head">
 											<span class="appt-kind">{apptKindLabel(ap.kind)}</span>
 											<span class="appt-date">{apptDateLabel(ap.scheduled_date)}</span>
 											{#if ap.start_time}<span class="appt-time">{ap.start_time.slice(0, 5)}{ap.end_time ? '–' + ap.end_time.slice(0, 5) : ''}</span>{/if}
 										</div>
-										{#if ap.assignee_name || ap.location || ap.notes}
+										{#if (ap.employees?.length ?? 0) > 0 || ap.assignee_name || ap.location || ap.notes}
 											<div class="appt-meta">
-												{#if ap.assignee_name}<span>👤 {ap.assignee_name}</span>{/if}
+												{#if (ap.employees?.length ?? 0) > 0}
+													<span>👥 {ap.employees?.map((e) => `${e.first_name} ${e.last_name}`).join(', ')}</span>
+												{:else if ap.assignee_name}
+													<span>👤 {ap.assignee_name}</span>
+												{/if}
 												{#if ap.location}<span>📍 {ap.location}</span>{/if}
 												{#if ap.notes}<span class="appt-note">{ap.notes}</span>{/if}
 											</div>
 										{/if}
-									</div>
+									</button>
 									<button class="appt-del" title="Löschen" aria-label="Termin löschen" onclick={() => deleteInqAppointment(inq.inquiry_id, ap.id)}>×</button>
 								</div>
 							{/each}
@@ -1524,6 +1682,95 @@
 						</div>
 					{/if}
 				</div>
+
+			<!-- ─── APPOINTMENT (ZUSATZTERMIN) PANEL ─────────────────────── -->
+			{:else if panelSelection.kind === 'appointment'}
+				{@const appt = panelSelection.item}
+
+				<div class="panel-section">
+					{#if apptReturnInquiry && apptReturnInquiry.item.inquiry_id === appt.inquiry_id}
+						<button class="back-to-inquiry-btn" onclick={() => panelSelection = apptReturnInquiry}>
+							← Zurück zur Anfrage
+						</button>
+					{/if}
+					<div class="section-title">Zusatztermin bearbeiten</div>
+					<p class="appt-hint">Eigener Termin zum Auftrag (z.&nbsp;B. Halteverbotszone) — mit eigenem Datum, Adresse und bezahltem Team.</p>
+					<div class="field-row">
+						<div class="field">
+							<label for="appt-kind">Art</label>
+							<input id="appt-kind" type="text" class="neu-input" list="appt-kinds" bind:value={apptEditKind} placeholder="z.B. Halteverbot" />
+							<datalist id="appt-kinds">
+								<option value="besichtigung">Besichtigung</option>
+								<option value="halteverbot">Halteverbot</option>
+								<option value="nachtermin">Nachtermin</option>
+							</datalist>
+						</div>
+						<div class="field">
+							<label for="appt-status">Status</label>
+							<select id="appt-status" class="neu-input" bind:value={apptEditStatus}>
+								<option value="scheduled">Geplant</option>
+								<option value="done">Erledigt</option>
+								<option value="cancelled">Storniert</option>
+							</select>
+						</div>
+					</div>
+					<div class="field">
+						<label for="appt-date">Datum</label>
+						<input id="appt-date" type="date" class="neu-input" bind:value={apptEditDate} />
+					</div>
+					<div class="field-row">
+						<div class="field">
+							<label for="appt-start">Von</label>
+							<input id="appt-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={apptEditStartTime} />
+						</div>
+						<div class="field">
+							<label for="appt-end">Bis</label>
+							<input id="appt-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={apptEditEndTime} />
+						</div>
+					</div>
+					<div class="field">
+						<label for="appt-loc">Ort</label>
+						<input id="appt-loc" type="text" class="neu-input" bind:value={apptEditLocation} placeholder="Adresse (optional, sonst Auszugsadresse)" />
+					</div>
+					<div class="field">
+						<label for="appt-desc">Beschreibung</label>
+						<textarea id="appt-desc" rows={2} class="neu-input" bind:value={apptEditDescription} placeholder="Was ist zu tun?"></textarea>
+					</div>
+					<div class="field">
+						<label for="appt-emp-notes">Notiz für Mitarbeiter</label>
+						<textarea id="appt-emp-notes" rows={2} class="neu-input" bind:value={apptEditEmployeeNotes} placeholder="Hinweis, den alle Zugewiesenen sehen"></textarea>
+					</div>
+					{#if appt.customer_name}
+						<div class="panel-kv">
+							<span class="kv-label">Auftrag</span>
+							<span class="kv-value">{appt.customer_name}</span>
+						</div>
+					{/if}
+					<div class="panel-actions">
+						<button class="btn btn-primary btn-sm" onclick={saveAppt} disabled={savingAppt || apptDetailLoading}>
+							<Save size={13} />
+							{savingAppt ? 'Speichern...' : 'Speichern'}
+						</button>
+						<a href="/admin/inquiries/{appt.inquiry_id}" class="btn btn-ghost btn-sm">
+							<ExternalLink size={13} /> Auftrag
+						</a>
+						<button class="btn btn-danger btn-sm" onclick={deleteAppt} disabled={deletingAppt}>
+							<Trash2 size={13} />
+							{deletingAppt ? '...' : 'Löschen'}
+						</button>
+					</div>
+				</div>
+
+				<!-- Bezahltes Team (crew + hours) -->
+				<div class="panel-section">
+					<EmployeeAssignmentPanel
+						entityType="appointment"
+						entityId={appt.appointment_id}
+						inquiryId={appt.inquiry_id}
+						preferredDate={apptEditDate}
+						onUpdated={() => onLoadSchedule()}
+					/>
+				</div>
 			{/if}
 
 		</div>
@@ -1546,6 +1793,15 @@
 	confirmLabel="Löschen"
 	loading={deletingTermin}
 	onConfirm={confirmDeleteTermin}
+/>
+
+<ConfirmationDialog
+	bind:open={showDeleteApptDialog}
+	title="Zusatztermin löschen"
+	message={`„${pendingDeleteApptTitle}" löschen?`}
+	confirmLabel="Löschen"
+	loading={deletingAppt}
+	onConfirm={confirmDeleteAppt}
 />
 
 <style>
@@ -1666,11 +1922,20 @@
 	.kv-label { font-size: 0.75rem; font-weight: 600; color: var(--dt-on-surface-variant); flex-shrink: 0; }
 	.kv-value { font-size: 0.8125rem; color: var(--dt-on-surface); font-weight: 500; text-align: right; }
 	.kv-muted { color: var(--dt-on-surface-variant); font-weight: 400; }
+	.panel-kv-route { align-items: flex-start; }
+	.kv-route-value { font-weight: 600; white-space: normal; }
 	.kv-link { color: inherit; text-decoration: none; }
 	.kv-link:hover { text-decoration: underline; }
 
 	.panel-empty { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }
 	.panel-loading { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }
+	.appt-hint { font-size: 0.78rem; color: var(--dt-on-surface-variant); margin: 0 0 0.75rem; line-height: 1.4; }
+	.back-to-inquiry-btn {
+		display: inline-flex; align-items: center; background: transparent; border: none;
+		color: var(--dt-primary); font-size: 0.8rem; font-weight: 500; cursor: pointer;
+		padding: 0 0 0.6rem; margin: 0;
+	}
+	.back-to-inquiry-btn:hover { text-decoration: underline; }
 
 	/* ─── Day panel entries ────────────────────────────────────────────────────── */
 	.day-entry {
@@ -1886,6 +2151,11 @@
 		border-left: 3px solid #0891b2; border-radius: 8px; background: var(--dt-surface-container-lowest, #fff);
 	}
 	.appt-item-info { min-width: 0; }
+	.appt-item-edit {
+		flex: 1; min-width: 0; text-align: left; background: transparent; border: none;
+		padding: 0; margin: 0; cursor: pointer; font: inherit; color: inherit; border-radius: 6px;
+	}
+	.appt-item-edit:hover { background: var(--dt-surface-container-high, #f1f5f9); }
 	.appt-item-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 	.appt-kind { font-weight: 600; font-size: 0.8125rem; }
 	.appt-date { font-size: 0.8125rem; color: var(--dt-primary); font-variant-numeric: tabular-nums; }

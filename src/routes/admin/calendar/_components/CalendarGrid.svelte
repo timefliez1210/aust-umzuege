@@ -154,8 +154,8 @@
 						{#if entry.type === 'inquiry'}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<span
-								class="cal-entry {inquiryEntryClass(entry.item.status)}"
-								title="{entry.item.customer_name ?? ''} · {entry.item.inquiry_id}"
+								class="cal-entry cal-entry-multiline {inquiryEntryClass(entry.item.status)}"
+								title="{entry.item.customer_name ?? ''} · {entry.item.inquiry_id}{entry.item.departure_address || entry.item.arrival_address ? ' · ' + (entry.item.departure_address || '?') + ' → ' + (entry.item.arrival_address || '?') : ''}"
 								draggable="true"
 								ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
 								onclick={(e) => openInquiryPanel(e, entry.item)}
@@ -163,7 +163,10 @@
 								tabindex="0"
 								onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
 							>
-								<span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 10)}
+								<span class="cal-entry-line"><span class="entry-time">{formatTime(entry.item.start_time)}</span>{truncate(entry.item.customer_name, 10)}</span>
+								{#if entry.item.departure_address || entry.item.arrival_address}
+									<span class="cal-entry-route">{entry.item.departure_address || '?'} → {entry.item.arrival_address || '?'}</span>
+								{/if}
 							</span>
 						{:else if entry.type === 'termin'}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -313,6 +316,29 @@
 	}
 	.cal-entry:hover { opacity: 0.8; }
 
+	/* Inquiry entries additionally show a second, smaller line with the route
+	   (full departure/arrival addresses) so it's visible without opening the panel. */
+	.cal-entry.cal-entry-multiline {
+		white-space: normal;
+		overflow: visible;
+		text-overflow: clip;
+	}
+	.cal-entry-line {
+		display: block;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.cal-entry-route {
+		display: block;
+		font-size: 0.56rem;
+		font-weight: 500;
+		opacity: 0.85;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 	/* Entry colour classes — duplicated from the parent page (Svelte scopes styles
 	   per-component, so these must exist here too for entries rendered by this grid). */
 	.entry-yellow { background: rgba(2, 36, 72, 0.12); color: var(--dt-primary); }
@@ -408,6 +434,9 @@
 		.cal-entries { flex-direction: row; flex-wrap: wrap; gap: 2px; align-items: center; }
 		.entry-time { display: none; }
 		.cal-more { font-size: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--dt-outline-variant); padding: 0; }
+		/* Keep inquiry entries as plain dots too — the route sub-line is desktop-only. */
+		.cal-entry.cal-entry-multiline { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+		.cal-entry-route { display: none; }
 	}
 
 	@media (max-width: 600px) {

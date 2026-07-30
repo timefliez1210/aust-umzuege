@@ -4,9 +4,10 @@
 	import { Clock, MapPin } from 'lucide-svelte';
 
 	interface Pending {
-		entry_type: string; // 'job' | 'item'
+		entry_type: string; // 'job' | 'item' | 'appointment'
 		inquiry_id: string | null;
 		calendar_item_id: string | null;
+		appointment_id: string | null;
 		job_date: string; // YYYY-MM-DD
 		title: string | null;
 		customer_name: string | null;
@@ -14,6 +15,12 @@
 		destination_city: string | null;
 		location: string | null;
 		start_time: string | null;
+	}
+
+	/** Human-readable title from an appointment's free-text kind. */
+	function kindLabel(k: string | null): string {
+		if (!k) return 'Zusatztermin';
+		return k.charAt(0).toUpperCase() + k.slice(1);
 	}
 
 	let pending = $state<Pending[]>([]);
@@ -49,11 +56,12 @@
 
 	function label(p: Pending): string {
 		if (p.entry_type === 'item') return p.title ?? 'Termin';
+		if (p.entry_type === 'appointment') return kindLabel(p.title);
 		return p.customer_name ?? 'Auftrag';
 	}
 
 	function place(p: Pending): string {
-		if (p.entry_type === 'item') return p.location ?? '';
+		if (p.entry_type === 'item' || p.entry_type === 'appointment') return p.location ?? '';
 		return [p.origin_city, p.destination_city].filter(Boolean).join(' → ');
 	}
 
@@ -85,10 +93,13 @@
 		try {
 			const anchor = p.job_date;
 			const toIso = (t: string) => new Date(`${anchor}T${t}:00`).toISOString();
+			// Appointments are single-day (no ?date); jobs/Termine carry the tapped day.
 			const path =
-				p.entry_type === 'item'
-					? `/api/v1/employee/items/${p.calendar_item_id}/clock?date=${p.job_date}`
-					: `/api/v1/employee/jobs/${p.inquiry_id}/clock?date=${p.job_date}`;
+				p.entry_type === 'appointment'
+					? `/api/v1/employee/appointments/${p.appointment_id}/clock`
+					: p.entry_type === 'item'
+						? `/api/v1/employee/items/${p.calendar_item_id}/clock?date=${p.job_date}`
+						: `/api/v1/employee/jobs/${p.inquiry_id}/clock?date=${p.job_date}`;
 
 			await workerFetch(path, {
 				method: 'PATCH',

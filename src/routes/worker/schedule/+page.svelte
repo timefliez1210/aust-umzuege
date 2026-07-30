@@ -17,6 +17,7 @@
 		colleague_names: string[];
 		entry_type: string;
 		calendar_item_id: string | null;
+		appointment_id: string | null;
 		title: string | null;
 		location: string | null;
 		category: string | null;
@@ -105,6 +106,37 @@
 						<div class="job-route item-location">
 							<MapPin size={14} />
 							<span>{job.location}</span>
+						</div>
+					{/if}
+					{#if job.employee_notes}
+						<p class="sched-notes">{job.employee_notes}</p>
+					{/if}
+
+					<ChevronRight size={16} class="chevron" />
+				</button>
+			{:else if job.entry_type === 'appointment'}
+				<button class="job-card appt-card" onclick={() => goto(`/worker/appointments/${job.appointment_id}`)}>
+					<div class="job-top">
+						<span class="job-date">{fmtDate(job.job_date)}</span>
+						<span class="badge badge-appt">Zusatztermin</span>
+					</div>
+
+					<div class="job-route">
+						<span class="item-title">{job.title ?? 'Zusatztermin'}</span>
+					</div>
+
+					{#if job.location}
+						<div class="job-route item-location">
+							<MapPin size={14} />
+							<span>{job.location}</span>
+						</div>
+					{/if}
+					{#if job.colleague_names.length > 0}
+						<div class="job-meta">
+							<span class="meta-pill">
+								<Users size={12} />
+								+{job.colleague_names.length}
+							</span>
 						</div>
 					{/if}
 					{#if job.employee_notes}
@@ -253,9 +285,14 @@
 	}
 
 	.badge-item   { background: #fef3c7; color: #92400e; }
+	.badge-appt   { background: #cffafe; color: #155e75; }
 
 	.item-card {
 		border-left: 3px solid #f59e0b;
+	}
+
+	.appt-card {
+		border-left: 3px solid #0891b2;
 	}
 
 	.item-title {

@@ -3,8 +3,16 @@
 	import { normalizeTimeInput } from "$lib/utils/format";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 	import { ChevronRight } from "lucide-svelte";
+	import EmployeeAssignmentPanel from "$lib/components/admin/EmployeeAssignmentPanel.svelte";
 
-	/** Lightweight appointment (Besichtigung etc.) linked to this inquiry. */
+	/** A crew member assigned to an appointment (paid Zusatztermin). */
+	interface AppointmentCrew {
+		employee_id: string;
+		first_name: string;
+		last_name: string;
+	}
+
+	/** Appointment linked to this inquiry — Besichtigung or paid Zusatztermin. */
 	interface Appointment {
 		id: string;
 		kind: string;
@@ -14,8 +22,11 @@
 		assignee_id: string | null;
 		assignee_name: string | null;
 		location: string | null;
+		description: string | null;
+		employee_notes: string | null;
 		notes: string | null;
 		status: string;
+		employees?: AppointmentCrew[];
 		created_at: string;
 	}
 
@@ -63,6 +74,8 @@
 		end_time: '',
 		assignee_id: '',
 		location: '',
+		description: '',
+		employee_notes: '',
 		notes: '',
 		status: 'scheduled',
 	});
@@ -94,7 +107,8 @@
 		apptForm = {
 			kind: 'besichtigung',
 			scheduled_date: scheduledDate?.slice(0, 10) ?? '',
-			start_time: '', end_time: '', assignee_id: '', location: '', notes: '', status: 'scheduled',
+			start_time: '', end_time: '', assignee_id: '', location: '',
+			description: '', employee_notes: '', notes: '', status: 'scheduled',
 		};
 	}
 
@@ -107,6 +121,8 @@
 			end_time: a.end_time ? a.end_time.slice(0, 5) : '',
 			assignee_id: a.assignee_id ?? '',
 			location: a.location ?? '',
+			description: a.description ?? '',
+			employee_notes: a.employee_notes ?? '',
 			notes: a.notes ?? '',
 			status: a.status,
 		};
@@ -123,6 +139,8 @@
 			end_time: apptForm.end_time ? normalizeTimeInput(apptForm.end_time) : null,
 			assignee_id: apptForm.assignee_id || null,
 			location: apptForm.location.trim() || null,
+			description: apptForm.description.trim() || null,
+			employee_notes: apptForm.employee_notes.trim() || null,
 			notes: apptForm.notes.trim() || null,
 			status: apptForm.status,
 		};
@@ -180,10 +198,15 @@
 									{#if a.start_time}<span class="appt-time">{a.start_time.slice(0, 5)}{a.end_time ? '–' + a.end_time.slice(0, 5) : ''}</span>{/if}
 									<span class="appt-status appt-status-{a.status}">{APPT_STATUS_LABELS[a.status] ?? a.status}</span>
 								</div>
-								{#if a.assignee_name || a.location || a.notes}
+								{#if (a.employees?.length ?? 0) > 0 || a.assignee_name || a.location || a.description || a.notes}
 									<div class="appt-sub">
-										{#if a.assignee_name}<span>👤 {a.assignee_name}</span>{/if}
+										{#if (a.employees?.length ?? 0) > 0}
+											<span>👥 {a.employees?.map((e) => `${e.first_name} ${e.last_name}`).join(', ')}</span>
+										{:else if a.assignee_name}
+											<span>👤 {a.assignee_name}</span>
+										{/if}
 										{#if a.location}<span>📍 {a.location}</span>{/if}
+										{#if a.description}<span class="appt-desc">{a.description}</span>{/if}
 										{#if a.notes}<span class="appt-notes">{a.notes}</span>{/if}
 									</div>
 								{/if}
@@ -233,7 +256,13 @@
 					<label class="appt-wide">Ort
 						<input type="text" bind:value={apptForm.location} placeholder="Adresse (optional, sonst Auszugsadresse)" />
 					</label>
-					<label class="appt-wide">Notiz
+					<label class="appt-wide">Beschreibung
+						<textarea rows={2} bind:value={apptForm.description} placeholder="Was ist zu tun? (z.&nbsp;B. Halteverbotszone aufstellen)"></textarea>
+					</label>
+					<label class="appt-wide">Notiz für Mitarbeiter
+						<textarea rows={2} bind:value={apptForm.employee_notes} placeholder="Hinweis, den alle zugewiesenen Mitarbeiter sehen"></textarea>
+					</label>
+					<label class="appt-wide">Interne Notiz
 						<textarea rows={2} bind:value={apptForm.notes}></textarea>
 					</label>
 				</div>
@@ -245,6 +274,22 @@
 						<button class="btn btn-sm" onclick={resetApptForm} disabled={apptSaving}>Abbrechen</button>
 					{/if}
 				</div>
+
+				{#if editingApptId}
+					<!-- Crew: paid Zusatztermin work (Halteverbotszone etc.). Only for a
+					     saved appointment — the crew endpoints need its id. -->
+					<div class="appt-crew">
+						<EmployeeAssignmentPanel
+							entityType="appointment"
+							entityId={editingApptId}
+							{inquiryId}
+							preferredDate={apptForm.scheduled_date}
+							onUpdated={onSaved}
+						/>
+					</div>
+				{:else}
+					<p class="appt-crew-hint">Mitarbeiter für bezahlte Zusatztermine (z.&nbsp;B. Halteverbotszone) lassen sich nach dem Anlegen zuweisen — Termin speichern, dann „Bearbeiten“.</p>
+				{/if}
 			</div>
 		</div>
 		{/if}
@@ -272,6 +317,9 @@
 	.appt-status-cancelled { background: #fee2e2; color: #991b1b; }
 	.appt-sub { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin-top: 0.25rem; }
 	.appt-notes { font-style: italic; }
+	.appt-desc { color: var(--dt-text, #334155); }
+	.appt-crew { border-top: 1px solid var(--dt-border, #e2e8f0); margin-top: 0.85rem; padding-top: 0.85rem; }
+	.appt-crew-hint { font-size: 0.78rem; color: var(--dt-text-muted, #64748b); margin: 0.85rem 0 0; padding-top: 0.6rem; border-top: 1px dashed var(--dt-border, #e2e8f0); }
 	.appt-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
 	.appt-empty { font-size: 0.85rem; color: var(--dt-text-muted, #64748b); margin: 0 0 1rem; }
 	.appt-form { border-top: 1px solid var(--dt-border, #e2e8f0); padding-top: 0.75rem; }

@@ -71,12 +71,15 @@
 	let {
 		entityId,
 		entityType,
+		inquiryId = undefined,
 		preferredDate = undefined,
 		hasPauschale = false,
 		onUpdated = undefined
 	}: {
 		entityId: string;
-		entityType: 'inquiry' | 'calendar_item';
+		entityType: 'inquiry' | 'calendar_item' | 'appointment';
+		/** Required for `appointment` mode — the inquiry that owns the appointment. */
+		inquiryId?: string | null;
 		preferredDate?: string | null;
 		hasPauschale?: boolean;
 		onUpdated?: () => void;
@@ -95,7 +98,9 @@
 	const baseUrl = $derived(
 		entityType === 'inquiry'
 			? `/api/v1/inquiries/${entityId}/employees`
-			: `/api/v1/admin/calendar-items/${entityId}/employees`
+			: entityType === 'appointment'
+				? `/api/v1/inquiries/${inquiryId}/appointments/${entityId}/employees`
+				: `/api/v1/admin/calendar-items/${entityId}/employees`
 	);
 
 	// ---------------------------------------------------------------------------
@@ -511,7 +516,7 @@
 		<p class="empty-hint">Laden...</p>
 	{:else if assignments.length === 0}
 		<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
-	{:else if entityType === 'inquiry'}
+	{:else if entityType !== 'calendar_item'}
 		{#if isMultiDay}
 			<!-- ── Inquiry multi-day mode: one summary row per employee ── -->
 			<div class="inq-emp-list">

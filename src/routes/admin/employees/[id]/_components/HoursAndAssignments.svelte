@@ -57,6 +57,28 @@
 		status: string;
 	}
 
+	/** A paid Zusatztermin (Halteverbotszone etc.) assignment for this employee. */
+	interface AppointmentAssignment {
+		appointment_id: string;
+		inquiry_id: string | null;
+		kind: string;
+		customer_name: string | null;
+		location: string | null;
+		scheduled_date: string | null;
+		actual_hours: number | null;
+		worked_hours: number | null;
+		paid_hours: number | null;
+		clock_in: string | null;
+		clock_out: string | null;
+		break_minutes: number;
+		start_time: string | null;
+		end_time: string | null;
+		employee_clock_in: string | null;
+		employee_clock_out: string | null;
+		employee_break_minutes: number | null;
+		status: string;
+	}
+
 	interface TimeDraft {
 		clock_in: string;
 		clock_out: string;
@@ -76,6 +98,7 @@
 		assignment_count: number;
 		assignments: Assignment[];
 		calendar_items: CalendarItemAssignment[];
+		appointments: AppointmentAssignment[];
 	}
 
 	/** Per-day payroll override draft, edited live in payroll edit mode. */
@@ -174,6 +197,15 @@
 					saving: false
 				};
 			}
+			// Appointment keys carry the owning inquiry id (needed for the crew PATCH URL).
+			for (const ap of hoursSummary.appointments ?? []) {
+				drafts[`appt:${ap.inquiry_id ?? ''}:${ap.appointment_id}`] = {
+					clock_in: hhmm(ap.clock_in ?? ap.start_time),
+					clock_out: hhmm(ap.clock_out ?? ap.end_time),
+					break_minutes: ap.break_minutes ?? 0,
+					saving: false
+				};
+			}
 			timeDrafts = drafts;
 		} catch {
 			hoursSummary = null;
@@ -199,16 +231,20 @@
 		if (!draft || draft.saving) return;
 		draft.saving = true;
 		try {
-			const [type, id, dayDate] = key.split(':');
+			const [type, id, third] = key.split(':');
 			const payload: Record<string, unknown> = {
 				clock_in: toTimeStr(draft.clock_in),
 				clock_out: toTimeStr(draft.clock_out),
 				break_minutes: draft.break_minutes
 			};
-			if (dayDate) payload.day_date = dayDate;
-			if (type === 'inq') {
+			if (type === 'appt') {
+				// key = appt:{inquiry_id}:{appointment_id} — single day, no day_date.
+				await apiPatch(`/api/v1/inquiries/${id}/appointments/${third}/employees/${employeeId}`, payload);
+			} else if (type === 'inq') {
+				if (third) payload.day_date = third;
 				await apiPatch(`/api/v1/inquiries/${id}/employees/${employeeId}`, payload);
 			} else {
+				if (third) payload.day_date = third;
 				await apiPatch(`/api/v1/admin/calendar-items/${id}/employees/${employeeId}`, payload);
 			}
 			// Reload to refresh the computed actual_hours column
@@ -553,7 +589,7 @@
 	<div class="card-header">
 		<h2>Einsaetze</h2>
 	</div>
-	{#if hoursSummary && (hoursSummary.assignments.length > 0 || hoursSummary.calendar_items?.length > 0)}
+	{#if hoursSummary && (hoursSummary.assignments.length > 0 || hoursSummary.calendar_items?.length > 0 || hoursSummary.appointments?.length > 0)}
 		<div class="table-wrapper">
 			<table class="data-table">
 				<thead>
@@ -688,6 +724,44 @@
 							<td class="time-col muted-col">{ci.employee_clock_out ? fmtTimestamp(ci.employee_clock_out) : '—'}</td>
 							<td class="time-col muted-col">{ci.employee_break_minutes != null ? `${breakMinutesToHours(ci.employee_break_minutes) || '0'} h` : '—'}</td>
 							<td><StatusBadge status={ci.status} /></td>
+						</tr>
+					{/each}
+					{#each (hoursSummary.appointments ?? []) as ap}
+						{@const key = `appt:${ap.inquiry_id ?? ''}:${ap.appointment_id}`}
+						{@const draft = timeDrafts[key]}
+						<!-- Paid Zusatztermine have no payroll-override layer yet: no Aktiv
+						     toggle, paid = worked, times stay inline-editable. -->
+						<tr
+							class="clickable-row appt-row"
+							onclick={() => { if (!payrollEditMode && ap.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${ap.inquiry_id}`); }}
+						>
+							{#if payrollEditMode}<td class="time-cell"></td>{/if}
+							<td>{ap.scheduled_date ? formatDate(ap.scheduled_date) : '—'}</td>
+							<td>
+								<span class="appt-badge">Zusatztermin</span>
+								{ap.customer_name ?? ap.kind}
+							</td>
+							<td>{ap.location ?? '—'}</td>
+							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+								{#if !payrollEditMode && draft}
+									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_in} onblur={() => saveTime(key)} />
+								{/if}
+							</td>
+							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+								{#if !payrollEditMode && draft}
+									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_out} onblur={() => saveTime(key)} />
+								{/if}
+							</td>
+							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
+								{#if !payrollEditMode && draft}
+									<input type="text" inputmode="decimal" class="break-input" class:saving={draft.saving} placeholder="0" maxlength="5" value={breakMinutesToHours(draft.break_minutes)} onblur={(e) => { draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); saveTime(key); }} />
+								{/if}
+							</td>
+							<td class="num">{(ap.paid_hours ?? ap.actual_hours)?.toFixed(1) ?? '—'}</td>
+							<td class="time-col muted-col">{ap.employee_clock_in ? fmtTimestamp(ap.employee_clock_in) : '—'}</td>
+							<td class="time-col muted-col">{ap.employee_clock_out ? fmtTimestamp(ap.employee_clock_out) : '—'}</td>
+							<td class="time-col muted-col">{ap.employee_break_minutes != null ? `${breakMinutesToHours(ap.employee_break_minutes) || '0'} h` : '—'}</td>
+							<td><StatusBadge status={ap.status} /></td>
 						</tr>
 					{/each}
 				</tbody>
@@ -894,6 +968,27 @@
 		text-transform: uppercase;
 		background: var(--dt-secondary-container);
 		color: var(--dt-on-secondary-container);
+		padding: 0.1rem 0.35rem;
+		border-radius: var(--dt-radius-sm);
+		margin-right: 0.35rem;
+		vertical-align: middle;
+	}
+
+	.appt-row td {
+		background: rgba(8, 145, 178, 0.05);
+	}
+
+	.appt-row:hover td {
+		background: rgba(8, 145, 178, 0.1) !important;
+	}
+
+	.appt-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		background: #cffafe;
+		color: #155e75;
 		padding: 0.1rem 0.35rem;
 		border-radius: var(--dt-radius-sm);
 		margin-right: 0.35rem;

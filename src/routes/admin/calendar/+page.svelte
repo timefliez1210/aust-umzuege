@@ -35,65 +35,15 @@
 		return APPT_KIND_LABELS[kind] ?? (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : 'Termin');
 	}
 
-	// ── Open the linked inquiry in the side panel from an appointment chip ───────
-	interface AddressLite { city?: string | null }
-	interface InqDetailLite {
-		customer?: { name?: string | null } | null;
-		origin_address?: AddressLite | null;
-		destination_address?: AddressLite | null;
-		scheduled_date?: string | null;
-		status?: string | null;
-		notes?: string | null;
-		employee_notes?: string | null;
-		service_type?: string | null;
-		volume_m3?: number | null;
-		start_time?: string | null;
-		end_time?: string | null;
+	/** Opens the dedicated appointment (Zusatztermin) edit panel with crew + hours. */
+	function openAppointmentPanel(a: ScheduleAppointment) {
+		panelSelection = { kind: 'appointment', item: a };
 	}
 
-	/**
-	 * Clicking a Besichtigung chip opens its inquiry in the side panel (same as an
-	 * inquiry chip). The appointment is shown there, among the inquiry's dates —
-	 * not as a disconnected floating card.
-	 */
-	async function openInquiryForAppointment(a: ScheduleAppointment) {
-		// Fast path: the inquiry's move is already loaded in the current view.
-		for (const day of schedule) {
-			const found = day.inquiries.find(i => i.inquiry_id === a.inquiry_id);
-			if (found) { panelSelection = { kind: 'inquiry', item: found }; return; }
-		}
-		// Otherwise fetch the inquiry and build the minimal item the panel needs.
-		try {
-			const inq = await apiGet<InqDetailLite>(`/api/v1/inquiries/${a.inquiry_id}`);
-			panelSelection = {
-				kind: 'inquiry',
-				item: {
-					inquiry_id: a.inquiry_id,
-					customer_name: inq.customer?.name ?? a.customer_name ?? null,
-					departure_address: inq.origin_address?.city ?? null,
-					arrival_address: inq.destination_address?.city ?? null,
-					volume_m3: inq.volume_m3 ?? null,
-					status: inq.status ?? 'pending',
-					notes: inq.notes ?? null,
-					offer_price_cents: null,
-					start_time: inq.start_time ?? '08:00',
-					end_time: inq.end_time ?? '17:00',
-					employees_assigned: 0,
-					employee_names: null,
-					service_type: inq.service_type ?? null,
-					scheduled_date: inq.scheduled_date ?? null,
-					employee_notes: inq.employee_notes ?? null,
-				},
-			};
-		} catch (err) {
-			showToast((err as Error).message, 'error');
-		}
-	}
-
-	/** Chip handler: stop the click bubbling to the day cell, then open the inquiry. */
+	/** Chip handler: stop the click bubbling to the day cell, then open the panel. */
 	function openAppointmentInquiry(e: Event, a: ScheduleAppointment) {
 		e.stopPropagation();
-		openInquiryForAppointment(a);
+		openAppointmentPanel(a);
 	}
 
 	const PRE_ACCEPTED = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
@@ -1007,8 +957,8 @@
 	}
 
 	/**
-	 * Creates a lightweight appointment linked to the chosen inquiry on the
-	 * pre-seeded date, then reloads the calendar so the chip appears.
+	 * Creates an appointment linked to the chosen inquiry on the pre-seeded date,
+	 * reloads the calendar, then opens its panel so the team can be added at once.
 	 */
 	async function submitQuickAppointment() {
 		if (!qaInquiryId) { quickCreateError = 'Bitte eine Anfrage auswählen'; return; }
@@ -1016,7 +966,7 @@
 		quickCreateError = '';
 		quickCreateLoading = true;
 		try {
-			await apiPost(`/api/v1/inquiries/${qaInquiryId}/appointments`, {
+			const created = await apiPost<{ id: string }>(`/api/v1/inquiries/${qaInquiryId}/appointments`, {
 				kind: qaKind.trim() || 'besichtigung',
 				scheduled_date: quickCreateDate,
 				start_time: qaStartTime ? normalizeTimeInput(qaStartTime) : null,
@@ -1025,9 +975,23 @@
 				location: qaLocation.trim() || null,
 				notes: qaNotes.trim() || null,
 			});
-			showToast('Termin angelegt', 'success');
+			showToast('Zusatztermin angelegt — jetzt Team zuweisen', 'success');
 			quickCreateMode = null;
 			await loadSchedule();
+			// Jump straight into the panel so crew + hours can be added immediately.
+			openAppointmentPanel({
+				appointment_id: created.id,
+				inquiry_id: qaInquiryId,
+				kind: qaKind.trim() || 'besichtigung',
+				customer_name: qaInquiryLabel || null,
+				start_time: qaStartTime ? normalizeTimeInput(qaStartTime) : null,
+				end_time: qaEndTime ? normalizeTimeInput(qaEndTime) : null,
+				assignee_name: null,
+				location: qaLocation.trim() || null,
+				notes: qaNotes.trim() || null,
+				status: 'scheduled',
+				scheduled_date: quickCreateDate,
+			});
 		} catch (err) {
 			quickCreateError = (err as Error).message;
 		} finally {
@@ -1522,7 +1486,7 @@
 			<div class="sheet-backdrop" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
 		{/if}
 
-		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} onAddAppointment={openAppointmentForInquiry} onOpenAppointment={openInquiryForAppointment} />
+		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} onAddAppointment={openAppointmentForInquiry} onOpenAppointment={openAppointmentPanel} />
 	</div>
 </div>
 

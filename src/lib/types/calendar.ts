@@ -126,4 +126,9 @@ export interface PanelTermin {
 	item: CalendarItem;
 }
 
-export type PanelSelection = PanelDay | PanelInquiry | PanelTermin | null;
+export interface PanelAppointment {
+	kind: 'appointment';
+	item: ScheduleAppointment;
+}
+
+export type PanelSelection = PanelDay | PanelInquiry | PanelTermin | PanelAppointment | null;

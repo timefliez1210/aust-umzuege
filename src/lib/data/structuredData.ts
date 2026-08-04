@@ -274,7 +274,7 @@ export const services = {
 		serviceType: "Umzugshelfer",
 		name: "Umzugshelfer mieten in Hildesheim",
 		description:
-			"Kräftige Umzugshelfer mieten. Unterstützung beim Tragen, Beladen und Entladen – stundenweise buchbar.",
+			"Kräftige Umzugshelfer mieten in Hildesheim – ab 35 € pro Person und Stunde inkl. MwSt. Unterstützung beim Tragen, Beladen und Entladen, stundengenau abgerechnet und ab 2 Stunden buchbar.",
 		provider: {
 			"@id": "https://www.aust-umzuege.de/#organization"
 		},
@@ -282,7 +282,21 @@ export const services = {
 		url: "https://www.aust-umzuege.de/leistungen/umzugshelfer",
 		offers: {
 			"@type": "Offer",
-			priceCurrency: "EUR"
+			availability: "https://schema.org/InStock",
+			priceCurrency: "EUR",
+			priceSpecification: {
+				"@type": "UnitPriceSpecification",
+				priceCurrency: "EUR",
+				minPrice: "35",
+				maxPrice: "40",
+				valueAddedTaxIncluded: true,
+				unitText: "pro Person und Stunde",
+				referenceQuantity: {
+					"@type": "QuantitativeValue",
+					value: 1,
+					unitCode: "HUR"
+				}
+			}
 		}
 	},
 	moebellift: {

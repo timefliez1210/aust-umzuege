@@ -46,7 +46,7 @@
         {
             question: "Was kostet ein Studentenumzug in Hildesheim?",
             answer:
-                "Für ein WG-Zimmer reicht meist die schlanke Variante: Transporter ab 60 € pro Tag plus Umzugshelfer ab 30 € pro Stunde, stundenweise buchbar. Ein typischer Zimmerumzug mit zwei Helfern und drei Stunden Einsatz liegt damit erfahrungsgemäß bei 200 bis 400 Euro – deutlich günstiger als ein klassischer Komplettumzug. Den genauen Preis nennen wir Ihnen nach einem kurzen Telefonat."
+                "Für ein WG-Zimmer reicht meist die schlanke Variante: Transporter ab 60 € pro Tag plus Umzugshelfer ab 35 € pro Stunde (brutto), stundenweise buchbar. Ein typischer Zimmerumzug mit zwei Helfern und drei Stunden Einsatz liegt damit erfahrungsgemäß bei 250 bis 450 Euro – deutlich günstiger als ein klassischer Komplettumzug. Den genauen Preis nennen wir Ihnen nach einem kurzen Telefonat."
         },
         {
             question: "Lohnt sich eine Umzugsfirma für ein einzelnes WG-Zimmer überhaupt?",
@@ -204,7 +204,7 @@
                     <h2>Der Einzug: Studentenumzug mit kleinem Budget</h2>
                     <p>
                         Für ein WG-Zimmer braucht niemand einen Full-Service-Umzug. Was sich bewährt hat,
-                        ist der Baukasten: <a href="/leistungen/umzugshelfer">Umzugshelfer ab 30 € pro
+                        ist der Baukasten: <a href="/leistungen/umzugshelfer">Umzugshelfer ab 35 € pro
                         Stunde</a>, stundenweise buchbar, dazu ein Transporter ab 60 € pro Tag. Zwei
                         Helfer, drei Stunden, Transporter – damit ist ein Zimmerumzug innerhalb
                         Hildesheims an einem Vormittag erledigt, ohne dass jemand aus der WG einen

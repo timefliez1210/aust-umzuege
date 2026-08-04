@@ -20,7 +20,7 @@
         },
         {
             question: "Was kosten Umzugshelfer pro Stunde in Hildesheim?",
-            answer: "Unsere professionellen Umzugshelfer kosten 30–35 Euro pro Person und Stunde – je nach Teamgröße. Ab 7 Helfern gilt der günstigste Satz von 30 Euro pro Person. Hinzu kommt die An- und Abfahrtszeit. Private Helfer sind zwar günstiger (10–15 Euro), arbeiten aber ohne Haftpflichtversicherung und Erfahrung. Für ein konkretes Angebot rufen Sie uns einfach kurz an."
+            answer: "Unsere professionellen Umzugshelfer kosten 35–40 Euro pro Person und Stunde – je nach Teamgröße. Alle Preise sind Bruttopreise inklusive 19 % Mehrwertsteuer. Ab 7 Helfern gilt der günstigste Satz von 35 Euro pro Person. Hinzu kommt die An- und Abfahrtszeit. Private Helfer sind zwar günstiger (10–15 Euro), arbeiten aber ohne Haftpflichtversicherung und Erfahrung. Für ein konkretes Angebot rufen Sie uns einfach kurz an."
         },
         {
             question: "Wie viele Umzugshelfer brauche ich?",
@@ -36,7 +36,7 @@
         },
         {
             question: "Gibt es Umzugshelfer in Hildesheim auch für kleine Budgets oder Studentenumzüge?",
-            answer: "Ja, gerade dafür ist unser stundenweises Helfer-Modell gemacht. Sie buchen nur die Zeit und die Anzahl Helfer, die Sie wirklich brauchen – ab 2 Stunden, ab einem Helfer. Für Studenten, Auszubildende oder Single-Haushalte mit eigenem Sprinter liegt der typische Einsatz zwischen 200 € und 350 €. Wir nennen Ihnen vorab eine realistische Spanne, und Sie zahlen am Ende nur die tatsächlich geleisteten Stunden – nicht mehr."
+            answer: "Ja, gerade dafür ist unser stundenweises Helfer-Modell gemacht. Sie buchen nur die Zeit und die Anzahl Helfer, die Sie wirklich brauchen – ab 2 Stunden, ab einem Helfer. Für Studenten, Auszubildende oder Single-Haushalte mit eigenem Sprinter liegt der typische Einsatz zwischen 250 € und 400 €. Wir nennen Ihnen vorab eine realistische Spanne, und Sie zahlen am Ende nur die tatsächlich geleisteten Stunden – nicht mehr."
         },
         {
             question: "Wie bleibt der Umzug mit Aust planbar – ohne Pauschalfallen?",
@@ -44,7 +44,7 @@
         },
         {
             question: "Lohnt sich eine Umzugsfirma für eine kleine Wohnung oder als Single?",
-            answer: "Ja, oft mehr als gedacht. Viele rechnen mit 200–500 € und erschrecken bei Online-Vergleichen über Pauschalen ab 1.000 €. Bei uns zahlen Sie nur die tatsächliche Zeit: Ein typischer Single-Umzug (1-Zimmer-Wohnung, eigener Transporter, 2 Helfer für 3 Stunden) liegt inklusive An- und Abfahrt bei rund 245 €. Profis arbeiten zudem etwa doppelt so schnell wie Laien – am Ende ist der Stundensatz höher, die Rechnung aber oft niedriger als gedacht."
+            answer: "Ja, oft mehr als gedacht. Viele rechnen mit 200–500 € und erschrecken bei Online-Vergleichen über Pauschalen ab 1.000 €. Bei uns zahlen Sie nur die tatsächliche Zeit: Ein typischer Single-Umzug (1-Zimmer-Wohnung, eigener Transporter, 2 Helfer für 3 Stunden) liegt inklusive An- und Abfahrt bei rund 280 € brutto. Profis arbeiten zudem etwa doppelt so schnell wie Laien – am Ende ist der Stundensatz höher, die Rechnung aber oft niedriger als gedacht."
         },
         {
             question: "Wie kurzfristig kann ich Umzugshelfer buchen?",
@@ -62,10 +62,11 @@
 </script>
 
 <MetaTags
-    title="Umzugshelfer Hildesheim ab 30 €/Std. | Aust Umzüge"
-    description="Umzugshelfer in Hildesheim mieten: versicherte Profis ab 30 €/Std., Transporter ab 60 €/Tag – stundenweise und flexibel für jedes Budget buchbar."
-    keywords="Umzugshelfer Hildesheim, Umzugskräfte mieten, Tragehilfe Umzug, stundenweise Helfer"
+    title="Umzugshelfer Hildesheim ab 35 €/Std. inkl. MwSt. | Aust"
+    description="Umzugshelfer in Hildesheim mieten: versicherte Profis ab 35 € pro Stunde inkl. MwSt. – stundengenau abgerechnet, ab 2 Stunden buchbar, ohne Pauschalfallen."
+    keywords="Umzugshelfer Hildesheim, Umzugshelfer Preise, Umzugshelfer Kosten, Umzugskräfte mieten, Tragehilfe Umzug, stundenweise Helfer"
     canonical="https://www.aust-umzuege.de/leistungen/umzugshelfer"
+    ogImage="https://www.aust-umzuege.de/umzugshelfer-hildesheim-transporter-beladen.webp"
 />
 
 <StructuredData schema={businessInfoSlim} />
@@ -197,7 +198,7 @@
                     <p class="example-box__lead">Rechenbeispiel: Kleiner Umzug mit eigenem Transporter</p>
                     <p>1-Zimmer-Wohnung, Sie haben einen Sprinter gemietet und brauchen 2 Helfer für ca. 3 Stunden. Anfahrt 15 Minuten, Rückfahrt 15 Minuten:</p>
                     <ul class="example-calc">
-                        <li><span>2 Helfer × 3,5 Std. (inkl. An-/Abfahrt) × 35 €</span><strong>245 €</strong></li>
+                        <li><span>2 Helfer × 3,5 Std. (inkl. An-/Abfahrt) × 40 €</span><strong>280 €</strong></li>
                     </ul>
                     <p class="example-box__note">Statt einer 1.000-€-Pauschale aus Online-Vergleichsportalen zahlen Sie nur die tatsächliche Zeit. Mehr Möbel oder mehr Stockwerke? Wir nennen Ihnen vorab eine realistische Spanne – ohne versteckte Kosten.</p>
                 </div>
@@ -207,34 +208,43 @@
                         <thead>
                             <tr>
                                 <th>Anzahl Helfer</th>
-                                <th>Stundensatz / Person</th>
+                                <th>Stundensatz / Person <span class="th-note">brutto, inkl. 19&nbsp;% MwSt.</span></th>
                                 <th>Ersparnis</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>1–2 Helfer</td>
-                                <td class="price-cell">35,00 €</td>
+                                <td class="price-cell">40,00 €</td>
                                 <td class="savings-cell">–</td>
                             </tr>
                             <tr>
-                                <td>3–4 Helfer</td>
-                                <td class="price-cell">33,00 €</td>
+                                <td>3 Helfer</td>
+                                <td class="price-cell">39,00 €</td>
+                                <td class="savings-cell">– 1 € / Person</td>
+                            </tr>
+                            <tr>
+                                <td>4 Helfer</td>
+                                <td class="price-cell">38,00 €</td>
                                 <td class="savings-cell">– 2 € / Person</td>
                             </tr>
                             <tr>
                                 <td>5–6 Helfer</td>
-                                <td class="price-cell">31,00 €</td>
+                                <td class="price-cell">36,00 €</td>
                                 <td class="savings-cell">– 4 € / Person</td>
                             </tr>
                             <tr class="price-best">
                                 <td>7+ Helfer</td>
-                                <td class="price-cell">30,00 €</td>
+                                <td class="price-cell">35,00 €</td>
                                 <td class="savings-cell">– 5 € / Person</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+                <p class="price-table-note">
+                    <strong>Alle Preise sind Bruttopreise</strong> – inklusive 19&nbsp;% Mehrwertsteuer.
+                    Was hier steht, zahlen Sie auch: keine Mehrwertsteuer, die später noch draufkommt.
+                </p>
 
                 <div class="anfahrt-notice">
                     <div class="anfahrt-notice__icon">⏱</div>
@@ -269,7 +279,7 @@
 
                 <h2 class="section-title">Privater Helfer oder Profi? Der ehrliche Vergleich</h2>
                 <p>
-                    Auf Kleinanzeigen finden Sie Helfer für 10–15 € pro Stunde. Bei uns kosten sie 30–35 €. Warum der Unterschied – und warum die Profi-Variante am Ende oft sogar günstiger ist:
+                    Auf Kleinanzeigen finden Sie Helfer für 10–15 € pro Stunde. Bei uns kosten sie 35–40 € brutto. Warum der Unterschied – und warum die Profi-Variante am Ende oft sogar günstiger ist:
                 </p>
 
                 <div class="compare-table-wrapper">
@@ -285,7 +295,7 @@
                             <tr>
                                 <td>Stundensatz</td>
                                 <td>10–15 €</td>
-                                <td class="compare-aust">30–35 €</td>
+                                <td class="compare-aust">35–40 €</td>
                             </tr>
                             <tr>
                                 <td>Tempo (1-Zi-Wohnung)</td>
@@ -310,14 +320,14 @@
                             <tr class="compare-total">
                                 <td>Endpreis (2 Helfer, kleiner Umzug)</td>
                                 <td>~150 € + Risiko</td>
-                                <td class="compare-aust">~245 € versichert</td>
+                                <td class="compare-aust">~280 € versichert</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
                 <p>
-                    Der Aufpreis von rund 100 € ist im Grunde Ihre Versicherungsprämie: Geht ein Möbelstück oder eine Tür zu Bruch, ist das gedeckt. Verletzt sich jemand, haften nicht Sie. Und Sie sparen sich den ganzen Tag Schleppen – am Abend sind Sie fit für die erste Nacht in der neuen Wohnung statt völlig erledigt.
+                    Der Aufpreis von rund 130 € ist im Grunde Ihre Versicherungsprämie: Geht ein Möbelstück oder eine Tür zu Bruch, ist das gedeckt. Verletzt sich jemand, haften nicht Sie. Und Sie sparen sich den ganzen Tag Schleppen – am Abend sind Sie fit für die erste Nacht in der neuen Wohnung statt völlig erledigt.
                 </p>
 
                 <h3 class="highlight-title">Was Kunden an unserem Service schätzen</h3>
@@ -551,6 +561,22 @@
         font-weight: 600;
         font-size: 0.9rem;
         letter-spacing: 0.02em;
+    }
+
+    .th-note {
+        display: block;
+        font-weight: 400;
+        font-size: 0.78rem;
+        opacity: 0.85;
+        letter-spacing: 0;
+        margin-top: 2px;
+    }
+
+    .price-table-note {
+        margin-top: calc(var(--space-6) * -1 + var(--space-3));
+        margin-bottom: var(--space-6);
+        font-size: 0.9rem;
+        color: #475569;
     }
 
     .price-table td {

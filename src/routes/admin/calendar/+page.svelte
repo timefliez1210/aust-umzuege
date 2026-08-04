@@ -1989,7 +1989,17 @@
 		color: var(--dt-on-surface);
 		line-height: 1;
 	}
-	.week-day-today { color: var(--dt-primary); }
+	.week-day-today {
+		color: #fff;
+		background: var(--dt-primary);
+		border-radius: 999px;
+		min-width: 1.4rem;
+		height: 1.4rem;
+		padding: 0 0.35rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
 	.week-cap-badge {
 		margin-left: auto;
 		font-size: 0.6rem;
@@ -2523,6 +2533,15 @@
 	.week-cell.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
 	/* Public holiday takes precedence when both apply */
 	.week-cell.school-holiday.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
+
+	/* Today ring — after the holiday backgrounds on purpose, same reasoning as the
+	   month grid: an equal-specificity background declared later would otherwise
+	   erase the today marker for a whole Ferien week. */
+	.week-cell.today {
+		box-shadow: inset 0 0 0 2px var(--dt-primary);
+		position: relative;
+		z-index: 1;
+	}
 	.holiday-badge {
 		display: inline-block;
 		font-size: 0.6rem;

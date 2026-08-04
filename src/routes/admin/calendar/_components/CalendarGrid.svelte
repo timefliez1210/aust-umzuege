@@ -288,6 +288,10 @@
 	.cal-cell.overflow .cal-date { color: var(--dt-outline); }
 	.cal-cell.today { background: rgba(2, 36, 72, 0.06); }
 	.cal-cell.today:hover { background: rgba(2, 36, 72, 0.10); }
+	/* NOTE: the .today background above is deliberately not the only marker — the
+	   holiday rules below have equal specificity and come later, so their gradient
+	   wins and today would vanish for the whole of a Ferien month. The ring +
+	   date pill further down are background-independent and always visible. */
 	.cal-cell.overbooked { background: rgba(168, 57, 0, 0.06); }
 	.cal-cell.overbooked:hover { background: rgba(168, 57, 0, 0.10); }
 	.cal-cell.drag-over { background: rgba(2, 36, 72, 0.10); outline: 2px dashed var(--dt-primary); outline-offset: -2px; }
@@ -296,12 +300,34 @@
 	/* Public holiday takes precedence when both apply */
 	.cal-cell.school-holiday.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
 
+	/* Today marker — declared after the holiday backgrounds on purpose. Uses an
+	   inset ring rather than a background so it survives any cell tint (Ferien,
+	   Feiertag, überbucht) and stays visible in every month. */
+	.cal-cell.today {
+		box-shadow: inset 0 0 0 2px var(--dt-primary);
+		position: relative;
+		z-index: 1;
+	}
+
 	.cal-entry[draggable="true"] { cursor: grab; }
 	.cal-entry[draggable="true"]:active { cursor: grabbing; opacity: 0.6; }
 
 	.cal-cell-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.125rem; }
 	.cal-date { font-size: 0.8125rem; font-weight: 600; color: var(--dt-on-surface-variant); line-height: 1; }
-	.cal-date-today { color: var(--dt-primary); font-weight: 700; }
+	/* Filled pill, not just a colour change — a recoloured numeral is unreadable
+	   against the yellow Ferien / red Feiertag cell tints. */
+	.cal-date-today {
+		color: #fff;
+		font-weight: 700;
+		background: var(--dt-primary);
+		border-radius: 999px;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		padding: 0 0.3rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
 	.cal-overbooked-icon { font-size: 0.65rem; color: var(--dt-secondary); line-height: 1; }
 
 	.cal-entries { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0; }

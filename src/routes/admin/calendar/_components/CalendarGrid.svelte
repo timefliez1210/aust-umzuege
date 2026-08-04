@@ -225,7 +225,10 @@
 	/* ─── Calendar grid ────────────────────────────────────────────────────────── */
 	.calendar-grid {
 		display: grid;
-		grid-template-columns: 36px repeat(7, 1fr);
+		/* minmax(0, …) — a bare 1fr floors at min-content, so the long route lines
+		   inside the cells widen every column and push FR/SA/SO past the grid's
+		   overflow:hidden edge. Matches the week grid in +page.svelte. */
+		grid-template-columns: 36px repeat(7, minmax(0, 1fr));
 		gap: 0;
 		background: var(--dt-surface-container);
 		border-radius: var(--dt-radius-lg);
@@ -272,6 +275,9 @@
 		cursor: pointer;
 		text-align: left;
 		width: 100%;
+		/* flex/grid item: let it shrink below its content's min-content width so
+		   the ellipsis on .cal-entry-line / .cal-entry-route actually kicks in */
+		min-width: 0;
 		border-right: 1px solid var(--dt-surface-container-high);
 		border-bottom: 1px solid var(--dt-surface-container-high);
 	}
@@ -298,7 +304,7 @@
 	.cal-date-today { color: var(--dt-primary); font-weight: 700; }
 	.cal-overbooked-icon { font-size: 0.65rem; color: var(--dt-secondary); line-height: 1; }
 
-	.cal-entries { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+	.cal-entries { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0; }
 
 	.cal-entry {
 		display: block;

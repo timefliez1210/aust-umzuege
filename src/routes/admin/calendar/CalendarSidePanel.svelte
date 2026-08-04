@@ -261,6 +261,40 @@
 	let apptEditEmployeeNotes = $state('');
 	let apptEditNotes = $state('');
 	let apptDetailLoading = $state(false);
+
+	/** Address shape as returned by the inquiry endpoint (subset we render). */
+	type ApptInquiryAddress = {
+		street: string;
+		house_number?: string | null;
+		postal_code: string;
+		city: string;
+		floor?: string | null;
+	};
+	/**
+	 * Outline of the parent inquiry, shown at the bottom of the appointment panel
+	 * so the Zusatztermin can be judged without opening the Auftrag.
+	 */
+	let apptInquiry = $state<{
+		id: string;
+		status: string;
+		scheduled_date?: string | null;
+		start_time?: string | null;
+		volume_m3?: number | null;
+		customer?: { name?: string | null; email?: string | null; phone?: string | null } | null;
+		origin_address?: ApptInquiryAddress | null;
+		destination_address?: ApptInquiryAddress | null;
+		offer?: { total_brutto_cents?: number | null } | null;
+		employees?: Array<{ first_name?: string | null; last_name?: string | null }>;
+	} | null>(null);
+
+	/** "Sarlinenstr. 8, 31162 Bad Salzdetfurth (2. OG)" */
+	function formatApptAddress(a: ApptInquiryAddress | null | undefined): string {
+		if (!a) return '—';
+		const street = [a.street, a.house_number].filter(Boolean).join(' ');
+		const city = [a.postal_code, a.city].filter(Boolean).join(' ');
+		const base = [street, city].filter(Boolean).join(', ');
+		return a.floor ? `${base} (${a.floor})` : base;
+	}
 	let savingAppt = $state(false);
 	let deletingAppt = $state(false);
 	let showDeleteApptDialog = $state(false);
@@ -1068,6 +1102,7 @@
 	 */
 	async function loadAppointmentDetail(inquiryId: string, apptId: string) {
 		apptDetailLoading = true;
+		apptInquiry = null;
 		try {
 			const list = await apiGet<Array<{
 				id: string; description: string | null; employee_notes: string | null; notes: string | null;
@@ -1082,6 +1117,13 @@
 			// Non-fatal — the fields the chip already carries stay usable.
 		} finally {
 			apptDetailLoading = false;
+		}
+		// Separate try: the outline is decoration, a failure here must not hide
+		// the appointment fields loaded above.
+		try {
+			apptInquiry = await apiGet(`/api/v1/inquiries/${inquiryId}`);
+		} catch {
+			apptInquiry = null;
 		}
 	}
 
@@ -1740,7 +1782,9 @@
 						<label for="appt-emp-notes">Notiz für Mitarbeiter</label>
 						<textarea id="appt-emp-notes" rows={2} class="neu-input" bind:value={apptEditEmployeeNotes} placeholder="Hinweis, den alle Zugewiesenen sehen"></textarea>
 					</div>
-					{#if appt.customer_name}
+					<!-- Fallback only: when the outline below loaded, it already names the
+					     Auftrag (and more), so don't repeat it here. -->
+					{#if appt.customer_name && !apptInquiry}
 						<div class="panel-kv">
 							<span class="kv-label">Auftrag</span>
 							<span class="kv-value">{appt.customer_name}</span>
@@ -1771,6 +1815,74 @@
 						onUpdated={() => onLoadSchedule()}
 					/>
 				</div>
+
+				<!-- Outline of the parent Auftrag, so the Zusatztermin has context
+				     without navigating away from the editor. -->
+				{#if apptInquiry}
+					<div class="panel-section appt-inquiry-outline">
+						<div class="section-title">Zugehöriger Auftrag</div>
+						<div class="panel-kv">
+							<span class="kv-label">Kunde</span>
+							<span class="kv-value">{apptInquiry.customer?.name || appt.customer_name || '—'}</span>
+						</div>
+						<div class="panel-kv">
+							<span class="kv-label">Status</span>
+							<span class="kv-value">{INQUIRY_STATUS_LABELS[apptInquiry.status] ?? apptInquiry.status}</span>
+						</div>
+						{#if apptInquiry.scheduled_date}
+							<div class="panel-kv">
+								<span class="kv-label">Umzugstermin</span>
+								<span class="kv-value">
+									{new Date(apptInquiry.scheduled_date).toLocaleDateString('de-DE')}
+									{#if apptInquiry.start_time}· {formatTime(apptInquiry.start_time)}{/if}
+								</span>
+							</div>
+						{/if}
+						<div class="panel-kv panel-kv-route">
+							<span class="kv-label">Von</span>
+							<span class="kv-value kv-route-value">{formatApptAddress(apptInquiry.origin_address)}</span>
+						</div>
+						<div class="panel-kv panel-kv-route">
+							<span class="kv-label">Nach</span>
+							<span class="kv-value kv-route-value">{formatApptAddress(apptInquiry.destination_address)}</span>
+						</div>
+						{#if apptInquiry.volume_m3}
+							<div class="panel-kv">
+								<span class="kv-label">Volumen</span>
+								<span class="kv-value">{apptInquiry.volume_m3.toFixed(1)} m³</span>
+							</div>
+						{/if}
+						{#if apptInquiry.offer?.total_brutto_cents}
+							<div class="panel-kv">
+								<span class="kv-label">Angebotspreis</span>
+								<span class="kv-value">{(apptInquiry.offer.total_brutto_cents / 100).toFixed(0)} € brutto</span>
+							</div>
+						{/if}
+						{#if apptInquiry.employees && apptInquiry.employees.length > 0}
+							<div class="panel-kv panel-kv-route">
+								<span class="kv-label">Team</span>
+								<span class="kv-value kv-route-value">
+									{apptInquiry.employees
+										.map((e) => [e.first_name, e.last_name].filter(Boolean).join(' '))
+										.filter(Boolean)
+										.join(', ')}
+								</span>
+							</div>
+						{/if}
+						{#if apptInquiry.customer?.phone || apptInquiry.customer?.email}
+							<div class="panel-kv">
+								<span class="kv-label">Kontakt</span>
+								<span class="kv-value kv-muted">
+									{#if apptInquiry.customer.phone}
+										<a href="tel:{apptInquiry.customer.phone}" class="kv-link">{apptInquiry.customer.phone}</a>
+									{:else}
+										<a href="mailto:{apptInquiry.customer.email}" class="kv-link">{apptInquiry.customer.email}</a>
+									{/if}
+								</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
 			{/if}
 
 		</div>
@@ -1926,6 +2038,16 @@
 	.kv-route-value { font-weight: 600; white-space: normal; }
 	.kv-link { color: inherit; text-decoration: none; }
 	.kv-link:hover { text-decoration: underline; }
+
+	/* Read-only outline of the parent Auftrag at the bottom of the appointment
+	   editor — tinted so it reads as reference, not as more editable fields. */
+	.appt-inquiry-outline {
+		background: var(--dt-surface-container-low);
+		border-radius: var(--dt-radius-md);
+		padding: 0.75rem;
+		margin-top: 0.25rem;
+	}
+	.appt-inquiry-outline .kv-route-value { min-width: 0; }
 
 	.panel-empty { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }
 	.panel-loading { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }

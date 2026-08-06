@@ -40,19 +40,16 @@
 		brutto: number;
 		/** Netto sum of the KVAs that actually became jobs. */
 		angenommen: number;
-		/** Brutto of the drafts — shown, but never counted, as in the invoice register. */
-		entwurf: number;
 	}
 
-	/**
-	 * A KVA that was never handed to the customer. The pipeline drafts an offer for
-	 * essentially every inquiry, so counting drafts would inflate the totals — and the
-	 * Rechnungsausgangsbuch one menu entry away excludes exactly this class, so the two
-	 * registers must not disagree.
+	/*
+	 * NOTE: unlike the Rechnungsausgangsbuch, this register counts every row, drafts
+	 * included. `offers.status` and `offers.sent_at` are not maintained in practice —
+	 * on production 106 of 110 KVAs sit at status "draft" and only one has a `sent_at`,
+	 * yet 33 of those drafts already produced an invoice. Excluding them would hide
+	 * ~96% of the register's value, including KVAs that demonstrably went out. "Davon
+	 * beauftragt" is the trustworthy signal here, so that is what the footer highlights.
 	 */
-	function isDraft(item: KvaBuchItem): boolean {
-		return item.sent_at == null && item.status === 'draft';
-	}
 
 	const STATUS_LABELS: Record<string, string> = {
 		draft: 'Entwurf',
@@ -85,14 +82,12 @@
 			const items = map.get(m)!;
 			const [y, mo] = m.split('-');
 			const label = new Date(+y, +mo - 1).toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
-			const issued = items.filter(r => !isDraft(r));
 			return {
 				key: m, label, items,
-				netto: issued.reduce((s, r) => s + r.netto_cents, 0),
-				mwst: issued.reduce((s, r) => s + r.mwst_cents, 0),
-				brutto: issued.reduce((s, r) => s + r.brutto_cents, 0),
-				angenommen: issued.reduce((s, r) => s + (r.invoice_number ? r.netto_cents : 0), 0),
-				entwurf: items.filter(isDraft).reduce((s, r) => s + r.brutto_cents, 0)
+				netto: items.reduce((s, r) => s + r.netto_cents, 0),
+				mwst: items.reduce((s, r) => s + r.mwst_cents, 0),
+				brutto: items.reduce((s, r) => s + r.brutto_cents, 0),
+				angenommen: items.reduce((s, r) => s + (r.invoice_number ? r.netto_cents : 0), 0)
 			};
 		});
 	}
@@ -125,7 +120,6 @@
 	let totalMwst = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
 	let totalBrutto = $derived(monthGroups.reduce((s, g) => s + g.brutto, 0));
 	let totalAngenommen = $derived(monthGroups.reduce((s, g) => s + g.angenommen, 0));
-	let totalEntwurf = $derived(monthGroups.reduce((s, g) => s + g.entwurf, 0));
 
 	function selectYear(y: string) {
 		activeYear = y;
@@ -226,7 +220,6 @@
 							<tr
 								class:won={item.invoice_number != null}
 								class:lost={item.status === 'rejected' || item.status === 'expired'}
-								class:draft={isDraft(item)}
 							>
 								<td class="mono">
 									{#if item.pdf_s3_key}
@@ -262,14 +255,6 @@
 							<th class="num">{fmtEur(active.brutto)}</th>
 							<th colspan="3"></th>
 						</tr>
-						{#if active.entwurf !== 0}
-							<tr class="foot-note">
-								<td colspan="10">
-									Nicht gez&auml;hlt: {fmtEur(active.entwurf)} aus KVA-Entw&uuml;rfen,
-									die nie versendet wurden.
-								</td>
-							</tr>
-						{/if}
 					</tfoot>
 				</table>
 			</div>
@@ -283,12 +268,6 @@
 			<span class="num" data-label="Davon beauftragt">{fmtEur(totalAngenommen)}</span>
 		</div>
 
-		{#if totalEntwurf !== 0}
-			<p class="draft-note">
-				Zus&auml;tzlich {fmtEur(totalEntwurf)} in nie versendeten KVA-Entw&uuml;rfen —
-				diese z&auml;hlen nicht zu den Summen.
-			</p>
-		{/if}
 	{/if}
 </div>
 
@@ -368,7 +347,6 @@
 	tbody tr:nth-child(odd)  { background: var(--dt-surface-container-lowest); }
 	tbody tr:hover { background: var(--dt-surface-container-high) !important; }
 	tbody tr.lost td { opacity: 0.65; }
-	tbody tr.draft td { opacity: 0.7; }
 
 	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
 
@@ -396,16 +374,6 @@
 		border-top: 2px solid var(--dt-outline-variant);
 	}
 	tfoot th.num { text-align: right; }
-	tfoot tr.foot-note td {
-		padding: 6px var(--dt-space-4);
-		font-size: 0.75rem; font-weight: 400;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.draft-note {
-		margin: var(--dt-space-2) 0 0;
-		font-size: 0.8125rem; color: var(--dt-on-surface-variant);
-	}
 
 	/* ── grand total ──────────────────────────────── */
 	.grand-total {

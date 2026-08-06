@@ -14,6 +14,7 @@
 		ClipboardList,
 		Flag,
 		BookOpen,
+		BookMarked,
 		PhoneCall,
 		Truck,
 		Warehouse
@@ -42,6 +43,7 @@
 		{ href: '/admin/calendar', label: 'Kalender', icon: CalendarDays },
 		{ href: '/admin/calendar-items', label: 'Termine', icon: CalendarCheck },
 		{ href: '/admin/rechnungsausgangsbuch', label: 'Rechnungsausgangsbuch', icon: BookOpen },
+		{ href: '/admin/kva-buch', label: 'KVA-Buch', icon: BookMarked },
 		{ href: '/admin/storage', label: 'Lagerung', icon: Warehouse },
 		{ href: '/admin/flash-contacts', label: 'Rückrufe', icon: PhoneCall },
 		{ href: '/admin/vehicles', label: 'Fuhrpark', icon: Truck },

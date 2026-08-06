@@ -3,7 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { workerGet, workerFetch } from '$lib/stores/worker.svelte';
 	import { normalizeTime } from '$lib/utils/time';
-	import { ArrowLeft, MapPin, Package, Phone, Users, Box, Clock } from 'lucide-svelte';
+	import { ArrowLeft, MapPin, Package, Phone, Users, Box, Clock, Image as ImageIcon, X } from 'lucide-svelte';
+	import { API_BASE } from '$lib/utils/api.svelte';
 
 	interface ItemInfo {
 		name: string;
@@ -28,6 +29,10 @@
 		destination_elevator: boolean | null;
 		estimated_volume_m3: number | null;
 		items: ItemInfo[];
+		/** Customer photos of the Umzugsgut — API-relative image paths. */
+		photo_urls: string[];
+		/** Customer walkthrough videos — same route, rendered as <video>. */
+		video_urls: string[];
 		customer_name: string | null;
 		customer_phone: string | null;
 		notes: string | null;
@@ -40,6 +45,9 @@
 	}
 
 	let job = $state<JobDetail | null>(null);
+
+	/** Photo currently opened full-screen; null when the lightbox is closed. */
+	let lightboxUrl = $state<string | null>(null);
 	let loading = $state(true);
 
 	// Clock-in/out + break editing state
@@ -278,6 +286,29 @@
 		</div>
 	{/if}
 
+	<!-- Customer photos (feedback report 2424940e) -->
+	{#if job.photo_urls?.length || job.video_urls?.length}
+		<div class="section">
+			<h2 class="section-title"><ImageIcon size={15} /> Fotos</h2>
+			{#each job.video_urls ?? [] as url}
+				<!-- svelte-ignore a11y_media_has_caption -->
+				<video class="job-video" src={API_BASE + url} controls playsinline preload="metadata"></video>
+			{/each}
+			<div class="photo-grid">
+				{#each job.photo_urls ?? [] as url, i}
+					<button
+						type="button"
+						class="photo-thumb"
+						onclick={() => (lightboxUrl = API_BASE + url)}
+						aria-label="Foto {i + 1} vergrößern"
+					>
+						<img src={API_BASE + url} alt="Foto {i + 1} vom Umzugsgut" loading="lazy" />
+					</button>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
 	<!-- Volume & Items -->
 	{#if job.estimated_volume_m3 || job.items.length > 0}
 		<div class="section">
@@ -374,7 +405,81 @@
 	</div>
 {/if}
 
+<!-- Full-screen photo viewer: thumbnails are too small to judge a wardrobe by. -->
+{#if lightboxUrl}
+	<div
+		class="lightbox"
+		role="button"
+		tabindex="0"
+		aria-label="Foto schließen"
+		onclick={() => (lightboxUrl = null)}
+		onkeydown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') lightboxUrl = null; }}
+	>
+		<button type="button" class="lightbox-close" aria-label="Schließen"><X size={22} /></button>
+		<img src={lightboxUrl} alt="Foto vom Umzugsgut" />
+	</div>
+{/if}
+
 <style>
+	/* ── customer photos ─────────────────────────────── */
+	.job-video {
+		width: 100%;
+		border-radius: 8px;
+		background: #000;
+		margin-bottom: 0.5rem;
+	}
+	.photo-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+		gap: 0.5rem;
+	}
+	.photo-thumb {
+		padding: 0;
+		border: none;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #f1f5f9;
+		aspect-ratio: 1;
+		cursor: pointer;
+	}
+	.photo-thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.lightbox {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		background: rgba(0, 0, 0, 0.92);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+	}
+	.lightbox img {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+	}
+	.lightbox-close {
+		position: absolute;
+		top: max(1rem, env(safe-area-inset-top));
+		right: 1rem;
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.15);
+		color: #fff;
+		cursor: pointer;
+	}
+
 	.back-btn {
 		display: inline-flex;
 		align-items: center;

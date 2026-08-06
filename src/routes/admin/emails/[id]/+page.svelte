@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { apiGet, apiPost, apiPatch, apiPreview, formatDateTime } from '$lib/utils/api.svelte';
-	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save, Paperclip } from 'lucide-svelte';
+	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save, Paperclip, FilePlus } from 'lucide-svelte';
+	import CreateInquiryFromEmailModal from './_components/CreateInquiryFromEmailModal.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 
@@ -47,6 +48,17 @@
 	let editSubject = $state('');
 	let editBody = $state('');
 	let saving = $state(false);
+
+	// Create-inquiry-from-email state (feedback report 71e097f6)
+	let showCreateInquiry = $state(false);
+
+	/**
+	 * Body of the newest inbound message — what the customer actually wrote.
+	 * Prefills the notes field so the request details survive into the Anfrage.
+	 */
+	let latestInboundBody = $derived(
+		[...(data?.messages ?? [])].reverse().find((m) => m.direction === 'inbound')?.body_text ?? ''
+	);
 
 	// Reply state
 	let showReply = $state(false);
@@ -348,6 +360,10 @@
 				<a href="/admin/inquiries/{data.thread.inquiry_id}" class="link-quote">
 					<ExternalLink size={14} /> Zur Anfrage
 				</a>
+			{:else}
+				<button type="button" class="link-quote" onclick={() => (showCreateInquiry = true)}>
+					<FilePlus size={14} /> Anfrage erstellen
+				</button>
 			{/if}
 		</div>
 
@@ -561,6 +577,18 @@
 	onCancel={() => { pendingActionMsgId = null; }}
 />
 
+{#if showCreateInquiry && data}
+	<CreateInquiryFromEmailModal
+		threadId={data.thread.id}
+		customerId={data.thread.customer_id}
+		customerName={data.thread.customer_name}
+		customerEmail={data.thread.customer_email}
+		initialNotes={latestInboundBody}
+		onCreated={() => { showCreateInquiry = false; loadThread(); }}
+		onClose={() => (showCreateInquiry = false)}
+	/>
+{/if}
+
 <style>
 	.page { max-width: 900px; }
 	.page-nav { margin-bottom: 1rem; }
@@ -614,6 +642,9 @@
 		text-decoration: none;
 		transition: background var(--dt-transition);
 		white-space: nowrap;
+		/* Shared by the <a> "Zur Anfrage" and the <button> "Anfrage erstellen". */
+		cursor: pointer;
+		font-family: inherit;
 	}
 
 	.link-quote:hover {

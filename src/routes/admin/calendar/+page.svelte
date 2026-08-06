@@ -271,7 +271,8 @@
 	let qtNewCustName = $state('');
 	let qtNewCustPhone = $state('');
 	let qtNewCustSalutation = $state('');
-	let qtStartTime = $state('09:00');
+	// Alex's working day starts at 08:00 (feedback report 62702b57).
+	let qtStartTime = $state('08:00');
 	let qtEndTime = $state('');
 
 	// ─── Derived ─────────────────────────────────────────────────────────────────
@@ -916,7 +917,7 @@
 		qiDestStreet = ''; qiDestCity = ''; qiDestPostal = '';
 		qiNotes = '';
 		qtTitle = ''; qtCategory = 'intern'; qtLocation = ''; qtDuration = 8;
-		qtStartTime = '09:00'; qtEndTime = '';
+		qtStartTime = '08:00'; qtEndTime = '';
 		qtCustomerMode = 'none'; qtCustomerSearch = ''; qtCustomerResults = []; qtCustomerId = null; qtCustomerLabel = '';
 		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = ''; qtNewCustSalutation = '';
 		qaInquirySearch = ''; qaInquiryResults = []; qaInquiryId = null; qaInquiryLabel = '';

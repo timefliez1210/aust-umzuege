@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiGet, apiPatch, apiPost } from '$lib/utils/api.svelte';
+	import { apiGet, apiPatch, apiPost, apiPreview } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ReviewRequestModal from '$lib/components/admin/ReviewRequestModal.svelte';
-	import { ChevronLeft, ChevronRight, Check } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, Check, FileText } from 'lucide-svelte';
 
 	const PAYMENT_METHODS = ['Überweisung', 'Bar', 'EC-Karte', 'PayPal'];
 
@@ -25,6 +25,45 @@
 		offene_zahlungen_cents: number | null;
 		payment_method: string | null;
 		notes: string | null;
+		/** "full" | "partial_first" | "partial_final" | "lagerung" */
+		invoice_type: string;
+		partial_percent: number | null;
+		/** "draft" | "ready" | "sent" | "paid" */
+		status: string;
+		is_gutschrift: boolean;
+		pdf_s3_key: string | null;
+	}
+
+	/** Short label for the Typ column — an Anzahlung must not look like a duplicate row. */
+	function typeLabel(item: RechnungsausgangItem): string {
+		if (item.is_gutschrift) return 'Gutschrift';
+		switch (item.invoice_type) {
+			case 'lagerung':
+				return 'Lagerung';
+			case 'partial_first':
+				return item.partial_percent ? `Anzahlung ${item.partial_percent}%` : 'Anzahlung';
+			case 'partial_final':
+				return 'Schlussrechnung';
+			default:
+				return 'Umzug';
+		}
+	}
+
+	/**
+	 * True while an invoice has not actually been issued — most often the
+	 * Schlussrechnung created as a draft alongside an Anzahlung. Such a row stays
+	 * visible (its number is already reserved) but is marked, and is left out of the
+	 * totals.
+	 *
+	 * Deliberately NOT keyed on `sent_at` alone: `invoice_repo::mark_paid` stamps
+	 * `paid_at`/`status` but never `sent_at`, so an invoice handed over on paper and
+	 * then booked via the "Bezahlt" button would otherwise be badged as a draft and
+	 * silently dropped from the register's sums — the very failure this page was
+	 * fixed to stop.
+	 */
+	function isDraft(item: RechnungsausgangItem): boolean {
+		if (item.sent_at != null || item.paid_at != null) return false;
+		return item.status === 'draft' || item.status === 'ready' || item.status === 'pending_approval';
 	}
 
 	/** Response of POST /rechnungsausgangsbuch/{id}/paid. */
@@ -46,12 +85,21 @@
 		mwst: number;
 		brutto: number;
 		offen: number;
+		/** Brutto of the rows that are not issued yet — shown, but never counted. */
+		entwurf: number;
 	}
 
 	let rows = $state<RechnungsausgangItem[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	/** Selected calendar year — the register is kept per year, like a paper ledger. */
+	let activeYear = $state<string>('');
 	let activeIndex = $state(0);
+
+	/** The year a row belongs to: its Rechnungsdatum, or the creation date for drafts. */
+	function yearOf(item: RechnungsausgangItem): string {
+		return (item.sent_at ?? item.created_at).substring(0, 4);
+	}
 
 	function groupByMonth(list: RechnungsausgangItem[]): MonthGroup[] {
 		const map = new Map<string, RechnungsausgangItem[]>();
@@ -65,12 +113,16 @@
 			const items = map.get(m)!;
 			const [y, mo] = m.split('-');
 			const label = new Date(+y, +mo - 1).toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
+			// Only issued invoices count towards the register's totals — a draft
+			// Schlussrechnung has a reserved number but is not yet a receivable.
+			const issued = items.filter(r => !isDraft(r));
 			return {
 				key: m, label, items,
-				netto: items.reduce((s, r) => s + (r.netto_cents ?? 0), 0),
-				mwst: items.reduce((s, r) => s + (r.mwst_cents ?? 0), 0),
-				brutto: items.reduce((s, r) => s + (r.brutto_cents ?? 0), 0),
-				offen: items.reduce((s, r) => s + (r.offene_zahlungen_cents ?? 0), 0)
+				netto: issued.reduce((s, r) => s + (r.netto_cents ?? 0), 0),
+				mwst: issued.reduce((s, r) => s + (r.mwst_cents ?? 0), 0),
+				brutto: issued.reduce((s, r) => s + (r.brutto_cents ?? 0), 0),
+				offen: issued.reduce((s, r) => s + (r.offene_zahlungen_cents ?? 0), 0),
+				entwurf: items.filter(isDraft).reduce((s, r) => s + (r.brutto_cents ?? 0), 0)
 			};
 		});
 	}
@@ -81,8 +133,9 @@
 		try {
 			const data = await apiGet<RechnungsausgangItem[]>('/api/v1/admin/rechnungsausgangsbuch');
 			rows = data;
-			const groups = groupByMonth(data);
-			activeIndex = Math.max(0, groups.length - 1);
+			const years = [...new Set(data.map(yearOf))].sort();
+			activeYear = years.at(-1) ?? String(new Date().getFullYear());
+			activeIndex = Math.max(0, groupByMonth(data.filter(r => yearOf(r) === activeYear)).length - 1);
 		} catch (e: any) {
 			error = e?.message || 'Ladefehler';
 			rows = [];
@@ -94,7 +147,15 @@
 
 	onMount(() => { load(); });
 
-	let monthGroups = $derived(groupByMonth(rows));
+	let years = $derived([...new Set(rows.map(yearOf))].sort());
+	let yearRows = $derived(rows.filter(r => yearOf(r) === activeYear));
+	let monthGroups = $derived(groupByMonth(yearRows));
+
+	/** Jumps to another year and lands on its last month with entries. */
+	function selectYear(y: string) {
+		activeYear = y;
+		activeIndex = Math.max(0, groupByMonth(rows.filter(r => yearOf(r) === y)).length - 1);
+	}
 
 	function prevMonth() {
 		activeIndex = Math.max(0, activeIndex - 1);
@@ -104,12 +165,37 @@
 		activeIndex = Math.min(monthGroups.length - 1, activeIndex + 1);
 	}
 
-	let active = $derived(monthGroups[activeIndex]);
+	let active = $derived(monthGroups[Math.min(activeIndex, Math.max(0, monthGroups.length - 1))]);
 
+	// Year totals — these used to sum EVERY loaded row regardless of year despite
+	// being labelled "Gesamtsumme (Jahr)" (feedback report 12e2d18f).
 	let totalNetto = $derived(monthGroups.reduce((s, g) => s + g.netto, 0));
 	let totalMwst  = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
 	let totalBrutto = $derived(monthGroups.reduce((s, g) => s + g.brutto, 0));
 	let totalOffen = $derived(monthGroups.reduce((s, g) => s + g.offen, 0));
+	let totalEntwurf = $derived(monthGroups.reduce((s, g) => s + g.entwurf, 0));
+
+	/**
+	 * Opens the invoice document for a row.
+	 *
+	 * Called by: template (Rechnungsnummer button).
+	 * Purpose: the register had no way to reach the actual invoice (report 542fb20d).
+	 */
+	async function openInvoicePdf(item: RechnungsausgangItem) {
+		// Storage invoices hang off a contract, not an inquiry, and have their own route.
+		const path =
+			item.kind === 'lagerung'
+				? `/api/v1/admin/storage/invoices/${item.id}/pdf`
+				: item.inquiry_id
+					? `/api/v1/inquiries/${item.inquiry_id}/invoices/${item.id}/pdf`
+					: null;
+		if (!path) return;
+		try {
+			await apiPreview(path);
+		} catch (e: any) {
+			showToast(e?.message || 'PDF konnte nicht geöffnet werden', 'error');
+		}
+	}
 
 	function fmtEur(cents: number | null): string {
 		if (cents == null) return '\u2014';
@@ -187,6 +273,20 @@
 	{:else if rows.length === 0}
 		<div class="empty">Keine Rechnungen vorhanden.</div>
 	{:else}
+		<!-- Year selector -->
+		<div class="year-nav">
+			{#each years as y}
+				<button
+					type="button"
+					class="year-btn"
+					class:active={y === activeYear}
+					onclick={() => selectYear(y)}
+				>
+					{y}
+				</button>
+			{/each}
+		</div>
+
 		<!-- Month navigator -->
 		<div class="month-nav">
 			<button type="button" class="nav-btn" class:dimmed={activeIndex === 0} onclick={prevMonth}>
@@ -236,11 +336,38 @@
 					</thead>
 					<tbody>
 						{#each active.items as item}
-							<tr class:paid={item.paid_at != null}>
-								<td class="mono">{item.invoice_number}</td>
-								<td>{item.kind === 'lagerung' ? 'Lagerung' : 'Umzug'}</td>
+							<tr class:paid={item.paid_at != null} class:draft={isDraft(item)}>
+								<td class="mono">
+									{#if item.pdf_s3_key && (item.inquiry_id || item.kind === 'lagerung')}
+										<button
+											type="button"
+											class="link-btn"
+											onclick={() => openInvoicePdf(item)}
+											title="Rechnung \u00f6ffnen"
+										>
+											<FileText size={12} />
+											{item.invoice_number}
+										</button>
+									{:else}
+										{item.invoice_number}
+									{/if}
+								</td>
+								<td>
+									<span class="type-label" class:credit={item.is_gutschrift}>{typeLabel(item)}</span>
+									{#if isDraft(item)}
+										<span class="draft-badge" title="Noch nicht versendet \u2014 Nummer ist reserviert">Entwurf</span>
+									{/if}
+								</td>
 								<td>{fmtDate(item.scheduled_date)}</td>
-								<td>{item.customer_name || '\u2014'}</td>
+								<td>
+									{#if item.inquiry_id}
+										<a class="row-link" href="/admin/inquiries/{item.inquiry_id}">
+											{item.customer_name || '\u2014'}
+										</a>
+									{:else}
+										{item.customer_name || '\u2014'}
+									{/if}
+								</td>
 								<td class="num">{fmtEur(item.netto_cents)}</td>
 								<td class="num">{fmtEur(item.mwst_cents)}</td>
 								<td class="num">{fmtEur(item.brutto_cents)}</td>
@@ -249,6 +376,10 @@
 								<td>
 									{#if item.paid_at}
 										{fmtDate(item.paid_at)}
+									{:else if isDraft(item)}
+										<!-- Booking a never-issued invoice as paid would also flip its
+										     inquiry to "bezahlt", from any status. Not offered here. -->
+										<span class="muted-cell">&mdash;</span>
 									{:else}
 										<button
 											type="button"
@@ -289,6 +420,13 @@
 							<th class="num">{fmtEur(active.offen)}</th>
 							<th colspan="2"></th>
 						</tr>
+						{#if active.entwurf !== 0}
+							<tr class="foot-note">
+								<td colspan="13">
+									Nicht gez&auml;hlt: {fmtEur(active.entwurf)} aus noch nicht versendeten Entw&uuml;rfen.
+								</td>
+							</tr>
+						{/if}
 					</tfoot>
 				</table>
 			</div>
@@ -296,13 +434,20 @@
 
 		<!-- Year grand total -->
 		<div class="grand-total">
-			<span class="grand-total__label">Gesamtsumme (Jahr)</span>
+			<span class="grand-total__label">Gesamtsumme {activeYear}</span>
 			<span class="num" data-label="Netto">{fmtEur(totalNetto)}</span>
 			<span class="num" data-label="MWST">{fmtEur(totalMwst)}</span>
 			<span class="num" data-label="Brutto">{fmtEur(totalBrutto)}</span>
 			<span class="spacer"></span>
 			<span class="num" data-label="Offen">{fmtEur(totalOffen)}</span>
 		</div>
+
+		{#if totalEntwurf !== 0}
+			<p class="draft-note">
+				Zus&auml;tzlich {fmtEur(totalEntwurf)} in noch nicht versendeten Entw&uuml;rfen —
+				diese z&auml;hlen nicht zu den Summen.
+			</p>
+		{/if}
 	{/if}
 </div>
 
@@ -335,6 +480,22 @@
 	.error-box {
 		background: var(--dt-error-bg); border: 1px solid var(--dt-error-text);
 		color: var(--dt-error-text); padding: var(--dt-space-4); border-radius: var(--dt-radius-md);
+	}
+
+	/* ── year selector ─────────────────────────────── */
+	.year-nav {
+		display: flex; justify-content: center; flex-wrap: wrap;
+		gap: var(--dt-space-2); margin-bottom: var(--dt-space-3);
+	}
+	.year-btn {
+		padding: 0.35rem 0.9rem; border-radius: var(--dt-radius-md);
+		border: var(--dt-ghost-border); background: var(--dt-surface-container-low);
+		color: var(--dt-on-surface-variant); font-size: 0.875rem; font-weight: 600;
+		cursor: pointer; transition: background var(--dt-transition);
+	}
+	.year-btn:hover { background: var(--dt-surface-container-high); }
+	.year-btn.active {
+		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
 	}
 
 	/* ── month navigation ──────────────────────────── */
@@ -390,6 +551,29 @@
 
 	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
 
+	/* ── row links ─────────────────────────────────── */
+	.link-btn {
+		display: inline-flex; align-items: center; gap: 0.25rem;
+		padding: 0; border: none; background: none; cursor: pointer;
+		font-family: var(--font-mono); font-size: 0.75rem;
+		color: var(--dt-primary); text-decoration: underline;
+	}
+	.link-btn:hover { opacity: 0.75; }
+	.row-link { color: var(--dt-on-surface); text-decoration: underline; }
+	.row-link:hover { color: var(--dt-primary); }
+
+	.muted-cell { color: var(--dt-on-surface-variant); }
+	.type-label { white-space: nowrap; }
+	.type-label.credit { color: var(--dt-error-text, #b3261e); font-weight: 600; }
+
+	.draft-badge {
+		margin-left: 0.35rem; padding: 1px 6px; border-radius: var(--dt-radius-sm);
+		font-size: 0.6875rem; font-weight: 600; white-space: nowrap;
+		color: var(--dt-on-surface-variant); background: var(--dt-surface-container-high);
+	}
+	/* Not yet issued — de-emphasised so the real entries read as the register. */
+	tbody tr.draft td:not(.offen) { opacity: 0.7; }
+
 	.paid-btn {
 		display: inline-flex; align-items: center; gap: 0.2rem;
 		padding: 2px 8px; font-size: 0.75rem; font-weight: 600;
@@ -416,6 +600,19 @@
 		border-top: 2px solid var(--dt-outline-variant);
 	}
 	tfoot th.num { text-align: right; }
+
+	tfoot tr.foot-note td {
+		padding: 6px var(--dt-space-4);
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--dt-on-surface-variant);
+	}
+
+	.draft-note {
+		margin: var(--dt-space-2) 0 0;
+		font-size: 0.8125rem;
+		color: var(--dt-on-surface-variant);
+	}
 
 	/* ── grand total ──────────────────────────────── */
 	.grand-total {

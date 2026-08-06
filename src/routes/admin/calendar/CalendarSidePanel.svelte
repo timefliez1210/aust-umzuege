@@ -238,7 +238,8 @@
 	let termEditCategory = $state('intern');
 	let termEditStatus = $state('scheduled');
 	let termEditDate = $state('');
-	let termEditStartTime = $state('09:00');
+	// Matches the 08:00 default used when creating a Termin (report 62702b57).
+	let termEditStartTime = $state('08:00');
 	let termEditEndTime = $state('');
 	let termEditDuration = $state('0');
 	let termEditLocation = $state('');

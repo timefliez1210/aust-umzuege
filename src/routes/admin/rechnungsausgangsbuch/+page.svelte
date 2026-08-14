@@ -3,7 +3,8 @@
 	import { apiGet, apiPatch, apiPost, apiPreview } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ReviewRequestModal from '$lib/components/admin/ReviewRequestModal.svelte';
-	import { ChevronLeft, ChevronRight, Check, FileText } from 'lucide-svelte';
+	import { Check, FileText } from 'lucide-svelte';
+	import { isDraft, yearOf, availableYears, rowsForYear, registerTotals } from '$lib/utils/register';
 
 	const PAYMENT_METHODS = ['Überweisung', 'Bar', 'EC-Karte', 'PayPal'];
 
@@ -61,10 +62,6 @@
 	 * silently dropped from the register's sums — the very failure this page was
 	 * fixed to stop.
 	 */
-	function isDraft(item: RechnungsausgangItem): boolean {
-		if (item.sent_at != null || item.paid_at != null) return false;
-		return item.status === 'draft' || item.status === 'ready' || item.status === 'pending_approval';
-	}
 
 	/** Response of POST /rechnungsausgangsbuch/{id}/paid. */
 	interface PaidOutcome {
@@ -77,55 +74,12 @@
 		review_prompt: boolean;
 	}
 
-	interface MonthGroup {
-		key: string;
-		label: string;
-		items: RechnungsausgangItem[];
-		netto: number;
-		mwst: number;
-		brutto: number;
-		offen: number;
-		/** Brutto of the rows that are not issued yet — shown, but never counted. */
-		entwurf: number;
-	}
-
 	let rows = $state<RechnungsausgangItem[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	/** Selected calendar year — the register is kept per year, like a paper ledger. */
 	let activeYear = $state<string>('');
-	let activeIndex = $state(0);
 
-	/** The year a row belongs to: its Rechnungsdatum, or the creation date for drafts. */
-	function yearOf(item: RechnungsausgangItem): string {
-		return (item.sent_at ?? item.created_at).substring(0, 4);
-	}
-
-	function groupByMonth(list: RechnungsausgangItem[]): MonthGroup[] {
-		const map = new Map<string, RechnungsausgangItem[]>();
-		for (const item of list) {
-			const d = item.sent_at ?? item.created_at;
-			const m = d.substring(0, 7);
-			if (!map.has(m)) map.set(m, []);
-			map.get(m)!.push(item);
-		}
-		return [...map.keys()].sort().map(m => {
-			const items = map.get(m)!;
-			const [y, mo] = m.split('-');
-			const label = new Date(+y, +mo - 1).toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
-			// Only issued invoices count towards the register's totals — a draft
-			// Schlussrechnung has a reserved number but is not yet a receivable.
-			const issued = items.filter(r => !isDraft(r));
-			return {
-				key: m, label, items,
-				netto: issued.reduce((s, r) => s + (r.netto_cents ?? 0), 0),
-				mwst: issued.reduce((s, r) => s + (r.mwst_cents ?? 0), 0),
-				brutto: issued.reduce((s, r) => s + (r.brutto_cents ?? 0), 0),
-				offen: issued.reduce((s, r) => s + (r.offene_zahlungen_cents ?? 0), 0),
-				entwurf: items.filter(isDraft).reduce((s, r) => s + (r.brutto_cents ?? 0), 0)
-			};
-		});
-	}
 
 	async function load() {
 		loading = true;
@@ -135,11 +89,9 @@
 			rows = data;
 			const years = [...new Set(data.map(yearOf))].sort();
 			activeYear = years.at(-1) ?? String(new Date().getFullYear());
-			activeIndex = Math.max(0, groupByMonth(data.filter(r => yearOf(r) === activeYear)).length - 1);
 		} catch (e: any) {
 			error = e?.message || 'Ladefehler';
 			rows = [];
-			activeIndex = 0;
 		} finally {
 			loading = false;
 		}
@@ -147,33 +99,23 @@
 
 	onMount(() => { load(); });
 
-	let years = $derived([...new Set(rows.map(yearOf))].sort());
-	let yearRows = $derived(rows.filter(r => yearOf(r) === activeYear));
-	let monthGroups = $derived(groupByMonth(yearRows));
+	let years = $derived(availableYears(rows));
 
-	/** Jumps to another year and lands on its last month with entries. */
-	function selectYear(y: string) {
-		activeYear = y;
-		activeIndex = Math.max(0, groupByMonth(rows.filter(r => yearOf(r) === y)).length - 1);
-	}
-
-	function prevMonth() {
-		activeIndex = Math.max(0, activeIndex - 1);
-	}
-
-	function nextMonth() {
-		activeIndex = Math.min(monthGroups.length - 1, activeIndex + 1);
-	}
-
-	let active = $derived(monthGroups[Math.min(activeIndex, Math.max(0, monthGroups.length - 1))]);
+	/**
+	 * The whole selected year as one chronological list — the register is a running
+	 * ledger, so it is read top to bottom rather than paged month by month.
+	 */
+	let yearRows = $derived(rowsForYear(rows, activeYear));
 
 	// Year totals — these used to sum EVERY loaded row regardless of year despite
-	// being labelled "Gesamtsumme (Jahr)" (feedback report 12e2d18f).
-	let totalNetto = $derived(monthGroups.reduce((s, g) => s + g.netto, 0));
-	let totalMwst  = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
-	let totalBrutto = $derived(monthGroups.reduce((s, g) => s + g.brutto, 0));
-	let totalOffen = $derived(monthGroups.reduce((s, g) => s + g.offen, 0));
-	let totalEntwurf = $derived(monthGroups.reduce((s, g) => s + g.entwurf, 0));
+	// being labelled "Gesamtsumme (Jahr)" (feedback report 12e2d18f). Scoping and
+	// the draft exclusion live in $lib/utils/register so they stay under test.
+	let totals = $derived(registerTotals(yearRows));
+	let totalNetto = $derived(totals.netto);
+	let totalMwst = $derived(totals.mwst);
+	let totalBrutto = $derived(totals.brutto);
+	let totalOffen = $derived(totals.offen);
+	let totalEntwurf = $derived(totals.entwurf);
 
 	/**
 	 * Opens the invoice document for a row.
@@ -239,8 +181,8 @@
 				{}
 			);
 
-			// Patch the row in place rather than refetching the whole register — the
-			// table is grouped by month and a reload would jump the user back to today.
+			// Patch the row in place rather than refetching the whole register — a
+			// reload would reset the year selection and lose the scroll position.
 			item.paid_at = outcome.paid_at;
 			item.offene_zahlungen_cents = 0;
 			showToast(`Rechnung ${item.invoice_number} als bezahlt gebucht`, 'success');
@@ -263,7 +205,9 @@
 <div class="page">
 	<div class="page-header">
 		<h1>Rechnungsausgangsbuch</h1>
-		<span class="page-count">{rows.length} Eintr&auml;ge</span>
+		<span class="page-count">
+			{loading ? rows.length : yearRows.length} Eintr&auml;ge{loading ? '' : ` ${activeYear}`}
+		</span>
 	</div>
 
 	{#if loading}
@@ -280,41 +224,17 @@
 					type="button"
 					class="year-btn"
 					class:active={y === activeYear}
-					onclick={() => selectYear(y)}
+					onclick={() => (activeYear = y)}
 				>
 					{y}
 				</button>
 			{/each}
 		</div>
 
-		<!-- Month navigator -->
-		<div class="month-nav">
-			<button type="button" class="nav-btn" class:dimmed={activeIndex === 0} onclick={prevMonth}>
-				<ChevronLeft size={18} />
-			</button>
-
-			<div class="month-label">
-				<select
-					class="month-select"
-					value={active?.key ?? ''}
-					onchange={(e) => {
-						const idx = monthGroups.findIndex(g => g.key === e.currentTarget.value);
-						if (idx !== -1) activeIndex = idx;
-					}}
-				>
-					{#each monthGroups as g}
-						<option value={g.key}>{g.label} ({g.items.length})</option>
-					{/each}
-				</select>
-			</div>
-
-			<button type="button" class="nav-btn" class:dimmed={activeIndex >= monthGroups.length - 1} onclick={nextMonth}>
-				<ChevronRight size={18} />
-			</button>
-		</div>
-
-		<!-- Active month table -->
-		{#if active}
+		<!-- Full year, one chronological list -->
+		{#if yearRows.length === 0}
+			<div class="empty">Keine Rechnungen im Jahr {activeYear}.</div>
+		{:else}
 			<div class="table-wrapper">
 				<table>
 					<thead>
@@ -335,7 +255,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each active.items as item}
+						{#each yearRows as item}
 							<tr class:paid={item.paid_at != null} class:draft={isDraft(item)}>
 								<td class="mono">
 									{#if item.pdf_s3_key && (item.inquiry_id || item.kind === 'lagerung')}
@@ -412,18 +332,18 @@
 					</tbody>
 					<tfoot>
 						<tr>
-							<th colspan="4">Summe {active.label}</th>
-							<th class="num">{fmtEur(active.netto)}</th>
-							<th class="num">{fmtEur(active.mwst)}</th>
-							<th class="num">{fmtEur(active.brutto)}</th>
+							<th colspan="4">Summe {activeYear}</th>
+							<th class="num">{fmtEur(totalNetto)}</th>
+							<th class="num">{fmtEur(totalMwst)}</th>
+							<th class="num">{fmtEur(totalBrutto)}</th>
 							<th colspan="3"></th>
-							<th class="num">{fmtEur(active.offen)}</th>
+							<th class="num">{fmtEur(totalOffen)}</th>
 							<th colspan="2"></th>
 						</tr>
-						{#if active.entwurf !== 0}
+						{#if totalEntwurf !== 0}
 							<tr class="foot-note">
 								<td colspan="13">
-									Nicht gez&auml;hlt: {fmtEur(active.entwurf)} aus noch nicht versendeten Entw&uuml;rfen.
+									Nicht gez&auml;hlt: {fmtEur(totalEntwurf)} aus noch nicht versendeten Entw&uuml;rfen.
 								</td>
 							</tr>
 						{/if}
@@ -498,33 +418,6 @@
 		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
 	}
 
-	/* ── month navigation ──────────────────────────── */
-	.month-nav {
-		display: flex; flex-direction: row; align-items: center; justify-content: center;
-		gap: var(--dt-space-3); margin-bottom: var(--dt-space-4); flex-wrap: nowrap;
-	}
-	.nav-btn {
-		flex: 0 0 auto; width: 36px; height: 36px; border-radius: var(--dt-radius-md);
-		color: var(--dt-on-surface); background: var(--dt-surface-container-low);
-		border: var(--dt-ghost-border); cursor: pointer; font-size: 16px; line-height: 1;
-		transition: background var(--dt-transition);
-	}
-	.nav-btn:hover { background: var(--dt-surface-container-high); }
-	.nav-btn.dimmed { opacity: 0.35; }
-
-	.month-label {
-		flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-	}
-	.month-select {
-		appearance: none; -webkit-appearance: none;
-		background-color: var(--dt-surface-container-low); color: var(--dt-on-surface);
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-md);
-		padding: 0.5rem 2rem 0.5rem var(--dt-space-4);
-		font-size: 1rem; font-weight: 600; cursor: pointer;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23191c1e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-		background-repeat: no-repeat; background-position: right 0.75rem center;
-	}
-
 	/* ── table ───────────────────────────────────── */
 	.table-wrapper {
 		background: var(--dt-surface-container-lowest); border-radius: var(--dt-radius-lg);
@@ -536,6 +429,11 @@
 		padding: 8px var(--dt-space-4); text-align: left; font-weight: 500;
 		color: var(--dt-on-surface-variant); font-size: 12px;
 		text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+	}
+	/* A full year is a long scroll — keep the column labels in view. */
+	thead th {
+		position: sticky; top: 0; z-index: 1;
+		background: var(--dt-surface-container-high);
 	}
 	th.num { text-align: right; }
 	td {
@@ -630,8 +528,7 @@
 		}
 
 		.paid-btn,
-		.payment-method-select,
-		.nav-btn {
+		.payment-method-select {
 			min-height: 44px;
 		}
 

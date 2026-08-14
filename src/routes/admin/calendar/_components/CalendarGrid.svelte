@@ -94,7 +94,6 @@
 			{@const mdEntries = allEntries.filter(e => (e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) || (e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1))}
 			{@const sdEntries = allEntries.filter(e => !(e.type === 'inquiry' && e.item.total_days && e.item.total_days > 1) && !(e.type === 'schedule-termin' && e.item.total_days && e.item.total_days > 1))}
 			{@const lanes = dayLaneMap.get(dateStr) ?? []}
-			{@const sdCap = Math.max(2, 4 - lanes.length)}
 			<button
 				class="cal-cell"
 				class:overflow={day.isOverflow}
@@ -150,7 +149,7 @@
 		{/if}
 	{/each}
 					<div class="cal-entries">
-						{#each sdEntries.slice(0, sdCap) as entry}
+						{#each sdEntries as entry}
 						{#if entry.type === 'inquiry'}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<span
@@ -213,9 +212,6 @@
 							</span>
 						{/if}
 					{/each}
-					{#if sdEntries.length > sdCap}
-						<span class="cal-more">+{sdEntries.length - sdCap} mehr</span>
-					{/if}
 				</div>
 			</button>
 	{/each}
@@ -389,7 +385,6 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	.cal-more { font-size: 0.6rem; color: var(--dt-on-surface-variant); font-weight: 500; padding: 1px 3px; }
 
 	.holiday-badge {
 		display: inline-block;
@@ -465,7 +460,6 @@
 		}
 		.cal-entries { flex-direction: row; flex-wrap: wrap; gap: 2px; align-items: center; }
 		.entry-time { display: none; }
-		.cal-more { font-size: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--dt-outline-variant); padding: 0; }
 		/* Keep inquiry entries as plain dots too — the route sub-line is desktop-only. */
 		.cal-entry.cal-entry-multiline { white-space: nowrap; overflow: hidden; text-overflow: clip; }
 		.cal-entry-route { display: none; }

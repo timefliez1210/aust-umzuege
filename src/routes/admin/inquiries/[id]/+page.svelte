@@ -21,6 +21,13 @@
 	import CustomerSection from "./_components/CustomerSection.svelte";
 	import DetailsSection from "./_components/DetailsSection.svelte";
 	import { normalizeFlatTotalItem, calculateBruttoCents, bruttoCentsToNetto } from "$lib/utils/pricing";
+	import {
+		classifyKind,
+		restorePricingInputs,
+		restoreCachedLineItems,
+		buildCustomFieldsPatch,
+		shouldCachePricing,
+	} from "$lib/utils/pricingCache";
 	import PhotoEstimationSection from "./_components/PhotoEstimationSection.svelte";
 	import PricingSection from "./_components/PricingSection.svelte";
 	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
@@ -159,7 +166,8 @@
 		is_multi_day?: boolean;
 		has_pauschale?: boolean;
 		appointments?: Appointment[];
-	}
+		custom_fields?: Record<string, any>;
+}
 
 	/** Appointment (Besichtigung or paid Zusatztermin) linked to this inquiry. */
 	interface Appointment {
@@ -317,13 +325,6 @@
 	let editLineItems = $state<EditLineItem[]>([]);
 	let dragIdx = $state<number | null>(null);
 	let dragOverIdx = $state<number | null>(null);
-
-	function classifyKind(label: string): ItemKind {
-		if (label === 'Fahrkostenpauschale') return 'fahrt';
-		if (label === 'Nürnbergerversicherung') return 'insurance';
-		if (label.endsWith('Umzugshelfer')) return 'labor';
-		return 'item';
-	}
 
 	/**
 	 * Constructs a new EditLineItem object with sensible defaults for UI state fields.
@@ -586,7 +587,28 @@
 			priceDirty = false;
 			return;
 		}
+		// No offer yet: restore cached pricing from a prior session (feedback 10d9cc36),
+		// so a page reload or a failed offer generation does not discard the admin's work.
+		const cachedRaw = (data as any).custom_fields?.cached_pricing;
+		const cached = restorePricingInputs(cachedRaw);
+		if (cached) {
+			editPersons = cached.persons;
+			editHours = cached.hours;
+			editRateCents = cached.rateCents;
+			editBruttoCents = cached.bruttoCents;
+			const cachedItems = restoreCachedLineItems(cachedRaw);
+			if (cachedItems.length > 0) {
+				editLineItems = cachedItems.map((li) =>
+					mkLineItem(li.kind, li.label, li.quantity, li.unitPriceCents, li.remark),
+				);
+			} else {
+				computeLineItemsFromNotes();
+			}
+			priceDirty = false;
+			return;
+		}
 
+		// First visit: compute defaults from inquiry data (floor/elevator heuristic).
 		const originFloor = parseFloor(data.origin_address?.floor ?? null);
 		const destFloor = parseFloor(data.destination_address?.floor ?? null);
 		const originElev = data.origin_address?.elevator ?? false;
@@ -687,6 +709,20 @@
 	 */
 	async function persistInquiry() {
 		if (!data) return;
+		// Cache pricing inputs into custom_fields so they survive a page reload
+		// or offer-generation error (feedback 10d9cc36). Only cache when no offer
+		// exists yet — once an offer exists, the offer itself is the source of truth
+		// and the cache is cleared so stale values cannot resurface.
+		const cachePayload = shouldCachePricing(!!data.offer)
+			? {
+					persons: editPersons,
+					hours: editHours,
+					rate_cents: editRateCents,
+					brutto_cents: editBruttoCents,
+					line_items: serializeLineItems(),
+				}
+			: null;
+
 		await apiPatch(`/api/v1/inquiries/${data.id}`, {
 			// Volume, distance and services are locked once an offer exists
 			...(!isLocked && {
@@ -699,10 +735,11 @@
 			start_time: normalizeTimeInput(editStartTime) ?? undefined,
 			end_time: normalizeTimeInput(editEndTime) ?? undefined,
 			has_pauschale: editHasPauschale,
-			custom_fields: {
-				...((data as any).custom_fields ?? {}),
-				offer_headline_override: editHeadlineOverride.trim() || null,
-			},
+			custom_fields: buildCustomFieldsPatch(
+				(data as any).custom_fields,
+				editHeadlineOverride.trim() || null,
+				cachePayload,
+			),
 		});
 	}
 

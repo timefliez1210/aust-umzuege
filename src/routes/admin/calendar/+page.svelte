@@ -4,6 +4,7 @@
 	import { buildCalendar } from '$lib/utils/calendar';
 	import { draggable } from '$lib/utils/draggable';
 	import { formatTime, normalizeTimeInput } from '$lib/utils/format';
+	import { DEFAULT_START_TIME, DEFAULT_END_TIME } from '$lib/utils/time';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
@@ -272,8 +273,8 @@
 	let qtNewCustPhone = $state('');
 	let qtNewCustSalutation = $state('');
 	// Alex's working day starts at 08:00 (feedback report 62702b57).
-	let qtStartTime = $state('08:00');
-	let qtEndTime = $state('');
+	let qtStartTime = $state(DEFAULT_START_TIME);
+	let qtEndTime = $state(DEFAULT_END_TIME);
 
 	// ─── Derived ─────────────────────────────────────────────────────────────────
 
@@ -917,7 +918,7 @@
 		qiDestStreet = ''; qiDestCity = ''; qiDestPostal = '';
 		qiNotes = '';
 		qtTitle = ''; qtCategory = 'intern'; qtLocation = ''; qtDuration = 8;
-		qtStartTime = '08:00'; qtEndTime = '';
+		qtStartTime = DEFAULT_START_TIME; qtEndTime = DEFAULT_END_TIME;
 		qtCustomerMode = 'none'; qtCustomerSearch = ''; qtCustomerResults = []; qtCustomerId = null; qtCustomerLabel = '';
 		qtNewCustEmail = ''; qtNewCustName = ''; qtNewCustPhone = ''; qtNewCustSalutation = '';
 		qaInquirySearch = ''; qaInquiryResults = []; qaInquiryId = null; qaInquiryLabel = '';

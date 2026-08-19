@@ -1,4 +1,19 @@
 /**
+ * The standard Auftragszeit, 08:00–16:30.
+ *
+ * Every form that pre-fills a start/end time for a job, Termin or appointment
+ * must use these rather than its own literal. The backend keeps the same values
+ * as the column DEFAULTs on `inquiries` and `calendar_items` (migration
+ * 20260819000000) — when one side changes, change both.
+ *
+ * Why constants: the previous 09:00–17:00 defaults were spread across four SQL
+ * fallbacks, two migrations and three Svelte pages, so an earlier fix caught
+ * only some of them and appeared to do nothing (feedback be449a19).
+ */
+export const DEFAULT_START_TIME = '08:00';
+export const DEFAULT_END_TIME = '16:30';
+
+/**
  * Tolerant time-input normalization for the worker portal clock fields.
  *
  * Movers type their hours on a phone with a numeric/decimal keypad, so they

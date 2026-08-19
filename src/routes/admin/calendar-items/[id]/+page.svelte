@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, apiPatch, apiDelete, formatDate } from '$lib/utils/api.svelte';
 	import { normalizeTimeInput } from '$lib/utils/format';
+	import { DEFAULT_START_TIME, DEFAULT_END_TIME } from '$lib/utils/time';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { ArrowLeft, Save, Trash2, X } from 'lucide-svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -52,7 +53,7 @@
 	let editDuration = $state('0');
 	let editLocation = $state('');
 	let editDescription = $state('');
-	let editStartTime = $state('09:00');
+	let editStartTime = $state(DEFAULT_START_TIME);
 	let editEndTime = $state('');
 	let editEmployeeNotes = $state('');
 	let editStatus = $state('scheduled');
@@ -94,6 +95,11 @@
 			editDescription = res.description ?? '';
 			editStatus = res.status;
 			editEmployeeNotes = res.employee_notes ?? '';
+			// Without these two the form always showed the initial 09:00 and an empty
+			// end time, so saving any unrelated field (location, status, …) silently
+			// overwrote the Termin's stored times (feedback be449a19).
+			editStartTime = res.start_time ? res.start_time.slice(0, 5) : DEFAULT_START_TIME;
+			editEndTime = res.end_time ? res.end_time.slice(0, 5) : '';
 		} catch {
 			showToast('Termin nicht gefunden', 'error');
 			goto('/admin/calendar-items');

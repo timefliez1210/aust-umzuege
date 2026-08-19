@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
 	import { normalizeTimeInput } from '$lib/utils/format';
+	import { DEFAULT_START_TIME, DEFAULT_END_TIME } from '$lib/utils/time';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { Plus, CalendarCheck } from 'lucide-svelte';
 
@@ -41,8 +42,8 @@
 	let createDuration = $state('0');
 	let createLocation = $state('');
 	let createDescription = $state('');
-	let createStartTime = $state('09:00');
-	let createEndTime = $state('');
+	let createStartTime = $state(DEFAULT_START_TIME);
+	let createEndTime = $state(DEFAULT_END_TIME);
 	let createLoading = $state(false);
 	let createError = $state('');
 
@@ -103,8 +104,8 @@
 			createDuration = '0';
 			createLocation = '';
 			createDescription = '';
-			createStartTime = '09:00';
-			createEndTime = '';
+			createStartTime = DEFAULT_START_TIME;
+			createEndTime = DEFAULT_END_TIME;
 			loadItems(selectedMonth);
 		} catch (e: unknown) {
 			createError = e instanceof Error ? e.message : 'Fehler beim Erstellen';

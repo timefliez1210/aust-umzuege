@@ -1,12 +1,38 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiGet, apiPatch, apiPost, apiPreview } from '$lib/utils/api.svelte';
+	import { apiDownload, apiGet, apiPatch, apiPost, apiPreview } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ReviewRequestModal from '$lib/components/admin/ReviewRequestModal.svelte';
-	import { Check, FileText } from 'lucide-svelte';
-	import { isDraft, yearOf, availableYears, rowsForYear, registerTotals } from '$lib/utils/register';
+	import { ArrowDown, ArrowUp, Check, Download, FileText, Search, X } from 'lucide-svelte';
+	import MonatsUebersicht from '$lib/components/admin/MonatsUebersicht.svelte';
+	import {
+		isDraft,
+		isOverdue,
+		isSettled,
+		yearOf,
+		availableYears,
+		rowsForYear,
+		registerTotals,
+		formatServicePeriod,
+		monthlySummaries,
+		viewRows,
+		registerKpis,
+		hasActiveFilters,
+		NO_FILTERS,
+		MONTH_LABELS,
+		type RegisterFilters,
+		type SortKey,
+		type SortState,
+		type StatusFilter
+	} from '$lib/utils/register';
+	import { parseEuroInput } from '$lib/utils/format';
 
-	const PAYMENT_METHODS = ['Überweisung', 'Bar', 'EC-Karte', 'PayPal'];
+	/**
+	 * Alex's own vocabulary, in his own frequency order — his 2026 book is "EC" 83
+	 * times and "BAR" 3 times, and nothing else. The app used to offer "EC-Karte"
+	 * and "Bar", so not one stored value matched what he reads in his own register.
+	 */
+	const PAYMENT_METHODS = ['EC', 'BAR', 'Überweisung', 'PayPal'];
 
 	interface RechnungsausgangItem {
 		id: string;
@@ -16,6 +42,8 @@
 		invoice_number: string;
 		customer_name: string | null;
 		scheduled_date: string | null;
+		/** Last day of the job; equal to scheduled_date for a single-day move. */
+		end_date: string | null;
 		netto_cents: number | null;
 		mwst_cents: number | null;
 		brutto_cents: number | null;
@@ -24,6 +52,13 @@
 		due_date: string | null;
 		paid_at: string | null;
 		offene_zahlungen_cents: number | null;
+		/**
+		 * True once the invoice is fully settled. Derived by the backend — not the same
+		 * as `paid_at != null`, because a storage invoice can be paid without one.
+		 */
+		is_settled: boolean;
+		/** Recorded Teilzahlung in cents; null when none was entered. */
+		paid_amount_cents: number | null;
 		payment_method: string | null;
 		notes: string | null;
 		/** "full" | "partial_first" | "partial_final" | "lagerung" */
@@ -102,15 +137,106 @@
 	let years = $derived(availableYears(rows));
 
 	/**
-	 * The whole selected year as one chronological list — the register is a running
-	 * ledger, so it is read top to bottom rather than paged month by month.
+	 * The whole selected year as one list in invoice-number order — the register is a
+	 * running ledger, so it is read top to bottom rather than paged month by month,
+	 * and its order is the number sequence, not the date (see `rowsForYear`).
 	 */
 	let yearRows = $derived(rowsForYear(rows, activeYear));
+
+
+	/**
+	 * Today, as YYYY-MM-DD.
+	 *
+	 * Captured once per load rather than per render: "überfällig" must not flip
+	 * mid-session, and a fresh `new Date()` inside a $derived would recompute the
+	 * whole table on every unrelated keystroke.
+	 */
+	let today = $state(new Date().toISOString().substring(0, 10));
+
+	// ── Filter & Sortierung ──────────────────────────────────────────────────
+
+	let filters = $state<RegisterFilters>({ ...NO_FILTERS });
+	/** null = register order (ascending invoice number), the ledger's own order. */
+	let sort = $state<SortState | null>(null);
+
+	let filtered = $derived(viewRows(yearRows, filters, sort, activeYear, today));
+	let filtersActive = $derived(hasActiveFilters(filters));
+	let monthSummaries = $derived(monthlySummaries(yearRows, activeYear));
+	/** KPIs follow the filter, so the tiles answer "in what I am looking at". */
+	let kpis = $derived(registerKpis(filtered, today));
+
+	const STATUS_CHIPS: { key: StatusFilter; label: string }[] = [
+		{ key: 'alle', label: 'Alle' },
+		{ key: 'offen', label: 'Offen' },
+		{ key: 'ueberfaellig', label: 'Überfällig' },
+		{ key: 'bezahlt', label: 'Bezahlt' },
+		{ key: 'entwurf', label: 'Entwürfe' }
+	];
+
+	/**
+	 * Cycles one column through ascending → descending → register order.
+	 *
+	 * The third click matters: a sorted register is a lens, and Alex needs a way back
+	 * to the ledger's own order without hunting for a reset button.
+	 */
+	function toggleSort(key: SortKey) {
+		if (sort?.key !== key) sort = { key, dir: 'asc' };
+		else if (sort.dir === 'asc') sort = { key, dir: 'desc' };
+		else sort = null;
+	}
+
+	/**
+	 * The table's columns, in order.
+	 *
+	 * `sort` names the key a header sorts by; a column without one is not sortable
+	 * (Typ and Bemerkungen are labels and free text — ordering by them tells nobody
+	 * anything). Labels carry entities because they are rendered with `@html`.
+	 */
+	const COLUMNS: { label: string; sort?: SortKey; num?: boolean }[] = [
+		{ label: 'Rg-Nr.', sort: 'number' },
+		{ label: 'Typ' },
+		{ label: 'Leistungszeitraum', sort: 'service' },
+		{ label: 'Kunde', sort: 'customer' },
+		{ label: 'Netto', sort: 'netto', num: true },
+		{ label: 'MWST', sort: 'mwst', num: true },
+		{ label: 'Brutto', sort: 'brutto', num: true },
+		{ label: 'Rechnungsdatum', sort: 'sent' },
+		{ label: 'F&auml;llig' },
+		{ label: 'Bezahlt', sort: 'paid' },
+		{ label: 'Offen', sort: 'offen', num: true },
+		{ label: 'Zahlungsart' },
+		{ label: 'Bem.' }
+	];
+
+	function resetFilters() {
+		filters = { ...NO_FILTERS };
+	}
+
+	function selectMonth(month: number | null) {
+		filters = { ...filters, month };
+	}
+
+	/**
+	 * Switches the register to another year.
+	 *
+	 * Clears the filters and the sort on the way: a month or a search carried across
+	 * a year boundary silently shows a different slice than the one the chips claim,
+	 * and the register is the wrong place to be surprised.
+	 */
+	function selectYear(year: string) {
+		activeYear = year;
+		filters = { ...NO_FILTERS };
+		sort = null;
+	}
 
 	// Year totals — these used to sum EVERY loaded row regardless of year despite
 	// being labelled "Gesamtsumme (Jahr)" (feedback report 12e2d18f). Scoping and
 	// the draft exclusion live in $lib/utils/register so they stay under test.
-	let totals = $derived(registerTotals(yearRows));
+	//
+	// Deliberately computed from the FILTERED rows: a footer that kept showing the
+	// whole year while the table showed one month would be the same bug in a new
+	// place. The year figure stays available in the Monatsübersicht below.
+	let totals = $derived(registerTotals(filtered));
 	let totalNetto = $derived(totals.netto);
 	let totalMwst = $derived(totals.mwst);
 	let totalBrutto = $derived(totals.brutto);
@@ -165,6 +291,147 @@
 		}
 	}
 
+	// ── Bemerkungen ──────────────────────────────────────────────────────────
+
+	/**
+	 * Saves a row's Bemerkung on blur.
+	 *
+	 * Called by: template (Bemerkungen cell).
+	 * Purpose: Bemerkungen is the column Alex actually works in — "19.08.26 erinnert
+	 *          per mail", "verrechnung mit RG 12 … 1432,-". It was read-only, which
+	 *          made the page a report rather than a ledger.
+	 *
+	 * Saves only when the text actually changed, so tabbing through the table doesn't
+	 * fire a request per row.
+	 */
+	async function saveNotes(item: RechnungsausgangItem, value: string) {
+		const next = value.trim() === '' ? null : value;
+		if (next === item.notes) return;
+		const prev = item.notes;
+		item.notes = next;
+		try {
+			await apiPatch(`/api/v1/admin/rechnungsausgangsbuch/${item.id}/notes`, { notes: next });
+		} catch (e: any) {
+			item.notes = prev;
+			showToast(e?.message || 'Bemerkung konnte nicht gespeichert werden', 'error');
+		}
+	}
+
+	// ── Teilzahlung ──────────────────────────────────────────────────────────
+
+	/** Row whose Offen cell is currently open for editing. */
+	let editingOffenId = $state<string | null>(null);
+	/** Raw text in that cell while it is being typed. */
+	let offenDraft = $state('');
+
+	/** The stored Teilzahlung as the text the cell shows while editing. */
+	function offenText(item: RechnungsausgangItem): string {
+		if (item.paid_amount_cents == null) return '';
+		return (item.paid_amount_cents / 100).toLocaleString('de-DE', {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2
+		});
+	}
+
+	function startOffenEdit(item: RechnungsausgangItem) {
+		editingOffenId = item.id;
+		offenDraft = offenText(item);
+	}
+
+	/**
+	 * Abandons the edit without saving.
+	 *
+	 * Resets the draft to the stored value *before* closing the cell: removing the
+	 * input can still fire its blur handler, and `saveTeilzahlung` then sees no change
+	 * and does nothing — otherwise Escape would save the very text it is discarding.
+	 */
+	function cancelOffenEdit(item: RechnungsausgangItem) {
+		offenDraft = offenText(item);
+		editingOffenId = null;
+	}
+
+	/**
+	 * Records how much of an invoice has been received.
+	 *
+	 * Called by: template (Offen cell editor).
+	 * Purpose: A customer paying 1.300 € of a 1.372,49 € invoice was untrackable —
+	 *          the register knew only paid or open, so the remainder lived in the
+	 *          Bemerkung as free text and never reached the totals.
+	 *
+	 * Does not book the invoice as paid: a part-paid invoice is still an open
+	 * receivable and stays in the Offen column and the dunning list. Clearing the
+	 * field removes the Teilzahlung again.
+	 */
+	async function saveTeilzahlung(item: RechnungsausgangItem) {
+		const paid_amount_cents = parseEuroInput(offenDraft);
+		editingOffenId = null;
+
+		if (offenDraft.trim() !== '' && paid_amount_cents == null) {
+			showToast('Betrag konnte nicht gelesen werden', 'error');
+			return;
+		}
+		if (paid_amount_cents != null && paid_amount_cents < 0) {
+			showToast('Teilzahlung darf nicht negativ sein', 'error');
+			return;
+		}
+		if (paid_amount_cents === item.paid_amount_cents) return;
+
+		const prevPaid = item.paid_amount_cents;
+		const prevOffen = item.offene_zahlungen_cents;
+		item.paid_amount_cents = paid_amount_cents;
+		item.offene_zahlungen_cents = openAmount(item);
+		try {
+			await apiPatch(`/api/v1/admin/rechnungsausgangsbuch/${item.id}/paid-amount`, {
+				paid_amount_cents
+			});
+		} catch (e: any) {
+			item.paid_amount_cents = prevPaid;
+			item.offene_zahlungen_cents = prevOffen;
+			showToast(e?.message || 'Teilzahlung konnte nicht gespeichert werden', 'error');
+		}
+	}
+
+	/**
+	 * What is still outstanding on a row, in cents — the same three-state rule the
+	 * backend applies, repeated here so the cell updates without a refetch.
+	 *
+	 * Settled beats everything; then a Teilzahlung leaves the remainder (never
+	 * negative — an overpayment reads as 0 and is settled with a Gutschrift row);
+	 * otherwise the full Brutto. `null` Brutto stays `null`: a row whose amount we
+	 * cannot compute must not claim 0,00 € open.
+	 */
+	function openAmount(item: RechnungsausgangItem): number | null {
+		if (item.is_settled) return 0;
+		if (item.brutto_cents == null) return null;
+		if (item.paid_amount_cents == null) return item.brutto_cents;
+		return Math.max(0, item.brutto_cents - item.paid_amount_cents);
+	}
+
+	// ── Export ───────────────────────────────────────────────────────────────
+
+	/**
+	 * Downloads the selected year as .xlsx.
+	 *
+	 * Called by: template (Als Excel exportieren).
+	 * Purpose: The register is what Alex hands to the Steuerberater, who has always
+	 *          received a spreadsheet. Without an export the app couldn't replace it.
+	 */
+	let exporting = $state(false);
+
+	async function exportYear() {
+		exporting = true;
+		try {
+			await apiDownload(
+				`/api/v1/admin/rechnungsausgangsbuch/export?year=${activeYear}`,
+				`Rechnungsausgangsbuch_${activeYear}.xlsx`
+			);
+		} catch (e: any) {
+			showToast(e?.message || 'Export fehlgeschlagen', 'error');
+		} finally {
+			exporting = false;
+		}
+	}
+
 	// ── Bezahlt ──────────────────────────────────────────────────────────────
 
 	/** Invoice id currently being booked — disables just that row's button. */
@@ -184,7 +451,12 @@
 			// Patch the row in place rather than refetching the whole register — a
 			// reload would reset the year selection and lose the scroll position.
 			item.paid_at = outcome.paid_at;
+			item.is_settled = true;
 			item.offene_zahlungen_cents = 0;
+			// The backend stamps EC when no Zahlungsart was chosen — every row in Alex's
+			// book carries one, and 83 of 86 are EC. Mirror it so the cell doesn't stay
+			// on "—" until the next reload.
+			item.payment_method = item.payment_method || 'EC';
 			showToast(`Rechnung ${item.invoice_number} als bezahlt gebucht`, 'success');
 
 			// Only for a fully settled Umzug whose review question is still open.
@@ -206,8 +478,18 @@
 	<div class="page-header">
 		<h1>Rechnungsausgangsbuch</h1>
 		<span class="page-count">
-			{loading ? rows.length : yearRows.length} Eintr&auml;ge{loading ? '' : ` ${activeYear}`}
+			{loading ? rows.length : filtered.length} Eintr&auml;ge{loading
+				? ''
+				: filtersActive
+					? ` von ${yearRows.length} (${activeYear})`
+					: ` ${activeYear}`}
 		</span>
+		{#if !loading && !error && yearRows.length > 0}
+			<button type="button" class="export-btn" onclick={exportYear} disabled={exporting}>
+				<Download size={14} />
+				{exporting ? 'Export läuft…' : 'Als Excel exportieren'}
+			</button>
+		{/if}
 	</div>
 
 	{#if loading}
@@ -224,39 +506,146 @@
 					type="button"
 					class="year-btn"
 					class:active={y === activeYear}
-					onclick={() => (activeYear = y)}
+					onclick={() => selectYear(y)}
 				>
 					{y}
 				</button>
 			{/each}
 		</div>
 
+		<!-- Headline figures. These follow the filter, so they always describe what
+		     is on screen rather than a year the reader isn't looking at. -->
+		<div class="kpis">
+			<div class="kpi">
+				<span class="kpi-label">Umsatz netto</span>
+				<span class="kpi-value">{fmtEur(kpis.umsatzNetto)}</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">Umsatzsteuer</span>
+				<span class="kpi-value">{fmtEur(kpis.umsatzsteuer)}</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">Offen</span>
+				<span class="kpi-value" class:warn={kpis.offen > 0}>{fmtEur(kpis.offen)}</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">
+					&Uuml;berf&auml;llig{kpis.ueberfaelligCount ? ` (${kpis.ueberfaelligCount})` : ''}
+				</span>
+				<span class="kpi-value" class:danger={kpis.ueberfaellig > 0}>
+					{fmtEur(kpis.ueberfaellig)}
+				</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">&empty; Zahlungsdauer</span>
+				<span class="kpi-value">
+					{kpis.zahlungsdauerTage == null ? '\u2014' : `${kpis.zahlungsdauerTage} Tage`}
+				</span>
+			</div>
+		</div>
+
+		<MonatsUebersicht months={monthSummaries} selected={filters.month} onSelect={selectMonth} />
+
+		<!-- Filters, one row above the table. -->
+		<div class="filter-bar">
+			<div class="chips">
+				{#each STATUS_CHIPS as chip}
+					<button
+						type="button"
+						class="chip"
+						class:active={filters.status === chip.key}
+						onclick={() => (filters = { ...filters, status: chip.key })}
+					>
+						{chip.label}
+					</button>
+				{/each}
+			</div>
+
+			<div class="chips months">
+				<button
+					type="button"
+					class="chip"
+					class:active={filters.month == null}
+					onclick={() => selectMonth(null)}
+				>
+					Jahr
+				</button>
+				{#each MONTH_LABELS as label, i}
+					<button
+						type="button"
+						class="chip"
+						class:active={filters.month === i + 1}
+						disabled={monthSummaries[i].count === 0}
+						onclick={() => selectMonth(i + 1)}
+					>
+						{label}
+					</button>
+				{/each}
+			</div>
+
+			<div class="search">
+				<Search size={14} />
+				<input
+					type="search"
+					placeholder="Kunde oder Rg.-Nr."
+					value={filters.search}
+					oninput={(e) => (filters = { ...filters, search: e.currentTarget.value })}
+				/>
+			</div>
+
+			{#if filtersActive}
+				<button type="button" class="chip reset" onclick={resetFilters}>
+					<X size={13} /> Filter zur&uuml;cksetzen
+				</button>
+			{/if}
+		</div>
+
 		<!-- Full year, one chronological list -->
-		{#if yearRows.length === 0}
-			<div class="empty">Keine Rechnungen im Jahr {activeYear}.</div>
+		{#if filtered.length === 0}
+			<div class="empty">
+				{filtersActive
+					? 'Keine Rechnungen für diese Auswahl.'
+					: `Keine Rechnungen im Jahr ${activeYear}.`}
+			</div>
 		{:else}
 			<div class="table-wrapper">
 				<table>
 					<thead>
 						<tr>
-							<th>Rg-Nr.</th>
-							<th>Typ</th>
-							<th>Leistungsdatum</th>
-							<th>Kunde</th>
-							<th class="num">Netto</th>
-							<th class="num">MWST</th>
-							<th class="num">Brutto</th>
-							<th>Rechnungsdatum</th>
-							<th>F&auml;llig</th>
-							<th>Bezahlt</th>
-							<th class="num">Offen</th>
-							<th>Zahlungsart</th>
-							<th>Bem.</th>
+							{#each COLUMNS as col}
+								{#if col.sort != null}
+									{@const sortKey = col.sort}
+									<th class:num={col.num}>
+										<button
+											type="button"
+											class="sort-btn"
+											class:sorted={sort?.key === sortKey}
+											onclick={() => toggleSort(sortKey)}
+											title="Sortieren — dritter Klick stellt die Registerreihenfolge wieder her"
+										>
+											<span>{@html col.label}</span>
+											{#if sort?.key === sortKey}
+												{#if sort.dir === 'asc'}
+													<ArrowUp size={11} />
+												{:else}
+													<ArrowDown size={11} />
+												{/if}
+											{/if}
+										</button>
+									</th>
+								{:else}
+									<th class:num={col.num}>{@html col.label}</th>
+								{/if}
+							{/each}
 						</tr>
 					</thead>
 					<tbody>
-						{#each yearRows as item}
-							<tr class:paid={item.paid_at != null} class:draft={isDraft(item)}>
+						{#each filtered as item}
+							<tr
+								class:paid={isSettled(item)}
+								class:draft={isDraft(item)}
+								class:overdue={isOverdue(item, today)}
+							>
 								<td class="mono">
 									{#if item.pdf_s3_key && (item.inquiry_id || item.kind === 'lagerung')}
 										<button
@@ -278,7 +667,7 @@
 										<span class="draft-badge" title="Noch nicht versendet \u2014 Nummer ist reserviert">Entwurf</span>
 									{/if}
 								</td>
-								<td>{fmtDate(item.scheduled_date)}</td>
+								<td>{formatServicePeriod(item.scheduled_date, item.end_date)}</td>
 								<td>
 									{#if item.inquiry_id}
 										<a class="row-link" href="/admin/inquiries/{item.inquiry_id}">
@@ -313,7 +702,42 @@
 										</button>
 									{/if}
 								</td>
-								<td class="num offen">{fmtEur(item.offene_zahlungen_cents)}</td>
+								<td class="num offen">
+									{#if editingOffenId === item.id}
+										<!-- svelte-ignore a11y_autofocus -->
+										<input
+											class="offen-input"
+											type="text"
+											inputmode="decimal"
+											autofocus
+											bind:value={offenDraft}
+											onblur={() => saveTeilzahlung(item)}
+											onkeydown={(e) => {
+												if (e.key === 'Enter') e.currentTarget.blur();
+												if (e.key === 'Escape') cancelOffenEdit(item);
+											}}
+											placeholder="Teilzahlung"
+											title="Erhaltenen Teilbetrag eintragen — leeren, um ihn zu entfernen"
+										/>
+									{:else if item.is_settled}
+										<!-- Alex's Offene-Zahlungen column says the word he scans for, not 0,00 €. -->
+										<span class="settled">Bezahlt</span>
+									{:else}
+										<button
+											type="button"
+											class="offen-btn"
+											onclick={() => startOffenEdit(item)}
+											title="Teilzahlung erfassen"
+										>
+											{fmtEur(item.offene_zahlungen_cents)}
+										</button>
+										{#if item.paid_amount_cents != null}
+											<span class="teilzahlung" title="Bereits erhalten">
+												davon {fmtEur(item.paid_amount_cents)} erhalten
+											</span>
+										{/if}
+									{/if}
+								</td>
 								<td>
 									<select
 										class="payment-method-select"
@@ -326,13 +750,28 @@
 										{/each}
 									</select>
 								</td>
-								<td class="notes-cell">{item.notes || ''}</td>
+								<td class="notes-cell">
+									<input
+										class="notes-input"
+										type="text"
+										value={item.notes ?? ''}
+										onblur={(e) => saveNotes(item, e.currentTarget.value)}
+										onkeydown={(e) => {
+											if (e.key === 'Enter') e.currentTarget.blur();
+											if (e.key === 'Escape') {
+												e.currentTarget.value = item.notes ?? '';
+												e.currentTarget.blur();
+											}
+										}}
+										placeholder="Bemerkung"
+									/>
+								</td>
 							</tr>
 						{/each}
 					</tbody>
 					<tfoot>
 						<tr>
-							<th colspan="4">Summe {activeYear}</th>
+							<th colspan="4">{filtersActive ? 'Summe Auswahl' : `Summe ${activeYear}`}</th>
 							<th class="num">{fmtEur(totalNetto)}</th>
 							<th class="num">{fmtEur(totalMwst)}</th>
 							<th class="num">{fmtEur(totalBrutto)}</th>
@@ -354,7 +793,9 @@
 
 		<!-- Year grand total -->
 		<div class="grand-total">
-			<span class="grand-total__label">Gesamtsumme {activeYear}</span>
+			<span class="grand-total__label">
+				{filtersActive ? 'Summe der Auswahl' : `Gesamtsumme ${activeYear}`}
+			</span>
 			<span class="num" data-label="Netto">{fmtEur(totalNetto)}</span>
 			<span class="num" data-label="MWST">{fmtEur(totalMwst)}</span>
 			<span class="num" data-label="Brutto">{fmtEur(totalBrutto)}</span>
@@ -418,6 +859,63 @@
 		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
 	}
 
+	/* ── KPI row ─────────────────────────────────── */
+	.kpis {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: var(--dt-space-3);
+		margin-bottom: var(--dt-space-4);
+	}
+	.kpi {
+		display: flex; flex-direction: column; gap: 0.15rem;
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg);
+		padding: var(--dt-space-4) var(--dt-space-5);
+	}
+	.kpi-label {
+		font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;
+		color: var(--dt-on-surface-variant);
+	}
+	.kpi-value {
+		font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums;
+		color: var(--dt-on-surface);
+	}
+	.kpi-value.warn { color: var(--dt-secondary); }
+	.kpi-value.danger { color: var(--dt-error-text, #b3261e); }
+
+	/* ── filter bar ──────────────────────────────── */
+	.filter-bar {
+		display: flex; flex-wrap: wrap; align-items: center;
+		gap: var(--dt-space-3); margin-bottom: var(--dt-space-3);
+	}
+	.chips { display: flex; flex-wrap: wrap; gap: var(--dt-space-1, 0.25rem); }
+	.chips.months { gap: 2px; }
+	.chip {
+		display: inline-flex; align-items: center; gap: 0.25rem;
+		padding: 0.3rem 0.7rem; border-radius: var(--dt-radius-md);
+		border: var(--dt-ghost-border); background: var(--dt-surface-container-lowest);
+		color: var(--dt-on-surface-variant);
+		font-size: 0.75rem; font-weight: 600; cursor: pointer;
+		transition: background var(--dt-transition);
+	}
+	.chip:hover:not(:disabled) { background: var(--dt-surface-container-high); }
+	.chip.active {
+		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
+	}
+	.chip:disabled { opacity: 0.35; cursor: default; }
+	.chip.reset { margin-left: auto; }
+
+	.search {
+		display: inline-flex; align-items: center; gap: 0.35rem;
+		padding: 0.3rem 0.6rem; border-radius: var(--dt-radius-md);
+		border: var(--dt-ghost-border); background: var(--dt-surface-container-lowest);
+		color: var(--dt-on-surface-variant);
+	}
+	.search input {
+		border: none; background: none; outline: none; font: inherit;
+		font-size: 0.8125rem; color: var(--dt-on-surface); width: 15ch;
+	}
+
 	/* ── table ───────────────────────────────────── */
 	.table-wrapper {
 		background: var(--dt-surface-container-lowest); border-radius: var(--dt-radius-lg);
@@ -448,6 +946,21 @@
 	tbody tr.paid td.offen { color: var(--admin-success); }
 
 	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
+
+	/* Sortable headers. The affordance stays quiet until hovered — the register is
+	 * read far more often than it is re-sorted. */
+	.sort-btn {
+		display: inline-flex; align-items: center; gap: 0.2rem;
+		padding: 0; border: none; background: none; cursor: pointer;
+		font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit;
+	}
+	.sort-btn:hover { color: var(--dt-on-surface); }
+	.sort-btn.sorted { color: var(--dt-primary); font-weight: 700; }
+	th.num .sort-btn { flex-direction: row-reverse; }
+
+	/* Issued, unpaid, past its Fälligkeit — the rows Alex is chasing. */
+	tbody tr.overdue td.offen { color: var(--dt-error-text, #b3261e); }
+	tbody tr.overdue td.mono { box-shadow: inset 3px 0 0 var(--dt-error-text, #b3261e); }
 
 	/* ── row links ─────────────────────────────────── */
 	.link-btn {
@@ -490,7 +1003,50 @@
 		border: var(--dt-ghost-border); border-radius: var(--dt-radius-sm);
 		padding: 2px 4px; font-size: 0.8125rem; cursor: pointer;
 	}
-	.notes-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+	.notes-cell { max-width: 240px; }
+
+	/* Bemerkungen and Teilzahlung are cell editors, not form fields: chromeless
+	 * until focused, so the table still reads as a ledger rather than a form. */
+	.notes-input, .offen-input {
+		width: 100%; padding: 2px 4px;
+		border: 1px solid transparent; border-radius: var(--dt-radius-sm);
+		background: transparent; color: var(--dt-on-surface);
+		font: inherit;
+	}
+	.notes-input:hover, .offen-input:hover { border-color: var(--dt-outline-variant); }
+	.notes-input:focus, .offen-input:focus {
+		outline: none; border-color: var(--dt-primary);
+		background: var(--dt-surface-container-lowest);
+	}
+	.notes-input::placeholder, .offen-input::placeholder {
+		color: var(--dt-on-surface-variant); opacity: 0.6;
+	}
+	.offen-input { text-align: right; font-variant-numeric: tabular-nums; }
+
+	/* The open amount doubles as the Teilzahlung trigger — styled as text, not a
+	 * button, so the column still reads as a column of numbers. */
+	.offen-btn {
+		padding: 0; border: none; background: none; cursor: text;
+		font: inherit; color: inherit; text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.offen-btn:hover { text-decoration: underline dotted; }
+	.settled { color: var(--admin-success, #2e7d32); font-weight: 600; }
+	.teilzahlung {
+		display: block; font-size: 0.6875rem; font-weight: 400;
+		color: var(--dt-on-surface-variant); white-space: nowrap;
+	}
+
+	.export-btn {
+		display: inline-flex; align-items: center; gap: 0.35rem;
+		margin-left: auto; padding: 0.35rem 0.75rem;
+		border: var(--dt-ghost-border); border-radius: var(--dt-radius-md);
+		background: var(--dt-surface-container-low); color: var(--dt-on-surface-variant);
+		font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+		transition: background var(--dt-transition);
+	}
+	.export-btn:hover:not(:disabled) { background: var(--dt-surface-container-high); }
+	.export-btn:disabled { opacity: 0.5; cursor: default; }
 
 	tfoot { background: var(--dt-surface-container-high); }
 	tfoot th {
@@ -528,9 +1084,18 @@
 		}
 
 		.paid-btn,
-		.payment-method-select {
+		.payment-method-select,
+		.export-btn,
+		.notes-input,
+		.offen-input {
 			min-height: 44px;
 		}
+
+		.chip, .search { min-height: 36px; }
+		.search input { width: 100%; }
+		.search { flex: 1; }
+		.chip.reset { margin-left: 0; }
+		.kpis { grid-template-columns: repeat(2, 1fr); }
 
 		/* Fixed 5-column grid (label + 4×120px) overflows narrow viewports —
 		 * switch to a wrapping flex list with inline labels instead. */

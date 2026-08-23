@@ -107,3 +107,31 @@ export function normalizeTimeInput(value: string | null): string | null {
 	if (/^\d{1,2}$/.test(v)) return v.padStart(2, '0') + ':00:00';
 	return v;
 }
+
+/**
+ * Parses a German-typed euro amount into cents.
+ *
+ * Called by: admin/rechnungsausgangsbuch/+page.svelte (Teilzahlung cell)
+ * Purpose: Alex types amounts the way he writes them in his book — "1.300,50",
+ *          "1300,5", "1300.50", sometimes with a trailing "€". All of those mean
+ *          the same number, and a register that rejects three of the four forms
+ *          would be slower than the spreadsheet it replaces.
+ *
+ * A dot is a thousands separator only when a comma is also present ("1.300,50");
+ * on its own it is a decimal point ("1300.50"), because that is what a keyboard
+ * numpad produces. Cents are rounded, never truncated.
+ *
+ * @param value - Raw input text
+ * @returns Amount in cents, or null when the input is empty or not a number
+ */
+export function parseEuroInput(value: string): number | null {
+	let text = (value ?? '').replace(/[€\s ]/g, '').trim();
+	if (text === '') return null;
+
+	if (text.includes(',')) {
+		text = text.replace(/\./g, '').replace(',', '.');
+	}
+	const amount = Number(text);
+	if (!Number.isFinite(amount)) return null;
+	return Math.round(amount * 100);
+}

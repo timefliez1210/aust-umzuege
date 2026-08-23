@@ -22,7 +22,7 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 | `/admin/employees/[id]` | Employee detail |
 | `/admin/calendar-items` | Calendar item list |
 | `/admin/calendar-items/[id]` | Calendar item detail |
-| `/admin/rechnungsausgangsbuch` | Invoice register — per-year, per-month, links to invoice PDF |
+| `/admin/rechnungsausgangsbuch` | Invoice register — one year per tab in invoice-number order; KPI row, Monatsübersicht (chart + per-month figures), month/status/search filters, sortable columns, editable Bemerkungen/Teilzahlung/Zahlungsart, XLSX export (register + Monatsübersicht sheets), links to invoice PDF |
 | `/admin/kva-buch` | KVA register — same shape as the invoice register, over `offers` |
 | `/admin/settings` | User management |
 

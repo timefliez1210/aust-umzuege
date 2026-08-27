@@ -20,6 +20,8 @@
 		Warehouse
 	} from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { apiGet } from '$lib/utils/api.svelte';
+	import { onDestroy } from 'svelte';
 
 	let {
 		collapsed,
@@ -32,6 +34,35 @@
 		mobileOpen?: boolean;
 		onMobileClose?: () => void;
 	} = $props();
+
+	/** Unread inbound mail, shown as a badge on the E-Mails link. */
+	let unreadEmails = $state(0);
+
+	/**
+	 * Polls the mailbox badge count.
+	 *
+	 * Called by: $effect (mount) and its own interval.
+	 * Purpose: Nothing in the dashboard indicated that mail had arrived — Alex had to
+	 *          open the E-Mails tab to find out. A minute is deliberately slack: this
+	 *          is an ambient hint, and the Telegram reminder is what actually chases
+	 *          an unanswered mail. Failures are swallowed so a blip cannot break the
+	 *          navigation.
+	 */
+	async function loadUnreadEmails() {
+		try {
+			const res = await apiGet<{ unread_messages: number }>('/api/v1/admin/emails/unread');
+			unreadEmails = res.unread_messages;
+		} catch {
+			// Ambient badge — a failed poll should leave the last known count alone.
+		}
+	}
+
+	$effect(() => {
+		loadUnreadEmails();
+	});
+
+	const badgePoll = setInterval(loadUnreadEmails, 60_000);
+	onDestroy(() => clearInterval(badgePoll));
 
 	const links = [
 		{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -85,10 +116,18 @@
 	<nav class="sidebar-nav">
 		{#each links as link}
 			{@const active = isActive(link.href, $page.url.pathname)}
+			{@const badge = link.href === '/admin/emails' ? unreadEmails : 0}
 			<a href={link.href} class="sidebar-link" class:active aria-current={active ? 'page' : undefined}>
 				<link.icon size={20} />
 				{#if !collapsed}
 					<span>{link.label}</span>
+				{/if}
+				{#if badge > 0}
+					<span
+						class="nav-badge"
+						class:collapsed
+						aria-label="{badge} ungelesene E-Mails"
+					>{badge > 99 ? '99+' : badge}</span>
 				{/if}
 			</a>
 		{/each}
@@ -105,6 +144,27 @@
 </aside>
 
 <style>
+	.nav-badge {
+		margin-left: auto;
+		min-width: 1.25rem;
+		padding: 0 0.35rem;
+		border-radius: 999px;
+		background: var(--dt-primary, #1b6ca8);
+		color: #fff;
+		font-size: 0.7rem;
+		font-weight: 600;
+		line-height: 1.25rem;
+		text-align: center;
+	}
+
+	/* Collapsed rail: the label is gone, so the count rides on the icon instead. */
+	.nav-badge.collapsed {
+		position: absolute;
+		top: 0.25rem;
+		right: 0.25rem;
+		margin-left: 0;
+	}
+
 	.sidebar {
 		width: 240px;
 		min-height: 100vh;
@@ -168,6 +228,8 @@
 
 	.sidebar-link {
 		display: flex;
+		/* Anchors .nav-badge.collapsed, which sits on the icon when the rail is narrow. */
+		position: relative;
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.625rem 0.75rem;

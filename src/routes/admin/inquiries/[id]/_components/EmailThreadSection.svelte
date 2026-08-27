@@ -285,7 +285,9 @@
 					</button>
 				{/if}
 				<div class="email-conversation">
-					{#each messages as msg}
+					<!-- Newest first, matching the mailbox view: the mail that needs an
+					     answer is the last one in, not the first. -->
+					{#each [...messages].reverse() as msg}
 						<div
 							class="email-msg"
 							class:email-msg--inbound={msg.direction ===

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { apiGet, apiPost, apiPatch, apiPreview, formatDateTime } from '$lib/utils/api.svelte';
-	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save, Paperclip, FilePlus } from 'lucide-svelte';
+	import { ArrowLeft, ExternalLink, Send, X, Pencil, Save, Paperclip, FilePlus, Check, Bell, BellOff, Code, FileText } from 'lucide-svelte';
 	import CreateInquiryFromEmailModal from './_components/CreateInquiryFromEmailModal.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -11,17 +11,25 @@
 		direction: string;
 		from_address: string;
 		to_address: string;
+		cc_addresses: string[];
 		subject: string | null;
 		body_text: string | null;
+		/** Sanitised server-side; safe to render. Null when the mail was plain text. */
+		body_html: string | null;
 		llm_generated: boolean;
 		status: string;
+		read_at: string | null;
+		handled_at: string | null;
 		attachment_keys: string[];
+		/** Positionally paired with attachment_keys; empty for older rows. */
+		attachment_names: string[];
 		created_at: string;
 	}
 
 	interface EmailThread {
 		id: string;
-		customer_id: string;
+		customer_id: string | null;
+		muted: boolean;
 		customer_email: string;
 		customer_name: string | null;
 		inquiry_id: string | null;
@@ -33,6 +41,16 @@
 	interface ThreadResponse {
 		thread: EmailThread;
 		messages: EmailMessage[];
+	}
+
+	/** A KVA or Rechnung already generated for this customer, ready to hang on a draft. */
+	interface ThreadDocument {
+		kind: 'offer' | 'invoice';
+		id: string;
+		label: string;
+		filename: string;
+		created_at: string;
+		attached: boolean;
 	}
 
 	let data = $state<ThreadResponse | null>(null);
@@ -64,7 +82,172 @@
 	let showReply = $state(false);
 	let replySubject = $state('');
 	let replyBody = $state('');
+	let replyCc = $state('');
+	let replyBcc = $state('');
 	let replying = $state(false);
+
+	/** Message ids the admin has switched from the HTML rendering back to plain text. */
+	let plainTextOverride = $state<Record<string, boolean>>({});
+	let uploadingFor = $state<string | null>(null);
+
+	// Document picker (KVA / Rechnung) state — scoped to the draft it was opened on.
+	let docPickerFor = $state<string | null>(null);
+	let documents = $state<ThreadDocument[]>([]);
+	let documentsLoading = $state(false);
+	let attachingDoc = $state<string | null>(null);
+
+	/**
+	 * The conversation newest-first.
+	 *
+	 * Called by: Template (message list)
+	 * Purpose: the API returns the thread oldest-first, which buried the mail that
+	 *          actually needs answering under months of history. `data.messages` keeps
+	 *          its server order — everything reading it positionally (latestInboundBody,
+	 *          attachment indices) still lines up with the backend.
+	 */
+	let orderedMessages = $derived([...(data?.messages ?? [])].reverse());
+
+	/**
+	 * Splits a comma- or semicolon-separated recipient string into addresses.
+	 *
+	 * Called by: saveReply
+	 * Purpose: The CC/BCC inputs accept whatever the admin pastes. The backend names
+	 *          the offending address if one does not parse, so this only tidies.
+	 */
+	function parseAddressList(raw: string): string[] {
+		return raw
+			.split(/[,;]/)
+			.map((a) => a.trim())
+			.filter((a) => a.length > 0);
+	}
+
+	/**
+	 * Display name for one attachment.
+	 *
+	 * Called by: Template (attachment list)
+	 * Purpose: `attachment_names` is empty for messages stored before the sender's
+	 *          filename was kept, where the key's basename is "{idx}.{ext}" — better
+	 *          than nothing, and exactly what the download route serves.
+	 */
+	function attachmentLabel(msg: EmailMessage, i: number): string {
+		return msg.attachment_names[i] || msg.attachment_keys[i]?.split('/').pop() || `Anhang ${i + 1}`;
+	}
+
+	/**
+	 * Ticks an inbound message off, or puts it back on the list.
+	 *
+	 * Called by: Template ("Erledigt" toggle on an inbound message)
+	 * Purpose: `handled_at` is what the Telegram reminder reconciles against, so this
+	 *          is the switch that silences a nag — deliberately separate from having
+	 *          merely read the mail.
+	 */
+	async function toggleHandled(msg: EmailMessage) {
+		const handled = msg.handled_at === null;
+		try {
+			await apiPatch(`/api/v1/admin/emails/messages/${msg.id}/handled`, { handled });
+			showToast(handled ? 'Als erledigt markiert' : 'Wieder als offen markiert', 'success');
+			await loadThread();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	/**
+	 * Mutes or unmutes reminders for this thread.
+	 *
+	 * Called by: Template (header "Stummschalten" button)
+	 * Purpose: Lets an automated or newsletter thread stop nagging without claiming
+	 *          its mail was answered.
+	 */
+	async function toggleMuted() {
+		if (!data) return;
+		const muted = !data.thread.muted;
+		try {
+			await apiPatch(`/api/v1/admin/emails/${$page.params.id}/mute`, { muted });
+			showToast(muted ? 'Erinnerungen stummgeschaltet' : 'Erinnerungen wieder aktiv', 'success');
+			await loadThread();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	}
+
+	/**
+	 * Opens (or closes) the KVA/Rechnung picker for a draft and loads what is available.
+	 *
+	 * Called by: Template ("KVA / Rechnung" button on a draft)
+	 * Purpose: the list is fetched per draft rather than with the thread, so it reflects
+	 *          documents generated while the composer was already open, and so each entry
+	 *          knows whether it is on *this* draft already.
+	 */
+	async function toggleDocPicker(msgId: string) {
+		if (docPickerFor === msgId) {
+			docPickerFor = null;
+			return;
+		}
+		docPickerFor = msgId;
+		documents = [];
+		documentsLoading = true;
+		try {
+			documents = await apiGet<ThreadDocument[]>(
+				`/api/v1/admin/emails/${$page.params.id}/documents?message=${msgId}`
+			);
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+			docPickerFor = null;
+		} finally {
+			documentsLoading = false;
+		}
+	}
+
+	/**
+	 * Hangs an already-generated KVA or Rechnung on a draft.
+	 *
+	 * Called by: Template (document picker entry)
+	 * Purpose: attaching the offer or the invoice used to mean downloading the PDF from
+	 *          the dashboard and uploading it straight back through the file picker.
+	 *          The backend attaches the stored file by reference, so nothing is copied.
+	 */
+	async function attachDocument(msgId: string, doc: ThreadDocument) {
+		attachingDoc = `${doc.kind}:${doc.id}`;
+		try {
+			await apiPost(`/api/v1/admin/emails/messages/${msgId}/attachments/document`, {
+				kind: doc.kind,
+				id: doc.id,
+			});
+			showToast(`${doc.filename} angehängt`, 'success');
+			docPickerFor = null;
+			await loadThread();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			attachingDoc = null;
+		}
+	}
+
+	/**
+	 * Uploads one or more files onto a draft message.
+	 *
+	 * Called by: Template ("Datei anhängen" input on a draft)
+	 * Purpose: Outbound mail could previously carry only the offer PDF, and only
+	 *          because the send path hardcoded it — anything else had to be sent from
+	 *          a separate mail client.
+	 */
+	async function uploadAttachments(msgId: string, files: FileList | null) {
+		if (!files || files.length === 0) return;
+		uploadingFor = msgId;
+		try {
+			const form = new FormData();
+			for (const file of Array.from(files)) form.append('file', file);
+			await apiPost(`/api/v1/admin/emails/messages/${msgId}/attachments`, form);
+			showToast('Anhang hinzugefügt', 'success');
+			docPickerFor = null;
+			await loadThread();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		} finally {
+			uploadingFor = null;
+		}
+	}
 
 	$effect(() => {
 		loadThread();
@@ -325,10 +508,14 @@
 			await apiPost(`/api/v1/admin/emails/${$page.params.id}/reply`, {
 				subject: replySubject.trim() || null,
 				body_text: replyBody.trim(),
+				cc: parseAddressList(replyCc),
+				bcc: parseAddressList(replyBcc),
 			});
 			showToast('Antwort als Entwurf gespeichert', 'success');
 			replySubject = '';
 			replyBody = '';
+			replyCc = '';
+			replyBcc = '';
 			showReply = false;
 			await loadThread();
 		} catch (e) {
@@ -351,20 +538,41 @@
 	{:else if data}
 		<div class="page-header">
 			<div class="header-info">
-				<h1>{data.thread.customer_name || data.thread.customer_email}</h1>
+				<h1>{data.thread.customer_name || data.thread.customer_email || '(unbekannter Absender)'}</h1>
 				{#if data.thread.subject}
 					<span class="thread-subject">{data.thread.subject}</span>
 				{/if}
 			</div>
-			{#if data.thread.inquiry_id}
-				<a href="/admin/inquiries/{data.thread.inquiry_id}" class="link-quote">
-					<ExternalLink size={14} /> Zur Anfrage
-				</a>
-			{:else}
-				<button type="button" class="link-quote" onclick={() => (showCreateInquiry = true)}>
-					<FilePlus size={14} /> Anfrage erstellen
+			<div class="header-actions">
+				<button
+					type="button"
+					class="link-quote"
+					class:is-muted={data.thread.muted}
+					onclick={toggleMuted}
+					title={data.thread.muted
+						? 'Erinnerungen für diesen Thread sind aus'
+						: 'Keine Telegram-Erinnerungen mehr für diesen Thread'}
+				>
+					{#if data.thread.muted}
+						<BellOff size={14} /> Stumm
+					{:else}
+						<Bell size={14} /> Stummschalten
+					{/if}
 				</button>
-			{/if}
+				{#if data.thread.inquiry_id}
+					<a href="/admin/inquiries/{data.thread.inquiry_id}" class="link-quote">
+						<ExternalLink size={14} /> Zur Anfrage
+					</a>
+				{:else if data.thread.customer_id}
+					<button type="button" class="link-quote" onclick={() => (showCreateInquiry = true)}>
+						<FilePlus size={14} /> Anfrage erstellen
+					</button>
+				{:else}
+					<span class="no-customer-hint" title="Diese E-Mail konnte keinem Kunden zugeordnet werden">
+						Kein Kunde zugeordnet
+					</span>
+				{/if}
+			</div>
 		</div>
 
 		{#if data.thread.offer_pdf_filename}
@@ -378,8 +586,64 @@
 			</button>
 		{/if}
 
+		<!-- Reply composer -->
+		<div class="reply-section">
+			{#if showReply}
+				<div class="reply-form">
+					<h3>Antwort verfassen</h3>
+					<div class="form-field">
+						<label for="reply-subject">Betreff (optional)</label>
+						<input
+							id="reply-subject"
+							type="text"
+							placeholder={data.thread.subject || 'Betreff...'}
+							bind:value={replySubject}
+						/>
+					</div>
+					<div class="form-field">
+						<label for="reply-cc">CC <span class="optional">(optional, mit Komma trennen)</span></label>
+						<input id="reply-cc" type="text" placeholder="kollege@beispiel.de" bind:value={replyCc} />
+					</div>
+					<div class="form-field">
+						<label for="reply-bcc">BCC <span class="optional">(optional)</span></label>
+						<input id="reply-bcc" type="text" placeholder="archiv@beispiel.de" bind:value={replyBcc} />
+					</div>
+					<div class="form-field">
+						<label for="reply-body">Nachricht</label>
+						<textarea
+							id="reply-body"
+							rows="6"
+							placeholder="Antwort schreiben..."
+							bind:value={replyBody}
+						></textarea>
+					</div>
+					<div class="reply-actions">
+						<button
+							class="btn btn-save"
+							onclick={saveReply}
+							disabled={replying || !replyBody.trim()}
+						>
+							<Save size={14} />
+							{replying ? 'Speichere...' : 'Als Entwurf speichern'}
+						</button>
+						<button
+							class="btn btn-cancel"
+							onclick={() => { showReply = false; replySubject = ''; replyBody = ''; replyCc = ''; replyBcc = ''; }}
+							disabled={replying}
+						>
+							Abbrechen
+						</button>
+					</div>
+				</div>
+			{:else}
+				<button class="btn btn-reply" onclick={() => { showReply = true; }}>
+					<Send size={14} /> Antworten
+				</button>
+			{/if}
+		</div>
+
 		<div class="conversation">
-			{#each data.messages as msg}
+			{#each orderedMessages as msg}
 				<div
 					class="message"
 					class:inbound={msg.direction === 'inbound'}
@@ -451,26 +715,87 @@
 						{#if msg.subject}
 							<div class="message-subject">{msg.subject}</div>
 						{/if}
-						<div class="message-body">{msg.body_text || ''}</div>
+						{#if msg.cc_addresses.length > 0}
+							<div class="message-cc">CC: {msg.cc_addresses.join(', ')}</div>
+						{/if}
+
+						{#if msg.body_html && !plainTextOverride[msg.id]}
+							<!-- Sanitised on the server (scripts, handlers, remote images and
+							     tracking pixels removed) before it ever reaches the client. -->
+							<div class="message-body message-html">{@html msg.body_html}</div>
+							<button
+								type="button"
+								class="body-toggle"
+								onclick={() => (plainTextOverride[msg.id] = true)}
+							>
+								<Code size={12} /> Als Text anzeigen
+							</button>
+						{:else}
+							<div class="message-body">{msg.body_text || ''}</div>
+							{#if msg.body_html}
+								<button
+									type="button"
+									class="body-toggle"
+									onclick={() => (plainTextOverride[msg.id] = false)}
+								>
+									<Code size={12} /> Formatiert anzeigen
+								</button>
+							{/if}
+						{/if}
 
 						{#if msg.attachment_keys.length > 0}
 							<div class="attachment-list">
-								{#each msg.attachment_keys as key, i}
-									{@const fname = key.split('/').pop() ?? `Anhang ${i + 1}`}
+								{#each msg.attachment_keys as _key, i}
 									<button
 										type="button"
 										class="attachment-link"
 										onclick={() => previewAttachment(msg.id, i)}
 									>
 										<Paperclip size={12} />
-										{fname}
+										{attachmentLabel(msg, i)}
 									</button>
 								{/each}
 							</div>
 						{/if}
 
+						{#if msg.direction === 'inbound'}
+							<div class="draft-actions">
+								<button
+									class="btn btn-handled"
+									class:is-handled={msg.handled_at !== null}
+									onclick={() => toggleHandled(msg)}
+								>
+									<Check size={14} />
+									{msg.handled_at !== null ? 'Erledigt' : 'Als erledigt markieren'}
+								</button>
+							</div>
+						{/if}
+
 						{#if msg.status === 'draft'}
 							<div class="draft-actions">
+								<button
+									class="btn btn-attach-doc"
+									class:is-open={docPickerFor === msg.id}
+									onclick={() => toggleDocPicker(msg.id)}
+								>
+									<FileText size={14} />
+									KVA / Rechnung anhängen
+								</button>
+								<label class="btn btn-attach" class:is-busy={uploadingFor === msg.id}>
+									<Paperclip size={14} />
+									{uploadingFor === msg.id ? 'Lade hoch...' : 'Datei anhängen'}
+									<input
+										type="file"
+										multiple
+										hidden
+										disabled={uploadingFor === msg.id}
+										onchange={(e) => {
+											const input = e.currentTarget as HTMLInputElement;
+											uploadAttachments(msg.id, input.files);
+											input.value = '';
+										}}
+									/>
+								</label>
 								<button
 									class="btn btn-send"
 									onclick={() => confirmSendDraft(msg.id)}
@@ -496,6 +821,37 @@
 									Verwerfen
 								</button>
 							</div>
+
+							{#if docPickerFor === msg.id}
+								<div class="doc-picker">
+									{#if documentsLoading}
+										<div class="doc-empty">Dokumente werden geladen...</div>
+									{:else if documents.length === 0}
+										<div class="doc-empty">
+											Keine fertigen Dokumente für diesen Kunden — KVA oder Rechnung
+											muss erst erzeugt werden.
+										</div>
+									{:else}
+										{#each documents as doc}
+											<button
+												type="button"
+												class="doc-entry"
+												disabled={doc.attached || attachingDoc !== null}
+												onclick={() => attachDocument(msg.id, doc)}
+											>
+												<FileText size={14} />
+												<span class="doc-label">{doc.label}</span>
+												<span class="doc-file">{doc.filename}</span>
+												{#if doc.attached}
+													<span class="doc-state">angehängt</span>
+												{:else if attachingDoc === `${doc.kind}:${doc.id}`}
+													<span class="doc-state">wird angehängt...</span>
+												{/if}
+											</button>
+										{/each}
+									{/if}
+								</div>
+							{/if}
 						{/if}
 					{/if}
 				</div>
@@ -503,54 +859,6 @@
 
 			{#if data.messages.length === 0}
 				<div class="empty">Keine Nachrichten in diesem Thread</div>
-			{/if}
-		</div>
-
-		<!-- Reply composer -->
-		<div class="reply-section">
-			{#if showReply}
-				<div class="reply-form">
-					<h3>Antwort verfassen</h3>
-					<div class="form-field">
-						<label for="reply-subject">Betreff (optional)</label>
-						<input
-							id="reply-subject"
-							type="text"
-							placeholder={data.thread.subject || 'Betreff...'}
-							bind:value={replySubject}
-						/>
-					</div>
-					<div class="form-field">
-						<label for="reply-body">Nachricht</label>
-						<textarea
-							id="reply-body"
-							rows="6"
-							placeholder="Antwort schreiben..."
-							bind:value={replyBody}
-						></textarea>
-					</div>
-					<div class="reply-actions">
-						<button
-							class="btn btn-save"
-							onclick={saveReply}
-							disabled={replying || !replyBody.trim()}
-						>
-							<Save size={14} />
-							{replying ? 'Speichere...' : 'Als Entwurf speichern'}
-						</button>
-						<button
-							class="btn btn-cancel"
-							onclick={() => { showReply = false; replySubject = ''; replyBody = ''; }}
-							disabled={replying}
-						>
-							Abbrechen
-						</button>
-					</div>
-				</div>
-			{:else}
-				<button class="btn btn-reply" onclick={() => { showReply = true; }}>
-					<Send size={14} /> Antworten
-				</button>
 			{/if}
 		</div>
 	{/if}
@@ -577,7 +885,10 @@
 	onCancel={() => { pendingActionMsgId = null; }}
 />
 
-{#if showCreateInquiry && data}
+<!-- Gated on customer_id: a thread opened by unattributable mail has no customer
+     to hang an Anfrage on. The button below is hidden in that case, and the
+     "Kunde zuordnen" hint takes its place. -->
+{#if showCreateInquiry && data?.thread.customer_id}
 	<CreateInquiryFromEmailModal
 		threadId={data.thread.id}
 		customerId={data.thread.customer_id}
@@ -590,6 +901,82 @@
 {/if}
 
 <style>
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.no-customer-hint {
+		font-size: 0.8rem;
+		color: var(--text-muted, #888);
+		padding: 0.35rem 0.5rem;
+	}
+
+	.link-quote.is-muted {
+		color: var(--text-muted, #888);
+	}
+
+	.message-cc {
+		font-size: 0.8rem;
+		color: var(--text-muted, #888);
+		margin-bottom: 0.25rem;
+	}
+
+	/* The HTML body is sanitised server-side; these rules only stop a wide mail
+	   from blowing out the column. */
+	.message-html {
+		overflow-x: auto;
+	}
+
+	.message-html :global(table) {
+		max-width: 100%;
+	}
+
+	.message-html :global(a) {
+		color: var(--dt-primary, #1b6ca8);
+	}
+
+	.body-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		margin-top: 0.4rem;
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--text-muted, #888);
+		font-size: 0.75rem;
+		cursor: pointer;
+	}
+
+	.body-toggle:hover {
+		color: var(--dt-primary, #1b6ca8);
+	}
+
+	.btn-attach {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		cursor: pointer;
+	}
+
+	.btn-attach.is-busy {
+		opacity: 0.6;
+		cursor: progress;
+	}
+
+	.btn-handled.is-handled {
+		color: var(--dt-primary, #1b6ca8);
+	}
+
+	.optional {
+		font-weight: 400;
+		color: var(--text-muted, #888);
+		font-size: 0.8em;
+	}
+
 	.page { max-width: 900px; }
 	.page-nav { margin-bottom: 1rem; }
 	.back-link {
@@ -777,6 +1164,66 @@
 		word-break: break-word;
 	}
 
+	.btn-attach-doc {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		cursor: pointer;
+	}
+	.btn-attach-doc.is-open {
+		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.15);
+	}
+
+	.doc-picker {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-top: 0.5rem;
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+		background: var(--bg-subtle, rgba(0, 0, 0, 0.03));
+	}
+	.doc-empty {
+		font-size: 0.8rem;
+		color: var(--text-muted, #888);
+		padding: 0.25rem;
+	}
+	.doc-entry {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+		text-align: left;
+		padding: 0.4rem 0.5rem;
+		border: none;
+		border-radius: 0.4rem;
+		background: transparent;
+		cursor: pointer;
+		font-size: 0.85rem;
+		color: inherit;
+	}
+	.doc-entry:hover:not(:disabled) {
+		background: rgba(0, 0, 0, 0.05);
+	}
+	.doc-entry:disabled {
+		opacity: 0.55;
+		cursor: default;
+	}
+	.doc-label {
+		font-weight: 600;
+	}
+	.doc-file {
+		color: var(--text-muted, #888);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.doc-state {
+		margin-left: auto;
+		font-size: 0.75rem;
+		color: var(--text-muted, #888);
+	}
+
 	.attachment-list {
 		display: flex;
 		flex-wrap: wrap;
@@ -930,11 +1377,11 @@
 		background: var(--dt-surface-container-low);
 	}
 
-	/* Reply section */
+	/* Reply section — sits above the conversation, which reads newest-first. */
 	.reply-section {
-		margin-top: 1.5rem;
-		padding-top: 1.5rem;
-		border-top: 1px solid var(--dt-outline-variant);
+		margin-bottom: 1.5rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 1px solid var(--dt-outline-variant);
 	}
 
 	.btn-reply {

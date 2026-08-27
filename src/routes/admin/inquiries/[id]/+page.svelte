@@ -795,6 +795,11 @@
 	// Embedded offer from the inquiry response
 	let latestOffer = $derived(data?.offer ?? null);
 
+	// Generating a KVA takes several seconds (PDF render + upload). Without this guard a
+	// second click starts a second generation that does not yet see the first one's offer,
+	// and the inquiry ends up with two KVAs (prod, 2026-08-27).
+	let offerBusy = $state(false);
+
 	/**
 	 * Triggers a full re-estimation of the latest offer, recalculating distance and regenerating the PDF.
 	 *
@@ -819,6 +824,8 @@
 		}
 		if (!confirm("Entfernung neu berechnen und Angebot neu erstellen?"))
 			return;
+		if (offerBusy) return;
+		offerBusy = true;
 		try {
 			// Persist unsaved items first (recalculates total volume)
 			await saveIfDirtyFn?.();
@@ -845,6 +852,8 @@
 			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, "error");
+		} finally {
+			offerBusy = false;
 		}
 	}
 
@@ -862,7 +871,8 @@
 	 * @returns void (side-effect: shows toast, calls loadInquiry on success)
 	 */
 	async function generateOffer() {
-		if (!data) return;
+		if (!data || offerBusy) return;
+		offerBusy = true;
 		try {
 			// Persist unsaved items first (recalculates total volume)
 			await saveIfDirtyFn?.();
@@ -886,6 +896,8 @@
 			await loadInquiry();
 		} catch (e) {
 			showToast((e as Error).message, "error");
+		} finally {
+			offerBusy = false;
 		}
 	}
 
@@ -1013,14 +1025,14 @@
 			</div>
 			<div class="header-actions">
 				{#if latestOffer}
-					<button class="btn btn-primary" onclick={reEstimateOffer}>
+					<button class="btn btn-primary" onclick={reEstimateOffer} disabled={offerBusy}>
 						<RotateCcw size={16} />
-						Neu berechnen
+						{offerBusy ? "Wird erstellt..." : "Neu berechnen"}
 					</button>
 				{:else}
-					<button class="btn btn-primary" onclick={generateOffer}>
+					<button class="btn btn-primary" onclick={generateOffer} disabled={offerBusy}>
 						<FileOutput size={16} />
-						Angebot erstellen
+						{offerBusy ? "Wird erstellt..." : "Angebot erstellen"}
 					</button>
 				{/if}
 				<select

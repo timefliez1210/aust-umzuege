@@ -3,108 +3,54 @@
 	 * KVA-Buch — the Kostenvoranschlag counterpart to the Rechnungsausgangsbuch.
 	 *
 	 * Requested in feedback report fa436f07 ("same as the Rechnungsausgangsbuch,
-	 * just for KVAs"), so the layout deliberately mirrors that page: year selector,
-	 * month navigator, monthly subtotal, yearly grand total. The extra column here
-	 * is Status, because unlike an invoice a KVA can still be rejected or expire.
+	 * just for KVAs"), so the register keeps that page's shape: year selector,
+	 * monthly overview, sortable table, filters, export.
+	 *
+	 * Where it deliberately differs: an invoice register is a legal ledger, a KVA
+	 * register is a sales instrument. So this page leads with the Nachfassliste —
+	 * the KVAs worth a phone call today — and its statistics are about winning work,
+	 * not about reporting revenue.
+	 *
+	 * NOTE on status: `offers.status` is NOT maintained (126 of 133 production rows
+	 * sit at "draft" while a third of them already produced an invoice), so nothing
+	 * here reads it. The backend derives `lage` from `inquiries.status`, which is
+	 * maintained, and that is the only win/loss signal used.
 	 */
 	import { onMount } from 'svelte';
-	import { apiGet, apiPreview } from '$lib/utils/api.svelte';
+	import { apiGet, apiPatch, apiPut, apiPreview } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { ChevronLeft, ChevronRight, FileText } from 'lucide-svelte';
+	import { formatEuro } from '$lib/utils/format';
+	import KvaMonatsUebersicht from '$lib/components/admin/KvaMonatsUebersicht.svelte';
+	import {
+		type KvaRow, type KvaFilters, type KvaSortKey, type KvaSortState, type LageFilter,
+		LAGE_LABELS, NO_FILTERS, availableYears, rowsForYear, kvaKpis, monthlySummaries,
+		followupRows, dateMissingRows, staleRows, viewRows, hasActiveFilters, kvaDate
+	} from '$lib/utils/kvaBuch';
+	import {
+		FileText, Search, X, ArrowUpDown, ArrowUp, ArrowDown, BellOff, Bell, Phone
+	} from 'lucide-svelte';
 
-	interface KvaBuchItem {
-		id: string;
-		inquiry_id: string;
-		offer_number: string | null;
-		customer_name: string | null;
-		scheduled_date: string | null;
-		netto_cents: number;
-		mwst_cents: number;
-		brutto_cents: number;
-		/** "draft" | "sent" | "viewed" | "accepted" | "rejected" | "expired" */
-		status: string;
-		valid_until: string | null;
-		sent_at: string | null;
-		created_at: string;
-		/** Set once the KVA turned into a job. */
-		invoice_number: string | null;
-		pdf_s3_key: string | null;
-	}
-
-	interface MonthGroup {
-		key: string;
-		label: string;
-		items: KvaBuchItem[];
-		netto: number;
-		mwst: number;
-		brutto: number;
-		/** Netto sum of the KVAs that actually became jobs. */
-		angenommen: number;
-	}
-
-	/*
-	 * NOTE: unlike the Rechnungsausgangsbuch, this register counts every row, drafts
-	 * included. `offers.status` and `offers.sent_at` are not maintained in practice —
-	 * on production 106 of 110 KVAs sit at status "draft" and only one has a `sent_at`,
-	 * yet 33 of those drafts already produced an invoice. Excluding them would hide
-	 * ~96% of the register's value, including KVAs that demonstrably went out. "Davon
-	 * beauftragt" is the trustworthy signal here, so that is what the footer highlights.
-	 */
-
-	const STATUS_LABELS: Record<string, string> = {
-		draft: 'Entwurf',
-		sent: 'Versendet',
-		viewed: 'Angesehen',
-		accepted: 'Angenommen',
-		rejected: 'Abgelehnt',
-		expired: 'Abgelaufen'
-	};
-
-	let rows = $state<KvaBuchItem[]>([]);
+	let rows = $state<KvaRow[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let activeYear = $state<string>('');
-	let activeIndex = $state(0);
-
-	/** The year a KVA belongs to: its KVA-Datum, falling back to creation. */
-	function yearOf(item: KvaBuchItem): string {
-		return (item.sent_at ?? item.created_at).substring(0, 4);
-	}
-
-	function groupByMonth(list: KvaBuchItem[]): MonthGroup[] {
-		const map = new Map<string, KvaBuchItem[]>();
-		for (const item of list) {
-			const m = (item.sent_at ?? item.created_at).substring(0, 7);
-			if (!map.has(m)) map.set(m, []);
-			map.get(m)!.push(item);
-		}
-		return [...map.keys()].sort().map(m => {
-			const items = map.get(m)!;
-			const [y, mo] = m.split('-');
-			const label = new Date(+y, +mo - 1).toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
-			return {
-				key: m, label, items,
-				netto: items.reduce((s, r) => s + r.netto_cents, 0),
-				mwst: items.reduce((s, r) => s + r.mwst_cents, 0),
-				brutto: items.reduce((s, r) => s + r.brutto_cents, 0),
-				angenommen: items.reduce((s, r) => s + (r.invoice_number ? r.netto_cents : 0), 0)
-			};
-		});
-	}
+	let filters = $state<KvaFilters>({ ...NO_FILTERS });
+	let sort = $state<KvaSortState | null>(null);
+	let followupDays = $state(21);
+	let savingDays = $state(false);
 
 	async function load() {
 		loading = true;
 		error = null;
 		try {
-			const data = await apiGet<KvaBuchItem[]>('/api/v1/admin/kva-buch');
-			rows = data;
-			const ys = [...new Set(data.map(yearOf))].sort();
-			activeYear = ys.at(-1) ?? String(new Date().getFullYear());
-			activeIndex = Math.max(0, groupByMonth(data.filter(r => yearOf(r) === activeYear)).length - 1);
+			rows = await apiGet<KvaRow[]>('/api/v1/admin/kva-buch');
+			const ys = availableYears(rows);
+			if (!ys.includes(activeYear)) {
+				activeYear = ys.at(-1) ?? String(new Date().getFullYear());
+			}
 		} catch (e: any) {
 			error = e?.message || 'Ladefehler';
 			rows = [];
-			activeIndex = 0;
 		} finally {
 			loading = false;
 		}
@@ -112,29 +58,46 @@
 
 	onMount(() => { load(); });
 
-	let years = $derived([...new Set(rows.map(yearOf))].sort());
-	let monthGroups = $derived(groupByMonth(rows.filter(r => yearOf(r) === activeYear)));
-	let active = $derived(monthGroups[Math.min(activeIndex, Math.max(0, monthGroups.length - 1))]);
+	let years = $derived(availableYears(rows));
+	let yearRows = $derived(rowsForYear(rows, activeYear));
+	let kpis = $derived(kvaKpis(yearRows));
+	let months = $derived(monthlySummaries(yearRows));
+	let visible = $derived(viewRows(yearRows, filters, sort));
 
-	let totalNetto = $derived(monthGroups.reduce((s, g) => s + g.netto, 0));
-	let totalMwst = $derived(monthGroups.reduce((s, g) => s + g.mwst, 0));
-	let totalBrutto = $derived(monthGroups.reduce((s, g) => s + g.brutto, 0));
-	let totalAngenommen = $derived(monthGroups.reduce((s, g) => s + g.angenommen, 0));
+	/* The Nachfassliste is deliberately NOT year-scoped: a KVA from last December
+	   whose move is next month still deserves the call. */
+	let chase = $derived(followupRows(rows));
+	let missingDate = $derived(dateMissingRows(rows));
+	let stale = $derived(staleRows(rows));
 
 	function selectYear(y: string) {
 		activeYear = y;
-		activeIndex = Math.max(0, groupByMonth(rows.filter(r => yearOf(r) === y)).length - 1);
+		filters = { ...NO_FILTERS };
+		sort = null;
 	}
 
-	function prevMonth() { activeIndex = Math.max(0, activeIndex - 1); }
-	function nextMonth() { activeIndex = Math.min(monthGroups.length - 1, activeIndex + 1); }
+	/** asc → desc → back to register order. */
+	function toggleSort(key: KvaSortKey) {
+		if (sort?.key !== key) sort = { key, dir: 'asc' };
+		else if (sort.dir === 'asc') sort = { key, dir: 'desc' };
+		else sort = null;
+	}
 
-	function fmtEur(cents: number | null): string {
-		if (cents == null) return '—';
-		return (cents / 100).toLocaleString('de-DE', {
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		}) + ' €';
+	function sortIcon(key: KvaSortKey) {
+		if (sort?.key !== key) return ArrowUpDown;
+		return sort.dir === 'asc' ? ArrowUp : ArrowDown;
+	}
+
+	function setLage(lage: LageFilter) {
+		filters = { ...filters, lage };
+	}
+
+	function setMonth(month: number | null) {
+		filters = { ...filters, month };
+	}
+
+	function clearFilters() {
+		filters = { ...NO_FILTERS };
 	}
 
 	function fmtDate(iso: string | null): string {
@@ -144,14 +107,74 @@
 		});
 	}
 
-	/** Opens the KVA document for a row. */
-	async function openKvaPdf(item: KvaBuchItem) {
+	function pct(value: number | null): string {
+		if (value == null) return '—';
+		return `${(value * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
+	}
+
+	async function openKvaPdf(item: KvaRow) {
 		try {
 			await apiPreview(`/api/v1/admin/kva-buch/${item.id}/pdf`);
 		} catch (e: any) {
 			showToast(e?.message || 'PDF konnte nicht geöffnet werden', 'error');
 		}
 	}
+
+	async function toggleMute(item: KvaRow) {
+		const next = !item.followup_muted;
+		try {
+			await apiPatch(`/api/v1/admin/kva-buch/${item.id}/followup-mute`, { muted: next });
+			showToast(next ? 'KVA von der Nachfassliste genommen' : 'KVA wieder auf der Nachfassliste', 'success');
+			await load();
+		} catch (e: any) {
+			showToast(e?.message || 'Konnte nicht gespeichert werden', 'error');
+		}
+	}
+
+	async function saveFollowupDays() {
+		if (savingDays) return;
+		const days = Math.round(followupDays);
+		if (!Number.isFinite(days) || days < 1 || days > 365) {
+			showToast('Bitte 1 bis 365 Tage angeben.', 'error');
+			return;
+		}
+		savingDays = true;
+		try {
+			await apiPut('/api/v1/admin/kva-buch/followup-days', { days });
+			showToast(`Nachfass-Frist auf ${days} Tage gesetzt`, 'success');
+			await load();
+		} catch (e: any) {
+			showToast(e?.message || 'Konnte nicht gespeichert werden', 'error');
+		} finally {
+			savingDays = false;
+		}
+	}
+
+	function exportYear() {
+		window.open(
+			`/api/v1/admin/kva-buch/export?year=${encodeURIComponent(activeYear)}`,
+			'_blank'
+		);
+	}
+
+	const COLUMNS: { key: KvaSortKey; label: string; num?: boolean }[] = [
+		{ key: 'number', label: 'KVA-Nr.' },
+		{ key: 'date', label: 'KVA-Datum' },
+		{ key: 'customer', label: 'Kunde' },
+		{ key: 'service', label: 'Umzugsdatum' },
+		{ key: 'netto', label: 'Netto', num: true },
+		{ key: 'brutto', label: 'Brutto', num: true },
+		{ key: 'age', label: 'Alter', num: true },
+		{ key: 'lage', label: 'Lage' }
+	];
+
+	const LAGE_FILTERS: { key: LageFilter; label: string }[] = [
+		{ key: 'alle', label: 'Alle' },
+		{ key: 'offen', label: 'Offen' },
+		{ key: 'gewonnen', label: 'Gewonnen' },
+		{ key: 'verloren', label: 'Verloren' },
+		{ key: 'nachfassen', label: 'Nachfassen' }
+	];
 </script>
 
 <div class="page">
@@ -167,107 +190,259 @@
 	{:else if rows.length === 0}
 		<div class="empty">Keine Kostenvoranschl&auml;ge vorhanden.</div>
 	{:else}
+		<!-- ── Nachfassliste ───────────────────────────────────────────────
+		     First on the page because it is the only part that earns money.
+		     Not year-scoped: an old KVA with a future move date still counts. -->
+		<section class="chase" class:chase--empty={chase.length === 0}>
+			<header class="chase-head">
+				<div>
+					<h2><Phone size={16} /> Nachfassen</h2>
+					<p class="chase-sub">
+						Offene KVAs, die l&auml;nger als {followupDays} Tage ohne Antwort sind
+						<strong>und</strong> deren Umzugstermin noch bevorsteht. Genau diese
+						meldet auch der Telegram-Bot.
+					</p>
+				</div>
+				<label class="days-field">
+					<span>Frist</span>
+					<input
+						type="number" min="1" max="365" bind:value={followupDays}
+						onblur={saveFollowupDays} disabled={savingDays}
+					/>
+					<span>Tage</span>
+				</label>
+			</header>
+
+			{#if chase.length === 0}
+				<p class="chase-none">Nichts nachzufassen — alle offenen KVAs sind aktuell.</p>
+			{:else}
+				<ul class="chase-list">
+					{#each chase as item}
+						<li>
+							<a class="chase-nr" href="/admin/inquiries/{item.inquiry_id ?? ''}">
+								{item.offer_number || '—'}
+							</a>
+							<span class="chase-name">{item.customer_name || '—'}</span>
+							<span class="chase-num">{formatEuro(item.netto_cents)}</span>
+							<span class="chase-meta">
+								{item.age_days} Tage still &middot; Umzug {fmtDate(item.scheduled_date)}
+							</span>
+							{#if item.followup_last_pinged_on}
+								<span class="chase-pinged">
+									zuletzt erinnert {fmtDate(item.followup_last_pinged_on)}
+								</span>
+							{/if}
+							<button
+								type="button" class="mute-btn" onclick={() => toggleMute(item)}
+								title="Nicht mehr an diesen KVA erinnern"
+							>
+								<BellOff size={13} /> Stumm
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+
+			{#if missingDate.length > 0}
+				<details class="side-list">
+					<summary>
+						{missingDate.length} &uuml;berf&auml;llige KVAs ohne Umzugsdatum
+					</summary>
+					<!-- Not pinged by design: without a move date there is no way to tell
+					     whether the job is still live. They stay visible here instead. -->
+					<p class="side-note">
+						Diese werden nicht automatisch gemeldet — ohne Termin l&auml;sst sich nicht
+						sagen, ob der Auftrag noch aktuell ist.
+					</p>
+					<ul>
+						{#each missingDate as item}
+							<li>
+								<span class="chase-nr">{item.offer_number || '—'}</span>
+								<span class="chase-name">{item.customer_name || '—'}</span>
+								<span class="chase-num">{formatEuro(item.netto_cents)}</span>
+								<span class="chase-meta">{item.age_days} Tage still</span>
+							</li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
+
+			{#if stale.length > 0}
+				<details class="side-list">
+					<summary>
+						{stale.length} offene KVAs mit vergangenem Umzugsdatum
+						({formatEuro(kpis.deadOpenNetto)})
+					</summary>
+					<!-- These inflate "Offen" without being winnable. Surfaced as a cleanup
+					     queue so the open pipeline figure can be read honestly. -->
+					<p class="side-note">
+						Der Termin ist vorbei — diese lassen sich nicht mehr gewinnen und sollten
+						auf gewonnen oder verloren gesetzt werden.
+					</p>
+					<ul>
+						{#each stale as item}
+							<li>
+								<span class="chase-nr">{item.offer_number || '—'}</span>
+								<span class="chase-name">{item.customer_name || '—'}</span>
+								<span class="chase-num">{formatEuro(item.netto_cents)}</span>
+								<span class="chase-meta">Umzug war {fmtDate(item.scheduled_date)}</span>
+							</li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
+		</section>
+
 		<div class="year-nav">
 			{#each years as y}
-				<button type="button" class="year-btn" class:active={y === activeYear} onclick={() => selectYear(y)}>
-					{y}
-				</button>
+				<button
+					type="button" class="year-btn" class:active={y === activeYear}
+					onclick={() => selectYear(y)}
+				>{y}</button>
 			{/each}
+			<button type="button" class="export-btn" onclick={exportYear}>
+				Excel-Export {activeYear}
+			</button>
 		</div>
 
-		<div class="month-nav">
-			<button type="button" class="nav-btn" class:dimmed={activeIndex === 0} onclick={prevMonth}>
-				<ChevronLeft size={18} />
-			</button>
-			<div class="month-label">
-				<select
-					class="month-select"
-					value={active?.key ?? ''}
-					onchange={(e) => {
-						const idx = monthGroups.findIndex(g => g.key === e.currentTarget.value);
-						if (idx !== -1) activeIndex = idx;
-					}}
-				>
-					{#each monthGroups as g}
-						<option value={g.key}>{g.label} ({g.items.length})</option>
-					{/each}
-				</select>
+		<!-- ── KPIs ─────────────────────────────────────────────────────── -->
+		<div class="kpis">
+			<div class="kpi">
+				<span class="kpi-label">Angebotsvolumen</span>
+				<span class="kpi-value">{formatEuro(kpis.volumeNetto)}</span>
+				<span class="kpi-note">{kpis.count} KVAs netto</span>
 			</div>
-			<button type="button" class="nav-btn" class:dimmed={activeIndex >= monthGroups.length - 1} onclick={nextMonth}>
-				<ChevronRight size={18} />
-			</button>
+			<div class="kpi">
+				<span class="kpi-label">Gewonnen</span>
+				<span class="kpi-value">{formatEuro(kpis.wonNetto)}</span>
+				<span class="kpi-note">{kpis.wonCount} Auftr&auml;ge</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">Annahmequote</span>
+				<span class="kpi-value">{pct(kpis.winRateByCount)}</span>
+				<!-- Both rates, always: they diverge when won and lost jobs differ in
+				     size, and that gap is the interesting number. -->
+				<span class="kpi-note">nach Wert {pct(kpis.winRateByValue)}</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">Offen</span>
+				<span class="kpi-value">{formatEuro(kpis.liveOpenNetto)}</span>
+				<span class="kpi-note">
+					{#if kpis.deadOpenCount > 0}
+						+ {formatEuro(kpis.deadOpenNetto)} Termin vorbei
+					{:else}
+						{kpis.openCount} KVAs
+					{/if}
+				</span>
+			</div>
+			<div class="kpi" class:kpi--alert={kpis.followupCount > 0}>
+				<span class="kpi-label">Nachfassen</span>
+				<span class="kpi-value">{kpis.followupCount}</span>
+				<span class="kpi-note">{formatEuro(kpis.followupNetto)}</span>
+			</div>
+			<div class="kpi">
+				<span class="kpi-label">&Oslash; Auftragswert</span>
+				<span class="kpi-value">
+					{kpis.avgWonNetto == null ? '—' : formatEuro(kpis.avgWonNetto)}
+				</span>
+				<!-- A systematically higher average on lost KVAs is a pricing signal. -->
+				<span class="kpi-note">
+					verloren {kpis.avgLostNetto == null ? '—' : formatEuro(kpis.avgLostNetto)}
+				</span>
+			</div>
 		</div>
 
-		{#if active}
-			<div class="table-wrapper">
-				<table>
-					<thead>
-						<tr>
-							<th>KVA-Nr.</th>
-							<th>KVA-Datum</th>
-							<th>Kunde</th>
-							<th>Leistungsdatum</th>
-							<th class="num">Netto</th>
-							<th class="num">MWST</th>
-							<th class="num">Brutto</th>
-							<th>G&uuml;ltig bis</th>
-							<th>Status</th>
-							<th>Rechnung</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each active.items as item}
-							<tr
-								class:won={item.invoice_number != null}
-								class:lost={item.status === 'rejected' || item.status === 'expired'}
-							>
-								<td class="mono">
-									{#if item.pdf_s3_key}
-										<button type="button" class="link-btn" onclick={() => openKvaPdf(item)} title="KVA öffnen">
-											<FileText size={12} />
-											{item.offer_number || '—'}
-										</button>
-									{:else}
-										{item.offer_number || '—'}
-									{/if}
-								</td>
-								<td>{fmtDate(item.sent_at ?? item.created_at)}</td>
-								<td>
-									<a class="row-link" href="/admin/inquiries/{item.inquiry_id}">
-										{item.customer_name || '—'}
-									</a>
-								</td>
-								<td>{fmtDate(item.scheduled_date)}</td>
-								<td class="num">{fmtEur(item.netto_cents)}</td>
-								<td class="num">{fmtEur(item.mwst_cents)}</td>
-								<td class="num">{fmtEur(item.brutto_cents)}</td>
-								<td>{fmtDate(item.valid_until)}</td>
-								<td><span class="status status--{item.status}">{STATUS_LABELS[item.status] ?? item.status}</span></td>
-								<td class="mono">{item.invoice_number || '—'}</td>
-							</tr>
+		<KvaMonatsUebersicht {months} selected={filters.month} onSelect={setMonth} />
+
+		<!-- ── filter bar ───────────────────────────────────────────────── -->
+		<div class="filter-bar">
+			<div class="chips">
+				{#each LAGE_FILTERS as f}
+					<button
+						type="button" class="chip" class:active={filters.lage === f.key}
+						onclick={() => setLage(f.key)}
+					>{f.label}</button>
+				{/each}
+			</div>
+			<label class="search">
+				<Search size={14} />
+				<input
+					type="search" placeholder="Nr., Kunde oder Rechnung…"
+					value={filters.search}
+					oninput={(e) => (filters = { ...filters, search: e.currentTarget.value })}
+				/>
+			</label>
+			{#if hasActiveFilters(filters)}
+				<button type="button" class="clear-btn" onclick={clearFilters}>
+					<X size={14} /> Filter zur&uuml;cksetzen
+				</button>
+			{/if}
+			<span class="result-count">{visible.length} von {yearRows.length}</span>
+		</div>
+
+		<!-- ── register table ───────────────────────────────────────────── -->
+		<div class="table-wrapper">
+			<table>
+				<thead>
+					<tr>
+						{#each COLUMNS as col}
+							{@const Icon = sortIcon(col.key)}
+							<th class:num={col.num}>
+								<button type="button" class="sort-btn" onclick={() => toggleSort(col.key)}>
+									{col.label}<Icon size={12} />
+								</button>
+							</th>
 						{/each}
-					</tbody>
-					<tfoot>
-						<tr>
-							<th colspan="4">Summe {active.label}</th>
-							<th class="num">{fmtEur(active.netto)}</th>
-							<th class="num">{fmtEur(active.mwst)}</th>
-							<th class="num">{fmtEur(active.brutto)}</th>
-							<th colspan="3"></th>
+						<th>Rechnung</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each visible as item}
+						<tr class:won={item.lage === 'gewonnen'} class:lost={item.lage === 'verloren'}>
+							<td class="mono">
+								{#if item.pdf_s3_key}
+									<button
+										type="button" class="link-btn" onclick={() => openKvaPdf(item)}
+										title="KVA öffnen"
+									>
+										<FileText size={12} />{item.offer_number || '—'}
+									</button>
+								{:else}
+									{item.offer_number || '—'}
+								{/if}
+							</td>
+							<td>{fmtDate(kvaDate(item))}</td>
+							<td>
+								<a class="row-link" href="/admin/inquiries/{item.inquiry_id ?? ''}">
+									{item.customer_name || '—'}
+								</a>
+							</td>
+							<td class:past={item.move_date_passed}>{fmtDate(item.scheduled_date)}</td>
+							<td class="num">{formatEuro(item.netto_cents)}</td>
+							<td class="num">{formatEuro(item.brutto_cents)}</td>
+							<td class="num">{item.age_days} T</td>
+							<td>
+								<span class="lage lage--{item.lage}">
+									{LAGE_LABELS[item.lage] ?? item.lage}
+								</span>
+								{#if item.needs_followup}
+									<span class="tag tag--chase" title="Auf der Nachfassliste">nachfassen</span>
+								{:else if item.followup_muted && item.lage === 'offen'}
+									<button
+										type="button" class="tag tag--muted" onclick={() => toggleMute(item)}
+										title="Wieder erinnern"
+									><Bell size={11} /> stumm</button>
+								{/if}
+							</td>
+							<td class="mono">{item.invoice_number || '—'}</td>
 						</tr>
-					</tfoot>
-				</table>
-			</div>
-		{/if}
-
-		<div class="grand-total">
-			<span class="grand-total__label">Gesamtsumme {activeYear}</span>
-			<span class="num" data-label="Netto">{fmtEur(totalNetto)}</span>
-			<span class="num" data-label="MWST">{fmtEur(totalMwst)}</span>
-			<span class="num" data-label="Brutto">{fmtEur(totalBrutto)}</span>
-			<span class="num" data-label="Davon beauftragt">{fmtEur(totalAngenommen)}</span>
+					{/each}
+				</tbody>
+			</table>
+			{#if visible.length === 0}
+				<p class="no-rows">Keine KVAs f&uuml;r diese Filter.</p>
+			{/if}
 		</div>
-
 	{/if}
 </div>
 
@@ -276,9 +451,11 @@
 
 	.page-header {
 		display: flex; align-items: baseline; gap: 0.75rem;
-		margin-bottom: var(--dt-space-6);
+		margin-bottom: var(--dt-space-5);
 	}
-	.page-header h1 { font-size: 1.5rem; font-weight: 700; color: var(--dt-on-surface); margin: 0; }
+	.page-header h1 {
+		font-size: 1.5rem; font-weight: 700; color: var(--dt-on-surface); margin: 0;
+	}
 	.page-count { font-size: 0.8125rem; color: var(--dt-on-surface-variant); }
 
 	.loading, .empty {
@@ -286,13 +463,93 @@
 	}
 	.error-box {
 		background: var(--dt-error-bg); border: 1px solid var(--dt-error-text);
-		color: var(--dt-error-text); padding: var(--dt-space-4); border-radius: var(--dt-radius-md);
+		color: var(--dt-error-text); padding: var(--dt-space-4);
+		border-radius: var(--dt-radius-md);
 	}
 
-	/* ── year selector ─────────────────────────────── */
+	/* ── Nachfassliste ──────────────────────────────── */
+	.chase {
+		background: var(--dt-surface-container-lowest);
+		border: 1px solid var(--dt-outline-variant);
+		border-left: 3px solid #1b6ca8;
+		border-radius: var(--dt-radius-lg);
+		padding: var(--dt-space-5) var(--dt-space-6);
+		margin-bottom: var(--dt-space-5);
+	}
+	.chase--empty { border-left-color: var(--dt-outline-variant); }
+
+	.chase-head {
+		display: flex; justify-content: space-between; align-items: flex-start;
+		gap: var(--dt-space-4); flex-wrap: wrap; margin-bottom: var(--dt-space-3);
+	}
+	.chase-head h2 {
+		display: flex; align-items: center; gap: 0.4rem;
+		margin: 0; font-size: 1rem; font-weight: 700; color: var(--dt-on-surface);
+	}
+	.chase-sub {
+		margin: 0.15rem 0 0; font-size: 0.8125rem;
+		color: var(--dt-on-surface-variant); max-width: 60ch;
+	}
+	.chase-none {
+		margin: 0; font-size: 0.875rem; color: var(--dt-on-surface-variant);
+	}
+
+	.days-field {
+		display: inline-flex; align-items: center; gap: 0.35rem;
+		font-size: 0.8125rem; color: var(--dt-on-surface-variant); white-space: nowrap;
+	}
+	.days-field input {
+		width: 4rem; padding: 0.3rem 0.4rem; text-align: right;
+		border: var(--dt-ghost-border); border-radius: var(--dt-radius-sm);
+		background: var(--dt-surface-container-low); color: var(--dt-on-surface);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.chase-list { list-style: none; margin: 0; padding: 0; }
+	.chase-list > li, .side-list li {
+		display: flex; align-items: center; gap: var(--dt-space-3);
+		flex-wrap: wrap; padding: 0.5rem 0;
+		border-top: 1px solid var(--dt-outline-variant);
+		font-size: 0.8125rem;
+	}
+	.chase-nr {
+		font-family: var(--font-mono); font-size: 0.75rem;
+		color: var(--dt-primary); text-decoration: underline; flex: 0 0 auto;
+	}
+	.chase-name { font-weight: 600; color: var(--dt-on-surface); }
+	.chase-num {
+		font-variant-numeric: tabular-nums; font-weight: 600;
+		color: var(--dt-on-surface); margin-left: auto;
+	}
+	.chase-meta, .chase-pinged {
+		color: var(--dt-on-surface-variant); font-size: 0.75rem;
+	}
+	.chase-pinged { font-style: italic; }
+
+	.mute-btn {
+		display: inline-flex; align-items: center; gap: 0.25rem;
+		padding: 0.2rem 0.5rem; border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-sm); background: var(--dt-surface-container-low);
+		color: var(--dt-on-surface-variant); font-size: 0.6875rem; cursor: pointer;
+	}
+	.mute-btn:hover { background: var(--dt-surface-container-high); }
+
+	.side-list { margin-top: var(--dt-space-4); }
+	.side-list summary {
+		cursor: pointer; font-size: 0.8125rem; color: var(--dt-on-surface-variant);
+		padding: 0.25rem 0;
+	}
+	.side-list summary:hover { color: var(--dt-on-surface); }
+	.side-list ul { list-style: none; margin: 0; padding: 0; }
+	.side-note {
+		margin: 0.25rem 0 0.5rem; font-size: 0.75rem;
+		color: var(--dt-on-surface-variant); max-width: 70ch;
+	}
+
+	/* ── year nav ───────────────────────────────────── */
 	.year-nav {
-		display: flex; justify-content: center; flex-wrap: wrap;
-		gap: var(--dt-space-2); margin-bottom: var(--dt-space-3);
+		display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+		gap: var(--dt-space-2); margin-bottom: var(--dt-space-4);
 	}
 	.year-btn {
 		padding: 0.35rem 0.9rem; border-radius: var(--dt-radius-md);
@@ -301,37 +558,79 @@
 		cursor: pointer; transition: background var(--dt-transition);
 	}
 	.year-btn:hover { background: var(--dt-surface-container-high); }
-	.year-btn.active { background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent; }
+	.year-btn.active {
+		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
+	}
+	.export-btn {
+		margin-left: var(--dt-space-3); padding: 0.35rem 0.9rem;
+		border-radius: var(--dt-radius-md); border: var(--dt-ghost-border);
+		background: var(--dt-surface-container-low); color: var(--dt-on-surface-variant);
+		font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+	}
+	.export-btn:hover { background: var(--dt-surface-container-high); }
 
-	/* ── month navigation ──────────────────────────── */
-	.month-nav {
-		display: flex; align-items: center; justify-content: center;
+	/* ── KPIs ───────────────────────────────────────── */
+	.kpis {
+		display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 		gap: var(--dt-space-3); margin-bottom: var(--dt-space-4);
 	}
-	.nav-btn {
-		flex: 0 0 auto; width: 36px; height: 36px; border-radius: var(--dt-radius-md);
-		color: var(--dt-on-surface); background: var(--dt-surface-container-low);
-		border: var(--dt-ghost-border); cursor: pointer; line-height: 1;
-		transition: background var(--dt-transition);
+	.kpi {
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg); padding: var(--dt-space-4);
+		display: flex; flex-direction: column; gap: 0.15rem;
 	}
-	.nav-btn:hover { background: var(--dt-surface-container-high); }
-	.nav-btn.dimmed { opacity: 0.35; }
+	.kpi--alert { border-left: 3px solid #1b6ca8; }
+	.kpi-label {
+		font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;
+		color: var(--dt-on-surface-variant); font-weight: 500;
+	}
+	.kpi-value {
+		font-size: 1.125rem; font-weight: 700; color: var(--dt-on-surface);
+		font-variant-numeric: tabular-nums;
+	}
+	.kpi-note { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
 
-	.month-label { display: flex; align-items: center; justify-content: center; }
-	.month-select {
-		appearance: none; -webkit-appearance: none;
-		background-color: var(--dt-surface-container-low); color: var(--dt-on-surface);
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-md);
-		padding: 0.5rem 2rem 0.5rem var(--dt-space-4);
-		font-size: 1rem; font-weight: 600; cursor: pointer;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23191c1e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-		background-repeat: no-repeat; background-position: right 0.75rem center;
+	/* ── filter bar ─────────────────────────────────── */
+	.filter-bar {
+		display: flex; align-items: center; gap: var(--dt-space-3);
+		flex-wrap: wrap; margin-bottom: var(--dt-space-3);
+	}
+	.chips { display: flex; gap: var(--dt-space-2); flex-wrap: wrap; }
+	.chip {
+		padding: 0.3rem 0.75rem; border-radius: 999px; border: var(--dt-ghost-border);
+		background: var(--dt-surface-container-low); color: var(--dt-on-surface-variant);
+		font-size: 0.8125rem; cursor: pointer;
+	}
+	.chip:hover { background: var(--dt-surface-container-high); }
+	.chip.active {
+		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
 	}
 
-	/* ── table ───────────────────────────────────── */
+	.search {
+		display: inline-flex; align-items: center; gap: 0.35rem;
+		padding: 0.3rem 0.6rem; border: var(--dt-ghost-border);
+		border-radius: var(--dt-radius-md); background: var(--dt-surface-container-low);
+		color: var(--dt-on-surface-variant);
+	}
+	.search input {
+		border: none; background: none; outline: none; color: var(--dt-on-surface);
+		font-size: 0.8125rem; min-width: 12rem;
+	}
+
+	.clear-btn {
+		display: inline-flex; align-items: center; gap: 0.25rem;
+		padding: 0.3rem 0.6rem; border: none; background: none;
+		color: var(--dt-primary); font-size: 0.8125rem; cursor: pointer;
+	}
+	.result-count {
+		margin-left: auto; font-size: 0.8125rem; color: var(--dt-on-surface-variant);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ── table ──────────────────────────────────────── */
 	.table-wrapper {
-		background: var(--dt-surface-container-lowest); border-radius: var(--dt-radius-lg);
-		overflow-x: auto;
+		background: var(--dt-surface-container-lowest);
+		border-radius: var(--dt-radius-lg); overflow-x: auto;
 	}
 	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 	thead { background: var(--dt-surface-container-high); }
@@ -341,15 +640,26 @@
 		text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
 	}
 	th.num { text-align: right; }
-	td { padding: 8px var(--dt-space-4); color: var(--dt-on-surface); white-space: nowrap; }
+	th.num .sort-btn { justify-content: flex-end; width: 100%; }
+	.sort-btn {
+		display: inline-flex; align-items: center; gap: 0.3rem;
+		padding: 0; border: none; background: none; cursor: pointer;
+		color: inherit; font: inherit; text-transform: inherit;
+		letter-spacing: inherit;
+	}
+	.sort-btn:hover { color: var(--dt-on-surface); }
+
+	td {
+		padding: 8px var(--dt-space-4); color: var(--dt-on-surface); white-space: nowrap;
+	}
 	td.num { text-align: right; font-variant-numeric: tabular-nums; }
+	td.past { color: var(--dt-error-text, #b3261e); }
 	tbody tr:nth-child(even) { background: var(--dt-surface-container-low); }
-	tbody tr:nth-child(odd)  { background: var(--dt-surface-container-lowest); }
+	tbody tr:nth-child(odd) { background: var(--dt-surface-container-lowest); }
 	tbody tr:hover { background: var(--dt-surface-container-high) !important; }
-	tbody tr.lost td { opacity: 0.65; }
+	tbody tr.lost td { opacity: 0.7; }
 
 	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
-
 	.link-btn {
 		display: inline-flex; align-items: center; gap: 0.25rem;
 		padding: 0; border: none; background: none; cursor: pointer;
@@ -360,41 +670,36 @@
 	.row-link { color: var(--dt-on-surface); text-decoration: underline; }
 	.row-link:hover { color: var(--dt-primary); }
 
-	.status {
+	/* Lage is never colour-alone — the label always carries the word. */
+	.lage {
 		padding: 1px 8px; border-radius: var(--dt-radius-sm);
 		font-size: 0.6875rem; font-weight: 600; white-space: nowrap;
 		background: var(--dt-surface-container-high); color: var(--dt-on-surface-variant);
 	}
-	.status--accepted { color: var(--admin-success, #2e7d32); }
-	.status--rejected, .status--expired { color: var(--dt-error-text, #b3261e); }
+	.lage--gewonnen { color: var(--admin-success, #2e7d32); }
+	.lage--verloren { color: var(--dt-error-text, #b3261e); }
 
-	tfoot { background: var(--dt-surface-container-high); }
-	tfoot th {
-		padding: 10px var(--dt-space-4); font-weight: 600; color: var(--dt-on-surface);
-		border-top: 2px solid var(--dt-outline-variant);
+	.tag {
+		margin-left: 0.35rem; padding: 1px 6px; border-radius: var(--dt-radius-sm);
+		font-size: 0.625rem; font-weight: 600; white-space: nowrap;
+		border: none; cursor: default;
 	}
-	tfoot th.num { text-align: right; }
+	.tag--chase { background: #1b6ca8; color: #fff; }
+	.tag--muted {
+		display: inline-flex; align-items: center; gap: 0.2rem;
+		background: var(--dt-surface-container-high); color: var(--dt-on-surface-variant);
+		cursor: pointer;
+	}
 
-	/* ── grand total ──────────────────────────────── */
-	.grand-total {
-		display: grid; grid-template-columns: 1fr repeat(4, 140px); gap: var(--dt-space-4);
-		align-items: center; padding: var(--dt-space-4) var(--dt-space-6);
-		background: var(--dt-primary); color: var(--dt-on-primary);
-		border-radius: var(--dt-radius-lg); font-weight: 700; font-size: 1rem;
-		margin-top: var(--dt-space-4);
+	.no-rows {
+		padding: var(--dt-space-6); text-align: center;
+		color: var(--dt-on-surface-variant); font-size: 0.875rem;
 	}
-	.grand-total .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 	@media (max-width: 768px) {
 		.page { padding: var(--dt-space-4); }
-		.year-btn, .nav-btn, .month-select { min-height: 44px; }
-
-		/* Fixed 5-column grid overflows narrow viewports — wrap with inline labels. */
-		.grand-total { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
-		.grand-total__label { flex-basis: 100%; }
-		.grand-total .num::before {
-			content: attr(data-label) ': ';
-			font-weight: 400; opacity: 0.85;
-		}
+		.year-btn, .export-btn, .chip { min-height: 40px; }
+		.chase-num { margin-left: 0; }
+		.result-count { margin-left: 0; }
 	}
 </style>

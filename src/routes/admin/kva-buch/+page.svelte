@@ -36,7 +36,7 @@
 	let activeYear = $state<string>('');
 	let filters = $state<KvaFilters>({ ...NO_FILTERS });
 	let sort = $state<KvaSortState | null>(null);
-	let followupDays = $state(21);
+	let followupDays = $state(6);
 	let savingDays = $state(false);
 
 	async function load() {

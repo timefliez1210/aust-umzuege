@@ -7,6 +7,7 @@
 	interface ScheduleJob {
 		inquiry_id: string | null;
 		job_date: string | null;
+		start_time: string | null;
 		status: string;
 		origin_street: string | null;
 		origin_house_number: string | null;
@@ -76,6 +77,17 @@
 	}
 
 	/**
+	 * Formats a HH:MM:SS time to "HH:MM Uhr", or "" when the entry has no time.
+	 *
+	 * Called by: Template (every card's date row).
+	 * Purpose: The list is ordered by the hour the worker starts, so that hour has
+	 * to be on the card. Two entries on one day are otherwise indistinguishable.
+	 */
+	function fmtTime(t: string | null): string {
+		return t ? `${t.slice(0, 5)} Uhr` : '';
+	}
+
+	/**
 	 * Joins one address into a single readable line.
 	 *
 	 * Called by: Template (job cards).
@@ -118,6 +130,9 @@
 				<button class="job-card item-card" onclick={() => goto(`/worker/items/${job.calendar_item_id}${job.job_date ? `?date=${job.job_date}` : ''}`)}>
 					<div class="job-top">
 						<span class="job-date">{fmtDate(job.job_date)}</span>
+						{#if fmtTime(job.start_time)}
+							<span class="job-time">{fmtTime(job.start_time)}</span>
+						{/if}
 						<span class="badge badge-item">{job.category ?? 'Termin'}</span>
 					</div>
 
@@ -157,6 +172,9 @@
 				<button class="job-card appt-card" onclick={() => goto(`/worker/appointments/${job.appointment_id}`)}>
 					<div class="job-top">
 						<span class="job-date">{fmtDate(job.job_date)}</span>
+						{#if fmtTime(job.start_time)}
+							<span class="job-time">{fmtTime(job.start_time)}</span>
+						{/if}
 						<span class="badge badge-appt">Zusatztermin</span>
 					</div>
 
@@ -204,6 +222,9 @@
 				<button class="job-card" onclick={() => goto(`/worker/jobs/${job.inquiry_id}${job.job_date ? `?date=${job.job_date}` : ''}`)}>
 					<div class="job-top">
 						<span class="job-date">{fmtDate(job.job_date)}</span>
+						{#if fmtTime(job.start_time)}
+							<span class="job-time">{fmtTime(job.start_time)}</span>
+						{/if}
 					</div>
 
 					<div class="job-route">
@@ -357,6 +378,12 @@
 		min-width: 2.5rem;
 		font-weight: 600;
 		color: #94a3b8;
+	}
+
+	.job-time {
+		font-size: 0.8125rem;
+		font-weight: 700;
+		color: #0e7490;
 	}
 
 	.contact-row {

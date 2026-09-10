@@ -17,6 +17,7 @@ const employee = {
 const inquiryJob = {
 	inquiry_id: 'inq-1',
 	job_date: '2026-06-15',
+	start_time: '08:00:00',
 	status: 'scheduled',
 	origin_street: 'Kaiserstr.',
 	origin_house_number: '32',
@@ -41,6 +42,7 @@ const inquiryJob = {
 const itemJob = {
 	inquiry_id: null,
 	job_date: '2026-06-16',
+	start_time: '14:00:00',
 	status: 'confirmed',
 	origin_street: null,
 	origin_house_number: null,
@@ -104,6 +106,15 @@ describe('worker schedule', () => {
 		expect(screen.getByText('Lager aufräumen')).toBeInTheDocument();
 		expect(screen.getByText('Halle 2')).toBeInTheDocument();
 		expect(screen.getByText('Handschuhe mitbringen')).toBeInTheDocument();
+	});
+
+	// The order down the card is the order the work happens, so the hour has to be
+	// legible on each one. Alex reported a worker seeing the later of two entries
+	// on one day listed first.
+	it('shows the start time on each card', async () => {
+		render(SchedulePage);
+		expect(await screen.findByText('08:00 Uhr')).toBeInTheDocument();
+		expect(screen.getByText('14:00 Uhr')).toBeInTheDocument();
 	});
 
 	// The crew reported they could not see who a job was for or reach them. Every

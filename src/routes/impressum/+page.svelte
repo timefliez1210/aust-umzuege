@@ -49,6 +49,13 @@
         </section>
 
         <section class="impressum__section">
+            <h2>E-Mail</h2>
+            <p>
+                <a href="mailto:info@aust-umzuege.de">info@aust-umzuege.de</a>
+            </p>
+        </section>
+
+        <section class="impressum__section">
             <h2>Internet</h2>
             <p>
                 <a
@@ -66,9 +73,9 @@
 
             <h3>Haftung für Inhalte</h3>
             <p>
-                Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene
+                Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene
                 Inhalte auf diesen Seiten nach den allgemeinen Gesetzen
-                verantwortlich. Nach § 8 bis 10 TMG sind wir als Diensteanbieter
+                verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter
                 jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde
                 Informationen zu überwachen oder nach Umständen zu forschen, die
                 auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur
@@ -115,16 +122,11 @@
         </section>
 
         <section class="impressum__section">
-            <h2>Online-Streitbeilegung gemäß Art. 14 Abs. 1 ODR-VO</h2>
+            <h2>Verbraucherstreitbeilegung</h2>
             <p>
-                Die Europäische Kommission stellt eine Plattform zur
-                Online-Streitbeilegung (OS) bereit, die Sie unter <a
-                    href="https://ec.europa.eu/consumers/odr/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >https://ec.europa.eu/consumers/odr/</a
-                > finden. Darüber hinaus nimmt unser Betrieb an einem Verbraucherstreitigkeit-verfahren
-                nicht teil.
+                Wir sind nicht bereit und nicht verpflichtet, an
+                Streitbeilegungsverfahren vor einer
+                Verbraucherschlichtungsstelle teilzunehmen.
             </p>
         </section>
 

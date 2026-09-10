@@ -21,6 +21,9 @@
 		address_postal_code: string | null;
 		address_floor: string | null;
 		address_elevator: boolean | null;
+		address_from_inquiry: boolean;
+		inquiry_origin: string | null;
+		inquiry_destination: string | null;
 		customer_name: string | null;
 		customer_phone: string | null;
 		notes: string | null;
@@ -184,6 +187,27 @@
 				<div class="address-line">{addressLine}</div>
 				{#if appt.address_floor}
 					<div class="address-sub">Etage: {appt.address_floor}{appt.address_elevator ? ' · Aufzug' : ''}</div>
+				{/if}
+				{#if appt.address_from_inquiry}
+					<div class="address-sub">Adresse vom Umzug übernommen</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
+	<!-- The move this Zusatztermin belongs to. Always shown: the crew needs the
+	     whole route, not just the one address this entry happens to carry. -->
+	{#if appt.inquiry_origin || appt.inquiry_destination}
+		<div class="section">
+			<h2 class="section-title"><MapPin size={15} /> Umzug</h2>
+			<div class="address-card">
+				{#if appt.inquiry_origin}
+					<div class="address-sub">Von</div>
+					<div class="address-line">{appt.inquiry_origin}</div>
+				{/if}
+				{#if appt.inquiry_destination}
+					<div class="address-sub">Nach</div>
+					<div class="address-line">{appt.inquiry_destination}</div>
 				{/if}
 			</div>
 		</div>

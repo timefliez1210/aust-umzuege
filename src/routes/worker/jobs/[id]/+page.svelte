@@ -18,11 +18,13 @@
 		start_time: string | null;
 		status: string;
 		origin_street: string | null;
+		origin_house_number: string | null;
 		origin_city: string | null;
 		origin_postal_code: string | null;
 		origin_floor: string | null;
 		origin_elevator: boolean | null;
 		destination_street: string | null;
+		destination_house_number: string | null;
 		destination_city: string | null;
 		destination_postal_code: string | null;
 		destination_floor: string | null;
@@ -33,6 +35,12 @@
 		photo_urls: string[];
 		/** Customer walkthrough videos — same route, rendered as <video>. */
 		video_urls: string[];
+		stop_street: string | null;
+		stop_house_number: string | null;
+		stop_city: string | null;
+		stop_postal_code: string | null;
+		stop_floor: string | null;
+		stop_elevator: boolean | null;
 		customer_name: string | null;
 		customer_phone: string | null;
 		notes: string | null;
@@ -165,6 +173,21 @@
 	}
 
 	/**
+	 * Joins a street name and its house number.
+	 *
+	 * Called by: Template (every address card).
+	 * Purpose: `addresses.street` holds the street name on its own. Rendering it
+	 * alone is what left the crew standing on a road with no door to knock on.
+	 *
+	 * @param street - Street name or null
+	 * @param houseNumber - House number or null
+	 * @returns "Brühl 33", or "" when neither is set
+	 */
+	function streetLine(street: string | null, houseNumber: string | null): string {
+		return [street, houseNumber].filter(Boolean).join(' ');
+	}
+
+	/**
 	 * Formats floor string and elevator flag to a German label.
 	 *
 	 * Called by: Template (address floor display).
@@ -223,8 +246,8 @@
 
 		<div class="address-card">
 			<div class="address-label">Auszug</div>
-			{#if job.origin_street}
-				<div class="address-line">{job.origin_street}</div>
+			{#if streetLine(job.origin_street, job.origin_house_number)}
+				<div class="address-line">{streetLine(job.origin_street, job.origin_house_number)}</div>
 			{/if}
 			{#if job.origin_postal_code || job.origin_city}
 				<div class="address-line">{[job.origin_postal_code, job.origin_city].filter(Boolean).join(' ')}</div>
@@ -237,12 +260,31 @@
 			{/if}
 		</div>
 
+		<!-- The Zwischenstopp, when the office entered one. A crew sent straight
+		     from A to B would drive past the address they were meant to call at. -->
+		{#if job.stop_street || job.stop_city}
+			<div class="address-arrow">↓</div>
+
+			<div class="address-card">
+				<div class="address-label">Zwischenstopp</div>
+				{#if streetLine(job.stop_street, job.stop_house_number)}
+					<div class="address-line">{streetLine(job.stop_street, job.stop_house_number)}</div>
+				{/if}
+				{#if job.stop_postal_code || job.stop_city}
+					<div class="address-line">{[job.stop_postal_code, job.stop_city].filter(Boolean).join(' ')}</div>
+				{/if}
+				{#if floorLabel(job.stop_floor, job.stop_elevator)}
+					<div class="address-floor">{floorLabel(job.stop_floor, job.stop_elevator)}</div>
+				{/if}
+			</div>
+		{/if}
+
 		<div class="address-arrow">↓</div>
 
 		<div class="address-card">
 			<div class="address-label">Einzug</div>
-			{#if job.destination_street}
-				<div class="address-line">{job.destination_street}</div>
+			{#if streetLine(job.destination_street, job.destination_house_number)}
+				<div class="address-line">{streetLine(job.destination_street, job.destination_house_number)}</div>
 			{/if}
 			{#if job.destination_postal_code || job.destination_city}
 				<div class="address-line">{[job.destination_postal_code, job.destination_city].filter(Boolean).join(' ')}</div>

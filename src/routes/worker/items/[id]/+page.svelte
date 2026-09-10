@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { workerGet, workerFetch } from '$lib/stores/worker.svelte';
 	import { normalizeTime } from '$lib/utils/time';
-	import { ArrowLeft, MapPin, Users, Clock, ClipboardList } from 'lucide-svelte';
+	import { ArrowLeft, MapPin, Users, Clock, ClipboardList, Phone } from 'lucide-svelte';
 
 	interface ItemDetail {
 		calendar_item_id: string;
@@ -12,6 +12,8 @@
 		title: string;
 		category: string;
 		location: string | null;
+		customer_name: string | null;
+		customer_phone: string | null;
 		description: string | null;
 		start_time: string | null;
 		end_time: string | null;
@@ -179,6 +181,20 @@
 		</div>
 	{/if}
 
+	<!-- Customer contact. A Termin can stand alone, but when it belongs to a
+	     customer the crew must be able to name them and ring them. -->
+	{#if item.customer_name || item.customer_phone}
+		<div class="section">
+			<h2 class="section-title"><Phone size={15} /> Kontakt</h2>
+			<div class="address-card">
+				{#if item.customer_name}<div class="address-line">{item.customer_name}</div>{/if}
+				{#if item.customer_phone}
+					<a class="phone-link" href={`tel:${item.customer_phone}`}>{item.customer_phone}</a>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	<!-- Description / task -->
 	{#if item.description}
 		<div class="section">
@@ -320,6 +336,15 @@
 
 	.section {
 		margin-bottom: 1.5rem;
+	}
+
+	.phone-link {
+		display: inline-block;
+		margin-top: 0.25rem;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: #0e7490;
+		text-decoration: none;
 	}
 
 	.section-title {

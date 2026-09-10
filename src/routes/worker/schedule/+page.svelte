@@ -2,18 +2,23 @@
 	import { goto } from '$app/navigation';
 	import { workerGet } from '$lib/stores/worker.svelte';
 	import { worker, workerData } from '$lib/stores/worker.svelte';
-	import { MapPin, Package, Users, ChevronRight } from 'lucide-svelte';
+	import { MapPin, Package, Users, ChevronRight, Phone, User } from 'lucide-svelte';
 
 	interface ScheduleJob {
 		inquiry_id: string | null;
 		job_date: string | null;
 		status: string;
 		origin_street: string | null;
+		origin_house_number: string | null;
 		origin_city: string | null;
+		origin_postal_code: string | null;
 		destination_street: string | null;
+		destination_house_number: string | null;
 		destination_city: string | null;
+		destination_postal_code: string | null;
 		estimated_volume_m3: number | null;
 		customer_name: string | null;
+		customer_phone: string | null;
 		colleague_names: string[];
 		entry_type: string;
 		calendar_item_id: string | null;
@@ -69,6 +74,24 @@
 			month: '2-digit',
 		});
 	}
+
+	/**
+	 * Joins one address into a single readable line.
+	 *
+	 * Called by: Template (job cards).
+	 * Purpose: The crew asked for full addresses, so the house number and the
+	 * postal code belong on the card, not just the street name and the town.
+	 */
+	function addressLine(
+		street: string | null,
+		houseNumber: string | null,
+		postalCode: string | null,
+		city: string | null,
+	): string {
+		const left = [street, houseNumber].filter(Boolean).join(' ');
+		const right = [postalCode, city].filter(Boolean).join(' ');
+		return [left, right].filter(Boolean).join(', ');
+	}
 </script>
 
 <svelte:head>
@@ -108,6 +131,22 @@
 							<span>{job.location}</span>
 						</div>
 					{/if}
+					{#if job.customer_name || job.customer_phone}
+						<div class="contact-row">
+							{#if job.customer_name}
+								<span class="contact-name"><User size={13} />{job.customer_name}</span>
+							{/if}
+							{#if job.customer_phone}
+								<a
+									class="contact-phone"
+									href={`tel:${job.customer_phone}`}
+									onclick={(e) => e.stopPropagation()}
+								>
+									<Phone size={13} />{job.customer_phone}
+								</a>
+							{/if}
+						</div>
+					{/if}
 					{#if job.employee_notes}
 						<p class="sched-notes">{job.employee_notes}</p>
 					{/if}
@@ -129,6 +168,22 @@
 						<div class="job-route item-location">
 							<MapPin size={14} />
 							<span>{job.location}</span>
+						</div>
+					{/if}
+					{#if job.customer_name || job.customer_phone}
+						<div class="contact-row">
+							{#if job.customer_name}
+								<span class="contact-name"><User size={13} />{job.customer_name}</span>
+							{/if}
+							{#if job.customer_phone}
+								<a
+									class="contact-phone"
+									href={`tel:${job.customer_phone}`}
+									onclick={(e) => e.stopPropagation()}
+								>
+									<Phone size={13} />{job.customer_phone}
+								</a>
+							{/if}
 						</div>
 					{/if}
 					{#if job.colleague_names.length > 0}
@@ -153,16 +208,42 @@
 
 					<div class="job-route">
 						<MapPin size={14} />
-						<span>
-							{#if job.origin_city && job.destination_city}
-								{job.origin_street ? job.origin_street + ', ' : ''}{job.origin_city} → {job.destination_street ? job.destination_street + ', ' : ''}{job.destination_city}
-							{:else if job.origin_city || job.destination_city}
-								{job.origin_street ? job.origin_street + ', ' : ''}{job.origin_city ?? job.destination_city}
+						<span class="route-lines">
+							{#if job.origin_city || job.destination_city}
+								{#if job.origin_city}
+									<span class="route-line">
+										<span class="route-label">Von</span>
+										{addressLine(job.origin_street, job.origin_house_number, job.origin_postal_code, job.origin_city)}
+									</span>
+								{/if}
+								{#if job.destination_city}
+									<span class="route-line">
+										<span class="route-label">Nach</span>
+										{addressLine(job.destination_street, job.destination_house_number, job.destination_postal_code, job.destination_city)}
+									</span>
+								{/if}
 							{:else}
 								—
 							{/if}
 						</span>
 					</div>
+
+					{#if job.customer_name || job.customer_phone}
+						<div class="contact-row">
+							{#if job.customer_name}
+								<span class="contact-name"><User size={13} />{job.customer_name}</span>
+							{/if}
+							{#if job.customer_phone}
+								<a
+									class="contact-phone"
+									href={`tel:${job.customer_phone}`}
+									onclick={(e) => e.stopPropagation()}
+								>
+									<Phone size={13} />{job.customer_phone}
+								</a>
+							{/if}
+						</div>
+					{/if}
 
 					<div class="job-meta">
 						{#if job.estimated_volume_m3}
@@ -252,11 +333,52 @@
 
 	.job-route {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		gap: 0.375rem;
 		font-size: 0.9375rem;
 		font-weight: 500;
 		color: #334155;
+	}
+
+	.route-lines {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.route-line {
+		display: block;
+		word-break: break-word;
+	}
+
+	.route-label {
+		display: inline-block;
+		min-width: 2.5rem;
+		font-weight: 600;
+		color: #94a3b8;
+	}
+
+	.contact-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		font-size: 0.875rem;
+		color: #475569;
+	}
+
+	.contact-name,
+	.contact-phone {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.contact-phone {
+		color: #2563eb;
+		font-weight: 600;
+		text-decoration: none;
 	}
 
 	.job-meta {

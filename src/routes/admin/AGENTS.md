@@ -2,7 +2,7 @@
 
 Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 
-> **Parent context**: [../AGENTS.md](../AGENTS.md)
+> **Parent context**: [../AGENTS.md](../../../AGENTS.md)
 
 ## Pages
 
@@ -11,19 +11,23 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 | `/admin` | Dashboard — KPIs, recent activity, conflict dates |
 | `/admin/login` | Login form (separate layout, no sidebar) |
 | `/admin/inquiries` | Inquiry list + create form |
-| `/admin/inquiries/[id]` | Inquiry detail — estimation, pricing, offer, assignments |
+| `/admin/inquiries/[id]` | Inquiry detail — estimation, pricing, offer, assignments, invoices |
 | `/admin/customers` | Customer directory |
 | `/admin/customers/[id]` | Customer detail with linked inquiries |
 | `/admin/emails` | Email thread list + compose |
-| `/admin/calendar` | Monthly calendar — bookings, capacity |
+| `/admin/emails/[id]` | Email thread detail |
+| `/admin/calendar` | Monthly calendar — bookings, capacity, day side panel; grid replaced by a `MonthAgenda` list view at ≤768px |
 | `/admin/orders` | Orders list |
 | `/admin/reports` | Reports and analytics |
 | `/admin/employees` | Employee list |
 | `/admin/employees/[id]` | Employee detail |
 | `/admin/calendar-items` | Calendar item list |
 | `/admin/calendar-items/[id]` | Calendar item detail |
-| `/admin/rechnungsausgangsbuch` | Invoice register — one year per tab in invoice-number order; KPI row, Monatsübersicht (chart + per-month figures), month/status/search filters, sortable columns, editable Bemerkungen/Teilzahlung/Zahlungsart, XLSX export (register + Monatsübersicht sheets), links to invoice PDF |
+| `/admin/rechnungsausgangsbuch` | Invoice register — one year per tab in invoice-number order; KPI row, Monatsübersicht (chart + per-month figures), month/status/search filters, sortable columns, editable Bemerkungen/Teilzahlung/Zahlungsart, "Bezahlt" button opening a `ReviewRequestModal`, XLSX export (register + Monatsübersicht sheets), links to invoice PDF |
 | `/admin/kva-buch` | KVA register — same shape as the invoice register, over `offers` |
+| `/admin/vehicles` | Fleet list — vehicles + maintenance reminders (due dates, ack/reset) |
+| `/admin/storage` | Storage-rental contracts (Lagerung) — create/edit, billing address, PDF |
+| `/admin/flash-contacts` | Quick callback requests (name/phone/time preference) with reminder state |
 | `/admin/settings` | User management |
 
 ## Key Components
@@ -38,6 +42,17 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 | `Toast.svelte` | `$lib/components/admin/` | Notification system |
 | `EmployeeAssignmentPanel.svelte` | `$lib/components/admin/` | Shared assignment panel (inquiry + calendar) |
 | `CalendarSidePanel.svelte` | `routes/admin/calendar/` | Day detail, capacity, assignments |
+| `MonthAgenda.svelte` | `routes/admin/calendar/_components/` | Mobile (≤768px) agenda list replacing the month grid |
+| `ManualInvoiceEditor.svelte` | `routes/admin/inquiries/[id]/_components/` | Free line-item table (Menge × Einzelpreis netto) for a full invoice's "Manuelle Rechnung" toggle |
+| `InvoicesSection.svelte` | `routes/admin/inquiries/[id]/_components/` | Invoice list/actions for an inquiry; hosts the `is_manual` toggle and `ManualInvoiceEditor` |
+| `ReviewRequestModal.svelte` | `$lib/components/admin/` | Google-review request prompt, opened from the register's "Bezahlt" button |
+| `InvoiceSendModal.svelte` | `$lib/components/admin/` | Compose/send an invoice email |
+| `ConfirmationDialog.svelte` | `$lib/components/admin/` | Reusable confirm/cancel modal, replaces inline `confirm()` |
+| `KnownAddressPicker.svelte` | `$lib/components/admin/` | Picks from a customer's saved address book |
+| `PhotoVideoUpload.svelte` | `$lib/components/admin/` | Estimation media upload |
+| `MonatsUebersicht.svelte` / `KvaMonatsUebersicht.svelte` | `$lib/components/admin/` | Per-month chart + figures for the invoice/KVA registers |
+
+`DataTable.svelte` reflows into a stacked card list below the shared 768px admin mobile breakpoint (see its `mobile-sort`/card-mode CSS); the shared `.modal`/`.modal-backdrop` classes anchor as a bottom sheet at the same breakpoint (`admin-components.css`), and `.modal-sheet` is a full-screen variant for content with its own header/body/footer.
 
 ## Auth Flow
 
@@ -99,7 +114,7 @@ Each day in the multi-day editor (`CalendarSidePanel`) has a day-level **Start**
 - On load, the day-level field is derived via `commonEmpTime`: it shows the crew's shared time, or blank if the employees differ.
 - All time inputs are normalised through `normalizeTimeInput` (`$lib/utils/format`), which accepts loose input (`7`, `7:30`, `3:30`) and pads to `HH:MM:SS`. Never hand-roll `value + ':00'` / `value.length === 5` — that silently drops single-digit-hour entries.
 
-`break_minutes` is the per-employee break deduction applied to the Ist hours. If a worker took no break, the admin zeros it manually.
+`break_minutes` is the per-employee break deduction applied to the Ist hours. If a worker took no break, the admin zeros it manually. Admin inputs take the break as **decimal hours** (e.g. `0.25`) and convert to/from the stored integer minutes via `breakHoursToMinutes`/`breakMinutesToHours` (`$lib/utils/time.ts`), used in `CalendarSidePanel`, `EmployeeAssignmentPanel` and the employee detail's `HoursAndAssignments`. The worker-facing UI (`/worker/*`) is unaffected — it never edits breaks.
 
 ### EmployeeAssignmentPanel — multi-day summary mode
 

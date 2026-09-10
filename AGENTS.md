@@ -1,6 +1,6 @@
 # frontend — SvelteKit Umzugsplattform
 
-Git submodule → `git@github.com:timefliez1210/aust-umzuege.git`
+Git submodule → `git@github.com:timefliez1210/aust-umzuege.git`. It has its own history: a change here needs a commit inside this submodule *and* a submodule-pointer commit in the parent repo (`aust_backend`) to take effect there.
 
 **One build, three audiences, three architectures.** Changes to public pages go live immediately on deploy — treat with care.
 
@@ -8,7 +8,7 @@ Git submodule → `git@github.com:timefliez1210/aust-umzuege.git`
 
 | Area | Routes | Auth | Rendering | Deploy Impact |
 |------|--------|------|-----------|---------------|
-| **Marketing** | `/`, `/leistungen`, `/ratgeber`, `/kontakt`, `/kostenloses-angebot`, `/foto-angebot`, `/firmenumzug-wolfsburg`, `/umzug-hannover`, `/umzug-braunschweig`, `/impressum`, `/datenschutz`, `/agb`, `/cookie-einstellungen` | None | `prerender: true` — static HTML at build time | **High** — public-facing, SEO-critical, indexed by Google |
+| **Marketing** | `/`, `/leistungen`, `/ratgeber`, `/kontakt`, `/ueber-uns`, `/kostenloses-angebot`, `/foto-angebot`, `/firmenumzug-wolfsburg`, `/umzug-hannover`, `/umzug-braunschweig`, `/impressum`, `/datenschutz`, `/agb`, `/cookie-einstellungen` | None | `prerender: true` — static HTML at build time | **High** — public-facing, SEO-critical, indexed by Google |
 | **Admin** | `/admin/*` | JWT (admin role) | `ssr: false`, `prerender: false` — client SPA | Medium — internal, Alex-only |
 | **Worker** | `/worker/*` | OTP session (employee role) | `ssr: false`, `prerender: false` — client SPA | Medium — internal, employees only |
 
@@ -38,9 +38,11 @@ Employee portal at `/worker/*`. 5 pages: login, schedule, hours, jobs detail, pr
 - **Layout**: Mobile-first shell (`max-width: 480px` centered card), bottom nav with 3 items (Einsätze, Stunden, Profil), dark header bar, logout button.
 - **Pages**:
   - `/worker/login` — Email → OTP code. No sidebar, no auth guard.
-  - `/worker/schedule` — Upcoming job list with day-grouped cards.
+  - `/worker/schedule` — Upcoming job list with day-grouped cards. Each card routes to one of three detail pages depending on entry type.
   - `/worker/hours` — Monthly hours summary: target vs. actual with per-assignment list (read-only).
-  - `/worker/jobs/[id]` — Job detail, route, customer contact, notes.
+  - `/worker/jobs/[id]` — Inquiry detail (`id` = `inquiry_id`): route, customer contact, notes, items.
+  - `/worker/items/[id]` — Calendar-item detail (`id` = `calendar_item_id`): title, category, location, notes.
+  - `/worker/appointments/[id]` — Appointment/Zusatztermin detail (`id` = `appointment_id`): kind, address, contact.
   - `/worker/profile` — Employee profile view.
 
 ---
@@ -56,7 +58,6 @@ Employee portal at `/worker/*`. 5 pages: login, schedule, hours, jobs detail, pr
 | `$lib/utils/constants.ts` | Admin (CUSTOMER_TYPE_LABELS) |
 | `$lib/utils/floor.ts` | Marketing + Admin (German floor parsing) |
 | `$lib/stores/auth.svelte.ts` | Admin |
-| `$lib/stores/worker.svelte.ts` | Worker |
 | `$lib/stores/cookieConsent.ts` | Marketing |
 | `$lib/components/` (top-level) | Marketing (Navbar, Footer, Hero, CTA, etc.) |
 | `$lib/components/admin/` | Admin only |

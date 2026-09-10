@@ -236,7 +236,7 @@ Covers: `format`, `pricing`, `volume`, `floor`, `sorting`, `calendar`.
 - **Score**: 84/100 (nearest competitor: 58/100)
 - **Indexed pages**: growing from 22 → 51+ planned
 - **Rich results active**: Breadcrumbs, FAQ, Review snippets, Image Metadata, HowTo
-- Roadmap: [`ACTION-PLAN.md`](ACTION-PLAN.md) · [`seo-domination-plan.md`](seo-domination-plan.md)
+- Roadmap: [`ACTION-PLAN.md`](ACTION-PLAN.md) · [`TODO-SEO.md`](TODO-SEO.md)
 
 ---
 
@@ -244,9 +244,10 @@ Covers: `format`, `pricing`, `volume`, `floor`, `sorting`, `calendar`.
 
 | File | What's in it |
 |------|-------------|
-| [`CLAUDE.md`](CLAUDE.md) | Full project guide |
-| [`src/routes/admin/CLAUDE.md`](src/routes/admin/CLAUDE.md) | Admin module deep-dive |
-| [`src/routes/admin/API.md`](src/routes/admin/API.md) | REST API endpoint reference |
-| [`ACTION-PLAN.md`](ACTION-PLAN.md) | SEO action items + status |
-| [`seo-domination-plan.md`](seo-domination-plan.md) | Full SEO growth roadmap |
-| [`Audit Reports/`](Audit%20Reports/) | SEO audit, competitor analysis, blog audit |
+| [`AGENTS.md`](AGENTS.md) | The three audiences, shared infrastructure, deploy |
+| [`MARKETING.md`](MARKETING.md) | The public site: SEO rules, page inventory, schema |
+| [`src/routes/admin/AGENTS.md`](src/routes/admin/AGENTS.md) | Admin SPA deep-dive |
+| [`src/routes/admin/API.md`](src/routes/admin/API.md) | REST endpoints the admin SPA calls |
+| [`TESTING.md`](TESTING.md) | Unit, integration and Playwright layers |
+| [`ACTION-PLAN.md`](ACTION-PLAN.md) · [`TODO-SEO.md`](TODO-SEO.md) | SEO action items and status |
+| [`AUDIT.md`](AUDIT.md) · [`FULL-AUDIT-REPORT.md`](FULL-AUDIT-REPORT.md) · [`blog-audit-report.md`](blog-audit-report.md) | Point-in-time audits, not current state |

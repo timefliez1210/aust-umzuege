@@ -917,9 +917,15 @@
 	}
 
 	/* ── table ───────────────────────────────────── */
+	/* The register is its own scroll box rather than growing the page: that keeps
+	 * the sticky header row (and its sort buttons) and the horizontal scrollbar on
+	 * its bottom edge both in view while working down a full year of rows.
+	 * The 14rem reserve is what leaves the box fully on screen — clear of the 56px
+	 * sticky topbar — once the page is scrolled down to the register. */
 	.table-wrapper {
 		background: var(--dt-surface-container-lowest); border-radius: var(--dt-radius-lg);
-		overflow-x: auto;
+		max-height: calc(100vh - 14rem);
+		overflow: auto;
 	}
 	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 	thead { background: var(--dt-surface-container-high); }
@@ -930,7 +936,7 @@
 	}
 	/* A full year is a long scroll — keep the column labels in view. */
 	thead th {
-		position: sticky; top: 0; z-index: 1;
+		position: sticky; top: 0; z-index: 2;
 		background: var(--dt-surface-container-high);
 	}
 	th.num { text-align: right; }
@@ -1096,9 +1102,12 @@
 		.search { flex: 1; }
 		.chip.reset { margin-left: 0; }
 		.kpis { grid-template-columns: repeat(2, 1fr); }
+	}
 
-		/* Fixed 5-column grid (label + 4×120px) overflows narrow viewports —
-		 * switch to a wrapping flex list with inline labels instead. */
+	/* The fixed 5-column grid (label + 4×120px) needs ~700px, more than the content
+	 * column has next to the 240px sidebar on a laptop — so it reflows well above
+	 * the mobile breakpoint: a wrapping flex list with inline labels instead. */
+	@media (max-width: 1100px) {
 		.grand-total {
 			display: flex;
 			flex-wrap: wrap;

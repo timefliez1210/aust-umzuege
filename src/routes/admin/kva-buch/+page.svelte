@@ -628,9 +628,14 @@
 	}
 
 	/* ── table ──────────────────────────────────────── */
+	/* Same scroll box as the Rechnungsausgangsbuch: the sticky header row and the
+	 * horizontal scrollbar on the bottom edge stay in view while scrolling rows,
+	 * with the same 14rem reserve for the sticky topbar. */
 	.table-wrapper {
 		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg); overflow-x: auto;
+		border-radius: var(--dt-radius-lg);
+		max-height: calc(100vh - 14rem);
+		overflow: auto;
 	}
 	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 	thead { background: var(--dt-surface-container-high); }
@@ -638,6 +643,10 @@
 		padding: 8px var(--dt-space-4); text-align: left; font-weight: 500;
 		color: var(--dt-on-surface-variant); font-size: 12px;
 		text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+	}
+	thead th {
+		position: sticky; top: 0; z-index: 2;
+		background: var(--dt-surface-container-high);
 	}
 	th.num { text-align: right; }
 	th.num .sort-btn { justify-content: flex-end; width: 100%; }

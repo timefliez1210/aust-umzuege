@@ -123,6 +123,10 @@
 
 	.admin-main {
 		flex: 1;
+		/* Without this, min-width:auto lets the column grow to its widest content —
+		 * the register tables then push the shell past the viewport instead of
+		 * scrolling inside their own .table-wrapper. */
+		min-width: 0;
 		margin-left: 240px;
 		transition: margin-left 150ms ease;
 		display: flex;

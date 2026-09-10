@@ -10,6 +10,14 @@
 	import DocumentsCard from './_components/DocumentsCard.svelte';
 	import HoursAndAssignments from './_components/HoursAndAssignments.svelte';
 
+	interface EmployeeDocument {
+		id: string;
+		label: string;
+		filename: string;
+		size_bytes: number;
+		created_at: string;
+	}
+
 	interface Employee {
 		id: string;
 		salutation: string | null;
@@ -21,6 +29,7 @@
 		active: boolean;
 		arbeitsvertrag_key: string | null;
 		mitarbeiterfragebogen_key: string | null;
+		documents: EmployeeDocument[];
 		created_at: string;
 		updated_at: string;
 	}
@@ -104,6 +113,7 @@
 		employeeId={data.id}
 		arbeitsvertragKey={data.arbeitsvertrag_key}
 		mitarbeiterfragebogenKey={data.mitarbeiterfragebogen_key}
+		documents={data.documents ?? []}
 		onUpdated={(updated) => { if (data) data = { ...data, ...updated }; }}
 	/>
 {/if}

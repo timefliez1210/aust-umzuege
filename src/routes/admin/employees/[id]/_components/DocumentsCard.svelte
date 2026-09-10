@@ -2,24 +2,138 @@
 	import { apiFetch, apiDownload } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
-	import { Upload, Download, X, FileText } from 'lucide-svelte';
+	import { Upload, Download, X, FileText, Plus } from 'lucide-svelte';
+
+	interface EmployeeDocument {
+		id: string;
+		label: string;
+		filename: string;
+		size_bytes: number;
+		created_at: string;
+	}
 
 	interface DocumentKeys {
 		arbeitsvertrag_key: string | null;
 		mitarbeiterfragebogen_key: string | null;
+		documents: EmployeeDocument[];
 	}
 
 	let {
 		employeeId,
 		arbeitsvertragKey,
 		mitarbeiterfragebogenKey,
+		documents,
 		onUpdated
 	}: {
 		employeeId: string;
 		arbeitsvertragKey: string | null;
 		mitarbeiterfragebogenKey: string | null;
+		documents: EmployeeDocument[];
 		onUpdated: (updated: Partial<DocumentKeys>) => void;
 	} = $props();
+
+	/** Label Alex types for the next free-form upload. */
+	let newDocLabel = $state('');
+	/** True while a labelled document is being uploaded. */
+	let uploadingExtra = $state(false);
+	/** The labelled document awaiting delete confirmation. */
+	let pendingExtraDoc = $state<EmployeeDocument | null>(null);
+	let deletingExtraId = $state<string | null>(null);
+
+	const canUploadExtra = $derived(newDocLabel.trim().length > 0 && !uploadingExtra);
+
+	/**
+	 * Formats a byte count for the document row.
+	 *
+	 * Called by: Template (labelled document rows)
+	 * Purpose: Shows the size in the unit a person reads without counting zeros.
+	 */
+	function fmtSize(bytes: number): string {
+		if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+		return `${bytes} B`;
+	}
+
+	/**
+	 * Opens the file picker for a labelled upload.
+	 *
+	 * Called by: Template ("Hochladen" button in the add row)
+	 * Purpose: The label is typed first, so the picker only opens once there is one.
+	 */
+	function triggerExtraPicker() {
+		if (!canUploadExtra) return;
+		document.getElementById('doc-input-extra')?.click();
+	}
+
+	/**
+	 * Uploads the chosen file under the typed label.
+	 *
+	 * Called by: Template (onchange on the hidden extra file input)
+	 * Purpose: POSTs label + file as multipart and refreshes the document list.
+	 */
+	async function handleExtraUpload(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		const label = newDocLabel.trim();
+		if (!file || !label) return;
+
+		uploadingExtra = true;
+		try {
+			const form = new FormData();
+			form.append('label', label);
+			form.append('file', file);
+			const updated = await apiFetch<DocumentKeys>(
+				`/api/v1/admin/employees/${employeeId}/documents`,
+				{ method: 'POST', body: form }
+			);
+			onUpdated(updated);
+			newDocLabel = '';
+			showToast(`${label} hochgeladen`, 'success');
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : 'Upload fehlgeschlagen', 'error');
+		} finally {
+			uploadingExtra = false;
+		}
+	}
+
+	/**
+	 * Downloads a labelled document through the API.
+	 *
+	 * Called by: Template (download button on a labelled document row)
+	 * Purpose: Uses apiDownload so the admin JWT is sent; S3 is not public.
+	 */
+	async function handleExtraDownload(doc: EmployeeDocument) {
+		await apiDownload(
+			`/api/v1/admin/employees/${employeeId}/documents/extra/${doc.id}`,
+			doc.filename
+		);
+	}
+
+	/**
+	 * Deletes the pending labelled document after confirmation.
+	 *
+	 * Called by: ConfirmationDialog (onConfirm)
+	 * Purpose: Removes the file from S3 and the row from the list.
+	 */
+	async function handleExtraDelete() {
+		const doc = pendingExtraDoc;
+		if (!doc) return;
+		deletingExtraId = doc.id;
+		try {
+			const updated = await apiFetch<DocumentKeys>(
+				`/api/v1/admin/employees/${employeeId}/documents/extra/${doc.id}`,
+				{ method: 'DELETE' }
+			);
+			onUpdated(updated);
+			pendingExtraDoc = null;
+			showToast(`${doc.label} geloescht`, 'success');
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : 'Fehler beim Loeschen', 'error');
+		} finally {
+			deletingExtraId = null;
+		}
+	}
 
 	/** Tracks which doc type is currently being uploaded (shows spinner). */
 	let uploadingDoc = $state<string | null>(null);
@@ -208,8 +322,88 @@
 				/>
 			</div>
 		{/each}
+
+		<!-- Free-form documents: whatever the personnel file needs, named by hand. -->
+		{#each documents as doc (doc.id)}
+			<div class="doc-row">
+				<div class="doc-icon">
+					<FileText size={20} />
+				</div>
+				<div class="doc-info">
+					<span class="doc-label">{doc.label}</span>
+					<span class="doc-filename">{doc.filename} · {fmtSize(doc.size_bytes)}</span>
+				</div>
+				<div class="doc-actions">
+					<button
+						class="btn btn-sm"
+						onclick={() => handleExtraDownload(doc)}
+						title="Herunterladen"
+					>
+						<Download size={14} />
+					</button>
+					<button
+						class="btn btn-sm btn-danger-sm"
+						onclick={() => { pendingExtraDoc = doc; }}
+						disabled={deletingExtraId === doc.id}
+						title="Loeschen"
+					>
+						<X size={14} />
+					</button>
+				</div>
+			</div>
+		{/each}
+
+		<div class="doc-row doc-add-row">
+			<div class="doc-icon">
+				<Plus size={20} />
+			</div>
+			<div class="doc-info">
+				<label class="doc-add-label" for="doc-new-label">Weiteres Dokument</label>
+				<input
+					id="doc-new-label"
+					class="doc-add-input"
+					type="text"
+					maxlength="100"
+					placeholder="Bezeichnung, z. B. Führungszeugnis"
+					bind:value={newDocLabel}
+					onkeydown={(e) => { if (e.key === 'Enter') triggerExtraPicker(); }}
+				/>
+			</div>
+			<div class="doc-actions">
+				<button
+					class="btn btn-sm btn-primary-sm"
+					onclick={triggerExtraPicker}
+					disabled={!canUploadExtra}
+					title={canUploadExtra ? 'Datei auswählen' : 'Bitte zuerst eine Bezeichnung eingeben'}
+				>
+					{#if uploadingExtra}
+						Laden...
+					{:else}
+						<Upload size={14} />
+						Hochladen
+					{/if}
+				</button>
+			</div>
+			<input
+				id="doc-input-extra"
+				type="file"
+				accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+				class="doc-input-hidden"
+				onchange={handleExtraUpload}
+			/>
+		</div>
 	</div>
 </div>
+
+<ConfirmationDialog
+	open={pendingExtraDoc !== null}
+	title="Dokument löschen"
+	message={pendingExtraDoc ? `${pendingExtraDoc.label} wirklich löschen?` : ''}
+	confirmLabel="Löschen"
+	loading={deletingExtraId !== null}
+	onConfirm={handleExtraDelete}
+	onCancel={() => { pendingExtraDoc = null; }}
+/>
 
 <ConfirmationDialog
 	bind:open={showDocDeleteDialog}
@@ -301,6 +495,32 @@
 
 	.doc-input-hidden {
 		display: none;
+	}
+
+	.doc-add-row {
+		background: transparent;
+		border: 1px dashed var(--dt-outline-variant);
+	}
+
+	.doc-add-label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--dt-on-surface-variant);
+	}
+
+	.doc-add-input {
+		width: 100%;
+		padding: 0.375rem 0.5rem;
+		font-size: 0.875rem;
+		color: var(--dt-on-surface);
+		background: var(--dt-surface-container-low);
+		border: 1px solid var(--dt-outline-variant);
+		border-radius: var(--dt-radius-sm);
+	}
+
+	.doc-add-input:focus {
+		outline: none;
+		border-color: var(--dt-primary);
 	}
 
 	.btn-primary-sm {

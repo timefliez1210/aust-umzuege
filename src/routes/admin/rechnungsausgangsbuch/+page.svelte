@@ -451,6 +451,10 @@
 			// Patch the row in place rather than refetching the whole register — a
 			// reload would reset the year selection and lose the scroll position.
 			item.paid_at = outcome.paid_at;
+			// mark_paid backfills sent_at for a draft that Alex sent by hand. Mirror the
+			// same COALESCE here so the Versendet column fills in with the rest of the
+			// row instead of staying on "\u2014" until the next reload.
+			item.sent_at = item.sent_at || outcome.paid_at;
 			item.is_settled = true;
 			item.offene_zahlungen_cents = 0;
 			// The backend stamps EC when no Zahlungsart was chosen — every row in Alex's
@@ -685,17 +689,19 @@
 								<td>
 									{#if item.paid_at}
 										{fmtDate(item.paid_at)}
-									{:else if isDraft(item)}
-										<!-- Booking a never-issued invoice as paid would also flip its
-										     inquiry to "bezahlt", from any status. Not offered here. -->
-										<span class="muted-cell">&mdash;</span>
 									{:else}
+										<!-- Alex regularly downloads a draft PDF and sends it himself
+										     instead of using "Senden", so the invoice never picks up a
+										     sent_at in the system even though it genuinely went out.
+										     Booking it as paid here backfills sent_at (see mark_paid). -->
 										<button
 											type="button"
 											class="paid-btn"
 											onclick={() => markPaid(item)}
 											disabled={payingId === item.id}
-											title="Als bezahlt buchen"
+											title={isDraft(item)
+												? 'Als bezahlt buchen (Rechnung gilt damit auch als versendet)'
+												: 'Als bezahlt buchen'}
 										>
 											<Check size={13} />
 											{payingId === item.id ? '…' : 'Bezahlt'}
@@ -979,7 +985,6 @@
 	.row-link { color: var(--dt-on-surface); text-decoration: underline; }
 	.row-link:hover { color: var(--dt-primary); }
 
-	.muted-cell { color: var(--dt-on-surface-variant); }
 	.type-label { white-space: nowrap; }
 	.type-label.credit { color: var(--dt-error-text, #b3261e); font-weight: 600; }
 

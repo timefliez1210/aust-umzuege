@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import Sidebar from './Sidebar.svelte';
@@ -7,9 +7,27 @@ import { setTestUrl } from '$lib/test/app-stores';
 
 const baseProps = { collapsed: false, onToggle: () => {} };
 
+/** Badge payload the sidebar polls on mount; overridden per test. */
+let badgeCounts: Record<string, number>;
+
 beforeEach(() => {
 	auth.logout();
 	setTestUrl('/admin');
+	badgeCounts = { flash_contacts: 0, unread_emails: 0, new_inquiries: 0, kva_followups: 0 };
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(() =>
+			Promise.resolve(
+				new Response(JSON.stringify(badgeCounts), {
+					headers: { 'content-type': 'application/json' }
+				})
+			)
+		)
+	);
+});
+
+afterEach(() => {
+	vi.unstubAllGlobals();
 });
 
 describe('Sidebar — navigation', () => {
@@ -71,5 +89,43 @@ describe('Sidebar — collapse behaviour', () => {
 	it('applies the mobile-open drawer class', () => {
 		const { container } = render(Sidebar, { ...baseProps, mobileOpen: true });
 		expect(container.querySelector('.sidebar.mobile-open')).not.toBeNull();
+	});
+});
+
+describe('Sidebar — badges', () => {
+	it('shows the open-callback count on the Rückrufe link', async () => {
+		badgeCounts.flash_contacts = 3;
+		render(Sidebar, baseProps);
+		expect(await screen.findByLabelText('3 offene Rückrufe')).toHaveTextContent('3');
+	});
+
+	it('badges every counted section and leaves the rest bare', async () => {
+		badgeCounts = {
+			flash_contacts: 1,
+			unread_emails: 2,
+			new_inquiries: 4,
+			kva_followups: 5
+		};
+		const { container } = render(Sidebar, baseProps);
+		await screen.findByLabelText('1 offene Rückrufe');
+		expect(screen.getByLabelText('2 ungelesene E-Mails')).toBeInTheDocument();
+		expect(screen.getByLabelText('4 neue Anfragen')).toBeInTheDocument();
+		expect(screen.getByLabelText('5 KVA zum Nachfassen')).toBeInTheDocument();
+		expect(container.querySelectorAll('.nav-badge').length).toBe(4);
+	});
+
+	it('hides a badge at zero and caps three-digit counts', async () => {
+		badgeCounts.flash_contacts = 120;
+		const { container } = render(Sidebar, baseProps);
+		expect(await screen.findByLabelText('120 offene Rückrufe')).toHaveTextContent('99+');
+		// unread_emails/new_inquiries/kva_followups are all 0 — no badge for them.
+		expect(container.querySelectorAll('.nav-badge').length).toBe(1);
+	});
+
+	it('keeps the navigation intact when the badge poll fails', async () => {
+		vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
+		const { container } = render(Sidebar, baseProps);
+		expect(screen.getByRole('link', { name: 'Rückrufe' })).toBeInTheDocument();
+		await vi.waitFor(() => expect(container.querySelectorAll('.nav-badge').length).toBe(0));
 	});
 });

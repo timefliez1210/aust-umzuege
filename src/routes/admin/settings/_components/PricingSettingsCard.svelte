@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { apiGet, apiPut } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { Euro, Hash } from 'lucide-svelte';
+	import { Euro, Hash, ListOrdered } from 'lucide-svelte';
+	import { invalidatePositions, type PositionPrice } from '$lib/utils/positionCatalog';
 
 	interface PricingSettings {
 		rate_per_person_hour_cents: number;
@@ -14,8 +15,14 @@
 	}
 	interface SettingsResponse {
 		pricing: PricingSettings;
+		positions: PositionPrice[];
 		next_invoice_number: number;
 		next_offer_number: number;
+	}
+
+	/** One row of the Positionen card: the catalogue entry plus its euro input. */
+	interface PositionRow extends PositionPrice {
+		priceEur: number;
 	}
 
 	let settingsLoading = $state(true);
@@ -28,6 +35,10 @@
 	let packingPrice = $state(0);
 	let transporterPrice = $state(0);
 	let savingPricing = $state(false);
+
+	// Positionen — the fixed KVA line items and their unit prices.
+	let positions = $state<PositionRow[]>([]);
+	let savingPositions = $state(false);
 
 	let nextInvoiceNumber = $state(0);
 	let nextOfferNumber = $state(0);
@@ -54,6 +65,10 @@
 			parkingBanPrice = data.pricing.parking_ban_price;
 			packingPrice = data.pricing.packing_price;
 			transporterPrice = data.pricing.transporter_price;
+			positions = (data.positions ?? []).map((p) => ({
+				...p,
+				priceEur: p.unit_price_cents / 100
+			}));
 			nextInvoiceNumber = data.next_invoice_number;
 			nextOfferNumber = data.next_offer_number;
 		} catch (e) {
@@ -89,6 +104,35 @@
 			showToast((e as Error).message || 'Fehler beim Speichern', 'error');
 		} finally {
 			savingPricing = false;
+		}
+	}
+
+	/**
+	 * Persists the position unit prices via PUT /api/v1/admin/settings/positions.
+	 *
+	 * Called by: Template (Positionen form onsubmit).
+	 * Purpose: These prices were hardcoded in the inquiry page, so a change to
+	 *          e.g. the Kleiderboxen rate needed a redeploy (feedback report
+	 *          ce764f7b). The cached catalogue is dropped afterwards so the next
+	 *          KVA picks the new prices up without a reload.
+	 */
+	async function savePositions(e: Event) {
+		e.preventDefault();
+		savingPositions = true;
+		try {
+			await apiPut('/api/v1/admin/settings/positions', {
+				positions: positions.map((p) => ({
+					key: p.key,
+					unit_price_cents: Math.round(p.priceEur * 100)
+				}))
+			});
+			invalidatePositions();
+			showToast('Positionspreise gespeichert', 'success');
+			await loadSettings();
+		} catch (e) {
+			showToast((e as Error).message || 'Fehler beim Speichern', 'error');
+		} finally {
+			savingPositions = false;
 		}
 	}
 
@@ -142,34 +186,64 @@
 					<label for="fahrt">Fahrkosten pro km (EUR)</label>
 					<input id="fahrt" type="number" step="0.01" min="0" bind:value={fahrtRatePerKm} required />
 				</div>
-				<div class="field">
-					<label for="assembly">De-/Montage pro Einheit (EUR)</label>
-					<input id="assembly" type="number" step="0.01" min="0" bind:value={assemblyPrice} required />
-				</div>
-			</div>
-			<div class="form-row">
-				<div class="field">
-					<label for="parking">Halteverbotszone pro Stück (EUR)</label>
-					<input id="parking" type="number" step="0.01" min="0" bind:value={parkingBanPrice} required />
-				</div>
-				<div class="field">
-					<label for="packing">Umzugsmaterial (EUR)</label>
-					<input id="packing" type="number" step="0.01" min="0" bind:value={packingPrice} required />
-				</div>
-			</div>
-			<div class="form-row">
-				<div class="field">
-					<label for="transporter">3,5t Transporter (EUR)</label>
-					<input id="transporter" type="number" step="0.01" min="0" bind:value={transporterPrice} required />
-				</div>
 				<div class="field"></div>
 			</div>
+			<p class="hint">
+				De-/Montage, Halteverbotszone, Umzugsmaterial und Transporter stehen
+				jetzt unten bei den Positionen.
+			</p>
 			<button type="submit" class="btn-create" disabled={savingPricing}>
 				{#if savingPricing}
 					Wird gespeichert...
 				{:else}
 					<Euro size={16} />
 					Preise speichern
+				{/if}
+			</button>
+		</form>
+	{/if}
+</div>
+
+<!-- Positions Card -->
+<div class="card">
+	<div class="card-header">
+		<ListOrdered size={20} />
+		<h2>Positionen</h2>
+	</div>
+
+	{#if settingsLoading}
+		<div class="loading">Lade Einstellungen...</div>
+	{:else}
+		<form class="create-form" onsubmit={savePositions}>
+			<div class="positions">
+				{#each positions as p, i (p.key)}
+					<div class="position-row">
+						<label for="pos-{p.key}">
+							{p.label}
+							{#if p.remark}<span class="remark">{p.remark}</span>{/if}
+						</label>
+						<input
+							id="pos-{p.key}"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={positions[i].priceEur}
+							required
+						/>
+					</div>
+				{/each}
+			</div>
+			<p class="hint">
+				Einzelpreise (netto) der festen Positionen. Sie werden beim Anlegen einer
+				Position im KVA vorgeschlagen und lassen sich dort weiterhin einzeln
+				überschreiben. Bereits erstellte Kostenvoranschläge bleiben unverändert.
+			</p>
+			<button type="submit" class="btn-create" disabled={savingPositions}>
+				{#if savingPositions}
+					Wird gespeichert...
+				{:else}
+					<ListOrdered size={16} />
+					Positionspreise speichern
 				{/if}
 			</button>
 		</form>
@@ -253,6 +327,39 @@
 		font-size: 0.9375rem;
 		align-self: flex-start;
 		justify-content: center;
+	}
+
+	.positions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	/* Label left, price right: the whole card reads as one price list rather
+	   than as a grid of unrelated fields. */
+	.position-row {
+		display: grid;
+		grid-template-columns: 1fr 9rem;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.position-row label {
+		font-size: 0.9375rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+
+	.position-row .remark {
+		font-size: 0.75rem;
+		color: var(--dt-on-surface-variant);
+	}
+
+	.position-row input {
+		padding: 0.5rem 0.625rem;
+		font-size: 0.9375rem;
+		text-align: right;
 	}
 
 	.hint {

@@ -35,48 +35,90 @@
 		onMobileClose?: () => void;
 	} = $props();
 
-	/** Unread inbound mail, shown as a badge on the E-Mails link. */
-	let unreadEmails = $state(0);
+	interface NavBadgeCounts {
+		flash_contacts: number;
+		unread_emails: number;
+		new_inquiries: number;
+		kva_followups: number;
+	}
+
+	/** Counts shown as badges next to the navigation links. */
+	let badges = $state<NavBadgeCounts>({
+		flash_contacts: 0,
+		unread_emails: 0,
+		new_inquiries: 0,
+		kva_followups: 0
+	});
 
 	/**
-	 * Polls the mailbox badge count.
+	 * Polls the navigation badge counts.
 	 *
 	 * Called by: $effect (mount) and its own interval.
-	 * Purpose: Nothing in the dashboard indicated that mail had arrived — Alex had to
-	 *          open the E-Mails tab to find out. A minute is deliberately slack: this
-	 *          is an ambient hint, and the Telegram reminder is what actually chases
-	 *          an unanswered mail. Failures are swallowed so a blip cannot break the
-	 *          navigation.
+	 * Purpose: Nothing outside the respective page said that a Rückruf, a mail or a
+	 *          new inquiry had arrived — Alex had to open each tab to find out
+	 *          (feedback report dc7515c2). A minute is deliberately slack: these are
+	 *          ambient hints, and Telegram is what actually chases anything urgent.
+	 *          Failures are swallowed so a blip cannot break the navigation.
 	 */
-	async function loadUnreadEmails() {
+	async function loadBadges() {
 		try {
-			const res = await apiGet<{ unread_messages: number }>('/api/v1/admin/emails/unread');
-			unreadEmails = res.unread_messages;
+			badges = await apiGet<NavBadgeCounts>('/api/v1/admin/nav-badges');
 		} catch {
-			// Ambient badge — a failed poll should leave the last known count alone.
+			// Ambient badges — a failed poll should leave the last known counts alone.
 		}
 	}
 
 	$effect(() => {
-		loadUnreadEmails();
+		loadBadges();
 	});
 
-	const badgePoll = setInterval(loadUnreadEmails, 60_000);
+	const badgePoll = setInterval(loadBadges, 60_000);
 	onDestroy(() => clearInterval(badgePoll));
 
-	const links = [
+	/** Which badge count, if any, rides on each link — key into `badges`. */
+	const links: {
+		href: string;
+		label: string;
+		icon: typeof LayoutDashboard;
+		badge?: keyof NavBadgeCounts;
+		badgeLabel?: (n: number) => string;
+	}[] = [
 		{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-		{ href: '/admin/inquiries', label: 'Anfragen', icon: FileText },
+		{
+			href: '/admin/inquiries',
+			label: 'Anfragen',
+			icon: FileText,
+			badge: 'new_inquiries',
+			badgeLabel: (n) => `${n} neue Anfragen`
+		},
 		{ href: '/admin/orders', label: 'Auftraege', icon: ClipboardList },
 		{ href: '/admin/employees', label: 'Mitarbeiter', icon: UserCheck },
 		{ href: '/admin/customers', label: 'Kunden', icon: Users },
-		{ href: '/admin/emails', label: 'E-Mails', icon: Mail },
+		{
+			href: '/admin/emails',
+			label: 'E-Mails',
+			icon: Mail,
+			badge: 'unread_emails',
+			badgeLabel: (n) => `${n} ungelesene E-Mails`
+		},
 		{ href: '/admin/calendar', label: 'Kalender', icon: CalendarDays },
 		{ href: '/admin/calendar-items', label: 'Termine', icon: CalendarCheck },
 		{ href: '/admin/rechnungsausgangsbuch', label: 'Rechnungsausgangsbuch', icon: BookOpen },
-		{ href: '/admin/kva-buch', label: 'KVA-Buch', icon: BookMarked },
+		{
+			href: '/admin/kva-buch',
+			label: 'KVA-Buch',
+			icon: BookMarked,
+			badge: 'kva_followups',
+			badgeLabel: (n) => `${n} KVA zum Nachfassen`
+		},
 		{ href: '/admin/storage', label: 'Lagerung', icon: Warehouse },
-		{ href: '/admin/flash-contacts', label: 'Rückrufe', icon: PhoneCall },
+		{
+			href: '/admin/flash-contacts',
+			label: 'Rückrufe',
+			icon: PhoneCall,
+			badge: 'flash_contacts',
+			badgeLabel: (n) => `${n} offene Rückrufe`
+		},
 		{ href: '/admin/vehicles', label: 'Fuhrpark', icon: Truck },
 		{ href: '/admin/settings', label: 'Einstellungen', icon: Settings }
 	];
@@ -116,18 +158,19 @@
 	<nav class="sidebar-nav">
 		{#each links as link}
 			{@const active = isActive(link.href, $page.url.pathname)}
-			{@const badge = link.href === '/admin/emails' ? unreadEmails : 0}
+			{@const count = link.badge ? badges[link.badge] : 0}
 			<a href={link.href} class="sidebar-link" class:active aria-current={active ? 'page' : undefined}>
 				<link.icon size={20} />
 				{#if !collapsed}
 					<span>{link.label}</span>
 				{/if}
-				{#if badge > 0}
+				{#if count > 0}
 					<span
 						class="nav-badge"
 						class:collapsed
-						aria-label="{badge} ungelesene E-Mails"
-					>{badge > 99 ? '99+' : badge}</span>
+						class:urgent={link.badge === 'flash_contacts'}
+						aria-label={link.badgeLabel?.(count)}
+					>{count > 99 ? '99+' : count}</span>
 				{/if}
 			</a>
 		{/each}
@@ -155,6 +198,12 @@
 		font-weight: 600;
 		line-height: 1.25rem;
 		text-align: center;
+	}
+
+	/* A waiting customer outranks unread mail, so the Rückruf count is the one
+	   colour that reads as "call now" rather than "look when you get to it". */
+	.nav-badge.urgent {
+		background: var(--dt-error, #b3261e);
 	}
 
 	/* Collapsed rail: the label is gone, so the count rides on the icon instead. */

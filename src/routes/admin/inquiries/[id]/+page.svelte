@@ -30,6 +30,7 @@
 	} from "$lib/utils/pricingCache";
 	import PhotoEstimationSection from "./_components/PhotoEstimationSection.svelte";
 	import PricingSection from "./_components/PricingSection.svelte";
+	import { loadPositions, FALLBACK_POSITIONS, type PositionPrice } from "$lib/utils/positionCatalog";
 	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
 	import {
 		ArrowLeft,
@@ -279,29 +280,31 @@
 		defaultRemark: string;
 	}
 
-	const POSITION_SKELETON: PositionDef[] = [
+	/**
+	 * The fixed positions, priced from the settings table.
+	 *
+	 * Starts on the built-in fallback so the panel renders before the fetch
+	 * lands; `loadInquiry` refreshes it. Prices used to be hardcoded here,
+	 * which is what feedback report ce764f7b was about.
+	 */
+	let positionCatalog = $state<PositionPrice[]>(FALLBACK_POSITIONS);
+
+	const POSITION_SKELETON: PositionDef[] = $derived([
 		{ kind: 'labor', label: 'Umzugshelfer', defaultCents: 0, defaultRemark: '' },
-		{ kind: 'item', label: 'Demontage', defaultCents: 5000, defaultRemark: '' },
-		{ kind: 'item', label: 'Montage', defaultCents: 5000, defaultRemark: '' },
-		{ kind: 'item', label: 'Einpackservice', defaultCents: 0, defaultRemark: 'je Karton (Glas, Porzellan)' },
-		{ kind: 'item', label: 'Halteverbotszone', defaultCents: 10000, defaultRemark: '' },
-		{ kind: 'item', label: 'Umzugsmaterial', defaultCents: 3000, defaultRemark: 'Stretchfolie, Decken, Gurte' },
-		{ kind: 'item', label: 'Verkauf Seidenpapier', defaultCents: 500, defaultRemark: '500x750' },
-		{ kind: 'item', label: 'Verkauf U-Karton', defaultCents: 210, defaultRemark: '590x318x328' },
-		{ kind: 'item', label: 'Verkauf B-Karton', defaultCents: 220, defaultRemark: '400x318x328' },
-		{ kind: 'item', label: 'Fernsehkarton', defaultCents: 0, defaultRemark: '' },
-		{ kind: 'item', label: 'Verleih Kleiderboxen', defaultCents: 1000, defaultRemark: '610x520x1370' },
-		{ kind: 'item', label: '3,5t Transporter m. Koffer', defaultCents: 6000, defaultRemark: '' },
-		{ kind: 'item', label: 'Möbellift', defaultCents: 0, defaultRemark: '' },
-		{ kind: 'item', label: 'Transferfahrzeug', defaultCents: 0, defaultRemark: '' },
+		...positionCatalog.map((p): PositionDef => ({
+			kind: 'item',
+			label: p.label,
+			defaultCents: p.unit_price_cents,
+			defaultRemark: p.remark,
+		})),
 		{ kind: 'fahrt', label: 'Fahrkostenpauschale', defaultCents: 0, defaultRemark: '' },
 		{ kind: 'insurance', label: 'Nürnbergerversicherung', defaultCents: 0, defaultRemark: 'Deckungssumme: 620,00 Euro / m³' },
-	];
+	]);
 
-	const CUSTOM_LABEL_OPTIONS: string[] = [
+	const CUSTOM_LABEL_OPTIONS: string[] = $derived([
 		...POSITION_SKELETON.filter(p => p.kind === 'item').map(p => p.label),
 		'Sonstiges',
-	];
+	]);
 
 	interface EditLineItem {
 		_id: number;        // stable key so Svelte tracks DOM nodes across reorders
@@ -650,6 +653,8 @@
 		loading = true;
 		try {
 			const id = $page.params.id;
+			// Before computePricingDefaults: it seeds every unit price from the catalogue.
+			positionCatalog = await loadPositions();
 			data = await apiGet<InquiryResponse>(`/api/v1/inquiries/${id}`);
 			editVolume = data.volume_m3;
 			editDistance = data.distance_km ?? 0;

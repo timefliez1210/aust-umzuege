@@ -8,6 +8,7 @@
         Package,
         Truck,
         UserCheck,
+        ShieldCheck,
     } from "lucide-svelte";
     import CTAButton from "$lib/components/CTAButton.svelte";
     import MetaTags from "$lib/components/MetaTags.svelte";
@@ -24,19 +25,19 @@
     const faqs = [
         {
             question: "Was kostet es, einen Möbellift zu mieten?",
-            answer: "Bei uns starten die Preise für den Möbellift bei 95 € pro Stunde. Das gilt für die Selbstabholung, bei der Sie den Lift bei uns in Hildesheim abholen, selbst aufbauen und wieder zurückbringen. Wenn wir den Möbellift liefern, aufbauen und abholen, kommt eine entfernungsabhängige Anfahrtspauschale hinzu. Soll ein geschulter Mitarbeiter den Lift bedienen, rechnen wir die Bedienzeit zusätzlich ab. Abgerechnet wird stundengenau – Sie zahlen nur die tatsächliche Einsatzzeit. Nach einem kurzen Telefonat nennen wir Ihnen einen festen Preis für Ihre Situation, ohne versteckte Kosten."
+            answer: "Bei uns starten die Preise für den Möbellift bei 95 € pro Stunde. Dazu kommen eine entfernungsabhängige Anfahrtspauschale für Lieferung, Aufbau und Abholung sowie die Bedienzeit unseres Mitarbeiters, der den Lift am Einsatztag steuert. Abgerechnet wird stundengenau – Sie zahlen nur die tatsächliche Einsatzzeit. Nach einem kurzen Telefonat nennen wir Ihnen einen festen Preis für Ihre Situation, ohne versteckte Kosten."
         },
         {
-            question: "Kann ich den Möbellift auch ohne Bedienpersonal mieten?",
-            answer: "Ja. Sie können den Möbellift komplett allein mieten und selbst bedienen – das ist die günstigste Variante ab 95 € pro Stunde. Vor der Übergabe weisen wir Sie gründlich in die Bedienung ein und erklären Ihnen die Sicherheitsvorkehrungen. Wenn Sie sich das nicht zutrauen oder sich auf den Umzug konzentrieren möchten, stellen wir Ihnen gegen Aufpreis einen erfahrenen Bediener zur Seite."
+            question: "Kann ich den Möbellift ohne Bedienpersonal mieten?",
+            answer: "Nein. Wir vermieten den Möbellift ausschließlich mit einem eigenen, geschulten Mitarbeiter, der den Lift aufbaut, bedient und wieder abbaut. Eine Vermietung zur Selbstabholung oder Selbstbedienung bieten wir nicht an – aus Sicherheits- und Haftungsgründen. Ein Möbellift arbeitet hoch über dem Gehweg, unter Last und im öffentlichen Raum; falsch aufgestellt oder falsch bedient wird er schnell gefährlich. Mit unserem Bediener ist der Einsatz versichert, korrekt abgestützt und fachgerecht durchgeführt."
         },
         {
-            question: "Kann ich den Möbellift selbst abholen oder wird er geliefert?",
-            answer: "Beides ist möglich. Zur Selbstabholung holen Sie den Möbellift mit einem geeigneten Anhänger bei uns in Hildesheim ab – das hält den Preis niedrig. Alternativ liefern wir den Lift direkt zu Ihrer Adresse, bauen ihn betriebsbereit auf und holen ihn nach dem Umzug wieder ab. Gerade bei beengten Innenstadtlagen oder ohne passendes Zugfahrzeug ist die Lieferung die entspannteste Lösung."
+            question: "Was ist bei der Miete alles enthalten?",
+            answer: "Alles rund um den Lift: Wir liefern ihn zu Ihrer Adresse, stellen ihn sicher auf, bauen ihn betriebsbereit auf, bedienen ihn während des gesamten Einsatzes, bauen ihn danach wieder ab und nehmen ihn wieder mit. Sie müssen weder ein Zugfahrzeug organisieren noch sich mit Aufbau, Absicherung oder Technik beschäftigen. Auf Wunsch beantragen wir zusätzlich die Halteverbotszone für den Stellplatz."
         },
         {
             question: "Warum ist ein elektrischer Möbellift besser als ein Benziner?",
-            answer: "Unser Möbellift wird elektrisch angetrieben. Das bringt drei klare Vorteile: Er arbeitet abgasfrei, stößt also keine giftigen Verbrennungsabgase aus – ein wichtiger Punkt, wenn der Lift direkt vor der Haustür oder unter offenen Fenstern steht. Er ist außerdem deutlich leiser als ein Benzinmotor, was Nachbarn in Wohngebieten und der Hildesheimer Innenstadt entgegenkommt. Und er ist umweltfreundlicher, weil kein Kraftstoff verbrannt wird. Sie können ihn an jeder normalen Steckdose betreiben."
+            answer: "Unser Möbellift wird elektrisch angetrieben. Das bringt drei klare Vorteile: Er arbeitet abgasfrei, stößt also keine giftigen Verbrennungsabgase aus – ein wichtiger Punkt, wenn der Lift direkt vor der Haustür oder unter offenen Fenstern steht. Er ist außerdem deutlich leiser als ein Benzinmotor, was Nachbarn in Wohngebieten und der Hildesheimer Innenstadt entgegenkommt. Und er ist umweltfreundlicher, weil kein Kraftstoff verbrannt wird. Betrieben wird er an einer ganz normalen Steckdose."
         },
         {
             question: "Bis in welches Stockwerk reicht der Möbellift?",
@@ -59,15 +60,15 @@
             answer: "Der elektrische Möbellift läuft über eine normale Stromversorgung und lässt sich an einer haushaltsüblichen Steckdose betreiben. Eine spezielle Starkstromversorgung ist nicht nötig. Vor dem Einsatz besprechen wir kurz, wo der nächste Stromanschluss liegt, damit am Umzugstag alles reibungslos läuft."
         },
         {
-            question: "Mieten auch andere Umzugsfirmen oder Handwerker den Lift bei Ihnen?",
-            answer: "Ja. Neben Privatkunden vermieten wir den Möbellift auch an Umzugsunternehmen, Maler, Dachdecker und Handwerksbetriebe in Hildesheim und Umgebung, die kurzfristig einen elektrischen Aufzug für einen Auftrag benötigen. Melden Sie sich einfach mit Termin, Adresse und gewünschter Förderhöhe – wir prüfen die Verfügbarkeit und nennen Ihnen den Preis."
+            question: "Können auch Umzugsfirmen oder Handwerker den Lift buchen?",
+            answer: "Ja. Neben Privatkunden stellen wir den Möbellift auch Umzugsunternehmen, Malern, Dachdeckern und Handwerksbetrieben in Hildesheim und Umgebung zur Verfügung – ebenfalls immer mit unserem Bediener, der den Lift aufbaut und steuert. Melden Sie sich einfach mit Termin, Adresse und gewünschter Förderhöhe, dann prüfen wir die Verfügbarkeit und nennen Ihnen den Preis."
         }
     ];
 </script>
 
 <MetaTags
     title="Möbellift mieten Hildesheim – elektrisch, ab 95 € | Aust"
-    description="Möbellift mieten in Hildesheim: elektrisch, leise und abgasfrei – ab 95 €/Std. zur Selbstabholung, mit Lieferung oder inklusive Bedienpersonal."
+    description="Möbellift mieten in Hildesheim: elektrisch, leise und abgasfrei – ab 95 €/Std. inklusive Lieferung, Aufbau und Bedienung durch unseren geschulten Mitarbeiter."
     keywords="Möbellift mieten Hildesheim, Möbelaufzug mieten, Umzugslift, elektrischer Möbellift, Außenaufzug Umzug"
     canonical="https://www.aust-umzuege.de/leistungen/moebellift"
 />
@@ -80,7 +81,7 @@
     "contentUrl": "https://www.aust-umzuege.de/moebellift-mieten-hildesheim-elektrisch.webp",
     "url": "https://www.aust-umzuege.de/leistungen/moebellift",
     "name": "Möbellift mieten Hildesheim – elektrischer Möbelaufzug von Aust Umzüge im Einsatz",
-    "description": "Elektrischer Möbellift von Aust Umzüge Hildesheim transportiert Möbel leise und abgasfrei in obere Stockwerke. Ab 95 € pro Stunde mietbar.",
+    "description": "Elektrischer Möbellift von Aust Umzüge Hildesheim transportiert Möbel leise und abgasfrei in obere Stockwerke. Ab 95 € pro Stunde inklusive Bedienung durch unseren Mitarbeiter.",
     "author": {
         "@type": "Organization",
         "name": "Aust Umzüge",
@@ -108,7 +109,8 @@
             </div>
             <h1 class="service-title">Möbellift mieten in Hildesheim</h1>
             <p class="service-subtitle">
-                Elektrisch, leise und abgasfrei – schwere Möbel mühelos in jedes Stockwerk. Ab 95 € pro Stunde.
+                Elektrisch, leise und abgasfrei – schwere Möbel mühelos in jedes Stockwerk.
+                Inklusive Lieferung, Aufbau und Bedienung. Ab 95 € pro Stunde.
             </p>
         </header>
 
@@ -139,11 +141,14 @@
                 </p>
                 <p>
                     Alex Aust hat in einen modernen, <strong>elektrisch
-                    angetriebenen Möbellift</strong> investiert – und vermietet
-                    ihn jetzt auch an Privatkunden, Umzugsunternehmen und
-                    Handwerksbetriebe in Hildesheim und Umgebung. Sie mieten ihn
-                    flexibel: nur den Lift zur Selbstabholung, mit Lieferung und
-                    Aufbau oder komplett inklusive geschultem Bedienpersonal.
+                    angetriebenen Möbellift</strong> investiert – und stellt ihn
+                    Privatkunden, Umzugsunternehmen und Handwerksbetrieben in
+                    Hildesheim und Umgebung zur Verfügung. Und zwar immer als
+                    Komplettleistung: <strong>Wir liefern den Lift, bauen ihn auf,
+                    bedienen ihn mit einem eigenen geschulten Mitarbeiter und
+                    holen ihn danach wieder ab.</strong> Sie brauchen weder ein
+                    Zugfahrzeug noch technisches Vorwissen – nur zu sagen, was
+                    nach oben oder unten soll.
                 </p>
 
                 <h3 class="highlight-title">Ihre Vorteile auf einen Blick:</h3>
@@ -154,11 +159,11 @@
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Schon ab 95 € pro Stunde mietbar – stundengenau abgerechnet</span>
+                        <span>Schon ab 95 € pro Stunde – stundengenau abgerechnet</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
-                        <span>Selbstabholung, Lieferung oder mit Bediener – Sie entscheiden</span>
+                        <span>Lieferung, Aufbau, Bedienung und Abholung – alles aus einer Hand</span>
                     </li>
                     <li>
                         <CheckCircle size={20} class="check-icon" />
@@ -167,6 +172,10 @@
                     <li>
                         <CheckCircle size={20} class="check-icon" />
                         <span>Schont Treppenhaus, Türrahmen und Ihr Umzugsgut</span>
+                    </li>
+                    <li>
+                        <CheckCircle size={20} class="check-icon" />
+                        <span>Bedient von unserem eigenen Personal – sicher und versichert</span>
                     </li>
                 </ul>
 
@@ -187,44 +196,58 @@
                     </div>
                 </div>
 
-                <h2 class="section-title" style="margin-top: var(--space-10);">Drei Wege, den Möbellift zu mieten</h2>
+                <h2 class="section-title" style="margin-top: var(--space-10);">Immer inklusive: Lieferung, Aufbau und Bedienung</h2>
                 <p>
-                    Sie zahlen nur das, was Sie wirklich brauchen. Wählen Sie die
-                    Variante, die zu Ihrem Umzug passt – vom reinen Lift bis zum
-                    Rundum-sorglos-Paket mit Bedienung.
+                    Bei uns gibt es den Möbellift nur im Komplettpaket – mit
+                    eigenem Bediener. Sie buchen einen Termin, alles andere
+                    übernehmen wir.
                 </p>
 
                 <div class="tier-grid">
                     <div class="tier-card">
-                        <div class="tier-card__icon"><Package size={28} strokeWidth={1.5} /></div>
-                        <h3 class="tier-card__title">Nur Lift – Selbstabholung</h3>
-                        <p class="tier-card__price">ab <strong>95 €</strong> / Std.</p>
-                        <p class="tier-card__desc">
-                            Sie holen den Möbellift bei uns in Hildesheim ab,
-                            bauen ihn selbst auf und bringen ihn zurück. Vor der
-                            Übergabe weisen wir Sie gründlich ein. Die günstigste
-                            Variante.
-                        </p>
-                    </div>
-                    <div class="tier-card tier-card--featured">
-                        <div class="tier-card__badge">Beliebt</div>
                         <div class="tier-card__icon"><Truck size={28} strokeWidth={1.5} /></div>
-                        <h3 class="tier-card__title">Lift mit Lieferung</h3>
-                        <p class="tier-card__price"><strong>95 €</strong> / Std. <span>+ Anfahrt</span></p>
+                        <h3 class="tier-card__title">Lieferung &amp; Aufbau</h3>
                         <p class="tier-card__desc">
-                            Wir liefern den Lift zu Ihrer Adresse, bauen ihn
-                            betriebsbereit auf und holen ihn nach dem Umzug wieder
-                            ab. Ideal ohne passendes Zugfahrzeug.
+                            Wir bringen den Möbellift zu Ihrer Adresse, stellen ihn
+                            sicher auf dem Stellplatz ab, stützen ihn fachgerecht
+                            ab und bauen ihn betriebsbereit auf.
                         </p>
                     </div>
                     <div class="tier-card">
                         <div class="tier-card__icon"><UserCheck size={28} strokeWidth={1.5} /></div>
-                        <h3 class="tier-card__title">Lift mit Bedienpersonal</h3>
-                        <p class="tier-card__price"><strong>95 €</strong> / Std. <span>+ Bediener</span></p>
+                        <h3 class="tier-card__title">Bedienung durch uns</h3>
                         <p class="tier-card__desc">
-                            Ein erfahrener Mitarbeiter bedient den Möbellift und
-                            nimmt Ihre Möbel sicher an. Sie konzentrieren sich
-                            ganz auf Ihren Umzug.
+                            Ein erfahrener Mitarbeiter steuert den Lift während des
+                            gesamten Einsatzes und nimmt Ihre Möbel am Fenster oder
+                            Balkon sicher an.
+                        </p>
+                    </div>
+                    <div class="tier-card">
+                        <div class="tier-card__icon"><Package size={28} strokeWidth={1.5} /></div>
+                        <h3 class="tier-card__title">Abbau &amp; Abholung</h3>
+                        <p class="tier-card__desc">
+                            Nach dem Einsatz bauen wir den Lift wieder ab und nehmen
+                            ihn mit. Sie müssen nichts zurückbringen und nichts
+                            reinigen.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="notice-box">
+                    <div class="notice-box__icon"><ShieldCheck size={28} strokeWidth={1.75} /></div>
+                    <div>
+                        <p class="notice-box__lead">Keine Vermietung zur Selbstbedienung</p>
+                        <p>
+                            Wir geben den Möbellift <strong>nicht ohne unser
+                            Personal heraus</strong> – weder zur Selbstabholung noch
+                            zur Bedienung in Eigenregie. Ein Möbellift arbeitet
+                            unter Last, mehrere Stockwerke hoch und im öffentlichen
+                            Verkehrsraum. Standsicherheit, Abstützung, Windlast und
+                            Lastaufnahme sind nichts, was man in einer kurzen
+                            Einweisung lernt. Mit unserem geschulten Bediener ist der
+                            Einsatz fachgerecht aufgebaut, versichert und für alle
+                            Beteiligten sicher – für Sie, Ihre Möbel und die
+                            Menschen auf dem Gehweg.
                         </p>
                     </div>
                 </div>
@@ -233,10 +256,11 @@
                     <p>
                         <strong>Transparent kalkuliert:</strong> Die Stundenmiete
                         des Lifts beträgt 95 € und wird stundengenau abgerechnet.
-                        Anfahrt für Lieferung und Abholung berechnen wir
-                        entfernungsabhängig, die Bedienzeit nach tatsächlichem
-                        Aufwand. Nach einem kurzen Telefonat nennen wir Ihnen einen
-                        festen Preis – ohne versteckte Kosten.
+                        Hinzu kommen die Anfahrt für Lieferung und Abholung
+                        (entfernungsabhängig) sowie die Bedienzeit unseres
+                        Mitarbeiters nach tatsächlichem Aufwand. Nach einem kurzen
+                        Telefonat nennen wir Ihnen einen festen Preis – ohne
+                        versteckte Kosten.
                     </p>
                 </div>
 
@@ -276,10 +300,10 @@
                 <h2 class="section-title">So läuft die Möbellift-Miete bei uns ab</h2>
                 <p>
                     <strong>1. Anfrage und Beratung:</strong> Sie sagen uns
-                    Termin, Adresse, gewünschtes Stockwerk und ob Sie den Lift
-                    selbst bedienen möchten. Wir prüfen Verfügbarkeit und die
-                    passende Förderhöhe für Ihr Gebäude und nennen Ihnen einen
-                    festen Preis.
+                    Termin, Adresse, gewünschtes Stockwerk und was transportiert
+                    werden soll. Wir prüfen Verfügbarkeit und die passende
+                    Förderhöhe für Ihr Gebäude und nennen Ihnen einen festen
+                    Preis.
                 </p>
                 <p>
                     <strong>2. Stellplatz und Halteverbot klären:</strong> Der
@@ -288,21 +312,20 @@
                     der Platz am Umzugstag frei ist.
                 </p>
                 <p>
-                    <strong>3. Übergabe oder Lieferung:</strong> Je nach Variante
-                    holen Sie den Lift bei uns ab oder wir liefern und bauen ihn
-                    betriebsbereit auf. Bei Selbstabholung weisen wir Sie
-                    gründlich in Bedienung und Sicherheit ein.
+                    <strong>3. Lieferung und Aufbau:</strong> Wir kommen zum
+                    vereinbarten Termin, stellen den Lift auf dem Stellplatz ab,
+                    stützen ihn fachgerecht ab und bauen ihn betriebsbereit auf.
                 </p>
                 <p>
-                    <strong>4. Einsatz am Umzugstag:</strong> Der elektrische
-                    Antrieb läuft leise und abgasfrei. Möbel und Kartons fahren
-                    sicher nach oben oder unten – Sie oder unser Bediener steuern
-                    den Lift.
+                    <strong>4. Einsatz am Umzugstag:</strong> Unser Mitarbeiter
+                    bedient den Lift während des gesamten Einsatzes. Der
+                    elektrische Antrieb läuft leise und abgasfrei, Möbel und
+                    Kartons fahren sicher nach oben oder unten.
                 </p>
                 <p>
-                    <strong>5. Rückgabe oder Abholung:</strong> Nach dem Umzug
-                    bringen Sie den Lift zurück oder wir holen ihn wieder ab.
-                    Fertig.
+                    <strong>5. Abbau und Abholung:</strong> Nach dem Umzug bauen
+                    wir den Lift wieder ab und nehmen ihn mit. Fertig – Sie
+                    müssen sich um nichts kümmern.
                 </p>
 
                 <h3 class="highlight-title">Verwandte Leistungen</h3>
@@ -334,7 +357,8 @@
                     </div>
                     <ul class="cta-facts">
                         <li><VolumeX size={16} /> Leiser Elektroantrieb</li>
-                        <li><Leaf size={16} /> Abgasfrei & umweltfreundlich</li>
+                        <li><Leaf size={16} /> Abgasfrei &amp; umweltfreundlich</li>
+                        <li><UserCheck size={16} /> Inkl. Aufbau &amp; Bedienung</li>
                         <li><CheckCircle size={16} /> Ab 95 € pro Stunde</li>
                     </ul>
                 </div>
@@ -520,25 +544,6 @@
         display: flex;
         flex-direction: column;
     }
-    .tier-card--featured {
-        border-color: #16a34a;
-        box-shadow: 0 4px 14px -6px rgba(22, 163, 74, 0.4);
-    }
-    .tier-card__badge {
-        position: absolute;
-        top: -11px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #16a34a;
-        color: #fff;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        padding: 3px 10px;
-        border-radius: var(--radius-full);
-        white-space: nowrap;
-    }
     .tier-card__icon {
         color: #16a34a;
         margin-bottom: var(--space-2);
@@ -549,26 +554,43 @@
         font-weight: 700;
         margin-bottom: var(--space-2);
     }
-    .tier-card__price {
-        color: #166534;
-        font-size: 1.05rem;
-        margin-bottom: var(--space-2) !important;
-    }
-    .tier-card__price strong {
-        font-size: 1.6rem;
-        font-weight: 800;
-    }
-    .tier-card__price span {
-        font-size: 0.95rem;
-        color: #64748b;
-        font-weight: 600;
-    }
     .tier-card__desc {
         color: #4a5568 !important;
         font-size: 0.95rem !important;
         line-height: 1.55 !important;
         margin-bottom: 0 !important;
     }
+    /* Safety notice box */
+    .notice-box {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+        background-color: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 4px solid #d97706;
+        border-radius: var(--radius-md);
+        padding: var(--space-5) var(--space-5);
+        margin-block: var(--space-6);
+    }
+    .notice-box__icon {
+        color: #d97706;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    .notice-box p {
+        color: #78350f !important;
+        font-size: 1rem !important;
+        line-height: 1.6;
+        margin-bottom: var(--space-2) !important;
+    }
+    .notice-box p:last-child {
+        margin-bottom: 0 !important;
+    }
+    .notice-box__lead {
+        font-weight: 700;
+        font-size: 1.05rem !important;
+    }
+
     .price-note {
         background-color: #f8fafc;
         border: 1px solid #e2e8f0;

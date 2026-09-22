@@ -32,6 +32,7 @@
 	import PricingSection from "./_components/PricingSection.svelte";
 	import { loadPositions, FALLBACK_POSITIONS, type PositionPrice } from "$lib/utils/positionCatalog";
 	import { SERVICE_TYPE_LABELS } from '$lib/utils/constants';
+	import type { InquiryRoute } from "$lib/types/route";
 	import {
 		ArrowLeft,
 		FileOutput,
@@ -220,8 +221,10 @@
 	let loading = $state(true);
 	let saving = $state(false);
 
-	// Route map coordinates
+	// Route map coordinates — concatenated geometry of every leg of the round trip
 	let routeCoordinates = $state<[number, number][] | null>(null);
+	// Per-leg breakdown + total km for the Route card
+	let routePlan = $state<InquiryRoute | null>(null);
 
 	// Editable fields
 	let editVolume = $state<number | null>(null);
@@ -645,9 +648,10 @@
 	 * Purpose: Primary data loader for the inquiry detail page. Calls GET /api/v1/inquiries/{id},
 	 *          then seeds editVolume, editDistance, editNotes, editItems (via initEditItems),
 	 *          and pricing defaults (via computePricingDefaults). Also fires a non-blocking
-	 *          POST /api/v1/distance/calculate (public) to populate the RouteMap polyline.
+	 *          GET /api/v1/inquiries/{id}/route to populate the RouteMap polyline and the
+	 *          per-leg kilometre breakdown.
 	 *
-	 * @returns void (side-effect: sets `data`, edit* fields, `routeCoordinates`, `loading`)
+	 * @returns void (side-effect: sets `data`, edit* fields, `routeCoordinates`, `routePlan`, `loading`)
 	 */
 	async function loadInquiry() {
 		loading = true;
@@ -668,23 +672,20 @@
 			computePricingDefaults();
 			// Email thread loads itself (EmailThreadSection $effect on inquiryId)
 
-			// Fetch route geometry from distance calculator (non-blocking)
+			// Fetch the driven round trip (non-blocking). The backend owns the waypoints —
+			// depot -> Auszug -> [Zwischenstopp] -> Einzug -> depot — so the map and the
+			// KVA's Fahrkostenpauschale describe the same trip (report bce7d392).
 			if (data.origin_address && data.destination_address) {
-				const originStr =
-					`${data.origin_address.street}, ${data.origin_address.postal_code || ""} ${data.origin_address.city}`.trim();
-				const destStr =
-					`${data.destination_address.street}, ${data.destination_address.postal_code || ""} ${data.destination_address.city}`.trim();
-				apiPost<{ legs: { geometry: [number, number][] }[] }>(
-					`/api/v1/distance/calculate`,
-					{
-						addresses: [originStr, destStr],
-					},
-				)
+				apiGet<InquiryRoute>(`/api/v1/inquiries/${id}/route`)
 					.then((r) => {
-						const geo = r.legs?.[0]?.geometry;
+						routePlan = r;
+						// Concatenate every leg, not just the first: a Zwischenstopp splits
+						// the trip into three or four legs and drawing legs[0] alone showed
+						// a fraction of the route.
+						const geo = r.legs.flatMap((l) => l.geometry ?? []);
 						// geometry is [[lng, lat], ...] — swap to [lat, lng] for Leaflet
 						routeCoordinates =
-							geo?.length >= 2
+							geo.length >= 2
 								? geo.map(
 										([lng, lat]) =>
 											[lat, lng] as [number, number],
@@ -692,6 +693,7 @@
 								: null;
 					})
 					.catch(() => {
+						routePlan = null;
 						routeCoordinates = null;
 					});
 			}
@@ -1097,6 +1099,7 @@
 				{isLocked}
 				{saving}
 				{routeCoordinates}
+				{routePlan}
 				customerMessage={data.customer_message}
 				bind:detailsOpen={cardOpen.details}
 				bind:routeOpen={cardOpen.route}

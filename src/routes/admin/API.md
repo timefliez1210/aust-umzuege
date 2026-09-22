@@ -1925,9 +1925,58 @@ curl -X POST https://api.aufraeumhelden.com/api/v1/distance/calculate \
   -d '{"addresses":["Musterstr. 1, 10115 Berlin","Beispielweg 5, 20095 Hamburg"]}'
 ```
 
+**Used by:** nothing in the admin SPA any more — the inquiry detail page moved to
+`GET /api/v1/inquiries/{id}/route` below, which adds the depot and the Zwischenstopp.
+This generic endpoint remains for ad-hoc two-point lookups.
+
+---
+
+### GET /api/v1/inquiries/{id}/route
+
+Driven round trip for one inquiry: **Lager → Auszug → [Zwischenstopp] → Einzug → Lager**.
+
+Prefer this over `POST /distance/calculate` for an inquiry. The waypoints are assembled
+server-side from the same helper that prices the KVA's Fahrkostenpauschale, and the depot
+address lives in backend config — so the map, the kilometre breakdown and the invoiced
+travel cost always describe the same trip (report bce7d392).
+
+**Authentication:** Required
+
+**Response:**
+
+```typescript
+{
+  total_distance_km: number;
+  total_duration_minutes: number;
+  legs: {
+    from_label: "Lager" | "Auszug" | "Zwischenstopp" | "Einzug";
+    to_label:   "Lager" | "Auszug" | "Zwischenstopp" | "Einzug";
+    from_address: string;
+    to_address: string;
+    distance_km: number;
+    duration_minutes: number;
+    geometry?: [number, number][];  // [longitude, latitude] pairs, omitted when empty
+  }[];
+}
+```
+
+Geometry is per leg — concatenate every leg for the full polyline. Drawing `legs[0]` alone
+shows only the depot→Auszug hop. Coordinates are `[longitude, latitude]` (GeoJSON); the
+frontend swaps to `[latitude, longitude]` for Leaflet.
+
+Returns `400` when the inquiry has no Auszug and/or no Einzug address — the detail page
+treats that as "no route card" rather than an error.
+
+**Example:**
+
+```bash
+curl https://api.aufraeumhelden.com/api/v1/inquiries/<id>/route \
+  -H "Authorization: Bearer <token>"
+```
+
 **Used by:**
-- `src/routes/admin/quotes/[id]/+page.svelte` — `loadQuote()` (non-blocking route map)
-- `src/routes/admin/offers/[id]/+page.svelte` — `loadOffer()` (non-blocking route map)
+- `src/routes/admin/inquiries/[id]/+page.svelte` — `loadInquiry()` (non-blocking); feeds
+  `RouteMap` and the leg breakdown in `DetailsSection.svelte`
 
 ---
 

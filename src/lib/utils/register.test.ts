@@ -333,20 +333,37 @@ function acc(over: Partial<RegisterRow> = {}): RegisterRow {
 }
 
 describe('monthOf', () => {
-	it('books a row into the month of its Rechnungsdatum', () => {
-		// Soll-Versteuerung: the tax is owed in the month the invoice is issued, so the
-		// Rechnungsdatum decides the month — not the job date and not the payment date.
-		expect(monthOf(acc({ sent_at: '2026-03-14T10:00:00Z' }), '2026')).toBe(3);
+	it('books a row into the month of its Leistungsdatum', () => {
+		// Alex credits revenue to the month the job was done — not the Rechnungsdatum
+		// and not the payment date.
+		const r = acc({ scheduled_date: '2026-03-28', sent_at: '2026-04-02T10:00:00Z' });
+		expect(monthOf(r, '2026')).toBe(3);
 	});
 
-	it('falls back to the creation date for a draft', () => {
+	it('does not move a job into the month it was booked as bezahlt', () => {
+		// Booking a draft as paid backfills sent_at with the payment date; the job
+		// month must win regardless.
+		const r = acc({
+			scheduled_date: '2026-03-14',
+			sent_at: '2026-05-20T10:00:00Z',
+			paid_at: '2026-05-20T10:00:00Z',
+			is_settled: true,
+		});
+		expect(monthOf(r, '2026')).toBe(3);
+	});
+
+	it('falls back to the Rechnungsdatum when there is no job date', () => {
+		expect(monthOf(acc({ scheduled_date: null, sent_at: '2026-03-14T10:00:00Z' }), '2026')).toBe(3);
+	});
+
+	it('falls back to the creation date for a draft without a job date', () => {
 		expect(monthOf(acc({ status: 'draft', sent_at: null, created_at: '2026-07-02T10:00:00Z' }), '2026')).toBe(7);
 	});
 
-	it('returns null when the Rechnungsdatum is outside the register year', () => {
+	it('returns null when the Leistungsdatum is outside the register year', () => {
 		// Such a row is real and stays in the register; it just has no month in THIS
 		// book, and a monthly figure that swallowed it would be wrong.
-		const r = acc({ invoice_number: '2026-02', sent_at: '2025-12-23T10:00:00Z' });
+		const r = acc({ invoice_number: '2026-02', scheduled_date: '2025-12-23', sent_at: '2026-01-05T10:00:00Z' });
 		expect(monthOf(r, '2026')).toBeNull();
 	});
 });

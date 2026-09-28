@@ -90,7 +90,7 @@
 	<header class="panel-head">
 		<h2>Monats&uuml;bersicht</h2>
 		<p class="panel-sub">
-			Umsatz brutto je Monat, nach Rechnungsdatum. Entw&uuml;rfe z&auml;hlen nicht mit.
+			Umsatz brutto je Monat, nach Leistungsdatum (Auftragsdatum). Entw&uuml;rfe z&auml;hlen nicht mit.
 		</p>
 	</header>
 

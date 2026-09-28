@@ -190,17 +190,23 @@ function compareParts(a: [string, string, string], b: [string, string, string]):
 /**
  * The month a row is booked into, 1–12, or `null` when it has none.
  *
- * Keyed on the Rechnungsdatum, because that is the date the Umsatzsteuer follows
- * (Soll-Versteuerung: the tax is owed in the month the invoice is issued, not the
- * month the money arrives). A draft has no Rechnungsdatum and falls back to its
- * creation date, which is the only date it has.
+ * Keyed on the Leistungsdatum — the first day of the job (for Lagerung, the first
+ * of the billed month). Alex credits revenue to the month the contract was
+ * fulfilled, which is also when the Umsatzsteuer arises under Soll-Versteuerung
+ * (§ 13 Abs. 1 Nr. 1a UStG). Neither the Rechnungsdatum nor the payment date may
+ * move it: booking a draft as bezahlt backfills `sent_at` with the payment date,
+ * which used to drag a March job into the month Alex marked it paid.
  *
- * Returns `null` when the resulting date lands outside `year`. Such a row is real
- * and stays in the register — it just cannot be attributed to a month of this
- * book, and a monthly revenue figure that silently swallowed it would be wrong.
+ * A row with no job date (legacy rows, a manual invoice without an inquiry date)
+ * falls back to its booking date, the only date it has.
+ *
+ * Returns `null` when the resulting date lands outside `year` — e.g. 2026-02 for a
+ * job on 23.12.2025. Such a row is real and stays in the register; it just cannot
+ * be attributed to a month of this book, and a monthly figure that silently
+ * swallowed it would be wrong.
  */
 export function monthOf(item: RegisterRow, year: string): number | null {
-	const date = bookingDate(item);
+	const date = item.scheduled_date || bookingDate(item);
 	if (date.substring(0, 4) !== year) return null;
 	const month = Number(date.substring(5, 7));
 	return Number.isInteger(month) && month >= 1 && month <= 12 ? month : null;

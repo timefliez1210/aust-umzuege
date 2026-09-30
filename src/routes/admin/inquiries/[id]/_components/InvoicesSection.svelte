@@ -33,6 +33,8 @@
 		pdf_s3_key: string | null;
 		sent_at: string | null;
 		paid_at: string | null;
+		/** Day paid in cash (YYYY-MM-DD) — the PDF then reads "in bar beglichen". */
+		cash_paid_on: string | null;
 		created_at: string;
 	}
 
@@ -319,6 +321,67 @@
 		manualOpen[inv.id] = false;
 	}
 
+	// Barzahlung editor state — keyed by invoice id. `cashOpen` is the transient
+	// "checkbox ticked but not saved yet" state; a saved cash invoice is always open.
+	let cashOpen = $state<Record<string, boolean>>({});
+	let cashDateDraft = $state<Record<string, string>>({});
+	let cashSaving = $state<Record<string, boolean>>({});
+
+	function isCashOpen(inv: Invoice): boolean {
+		return inv.cash_paid_on !== null || cashOpen[inv.id] === true;
+	}
+
+	function todayIso(): string {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	}
+
+	/**
+	 * Toggle "Bar Zahlung" for an invoice.
+	 *
+	 * Turning ON opens the date field (nothing persists until Speichern).
+	 * Turning OFF a saved cash invoice restores the bank details on the PDF via
+	 * PATCH `{ cash_paid: false }`; the payment itself stays booked.
+	 */
+	async function toggleCash(inv: Invoice, on: boolean) {
+		if (on) {
+			cashDateDraft[inv.id] = inv.cash_paid_on ?? todayIso();
+			cashOpen[inv.id] = true;
+			return;
+		}
+		if (inv.cash_paid_on !== null) {
+			if (!confirm('Barzahlung entfernen? Die Rechnung zeigt dann wieder die Bankverbindung.')) {
+				return;
+			}
+			await saveCash(inv, false);
+		}
+		cashOpen[inv.id] = false;
+	}
+
+	/** Persist the Barzahlung date (or clear it) and apply the regenerated invoice. */
+	async function saveCash(inv: Invoice, cashPaid: boolean) {
+		const date = cashDateDraft[inv.id] ?? inv.cash_paid_on ?? '';
+		if (cashPaid && !date) {
+			showToast('Bitte das Datum der Barzahlung angeben', 'error');
+			return;
+		}
+		cashSaving[inv.id] = true;
+		try {
+			const updated = await apiPatch(`/api/v1/inquiries/${inquiryId}/invoices/${inv.id}`, {
+				cash_paid: cashPaid,
+				cash_paid_on: cashPaid ? date : null,
+			});
+			invoices = invoices.map((i) => (i.id === inv.id ? (updated as Invoice) : i));
+			showToast(cashPaid ? 'Barzahlung gespeichert — Rechnung ist jetzt Quittung' : 'Barzahlung entfernt', 'success');
+			if (cashPaid) await onStatusChange();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : 'Barzahlung konnte nicht gespeichert werden';
+			showToast(msg, 'error');
+		} finally {
+			cashSaving[inv.id] = false;
+		}
+	}
+
 	/** Apply the saved invoice returned by the manual editor and close it. */
 	function onManualSaved(invId: string, updated: Invoice) {
 		invoices = invoices.map((i) => (i.id === invId ? updated : i));
@@ -537,6 +600,39 @@
 										</button>
 									{/if}
 								</div>
+							</div>
+
+							<!-- Barzahlung: the PDF prints "in bar beglichen" instead of the bank details -->
+							<div class="manual-section">
+								<label class="manual-toggle">
+									<input
+										type="checkbox"
+										checked={isCashOpen(inv)}
+										disabled={cashSaving[inv.id]}
+										onchange={(e) => toggleCash(inv, (e.currentTarget as HTMLInputElement).checked)}
+									/>
+									<span>Bar Zahlung — Rechnung gilt als Quittung</span>
+								</label>
+								{#if isCashOpen(inv)}
+									<div class="cash-row">
+										<label for="cash-date-{inv.id}">Bezahlt am</label>
+										<input
+											id="cash-date-{inv.id}"
+											type="date"
+											class="inline-input"
+											required
+											value={cashDateDraft[inv.id] ?? inv.cash_paid_on ?? ''}
+											oninput={(e) => (cashDateDraft[inv.id] = (e.currentTarget as HTMLInputElement).value)}
+										/>
+										<button
+											class="btn btn-sm btn-primary"
+											disabled={cashSaving[inv.id] || !(cashDateDraft[inv.id] ?? inv.cash_paid_on)}
+											onclick={() => saveCash(inv, true)}
+										>
+											{cashSaving[inv.id] ? '...' : 'Speichern'}
+										</button>
+									</div>
+								{/if}
 							</div>
 
 							<!-- Manual invoice mode (full invoices only): free line-item editing -->
@@ -813,6 +909,15 @@
 		width: 1rem;
 		height: 1rem;
 		cursor: pointer;
+	}
+
+	.cash-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+		font-size: 0.85rem;
 	}
 
 	.extras-section {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { apiPut } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 
@@ -55,18 +56,17 @@
 	}
 </script>
 
-<div class="panel-section">
-	<div class="section-title">Kapazität überschreiben</div>
-	<div class="capacity-row">
+<div class="flex flex-col gap-2">
+	<span class="label-xs text-faint">Kapazität überschreiben</span>
+	<div class="flex items-center gap-2">
 		<input
 			type="number"
 			min="0"
 			max="10"
-			class="neu-input capacity-input"
+			aria-label="Kapazität"
+			class="num h-8 w-20 rounded-sm border border-line-strong bg-panel px-2 text-right text-sm outline-none focus:border-fg"
 			bind:value={capacityInput}
 		/>
-		<button class="btn btn-primary btn-sm" onclick={saveCapacity} disabled={saving}>
-			{saving ? '...' : 'Speichern'}
-		</button>
+		<Button size="sm" variant="solid" onclick={saveCapacity} disabled={saving}>{saving ? '…' : 'Speichern'}</Button>
 	</div>
 </div>

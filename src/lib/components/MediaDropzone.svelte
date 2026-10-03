@@ -222,8 +222,8 @@
 
 	/* ===== Public variant (matches ap__dropzone from foto-angebot) ===== */
 	.md-wrap--public {
-		border: 2px dashed #cbd5e0;
-		background-color: #f8fafc;
+		border: 2px dashed var(--line-strong, #cbd5e0);
+		background-color: var(--sunk, #f8fafc);
 	}
 
 	.md-wrap--public.md-wrap--dragging {
@@ -239,7 +239,7 @@
 		padding: var(--space-10, 2.5rem) var(--space-6, 1.5rem);
 		width: 100%;
 		cursor: pointer;
-		color: #94a3b8;
+		color: var(--faint, #94a3b8);
 		background: none;
 		border: none;
 	}
@@ -251,17 +251,17 @@
 	.md-label--public {
 		font-size: var(--text-lg, 1.125rem);
 		font-weight: var(--font-semibold, 600);
-		color: #475569;
+		color: var(--muted, #475569);
 	}
 
 	/* ===== Admin variant (matches upload-drop-label / photo-dropzone from admin pages) ===== */
 	.md-wrap--admin {
-		border: 2px dashed #d1d9e6;
+		border: 2px dashed var(--line-strong, #d1d9e6);
 	}
 
 	.md-wrap--admin.md-wrap--dragging {
-		border-color: #6366f1;
-		background: rgba(99, 102, 241, 0.04);
+		border-color: var(--accent-text, #6366f1);
+		background: color-mix(in oklab, var(--accent, #6366f1) 6%, transparent);
 	}
 
 	.md-empty--admin {
@@ -272,7 +272,7 @@
 		padding: 1.5rem 2rem;
 		width: 100%;
 		cursor: pointer;
-		color: #64748b;
+		color: var(--muted, #64748b);
 		background: none;
 		border: none;
 		border-radius: inherit;
@@ -281,13 +281,13 @@
 	}
 
 	.md-empty--admin:hover {
-		border-color: #6366f1;
-		color: #6366f1;
-		background: rgba(99, 102, 241, 0.04);
+		border-color: var(--accent-text, #6366f1);
+		color: var(--accent-text, #6366f1);
+		background: color-mix(in oklab, var(--accent, #6366f1) 6%, transparent);
 	}
 
 	.md-wrap--admin.md-wrap--dragging .md-empty--admin {
-		color: #6366f1;
+		color: var(--accent-text, #6366f1);
 	}
 
 	.md-label--admin {
@@ -299,7 +299,7 @@
 	/* ===== Shared hint ===== */
 	.md-hint {
 		font-size: var(--text-sm, 0.875rem);
-		color: #94a3b8;
+		color: var(--faint, #94a3b8);
 	}
 
 	.md-wrap--admin .md-hint {

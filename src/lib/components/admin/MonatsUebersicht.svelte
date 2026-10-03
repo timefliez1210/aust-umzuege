@@ -86,237 +86,94 @@
 	}
 </script>
 
-<section class="panel">
-	<header class="panel-head">
-		<h2>Monats&uuml;bersicht</h2>
-		<p class="panel-sub">
-			Umsatz brutto je Monat, nach Leistungsdatum (Auftragsdatum). Entw&uuml;rfe z&auml;hlen nicht mit.
+<!-- One series, one hue. Selecting a month dims the rest instead of recolouring them. -->
+<section class="rounded-md border border-line bg-panel">
+	<header class="flex flex-col gap-1 px-4 py-3.5">
+		<h2 class="text-[15px] font-semibold">Monatsübersicht</h2>
+		<p class="text-xs text-muted">
+			Umsatz brutto je Monat, nach Leistungsdatum (Auftragsdatum). Entwürfe zählen nicht mit. Klick auf einen Monat filtert die
+			Liste.
 		</p>
 	</header>
 
 	{#if yearTotals.count === 0}
-		<p class="empty">Keine gebuchten Rechnungen in diesem Jahr.</p>
+		<p class="border-t border-line px-4 py-6 text-center text-sm text-muted">Keine gebuchten Rechnungen in diesem Jahr.</p>
 	{:else}
-		<!-- Chart: one series, one hue. Selecting a month de-emphasises the rest
-		     rather than recolouring them — the highlight is the message. -->
-		<div class="chart">
-			<div class="y-axis" aria-hidden="true">
-				{#each gridTicks as tick}
-					<span class="y-tick">{Math.round(tick / 100).toLocaleString('de-DE')}</span>
+		<div class="px-4 pb-4">
+			<div class="relative grid h-48 grid-cols-12 items-end gap-1.5 border-b border-line-strong sm:gap-2">
+				<div class="pointer-events-none absolute inset-0 flex flex-col justify-between" aria-hidden="true">
+					{#each gridTicks as tick, i (i)}
+						<span class="num relative border-t border-dashed border-line text-[10px] text-faint"
+							><span class="absolute -top-2 right-0 bg-panel pl-1">{Math.round(tick / 100).toLocaleString('de-DE')}</span></span
+						>
+					{/each}
+				</div>
+				{#each months as m (m.month)}
+					<button
+						type="button"
+						class="relative z-[1] flex h-full flex-col justify-end transition-opacity {selected != null && selected !== m.month
+							? 'opacity-35'
+							: ''}"
+						onclick={() => toggle(m.month)}
+						title={tooltip(m)}
+						aria-label={tooltip(m)}
+						aria-pressed={selected === m.month}
+					>
+						{#if m.month === peakMonth}
+							<span class="num mb-1 text-center text-[10px] text-fg">{Math.round(m.brutto / 100).toLocaleString('de-DE')} €</span>
+						{/if}
+						<span
+							class="rounded-t-xs {selected === m.month ? 'bg-accent ring-2 ring-fg' : 'bg-accent/70'}"
+							style:height="{heightPercent(m.brutto)}%"
+						></span>
+					</button>
 				{/each}
 			</div>
-			<div class="plot">
-				<div class="grid" aria-hidden="true">
-					{#each gridTicks as _tick}
-						<span class="grid-line"></span>
-					{/each}
-				</div>
-				<div class="bars">
-					{#each months as m}
-						<button
-							type="button"
-							class="bar-slot"
-							class:dimmed={selected != null && selected !== m.month}
-							class:active={selected === m.month}
-							onclick={() => toggle(m.month)}
-							title={tooltip(m)}
-							aria-label={tooltip(m)}
-							aria-pressed={selected === m.month}
-						>
-							<span class="bar-track">
-								{#if m.month === peakMonth}
-									<span class="bar-value" style:bottom="{heightPercent(m.brutto)}%">
-										{Math.round(m.brutto / 100).toLocaleString('de-DE')}&nbsp;&euro;
-									</span>
-								{/if}
-								<span class="bar" style:height="{heightPercent(m.brutto)}%"></span>
-							</span>
-							<span class="bar-label">{m.label}</span>
-						</button>
-					{/each}
-				</div>
+			<div class="grid grid-cols-12 gap-1.5 pt-2 sm:gap-2">
+				{#each months as m (m.month)}
+					<span class="num text-center text-[10.5px] {selected === m.month ? 'text-fg' : 'text-faint'}">{m.label}</span>
+				{/each}
 			</div>
 		</div>
 
-		<!-- The record. Same twelve numbers, never collapsed away. -->
-		<div class="table-wrap">
-			<table>
+		<!-- The record: the same twelve numbers, never collapsed away. -->
+		<div class="overflow-x-auto border-t border-line">
+			<table class="num w-full min-w-[520px] border-collapse text-[13px]">
 				<thead>
-					<tr>
-						<th>Monat</th>
-						<th class="num">Rg.</th>
-						<th class="num">Netto</th>
-						<th class="num">MWST</th>
-						<th class="num">Brutto</th>
-						<th class="num">Offen</th>
+					<tr class="label-xs text-faint">
+						<th class="px-4 py-2 text-left font-normal">Monat</th>
+						<th class="px-3 py-2 text-right font-normal">Rg.</th>
+						<th class="px-3 py-2 text-right font-normal">Netto</th>
+						<th class="px-3 py-2 text-right font-normal">MwSt</th>
+						<th class="px-3 py-2 text-right font-normal">Brutto</th>
+						<th class="px-4 py-2 text-right font-normal">Offen</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each months as m}
-						<tr
-							class:empty-month={m.count === 0}
-							class:selected={selected === m.month}
-						>
-							<td>
-								<button type="button" class="month-btn" onclick={() => toggle(m.month)}>
-									{m.label}
-								</button>
+					{#each months as m (m.month)}
+						<tr class="border-t border-line {m.count === 0 ? 'text-faint' : ''} {selected === m.month ? 'bg-sunk' : ''}">
+							<td class="px-4 py-1.5">
+								<button type="button" class="font-sans hover:underline" onclick={() => toggle(m.month)}>{m.label}</button>
 							</td>
-							<td class="num">{m.count || '—'}</td>
-							<td class="num">{m.count ? formatEuro(m.netto) : '—'}</td>
-							<td class="num">{m.count ? formatEuro(m.mwst) : '—'}</td>
-							<td class="num">{m.count ? formatEuro(m.brutto) : '—'}</td>
-							<td class="num offen">{m.offen ? formatEuro(m.offen) : '—'}</td>
+							<td class="px-3 py-1.5 text-right">{m.count || '—'}</td>
+							<td class="px-3 py-1.5 text-right">{m.count ? formatEuro(m.netto) : '—'}</td>
+							<td class="px-3 py-1.5 text-right">{m.count ? formatEuro(m.mwst) : '—'}</td>
+							<td class="px-3 py-1.5 text-right">{m.count ? formatEuro(m.brutto) : '—'}</td>
+							<td class="px-4 py-1.5 text-right {m.offen ? 'text-warn' : ''}">{m.offen ? formatEuro(m.offen) : '—'}</td>
 						</tr>
 					{/each}
 				</tbody>
 				<tfoot>
-					<tr>
-						<th>Jahr</th>
-						<th class="num">{yearTotals.count}</th>
-						<th class="num">{formatEuro(yearTotals.netto)}</th>
-						<th class="num">{formatEuro(yearTotals.mwst)}</th>
-						<th class="num">{formatEuro(yearTotals.brutto)}</th>
-						<th class="num">{formatEuro(yearTotals.offen)}</th>
+					<tr class="border-t border-line-strong font-semibold">
+						<th class="px-4 py-2 text-left font-sans">Jahr</th>
+						<th class="px-3 py-2 text-right">{yearTotals.count}</th>
+						<th class="px-3 py-2 text-right">{formatEuro(yearTotals.netto)}</th>
+						<th class="px-3 py-2 text-right">{formatEuro(yearTotals.mwst)}</th>
+						<th class="px-3 py-2 text-right">{formatEuro(yearTotals.brutto)}</th>
+						<th class="px-4 py-2 text-right">{formatEuro(yearTotals.offen)}</th>
 					</tr>
 				</tfoot>
 			</table>
 		</div>
 	{/if}
 </section>
-
-<style>
-	/* One series, one hue. A lighter, more chromatic step of the brand navy than
-	 * --dt-primary (#022448): as a 12-bar area fill the brand step reads as a wall of
-	 * near-black, and it sits outside the legible lightness/chroma band. This step
-	 * passes the palette validator against the white chart surface. */
-	.panel {
-		--chart-ink: #1b6ca8;
-		/* De-emphasis, not erasure: a month that is filtered out must still be
-		 * readable as a column, or the chart stops being a year at a glance. */
-		--chart-ink-dim: color-mix(in srgb, #1b6ca8 32%, transparent);
-
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: var(--dt-space-5) var(--dt-space-6);
-		margin-bottom: var(--dt-space-4);
-	}
-
-	.panel-head { margin-bottom: var(--dt-space-5); }
-	.panel-head h2 {
-		margin: 0; font-size: 1rem; font-weight: 700; color: var(--dt-on-surface);
-	}
-	.panel-sub {
-		margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--dt-on-surface-variant);
-	}
-	.empty {
-		color: var(--dt-on-surface-variant); font-size: 0.8125rem;
-		padding: var(--dt-space-6) 0; text-align: center;
-	}
-
-	/* ── chart ─────────────────────────────────────── */
-	.chart { display: flex; gap: var(--dt-space-2); height: 190px; }
-
-	.y-axis {
-		display: flex; flex-direction: column; justify-content: space-between;
-		/* Aligns with .plot's own bottom label strip so ticks meet their gridlines. */
-		padding-bottom: 22px;
-		font-size: 0.6875rem; font-variant-numeric: tabular-nums;
-		color: var(--dt-on-surface-variant); text-align: right; min-width: 3.5ch;
-	}
-	.y-tick { line-height: 1; transform: translateY(-0.35em); }
-
-	.plot { position: relative; flex: 1; min-width: 0; }
-
-	.grid {
-		position: absolute; inset: 0 0 22px 0;
-		display: flex; flex-direction: column; justify-content: space-between;
-	}
-	/* Hairline, solid, one step off the surface — recessive by construction. */
-	.grid-line { height: 1px; background: var(--dt-outline-variant); opacity: 0.5; }
-
-	.bars {
-		position: absolute; inset: 0;
-		display: flex; align-items: stretch;
-		/* The 2px surface gap that separates touching columns. */
-		gap: 2px;
-	}
-
-	.bar-slot {
-		flex: 1; min-width: 0;
-		display: flex; flex-direction: column;
-		padding: 0; border: none; background: none; cursor: pointer;
-	}
-	/* Dimming is the fill colour alone — never also an opacity on the slot. Stacking
-	 * the two washed the column out to almost nothing and made a hovered dim column
-	 * read as a muddy third state that means neither "selected" nor "not". */
-	.bar-slot.dimmed .bar-value { color: var(--dt-on-surface-variant); }
-
-	.bar-track {
-		position: relative; flex: 1;
-		display: flex; align-items: flex-end; justify-content: center;
-	}
-
-	/* ≤24px thick, 4px rounded cap, square at the baseline. */
-	.bar {
-		width: 100%; max-width: 24px;
-		background: var(--chart-ink);
-		border-radius: 4px 4px 0 0;
-		transition: background var(--dt-transition);
-	}
-	.bar-slot.dimmed .bar { background: var(--chart-ink-dim); }
-	/* Hover previews a column by restoring it to full strength; only the SELECTED
-	 * month goes to the darker brand step. Giving hover and selection the same
-	 * colour made "the pointer happens to be here" indistinguishable from
-	 * "this is the month you are filtered to". */
-	.bar-slot:hover .bar { background: var(--chart-ink); }
-	.bar-slot.active .bar, .bar-slot.active:hover .bar { background: var(--dt-primary); }
-
-	/* Only the tallest column is labelled — a number on every column goes unread. */
-	.bar-value {
-		position: absolute; left: 50%; transform: translate(-50%, -4px);
-		font-size: 0.6875rem; font-weight: 600; white-space: nowrap;
-		font-variant-numeric: tabular-nums;
-		color: var(--dt-on-surface);
-	}
-
-	.bar-label {
-		height: 22px; line-height: 22px;
-		font-size: 0.6875rem; color: var(--dt-on-surface-variant);
-	}
-	.bar-slot.active .bar-label { color: var(--dt-on-surface); font-weight: 700; }
-
-	/* ── table ─────────────────────────────────────── */
-	.table-wrap { margin-top: var(--dt-space-5); overflow-x: auto; }
-	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-	th {
-		padding: 6px var(--dt-space-3); text-align: left; font-weight: 500;
-		font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;
-		color: var(--dt-on-surface-variant); white-space: nowrap;
-	}
-	td { padding: 4px var(--dt-space-3); color: var(--dt-on-surface); white-space: nowrap; }
-	.num { text-align: right; font-variant-numeric: tabular-nums; }
-	td.offen { color: var(--dt-secondary); font-weight: 600; }
-	tbody tr.empty-month td { color: var(--dt-on-surface-variant); opacity: 0.6; }
-	tbody tr.selected { background: var(--dt-surface-container-high); }
-	tbody tr:hover { background: var(--dt-surface-container-low); }
-
-	.month-btn {
-		padding: 0; border: none; background: none; cursor: pointer;
-		font: inherit; color: inherit; text-decoration: underline dotted;
-	}
-	.month-btn:hover { color: var(--dt-primary); }
-
-	tfoot th {
-		padding-top: 8px; font-size: 0.8125rem; text-transform: none; letter-spacing: 0;
-		font-weight: 700; color: var(--dt-on-surface);
-		border-top: 2px solid var(--dt-outline-variant);
-	}
-
-	@media (max-width: 768px) {
-		.panel { padding: var(--dt-space-4); }
-		.chart { height: 150px; }
-		.bar-value { display: none; }
-		.month-btn { min-height: 32px; }
-	}
-</style>

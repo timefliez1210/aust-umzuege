@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
-	import { Phone, CheckCircle, Clock, PhoneCall, Trash2, AlarmClock } from 'lucide-svelte';
+	import { Phone, CheckCircle, AlarmClock, RefreshCw } from 'lucide-svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import { navBadges } from '$lib/components/console/navBadges.svelte';
 
 	interface FlashContact {
 		id: string;
@@ -29,6 +35,9 @@
 	const done = $derived(contacts.filter((c) => !!c.handled_at));
 	const dismissed = $derived(contacts.filter((c) => !!c.dismissed_at));
 
+	let tab = $state<'open' | 'done' | 'dismissed'>('open');
+	const history = $derived(tab === 'done' ? done : dismissed);
+
 	async function load() {
 		loading = true;
 		error = null;
@@ -49,6 +58,7 @@
 			contacts = contacts.map((c) =>
 				c.id === id ? { ...c, handled_at: new Date().toISOString() } : c
 			);
+			navBadges.refresh();
 		} catch {
 			error = 'Aktion fehlgeschlagen.';
 		} finally {
@@ -61,342 +71,82 @@
 	});
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<div class="page-title">
-			<PhoneCall size={22} />
-			<h1>Rückruf-Anfragen</h1>
-		</div>
-		<button class="btn-refresh" onclick={load} disabled={loading}>
-			{loading ? 'Lädt …' : 'Aktualisieren'}
-		</button>
+<svelte:head><title>Rückrufe</title></svelte:head>
+
+<PageHeader title="Rückrufe" count="{open.length} offen">
+	{#snippet actions()}
+		<Button variant="ghost" size="icon" onclick={load} disabled={loading} aria-label="Aktualisieren">
+			<RefreshCw size={16} class={loading ? 'animate-spin' : ''} />
+		</Button>
+	{/snippet}
+</PageHeader>
+
+{#if error}
+	<p class="mb-3 rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
+{/if}
+
+<FilterTabs
+	class="mb-4"
+	label="Rückrufe"
+	options={[
+		{ value: 'open', label: 'Offen', count: open.length },
+		{ value: 'done', label: 'Erreicht', count: done.length },
+		{ value: 'dismissed', label: 'Verworfen', count: dismissed.length }
+	]}
+	bind:value={tab}
+/>
+
+{#if loading && contacts.length === 0}
+	<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+		{#each Array(3) as _, i (i)}<div class="h-40 animate-pulse rounded-md bg-sunk"></div>{/each}
 	</div>
-
-	{#if error}
-		<p class="error">{error}</p>
-	{/if}
-
-	{#if loading && contacts.length === 0}
-		<p class="empty">Lädt …</p>
+{:else if tab === 'open'}
+	{#if open.length === 0}
+		<EmptyState title="Keine offenen Rückrufe" hint="Neue Anfragen aus dem Schnellkontakt-Formular erscheinen hier." />
 	{:else}
-		<section class="section">
-			<h2 class="section-title">
-				<Clock size={16} />
-				Offen ({open.length})
-			</h2>
-			{#if open.length === 0}
-				<p class="empty">Keine offenen Anfragen.</p>
-			{:else}
-				<div class="cards">
-					{#each open as c (c.id)}
-						<div class="card card--open">
-							<div class="card-info">
-								<span class="card-name">{c.name}</span>
-								<a class="card-phone" href="tel:{c.phone}">
-									<Phone size={14} />
-									{c.phone}
-								</a>
-								<span class="card-time">
-									Wann: <strong>{TIME_LABELS[c.time_preference] ?? c.time_preference}</strong>
-								</span>
-								<span class="card-date">Eingegangen: {formatDate(c.created_at)}</span>
-							{#if c.next_remind_at}
-								<span class="card-snooze">
-									<AlarmClock size={12} />
-									Nächste Erinnerung: {formatDate(c.next_remind_at)}
-								</span>
-							{/if}
-							</div>
-							<button
-								class="btn-handle"
-								onclick={() => markHandled(c.id)}
-								disabled={handlingId === c.id}
-							>
-								<CheckCircle size={16} />
-								{handlingId === c.id ? 'Speichert …' : 'Erledigt'}
-							</button>
+		<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+			{#each open as c (c.id)}
+				<article class="flex flex-col gap-3 rounded-md border border-line bg-panel p-4 shadow-[inset_3px_0_0_var(--accent)]">
+					<div class="flex items-start justify-between gap-3">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<span class="truncate text-base font-semibold">{c.name}</span>
+							<span class="num text-xs text-faint">Eingegangen {formatDate(c.created_at)}</span>
 						</div>
-					{/each}
-				</div>
-			{/if}
-		</section>
-
-		<section class="section">
-			<h2 class="section-title">
-				<CheckCircle size={16} />
-				Erreicht ({done.length})
-			</h2>
-			{#if done.length === 0}
-				<p class="empty">Noch keine erledigten Anfragen.</p>
-			{:else}
-				<div class="cards cards--done">
-					{#each done as c (c.id)}
-						<div class="card card--done">
-							<div class="card-info">
-								<span class="card-name">{c.name}</span>
-								<a class="card-phone" href="tel:{c.phone}">
-									<Phone size={14} />
-									{c.phone}
-								</a>
-								<span class="card-time">
-									Wann: <strong>{TIME_LABELS[c.time_preference] ?? c.time_preference}</strong>
-								</span>
-								<span class="card-date">Eingegangen: {formatDate(c.created_at)}</span>
-								{#if c.handled_at}
-									<span class="card-date">Erreicht: {formatDate(c.handled_at)}</span>
-								{/if}
-							</div>
-							<span class="badge-done">
-								<CheckCircle size={14} />
-								Erreicht
-							</span>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</section>
-
-		<section class="section">
-			<h2 class="section-title">
-				<Trash2 size={16} />
-				Verworfen ({dismissed.length})
-			</h2>
-			{#if dismissed.length === 0}
-				<p class="empty">Keine verworfenen Anfragen.</p>
-			{:else}
-				<div class="cards cards--done">
-					{#each dismissed as c (c.id)}
-						<div class="card card--done">
-							<div class="card-info">
-								<span class="card-name">{c.name}</span>
-								<a class="card-phone" href="tel:{c.phone}">
-									<Phone size={14} />
-									{c.phone}
-								</a>
-								<span class="card-time">
-									Wann: <strong>{TIME_LABELS[c.time_preference] ?? c.time_preference}</strong>
-								</span>
-								<span class="card-date">Eingegangen: {formatDate(c.created_at)}</span>
-								{#if c.dismissed_at}
-									<span class="card-date">Verworfen: {formatDate(c.dismissed_at)}</span>
-								{/if}
-							</div>
-							<span class="badge-dismissed">
-								<Trash2 size={14} />
-								Verworfen
-							</span>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</section>
+						<Badge tone={c.time_preference === 'gleich' ? 'danger' : 'warn'}>{TIME_LABELS[c.time_preference] ?? c.time_preference}</Badge>
+					</div>
+					<a href="tel:{c.phone}" class="num text-xl font-medium tracking-tight hover:text-accent-text">{c.phone}</a>
+					{#if c.next_remind_at}
+						<span class="flex items-center gap-1.5 text-xs text-muted">
+							<AlarmClock size={12} /> Nächste Erinnerung {formatDate(c.next_remind_at)}
+						</span>
+					{/if}
+					<div class="mt-auto grid grid-cols-2 gap-2">
+						<Button href="tel:{c.phone}" variant="accent"><Phone size={15} /> Anrufen</Button>
+						<Button onclick={() => markHandled(c.id)} disabled={handlingId === c.id}>
+							<CheckCircle size={15} />
+							{handlingId === c.id ? 'Speichert …' : 'Erreicht'}
+						</Button>
+					</div>
+				</article>
+			{/each}
+		</div>
 	{/if}
-</div>
-
-<style>
-	@import '../../../styles/admin.css';
-
-	.page {
-		padding: 2rem;
-		max-width: 900px;
-	}
-
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 2rem;
-	}
-
-	.page-title {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		color: var(--dt-on-surface, #191c1e);
-	}
-
-	.page-title h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		margin: 0;
-	}
-
-	.btn-refresh {
-		padding: 0.45rem 1rem;
-		border: 1px solid var(--dt-outline, #ccc);
-		border-radius: 0.5rem;
-		background: transparent;
-		cursor: pointer;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface, #191c1e);
-	}
-	.btn-refresh:hover:not(:disabled) {
-		background: var(--dt-surface-variant, #f0f2f5);
-	}
-	.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
-
-	.section { margin-bottom: 2.5rem; }
-
-	.section-title {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 1rem;
-		font-weight: 600;
-		margin: 0 0 1rem;
-		color: var(--dt-on-surface, #191c1e);
-	}
-
-	.cards {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1rem 1.25rem;
-		border-radius: 0.75rem;
-		border: 1px solid var(--dt-outline-variant, #e0e2e8);
-		background: var(--dt-surface-container, #fff);
-	}
-
-	.card--open {
-		border-left: 4px solid #ff6b00;
-	}
-
-	.cards--done { opacity: 0.7; }
-
-	.card-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-		min-width: 0;
-	}
-
-	.card-name {
-		font-weight: 700;
-		font-size: 1rem;
-	}
-
-	.card-phone {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		font-size: 0.9rem;
-		color: #ff6b00;
-		text-decoration: none;
-		font-weight: 600;
-	}
-	.card-phone:hover { text-decoration: underline; }
-
-	.card-time {
-		font-size: 0.82rem;
-		color: var(--dt-on-surface-variant, #5b6478);
-	}
-
-	.card-date {
-		font-size: 0.78rem;
-		color: var(--dt-on-surface-variant, #5b6478);
-	}
-
-	.btn-handle {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.5rem 1rem;
-		background: #1e3a5f;
-		color: #fff;
-		border: none;
-		border-radius: 0.55rem;
-		font: inherit;
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-		white-space: nowrap;
-		flex-shrink: 0;
-		transition: background 0.15s;
-	}
-	.btn-handle:hover:not(:disabled) { background: #15294a; }
-	.btn-handle:disabled { opacity: 0.5; cursor: not-allowed; }
-
-	.badge-done {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: #166534;
-		background: #dcfce7;
-		padding: 0.3rem 0.7rem;
-		border-radius: 999px;
-		white-space: nowrap;
-		flex-shrink: 0;
-	}
-
-	.badge-dismissed {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: #6b7280;
-		background: #f3f4f6;
-		padding: 0.3rem 0.7rem;
-		border-radius: 999px;
-		white-space: nowrap;
-		flex-shrink: 0;
-	}
-
-	.card-snooze {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.78rem;
-		color: #b45309;
-		font-weight: 600;
-	}
-
-	.error {
-		color: #dc2626;
-		margin-bottom: 1rem;
-		font-size: 0.9rem;
-	}
-
-	.empty {
-		color: var(--dt-on-surface-variant, #5b6478);
-		font-size: 0.9rem;
-	}
-
-	@media (max-width: 768px) {
-		.page {
-			padding: 1rem;
-		}
-
-		.page-header {
-			flex-wrap: wrap;
-			gap: 0.75rem;
-		}
-
-		.btn-refresh {
-			min-height: 44px;
-		}
-
-		.card {
-			flex-wrap: wrap;
-		}
-
-		.btn-handle {
-			min-height: 44px;
-			width: 100%;
-			justify-content: center;
-		}
-
-		.card-phone {
-			min-height: 44px;
-		}
-	}
-</style>
+{:else if history.length === 0}
+	<EmptyState title={tab === 'done' ? 'Noch keine erreichten Rückrufe' : 'Keine verworfenen Rückrufe'} />
+{:else}
+	<ul class="divide-y divide-line rounded-md border border-line bg-panel">
+		{#each history as c (c.id)}
+			<li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3">
+				<span class="flex min-w-0 flex-col">
+					<span class="font-medium">{c.name}</span>
+					<a href="tel:{c.phone}" class="num text-[13px] text-muted hover:text-fg">{c.phone}</a>
+				</span>
+				<span class="num flex flex-col items-end text-xs text-faint">
+					<span>Eingegangen {formatDate(c.created_at)}</span>
+					{#if tab === 'done' && c.handled_at}<span class="text-ok">Erreicht {formatDate(c.handled_at)}</span>{/if}
+					{#if tab === 'dismissed' && c.dismissed_at}<span>Verworfen {formatDate(c.dismissed_at)}</span>{/if}
+				</span>
+			</li>
+		{/each}
+	</ul>
+{/if}

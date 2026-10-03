@@ -35,6 +35,20 @@
 		<meta name="geo.region" content="DE-NI" />
 		<meta name="geo.placename" content="Hildesheim" />
 
+		<!-- Console (admin/worker) theme before first paint — mirrors lib/stores/theme.svelte.ts -->
+		<script>
+			(function () {
+				try {
+					var p = location.pathname;
+					if (p.indexOf('/admin') !== 0) return;
+					var m = localStorage.getItem('aust_theme');
+					var dark = m === 'dark' || (m !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+					document.documentElement.setAttribute('data-console', '');
+					document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+				} catch (e) {}
+			})();
+		</script>
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

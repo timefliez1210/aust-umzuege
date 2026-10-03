@@ -16,8 +16,9 @@
 		sortDir = $bindable<'asc' | 'desc'>('desc'),
 		onRowClick,
 		row: rowSnippet,
+		card,
 		rowClass,
-		emptyMessage = 'Keine Eintraege gefunden'
+		emptyMessage = 'Keine Einträge gefunden'
 	}: {
 		columns: Column[];
 		rows: unknown[];
@@ -25,6 +26,8 @@
 		sortDir?: 'asc' | 'desc';
 		onRowClick?: (row: unknown) => void;
 		row: Snippet<[unknown, number]>;
+		/** Phone layout for one row. Without it, rows reflow generically into label/value cards. */
+		card?: Snippet<[unknown, number]>;
 		rowClass?: (row: unknown, i: number) => string | undefined;
 		emptyMessage?: string;
 	} = $props();
@@ -88,49 +91,77 @@
 </script>
 
 {#if isMobile && columns.some((c) => c.sortable)}
-	<div class="mobile-sort">
+	<div class="mb-3 flex gap-2">
 		<select
-			class="mobile-sort-select"
+			class="h-11 flex-1 rounded-md border border-line bg-panel px-3 text-base text-fg"
 			value={sortKey}
 			onchange={(e) => handleSort((e.target as HTMLSelectElement).value)}
 			aria-label="Sortieren nach"
 		>
-			{#each columns.filter((c) => c.sortable) as col}
+			{#each columns.filter((c) => c.sortable) as col (col.key)}
 				<option value={col.key}>{col.label}</option>
 			{/each}
 		</select>
 		<button
-			class="mobile-sort-dir"
+			class="inline-flex size-11 items-center justify-center rounded-md border border-line bg-panel text-muted"
 			type="button"
 			onclick={() => (sortDir = sortDir === 'asc' ? 'desc' : 'asc')}
 			aria-label="Sortierrichtung umkehren"
 		>
-			{#if sortDir === 'asc'}
-				<ArrowUp size={16} />
-			{:else}
-				<ArrowDown size={16} />
-			{/if}
+			{#if sortDir === 'asc'}<ArrowUp size={16} />{:else}<ArrowDown size={16} />{/if}
 		</button>
 	</div>
 {/if}
 
-<div class="table-wrapper" bind:this={tableWrapperEl}>
-	<table>
+{#if isMobile && card}
+	<div class="flex flex-col gap-2">
+		{#if rows.length === 0}
+			<p class="rounded-md border border-dashed border-line-strong py-10 text-center text-sm text-muted">{emptyMessage}</p>
+		{/if}
+		{#each rows as item, i (i)}
+			{#if onRowClick}
+				<button
+					type="button"
+					class="{rowClass?.(item, i) ?? ''} block w-full rounded-md border border-line bg-panel p-3.5 text-left active:bg-sunk"
+					onclick={() => onRowClick?.(item)}
+				>
+					{@render card(item, i)}
+				</button>
+			{:else}
+				<div class="{rowClass?.(item, i) ?? ''} rounded-md border border-line bg-panel p-3.5">{@render card(item, i)}</div>
+			{/if}
+		{/each}
+	</div>
+{:else}
+<!--
+	Desktop: hairline table. Phones (≤768px): every row reflows into a card — the first
+	cell is the title, the rest are "LABEL value" lines (labels come from data-label).
+	Cell styling is applied from here because cells are rendered by the caller's snippet.
+-->
+<div
+	bind:this={tableWrapperEl}
+	class={isMobile
+		? '[&_table]:block [&_tbody]:block [&_thead]:hidden [&_tr]:mb-2.5 [&_tr]:block [&_tr]:rounded-md [&_tr]:border [&_tr]:border-line [&_tr]:bg-panel [&_tr]:px-4 [&_tr]:pt-1 [&_tr]:pb-2 [&_td]:flex [&_td]:items-baseline [&_td]:justify-between [&_td]:gap-3 [&_td]:border-b [&_td]:border-line [&_td]:py-1.5 [&_td]:text-[13px] [&_td:last-child]:border-b-0 [&_td]:before:shrink-0 [&_td]:before:font-mono [&_td]:before:text-[10.5px] [&_td]:before:tracking-wider [&_td]:before:text-faint [&_td]:before:uppercase [&_td]:before:content-[attr(data-label)] [&_td:first-child:not(.empty)]:block [&_td:first-child:not(.empty)]:pt-2.5 [&_td:first-child:not(.empty)]:pb-2 [&_td:first-child:not(.empty)]:text-[15px] [&_td:first-child:not(.empty)]:font-semibold [&_td:first-child:not(.empty)]:before:content-none'
+		: 'overflow-x-auto rounded-md border border-line bg-panel [&_td]:px-4 [&_td]:py-2.5 [&_td]:align-middle [&_tbody_tr]:border-t [&_tbody_tr]:border-line'}
+>
+	<table class="w-full border-collapse text-sm">
 		<thead>
 			<tr>
-				{#each columns as col}
-					<th style={col.width ? `width: ${col.width}` : ''}>
+				{#each columns as col (col.key)}
+					<th
+						style={col.width ? `width: ${col.width}` : ''}
+						class="label-xs px-4 py-2.5 text-left font-normal whitespace-nowrap text-faint"
+					>
 						{#if col.sortable}
-							<button class="sort-btn" onclick={() => handleSort(col.key)}>
+							<button
+								class="label-xs inline-flex items-center gap-1.5 {sortKey === col.key ? 'text-fg' : 'text-faint hover:text-fg'}"
+								onclick={() => handleSort(col.key)}
+							>
 								{col.label}
 								{#if sortKey === col.key}
-									{#if sortDir === 'asc'}
-										<ArrowUp size={14} />
-									{:else}
-										<ArrowDown size={14} />
-									{/if}
+									{#if sortDir === 'asc'}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
 								{:else}
-									<ArrowUpDown size={14} />
+									<ArrowUpDown size={13} />
 								{/if}
 							</button>
 						{:else}
@@ -143,15 +174,17 @@
 		<tbody>
 			{#if rows.length === 0}
 				<tr>
-					<td colspan={columns.length} class="empty">{emptyMessage}</td>
+					<td colspan={columns.length} class="empty !block py-10 text-center text-sm text-muted">{emptyMessage}</td>
 				</tr>
 			{:else}
-				{#each rows as item, i}
+				{#each rows as item, i (i)}
 					<tr
-						class={rowClass?.(item, i) ?? ''}
+						class="{rowClass?.(item, i) ?? ''} transition-colors {onRowClick ? 'cursor-pointer hover:bg-sunk' : ''}"
 						class:clickable={!!onRowClick}
 						onclick={() => onRowClick?.(item)}
-						onkeydown={(e) => { if (e.key === 'Enter') onRowClick?.(item); }}
+						onkeydown={(e) => {
+							if (e.key === 'Enter') onRowClick?.(item);
+						}}
 						tabindex={onRowClick ? 0 : undefined}
 						role={onRowClick ? 'button' : undefined}
 					>
@@ -162,202 +195,4 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.table-wrapper {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-
-	thead {
-		background: var(--dt-surface-container-high);
-	}
-
-	th {
-		padding: 8px 1rem;
-		text-align: left;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		font-size: 12px;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		white-space: nowrap;
-	}
-
-	td {
-		padding: 8px 1rem;
-		color: var(--dt-on-surface);
-	}
-
-	tbody tr {
-		transition: background var(--dt-transition);
-	}
-
-	tbody tr:nth-child(even) {
-		background: var(--dt-surface-container-low);
-	}
-
-	tbody tr:nth-child(odd) {
-		background: var(--dt-surface-container-lowest);
-	}
-
-	tbody tr:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	tr.clickable {
-		cursor: pointer;
-	}
-
-	.sort-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		color: var(--dt-on-surface-variant);
-		font-weight: 500;
-		font-size: 12px;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		transition: color var(--dt-transition);
-	}
-
-	.sort-btn:hover {
-		color: var(--dt-on-surface);
-	}
-
-	.empty {
-		text-align: center;
-		color: var(--dt-on-surface-variant);
-		padding: 2rem 1rem;
-	}
-
-	.mobile-sort {
-		display: none;
-	}
-
-	@media (max-width: 768px) {
-		td, th {
-			padding: 8px 0.6rem;
-			font-size: 0.8125rem;
-		}
-
-		th {
-			white-space: normal;
-		}
-
-		/* Compact sort control shown above the card list — the header row (and
-		 * its sort buttons) is hidden in card mode, so this is the only sort UI. */
-		.mobile-sort {
-			display: flex;
-			gap: 0.5rem;
-			margin-bottom: 0.75rem;
-		}
-
-		.mobile-sort-select {
-			flex: 1;
-			min-height: 44px;
-			font-size: 16px;
-			padding: 0 0.75rem;
-			border-radius: var(--dt-radius-md);
-			border: none;
-			background: var(--dt-surface-container-lowest);
-			color: var(--dt-on-surface);
-		}
-
-		.mobile-sort-dir {
-			min-height: 44px;
-			min-width: 44px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			border-radius: var(--dt-radius-md);
-			border: none;
-			background: var(--dt-surface-container-lowest);
-			color: var(--dt-on-surface-variant);
-		}
-
-		/* ─── Card mode: table/thead/tbody/tr reflow as a stacked card list ── */
-
-		table {
-			display: block;
-		}
-
-		thead {
-			display: none;
-		}
-
-		tbody {
-			display: block;
-		}
-
-		tbody tr {
-			display: block;
-			border-radius: var(--dt-radius-md);
-			padding: 0.25rem 1rem 0.5rem;
-			margin-bottom: 0.75rem;
-			background: var(--dt-surface-container-lowest);
-			box-shadow: var(--dt-shadow-ambient);
-		}
-
-		tbody tr:nth-child(even),
-		tbody tr:nth-child(odd) {
-			background: var(--dt-surface-container-lowest);
-		}
-
-		/* Each td is a label:value line; the label comes from the data-label
-		 * attribute set by the mobile-labeling effect in <script>. */
-		td {
-			display: flex;
-			justify-content: space-between;
-			align-items: baseline;
-			gap: 0.75rem;
-			padding: 0.375rem 0;
-			border-bottom: 1px solid var(--dt-surface-container-high);
-		}
-
-		td:last-child {
-			border-bottom: none;
-		}
-
-		td::before {
-			content: attr(data-label);
-			font-weight: 500;
-			font-size: 12px;
-			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			color: var(--dt-on-surface-variant);
-			flex-shrink: 0;
-		}
-
-		/* First column is the card title: full-width, bold, no label prefix. */
-		tr td:first-child:not(.empty) {
-			display: block;
-			font-weight: 600;
-			font-size: 0.9375rem;
-			color: var(--dt-on-surface);
-			padding: 0.625rem 0 0.5rem;
-		}
-
-		tr td:first-child:not(.empty)::before {
-			content: none;
-		}
-
-		td.empty {
-			display: block;
-			text-align: center;
-			border-bottom: none;
-		}
-
-		td.empty::before {
-			content: none;
-		}
-	}
-</style>
+{/if}

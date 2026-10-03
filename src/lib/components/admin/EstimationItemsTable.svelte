@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { apiPut } from '$lib/utils/api.svelte';
 	import { API_BASE } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
@@ -586,375 +588,190 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Shared mobile card row — reused by Sections A/B/C so the stacked-card
-     layout stays in one place instead of being duplicated per section. -->
-{#snippet itemCard(item: EditableItem, showVolume: boolean)}
-	<div class="item-card">
-		<div class="item-card-top">
-			<div class="item-card-crop">
-				{#if item.crop_url}
-					<button class="crop-btn card-crop-btn" onclick={() => openReview(item)}>
-						<img src={API_BASE + item.crop_url} alt={item.name} class="crop-thumb" />
-					</button>
-				{:else}
-					<span class="no-crop">—</span>
+<!-- Shared look for the inline editors in every table / card / dialog below. -->
+{#snippet num(item: EditableItem, field: 'quantity' | 'volume_m3', cls = 'w-20')}
+	<input
+		type="number"
+		class="num h-8 rounded-sm border border-line bg-transparent px-2 text-right text-[13px] outline-none hover:border-line-strong focus:border-fg {cls}"
+		min={field === 'quantity' ? 1 : 0}
+		step={field === 'quantity' ? 1 : 0.01}
+		bind:value={item[field]}
+		oninput={markDirty}
+		aria-label={field === 'quantity' ? 'Anzahl' : 'Volumen (m³)'}
+	/>
+{/snippet}
+
+{#snippet crop(item: EditableItem, size = 'size-11')}
+	{#if item.crop_url}
+		<button class="block shrink-0 overflow-hidden rounded-xs border border-line {size}" onclick={() => openReview(item)}>
+			<img src={API_BASE + item.crop_url} alt={item.name} class="size-full object-cover" loading="lazy" />
+		</button>
+	{:else}
+		<span class="flex shrink-0 items-center justify-center rounded-xs border border-dashed border-line text-faint {size}">—</span>
+	{/if}
+{/snippet}
+
+<!--
+	One table for all three sections. Desktop: hairline table; phones: stacked cards.
+	`showVolume` is off for non-moveable items (they don't count towards the volume).
+-->
+{#snippet itemsTable(list: EditableItem[], showVolume: boolean, total: { label: string } | null, sortable: boolean)}
+	<div class="hidden md:block">
+		<table class="w-full border-collapse text-sm">
+			<thead>
+				<tr class="border-b border-line">
+					<th class="label-xs w-16 px-4 py-2 text-left font-normal text-faint">Foto</th>
+					<th class="label-xs px-2 py-2 text-left font-normal text-faint">
+						{#if sortable}
+							<button class="label-xs hover:text-fg" onclick={() => toggleSort('name')}>
+								Gegenstand {sortKey === 'name' ? (sortAsc ? '▲' : '▼') : ''}
+							</button>
+						{:else}Gegenstand{/if}
+					</th>
+					<th class="label-xs w-24 px-2 py-2 text-right font-normal text-faint">
+						{#if sortable}
+							<button class="label-xs hover:text-fg" onclick={() => toggleSort('quantity')}>
+								Anzahl {sortKey === 'quantity' ? (sortAsc ? '▲' : '▼') : ''}
+							</button>
+						{:else}Anzahl{/if}
+					</th>
+					{#if showVolume}
+						<th class="label-xs w-28 px-2 py-2 text-right font-normal text-faint">
+							{#if sortable}
+								<button class="label-xs hover:text-fg" onclick={() => toggleSort('volume_m3')}>
+									m³ {sortKey === 'volume_m3' ? (sortAsc ? '▲' : '▼') : ''}
+								</button>
+							{:else}m³{/if}
+						</th>
+					{/if}
+					<th class="label-xs w-20 px-2 py-2 text-right font-normal text-faint">Konfidenz</th>
+					<th class="w-12 px-4 py-2"></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each list as item, idx (idx)}
+					<tr class="border-b border-line hover:bg-sunk/50">
+						<td class="px-4 py-1.5">{@render crop(item)}</td>
+						<td class="px-2 py-1.5">
+							<input
+								type="text"
+								class="h-8 w-full rounded-sm border border-transparent bg-transparent px-2 text-sm outline-none hover:border-line focus:border-fg"
+								bind:value={item.name}
+								oninput={markDirty}
+								aria-label="Gegenstand"
+							/>
+						</td>
+						<td class="px-2 py-1.5 text-right">{@render num(item, 'quantity')}</td>
+						{#if showVolume}<td class="px-2 py-1.5 text-right">{@render num(item, 'volume_m3', 'w-24')}</td>{/if}
+						<td class="num px-2 py-1.5 text-right text-xs text-muted">{Math.round(item.confidence * 100)} %</td>
+						<td class="px-4 py-1.5 text-right">
+							<Button variant="ghost" size="icon-sm" onclick={() => deleteItem(item)} aria-label="Entfernen"><X size={14} /></Button>
+						</td>
+					</tr>
+				{/each}
+				{#if total}
+					<tr class="font-semibold">
+						<td class="px-4 py-2.5"></td>
+						<td class="px-4 py-2.5">{total.label}</td>
+						<td class="num px-4 py-2.5 text-right">{list.reduce((s, i) => s + i.quantity, 0)}</td>
+						{#if showVolume}
+							<td class="num px-4 py-2.5 text-right">{list.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m³</td>
+						{/if}
+						<td></td><td></td>
+					</tr>
 				{/if}
-			</div>
-			<input
-				type="text"
-				class="edit-input edit-name card-name-input"
-				bind:value={item.name}
-				oninput={markDirty}
-				placeholder="Bezeichnung"
-			/>
-			<button class="del-btn card-del-btn" onclick={() => deleteItem(item)} title="Entfernen">
-				<X size={16} />
-			</button>
-		</div>
-		<div class="item-card-fields">
-			<label class="card-field">
-				<span class="card-field-label">Anzahl</span>
-				<input
-					type="number"
-					class="edit-input edit-num"
-					min="1"
-					step="1"
-					bind:value={item.quantity}
-					oninput={markDirty}
-				/>
-			</label>
-			{#if showVolume}
-				<label class="card-field">
-					<span class="card-field-label">Volumen (m3)</span>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="flex flex-col gap-2 p-3 md:hidden">
+		{#each list as item, idx (idx)}
+			<div class="flex flex-col gap-2 rounded-md border border-line p-2.5">
+				<div class="flex items-center gap-2.5">
+					{@render crop(item, 'size-12')}
 					<input
-						type="number"
-						class="edit-input edit-num"
-						min="0"
-						step="0.01"
-						bind:value={item.volume_m3}
+						type="text"
+						class="h-9 min-w-0 flex-1 rounded-sm border border-line bg-transparent px-2.5 text-sm outline-none focus:border-fg"
+						bind:value={item.name}
 						oninput={markDirty}
+						placeholder="Bezeichnung"
+						aria-label="Gegenstand"
 					/>
-				</label>
-			{/if}
-			<div class="card-field card-field-readonly">
-				<span class="card-field-label">Konfidenz</span>
-				<span class="confidence-cell">{Math.round(item.confidence * 100)}%</span>
+					<Button variant="ghost" size="icon" onclick={() => deleteItem(item)} aria-label="Entfernen"><X size={16} /></Button>
+				</div>
+				<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
+					<label class="flex items-center gap-2">Anzahl {@render num(item, 'quantity', 'w-16')}</label>
+					{#if showVolume}<label class="flex items-center gap-2">m³ {@render num(item, 'volume_m3', 'w-20')}</label>{/if}
+					<span class="num ml-auto">{Math.round(item.confidence * 100)} %</span>
+				</div>
 			</div>
-		</div>
+		{/each}
+		{#if total}
+			<div class="num flex justify-between px-1 pt-1 text-sm font-semibold">
+				<span>{total.label}</span>
+				<span>{list.reduce((s, i) => s + i.quantity, 0)} Stück</span>
+				{#if showVolume}<span>{list.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m³</span>{/if}
+			</div>
+		{/if}
 	</div>
 {/snippet}
 
-<!-- ── Section A: Main moveable items ──────────────────────────────────── -->
-<div class="card full-width">
-	<div class="card-header">
-		<h3>
-			{#if filterPhotoIndex !== null}
-				Gegenstaende aus Foto {filterPhotoIndex + 1} ({sortedItems.length})
-			{:else}
-				Moebel &amp; Gegenstaende ({mainItems.length})
-			{/if}
-		</h3>
-	</div>
-	{#if mainItems.length > 0}
-		<div class="items-table-wrap">
-			<table class="items-table">
-				<thead>
-					<tr>
-						<th class="th-foto">Foto</th>
-						<th class="th-sortable" onclick={() => toggleSort('name')}>
-							Gegenstand {sortKey === 'name' ? (sortAsc ? '\u25B2' : '\u25BC') : ''}
-						</th>
-						<th class="th-num th-sortable" onclick={() => toggleSort('quantity')}>
-							Anzahl {sortKey === 'quantity' ? (sortAsc ? '\u25B2' : '\u25BC') : ''}
-						</th>
-						<th class="th-num th-sortable" onclick={() => toggleSort('volume_m3')}>
-							Volumen (m3) {sortKey === 'volume_m3' ? (sortAsc ? '\u25B2' : '\u25BC') : ''}
-						</th>
-						<th class="th-num">Konfidenz</th>
-						<th class="th-del"></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each sortedItems as item}
-						<tr>
-							<td class="crop-cell">
-								{#if item.crop_url}
-									<button class="crop-btn" onclick={() => openReview(item)}>
-										<img
-											src={API_BASE + item.crop_url}
-											alt={item.name}
-											class="crop-thumb"
-										/>
-									</button>
-								{:else}
-									<span class="no-crop">—</span>
-								{/if}
-							</td>
-							<td>
-								<input
-									type="text"
-									class="edit-input edit-name"
-									bind:value={item.name}
-									oninput={markDirty}
-								/>
-							</td>
-							<td>
-								<input
-									type="number"
-									class="edit-input edit-num"
-									min="1"
-									step="1"
-									bind:value={item.quantity}
-									oninput={markDirty}
-								/>
-							</td>
-							<td>
-								<input
-									type="number"
-									class="edit-input edit-num"
-									min="0"
-									step="0.01"
-									bind:value={item.volume_m3}
-									oninput={markDirty}
-								/>
-							</td>
-							<td class="confidence-cell">
-								{Math.round(item.confidence * 100)}%
-							</td>
-							<td class="del-cell">
-								<button class="del-btn" onclick={() => deleteItem(item)} title="Entfernen">
-									<X size={14} />
-								</button>
-							</td>
-						</tr>
-					{/each}
-					<tr class="total-row">
-						<td></td>
-						<td>Gesamt</td>
-						<td>{mainItems.reduce((s, i) => s + i.quantity, 0)}</td>
-						<td>{computedTotal.toFixed(2)} m&#x00B3;</td>
-						<td></td>
-						<td></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<div class="items-cards">
-			{#each sortedItems as item}
-				{@render itemCard(item, true)}
-			{/each}
-			<div class="items-cards-total">
-				<span>Gesamt</span>
-				<span>{mainItems.reduce((s, i) => s + i.quantity, 0)} St&uuml;ck</span>
-				<span>{computedTotal.toFixed(2)} m&#x00B3;</span>
-			</div>
-		</div>
-	{:else}
-		<p class="empty-items">Noch keine Gegenstaende erfasst.</p>
-	{/if}
-	<div class="items-footer-actions">
-		<button class="btn btn-sm" onclick={addItem}>
-			<Plus size={14} />
-			Gegenstand
-		</button>
-		<button
-			class="btn btn-sm"
-			class:btn-dirty={itemsDirty}
-			onclick={saveItems}
-			disabled={savingItems || !itemsDirty}
-		>
+<!-- ── Section A: moveable items ───────────────────────────────────────── -->
+<div class="flex items-center justify-between gap-3 px-4 py-3">
+	<h4 class="text-sm font-medium">
+		{#if filterPhotoIndex !== null}
+			Gegenstände aus Foto {filterPhotoIndex + 1} <span class="num text-faint">({sortedItems.length})</span>
+		{:else}
+			Möbel & Gegenstände <span class="num text-faint">({mainItems.length})</span>
+		{/if}
+	</h4>
+	<div class="flex gap-1.5">
+		<Button size="sm" onclick={addItem}><Plus size={14} /> Gegenstand</Button>
+		<Button size="sm" variant={itemsDirty ? 'accent' : 'outline'} onclick={saveItems} disabled={savingItems || !itemsDirty}>
 			<Save size={14} />
-			{savingItems ? 'Speichern...' : 'Speichern'}
-		</button>
+			{savingItems ? 'Speichern …' : 'Speichern'}
+		</Button>
 	</div>
 </div>
+{#if mainItems.length > 0}
+	<div class="border-t border-line">
+		{@render itemsTable(sortedItems, true, filterPhotoIndex === null ? { label: 'Gesamt' } : null, true)}
+	</div>
+{:else}
+	<p class="border-t border-line px-4 py-6 text-center text-sm text-muted">Noch keine Gegenstände erfasst.</p>
+{/if}
 
-<!-- ── Section B: Box-packable items ───────────────────────────────────── -->
+<!-- ── Section B: box-packable items ───────────────────────────────────── -->
 {#if filteredBoxItems.length > 0}
-	<div class="card full-width items-section-box">
-		<div class="card-header">
-			<h3>Kartons &amp; Kleinteile ({filteredBoxItems.length})</h3>
-			<span class="section-badge badge-box">In Kartons verpackt</span>
+	<div class="border-t-4 border-sunk">
+		<div class="flex flex-wrap items-center gap-2 px-4 py-3">
+			<h4 class="text-sm font-medium">Kartons & Kleinteile <span class="num text-faint">({filteredBoxItems.length})</span></h4>
+			<Badge tone="info">In Kartons verpackt</Badge>
 		</div>
-		<div class="items-table-wrap">
-			<table class="items-table">
-				<thead>
-					<tr>
-						<th class="th-foto">Foto</th>
-						<th>Gegenstand</th>
-						<th class="th-num">Anzahl</th>
-						<th class="th-num">Volumen (m3)</th>
-						<th class="th-num">Konfidenz</th>
-						<th class="th-del"></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each filteredBoxItems as item}
-						<tr class="box-item-row">
-							<td class="crop-cell">
-								{#if item.crop_url}
-									<button class="crop-btn" onclick={() => openReview(item)}>
-										<img
-											src={API_BASE + item.crop_url}
-											alt={item.name}
-											class="crop-thumb"
-										/>
-									</button>
-								{:else}
-									<span class="no-crop">—</span>
-								{/if}
-							</td>
-							<td>
-								<input
-									type="text"
-									class="edit-input edit-name"
-									bind:value={item.name}
-									oninput={markDirty}
-								/>
-							</td>
-							<td>
-								<input
-									type="number"
-									class="edit-input edit-num"
-									min="1"
-									step="1"
-									bind:value={item.quantity}
-									oninput={markDirty}
-								/>
-							</td>
-							<td>
-								<input
-									type="number"
-									class="edit-input edit-num"
-									min="0"
-									step="0.01"
-									bind:value={item.volume_m3}
-									oninput={markDirty}
-								/>
-							</td>
-							<td class="confidence-cell">
-								{Math.round(item.confidence * 100)}%
-							</td>
-							<td class="del-cell">
-								<button class="del-btn" onclick={() => deleteItem(item)} title="Entfernen">
-									<X size={14} />
-								</button>
-							</td>
-						</tr>
-					{/each}
-					<tr class="total-row">
-						<td></td>
-						<td>Rohvolumen</td>
-						<td>{filteredBoxItems.reduce((s, i) => s + i.quantity, 0)}</td>
-						<td
-							>{filteredBoxItems
-								.reduce((s, i) => s + i.volume_m3, 0)
-								.toFixed(2)} m&#x00B3;</td
-						>
-						<td></td>
-						<td></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<div class="items-cards">
-			{#each filteredBoxItems as item}
-				{@render itemCard(item, true)}
-			{/each}
-			<div class="items-cards-total">
-				<span>Rohvolumen</span>
-				<span>{filteredBoxItems.reduce((s, i) => s + i.quantity, 0)} St&uuml;ck</span>
-				<span>{filteredBoxItems.reduce((s, i) => s + i.volume_m3, 0).toFixed(2)} m&#x00B3;</span>
-			</div>
-		</div>
-		<p class="section-note">
-			Das Rohvolumen dieser Kleinteile wird automatisch in Umzugskartons umgerechnet und im
-			Gesamtvolumen ber&#x00FC;cksichtigt.
+		<div class="border-t border-line">{@render itemsTable(filteredBoxItems, true, { label: 'Rohvolumen' }, false)}</div>
+		<p class="px-4 pt-1 pb-3 text-xs text-muted">
+			Das Rohvolumen dieser Kleinteile wird automatisch in Umzugskartons umgerechnet und im Gesamtvolumen berücksichtigt.
 		</p>
 	</div>
 {/if}
 
-<!-- ── Section C: Non-moveable items ───────────────────────────────────── -->
+<!-- ── Section C: non-moveable items ───────────────────────────────────── -->
 {#if filteredNonMoveableItems.length > 0}
-	<div class="card full-width items-section-nonmoveable">
-		<div class="card-header">
-			<button
-				class="section-toggle"
-				onclick={() => (showNonMoveable = !showNonMoveable)}
-			>
-				<h3>Nicht transportiert ({filteredNonMoveableItems.length})</h3>
-				<span class="section-badge badge-nonmoveable">Vom Volumen ausgeschlossen</span>
-				<span class="toggle-arrow">{showNonMoveable ? '\u25B2' : '\u25BC'}</span>
-			</button>
-		</div>
+	<div class="border-t-4 border-sunk">
+		<button
+			class="flex w-full flex-wrap items-center gap-2 px-4 py-3 text-left"
+			onclick={() => (showNonMoveable = !showNonMoveable)}
+			aria-expanded={showNonMoveable}
+		>
+			<ChevronRight size={15} class="text-faint transition-transform {showNonMoveable ? 'rotate-90' : ''}" />
+			<h4 class="text-sm font-medium">Nicht transportiert <span class="num text-faint">({filteredNonMoveableItems.length})</span></h4>
+			<Badge>Vom Volumen ausgeschlossen</Badge>
+		</button>
 		{#if showNonMoveable}
-			<div class="items-table-wrap">
-				<table class="items-table">
-					<thead>
-						<tr>
-							<th class="th-foto">Foto</th>
-							<th>Gegenstand</th>
-							<th class="th-num">Anzahl</th>
-							<th class="th-num">Konfidenz</th>
-							<th class="th-del"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each filteredNonMoveableItems as item}
-							<tr class="nonmoveable-row">
-								<td class="crop-cell">
-									{#if item.crop_url}
-										<button class="crop-btn" onclick={() => openReview(item)}>
-											<img
-												src={API_BASE + item.crop_url}
-												alt={item.name}
-												class="crop-thumb"
-											/>
-										</button>
-									{:else}
-										<span class="no-crop">—</span>
-									{/if}
-								</td>
-								<td>
-									<input
-										type="text"
-										class="edit-input edit-name"
-										bind:value={item.name}
-										oninput={markDirty}
-									/>
-								</td>
-								<td>
-									<input
-										type="number"
-										class="edit-input edit-num"
-										min="1"
-										step="1"
-										bind:value={item.quantity}
-										oninput={markDirty}
-									/>
-								</td>
-								<td class="confidence-cell">
-									{Math.round(item.confidence * 100)}%
-								</td>
-								<td class="del-cell">
-									<button class="del-btn" onclick={() => deleteItem(item)} title="Entfernen">
-										<X size={14} />
-									</button>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			<div class="items-cards">
-				{#each filteredNonMoveableItems as item}
-					{@render itemCard(item, false)}
-				{/each}
-			</div>
-			<p class="section-note">
-				Diese Gegenst&#x00E4;nde wurden als nicht transportierbar eingestuft (z.&nbsp;B.
-				Heizk&#x00F6;rper, Einbauten) und flie&#x00DF;en nicht ins Umzugsvolumen ein. Bitte bei
-				Bedarf korrigieren.
+			<div class="border-t border-line">{@render itemsTable(filteredNonMoveableItems, false, null, false)}</div>
+			<p class="px-4 pt-1 pb-3 text-xs text-muted">
+				Diese Gegenstände wurden als nicht transportierbar eingestuft (z. B. Heizkörper, Einbauten) und fließen nicht ins
+				Umzugsvolumen ein. Bitte bei Bedarf korrigieren.
 			</p>
 		{/if}
 	</div>
@@ -965,135 +782,94 @@
 	{@const pdItems = photoDetailItems()}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="photo-detail-backdrop"
+		class="fixed inset-0 z-[620] flex items-stretch justify-center bg-black/70 sm:p-4"
 		role="presentation"
 		onclick={(e) => {
 			if (e.target === e.currentTarget) closePhotoDetail();
 		}}
 	>
-		<div class="photo-detail-modal">
-			<!-- Header -->
-			<div class="photo-detail-header">
-				<button
-					class="btn btn-sm"
-					onclick={photoDetailPrev}
-					disabled={photoDetailIndex === 0}
-					aria-label="Vorheriges Foto"
-				>
+		<div class="flex w-full max-w-6xl flex-col overflow-hidden border border-line bg-panel text-fg shadow-2xl sm:rounded-md">
+			<div class="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2">
+				<Button size="icon-sm" onclick={photoDetailPrev} disabled={photoDetailIndex === 0} aria-label="Vorheriges Foto">
 					<ChevronLeft size={16} />
-				</button>
-				<h3>Foto {photoDetailIndex + 1} / {galleryImages.length}</h3>
-				<button
-					class="btn btn-sm"
+				</Button>
+				<h3 class="num text-sm font-semibold">Foto {photoDetailIndex + 1} / {galleryImages.length}</h3>
+				<Button
+					size="icon-sm"
 					onclick={photoDetailNext}
 					disabled={photoDetailIndex === galleryImages.length - 1}
-					aria-label="Naechstes Foto"
+					aria-label="Nächstes Foto"
 				>
 					<ChevronRight size={16} />
-				</button>
-				<button class="review-close" onclick={closePhotoDetail} aria-label="Schliessen">
-					<X size={20} />
-				</button>
+				</Button>
+				<Button variant="ghost" size="icon" class="ml-auto" onclick={closePhotoDetail} aria-label="Schließen"><X size={18} /></Button>
 			</div>
 
-			<!-- Body: large image + items panel -->
-			<div class="photo-detail-body">
-				<!-- Main area: full photo or zoomed crop -->
-				<div class="photo-detail-main">
+			<div class="flex min-h-0 flex-1 flex-col lg:flex-row">
+				<div class="relative flex min-h-[40dvh] flex-1 items-center justify-center bg-black">
 					{#if photoDetailZoomItem !== null && pdItems[photoDetailZoomItem]?.crop_url}
-						<div class="photo-detail-zoom-back">
-							<button class="btn btn-sm" onclick={() => (photoDetailZoomItem = null)}>
-								<ChevronLeft size={14} /> Foto
-							</button>
-						</div>
+						<Button size="xs" class="absolute top-2 left-2 bg-panel" onclick={() => (photoDetailZoomItem = null)}>
+							<ChevronLeft size={13} /> Foto
+						</Button>
 						<img
 							src={API_BASE + pdItems[photoDetailZoomItem].crop_url}
 							alt={pdItems[photoDetailZoomItem].name}
-							class="photo-detail-main-img"
+							class="max-h-full max-w-full object-contain"
 						/>
 					{:else}
-						<img
-							src={galleryImages[photoDetailIndex]}
-							alt="Foto {photoDetailIndex + 1}"
-							class="photo-detail-main-img"
-						/>
+						<img src={galleryImages[photoDetailIndex]} alt="Foto {photoDetailIndex + 1}" class="max-h-full max-w-full object-contain" />
 					{/if}
 				</div>
 
-				<!-- Items side panel -->
-				<div class="photo-detail-side">
-					<div class="photo-detail-side-header">
-						<h4>{pdItems.length} Gegenst&auml;nde</h4>
-						<button class="btn btn-sm" onclick={addItemToPhoto}>
-							<Plus size={14} /> Hinzuf&uuml;gen
-						</button>
+				<div class="flex max-h-[50dvh] w-full flex-col border-t border-line lg:max-h-none lg:w-96 lg:border-t-0 lg:border-l">
+					<div class="flex items-center justify-between gap-2 px-3 py-2.5">
+						<h4 class="text-sm font-medium"><span class="num">{pdItems.length}</span> Gegenstände</h4>
+						<Button size="xs" onclick={addItemToPhoto}><Plus size={13} /> Hinzufügen</Button>
 					</div>
-					<div class="photo-detail-items-list">
-						{#each pdItems as item, i}
-							<div
-								class="photo-detail-item"
-								class:pdi-zoomed={photoDetailZoomItem === i}
-							>
-								<!-- Crop thumbnail (click to enlarge) -->
+					<div class="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-3">
+						{#each pdItems as item, i (i)}
+							<div class="flex items-start gap-2 rounded-sm border p-2 {photoDetailZoomItem === i ? 'border-accent' : 'border-line'}">
 								<button
-									class="pdi-thumb-btn"
-									onclick={() =>
-										(photoDetailZoomItem = photoDetailZoomItem === i ? null : i)}
-									title={item.crop_url ? 'Vergr&ouml;&szlig;ern' : 'Kein Foto'}
+									class="size-12 shrink-0 overflow-hidden rounded-xs border border-line"
+									onclick={() => (photoDetailZoomItem = photoDetailZoomItem === i ? null : i)}
+									title={item.crop_url ? 'Vergrößern' : 'Kein Foto'}
 								>
 									{#if item.crop_url}
-										<img src={API_BASE + item.crop_url} alt={item.name} class="pdi-thumb" />
+										<img src={API_BASE + item.crop_url} alt={item.name} class="size-full object-cover" />
 									{:else}
-										<div class="pdi-no-thumb">&mdash;</div>
+										<span class="flex size-full items-center justify-center text-faint">—</span>
 									{/if}
 								</button>
-								<!-- Edit fields -->
-								<div class="pdi-fields">
+								<div class="flex min-w-0 flex-1 flex-col gap-1.5">
 									<input
 										type="text"
-										class="edit-input edit-name"
+										class="h-8 w-full rounded-sm border border-line bg-transparent px-2 text-[13px] outline-none focus:border-fg"
 										bind:value={item.name}
 										oninput={markDirty}
 										placeholder="Bezeichnung"
+										aria-label="Gegenstand"
 									/>
-									<div class="pdi-row">
-										<input
-											type="number"
-											class="edit-input edit-num"
-											min="0"
-											step="0.01"
-											bind:value={item.volume_m3}
-											oninput={markDirty}
-										/>
-										<span class="pdi-unit">m&sup3;</span>
-										<label class="pdi-check">
-											<input
-												type="checkbox"
-												bind:checked={item.is_moveable}
-												onchange={markDirty}
-											/>
-											<span>Mobil</span>
+									<div class="flex items-center gap-2 text-xs text-muted">
+										{@render num(item, 'volume_m3', 'w-20')} m³
+										<label class="ml-auto flex items-center gap-1.5">
+											<input type="checkbox" class="accent-[var(--accent)]" bind:checked={item.is_moveable} onchange={markDirty} />
+											Mobil
 										</label>
 									</div>
 								</div>
-								<!-- Delete -->
-								<button class="del-btn" onclick={() => deleteItem(item)} title="Entfernen">
-									<X size={14} />
-								</button>
+								<Button variant="ghost" size="icon-sm" onclick={() => deleteItem(item)} aria-label="Entfernen"><X size={14} /></Button>
 							</div>
 						{/each}
 						{#if pdItems.length === 0}
-							<p class="empty-items">
-								Keine Gegenst&auml;nde f&uuml;r dieses Foto erkannt.
-							</p>
+							<p class="py-6 text-center text-sm text-muted">Keine Gegenstände für dieses Foto erkannt.</p>
 						{/if}
 					</div>
 					{#if itemsDirty}
-						<div class="photo-detail-save">
-							<button class="btn btn-primary" onclick={saveItems} disabled={savingItems}>
+						<div class="border-t border-line p-3">
+							<Button variant="accent" class="w-full" onclick={saveItems} disabled={savingItems}>
 								<Save size={14} />
-								{savingItems ? 'Speichern...' : 'Speichern'}
-							</button>
+								{savingItems ? 'Speichern …' : 'Speichern'}
+							</Button>
 						</div>
 					{/if}
 				</div>
@@ -1108,65 +884,62 @@
 	{#if rItem}
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div
-			class="review-backdrop"
+			class="fixed inset-0 z-[620] flex items-center justify-center bg-black/85 p-4"
 			role="presentation"
 			onclick={(e) => {
 				if (e.target === e.currentTarget) closeReview();
 			}}
 		>
-			<button class="review-close" onclick={closeReview} aria-label="Schliessen">
+			<button
+				class="absolute top-3 right-3 inline-flex size-11 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+				onclick={closeReview}
+				aria-label="Schließen"
+			>
 				<X size={24} />
 			</button>
-
 			{#if reviewIndex > 0}
 				<button
-					class="review-nav review-prev"
+					class="absolute top-1/2 left-2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
 					onclick={reviewPrev}
 					aria-label="Vorheriger Gegenstand"
 				>
 					<ChevronLeft size={32} />
 				</button>
 			{/if}
-
 			{#if reviewIndex < sortedItems.length - 1}
 				<button
-					class="review-nav review-next"
+					class="absolute top-1/2 right-2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
 					onclick={reviewNext}
-					aria-label="Naechster Gegenstand"
+					aria-label="Nächster Gegenstand"
 				>
 					<ChevronRight size={32} />
 				</button>
 			{/if}
 
-			<div class="review-content">
-				<div class="review-image-wrap">
+			<div class="flex w-full max-w-lg flex-col overflow-hidden rounded-md border border-line bg-panel text-fg">
+				<div class="flex aspect-[4/3] items-center justify-center bg-black">
 					{#key reviewIndex}
 						{#if rItem.crop_url}
-							<img
-								src={API_BASE + rItem.crop_url}
-								alt={rItem.name}
-								class="review-image"
-							/>
+							<img src={API_BASE + rItem.crop_url} alt={rItem.name} class="max-h-full max-w-full object-contain" />
 						{:else}
-							<div class="review-no-image">Kein Foto</div>
+							<span class="text-sm text-white/60">Kein Foto</span>
 						{/if}
 					{/key}
 				</div>
-
-				<div class="review-panel">
-					<div class="review-field">
-						<label for="review-item-name">Gegenstand</label>
+				<div class="flex flex-col gap-3 p-4">
+					<label class="flex flex-col gap-1.5 text-xs font-medium text-muted" for="review-item-name">
+						Gegenstand
 						<input
 							id="review-item-name"
 							type="text"
 							bind:value={rItem.name}
 							oninput={markDirty}
-							class="review-input"
+							class="h-9 rounded-sm border border-line-strong bg-panel px-3 text-sm font-normal text-fg outline-none focus:border-fg"
 						/>
-					</div>
-					<div class="review-row">
-						<div class="review-field">
-							<label for="review-volume">Volumen (m3)</label>
+					</label>
+					<div class="grid grid-cols-2 gap-3">
+						<label class="flex flex-col gap-1.5 text-xs font-medium text-muted" for="review-volume">
+							Volumen (m³)
 							<input
 								id="review-volume"
 								type="number"
@@ -1174,11 +947,11 @@
 								step="0.01"
 								bind:value={rItem.volume_m3}
 								oninput={markDirty}
-								class="review-input review-input-num"
+								class="num h-9 rounded-sm border border-line-strong bg-panel px-3 text-sm font-normal text-fg outline-none focus:border-fg"
 							/>
-						</div>
-						<div class="review-field">
-							<label for="review-quantity">Anzahl</label>
+						</label>
+						<label class="flex flex-col gap-1.5 text-xs font-medium text-muted" for="review-quantity">
+							Anzahl
 							<input
 								id="review-quantity"
 								type="number"
@@ -1186,937 +959,23 @@
 								step="1"
 								bind:value={rItem.quantity}
 								oninput={markDirty}
-								class="review-input review-input-num"
+								class="num h-9 rounded-sm border border-line-strong bg-panel px-3 text-sm font-normal text-fg outline-none focus:border-fg"
 							/>
-						</div>
+						</label>
 					</div>
-					<div class="review-actions">
-						<button class="review-btn review-btn-delete" onclick={reviewDelete}>
-							<Trash2 size={14} />
-							Entfernen
-						</button>
-						<span class="review-counter">{reviewIndex + 1} / {sortedItems.length}</span>
-						<button
-							class="review-btn review-btn-add"
+					<div class="flex items-center justify-between gap-2">
+						<Button size="sm" variant="danger" onclick={reviewDelete}><Trash2 size={14} /> Entfernen</Button>
+						<span class="num text-xs text-faint">{reviewIndex + 1} / {sortedItems.length}</span>
+						<Button
+							size="sm"
 							onclick={() => {
 								addItem();
 								reviewIndex = sortedItems.length - 1;
-							}}
+							}}><Plus size={14} /> Neu</Button
 						>
-							<Plus size={14} />
-							Neu
-						</button>
 					</div>
 				</div>
 			</div>
 		</div>
 	{/if}
 {/if}
-
-<style>
-	/* ── Items table ────────────────────────────────────────────────────── */
-
-	.items-table-wrap {
-		overflow-x: auto;
-	}
-
-	/* Mobile card list — hidden on desktop, shown instead of .items-table-wrap
-	 * below the 768px breakpoint (see the mobile media query at the bottom). */
-	.items-cards {
-		display: none;
-	}
-
-	.items-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.8125rem;
-	}
-
-	.items-table th {
-		text-align: left;
-		color: var(--dt-on-surface-variant);
-		font-weight: 600;
-		padding: 0.5rem 0.75rem;
-		background: var(--dt-surface-container-high);
-		font-size: 0.6875rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.items-table td {
-		padding: 0.375rem 0.75rem;
-		color: var(--dt-on-surface);
-		vertical-align: middle;
-	}
-
-	.items-table tr:nth-child(even) td {
-		background: var(--dt-surface-container-low);
-	}
-
-	.items-table .total-row td {
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		padding: 0.5rem 0.75rem;
-	}
-
-	.items-footer-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.375rem;
-		padding: 0.75rem 1rem 0.25rem;
-	}
-
-	.empty-items {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		text-align: center;
-		padding: 1.5rem 0;
-	}
-
-	/* ── Section B — box items ──────────────────────────────────────────── */
-
-	.items-section-box .card-header {
-		border-left: 3px solid var(--dt-secondary-container);
-		padding-left: 0.75rem;
-	}
-
-	.badge-box {
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.box-item-row td {
-		background: var(--dt-surface-container-low);
-	}
-
-	/* ── Section C — non-moveable items ────────────────────────────────── */
-
-	.items-section-nonmoveable .card-header {
-		border-left: 3px solid var(--dt-outline-variant);
-		padding-left: 0.75rem;
-	}
-
-	.badge-nonmoveable {
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.nonmoveable-row td {
-		opacity: 0.7;
-	}
-
-	.section-badge {
-		display: inline-block;
-		font-size: 0.7rem;
-		font-weight: 600;
-		padding: 0.15rem 0.5rem;
-		border-radius: 999px;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-
-	.section-toggle {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		background: none;
-		border: none;
-		padding: 0;
-		cursor: pointer;
-		text-align: left;
-		width: 100%;
-	}
-
-	.section-toggle h3 {
-		margin: 0;
-	}
-
-	.toggle-arrow {
-		margin-left: auto;
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.section-note {
-		font-size: 0.78rem;
-		color: var(--dt-on-surface-variant);
-		padding: 0.5rem 1rem 0.75rem;
-		margin: 0;
-		font-style: italic;
-	}
-
-	/* ── Column header styles ───────────────────────────────────────────── */
-
-	.th-sortable {
-		cursor: pointer;
-		user-select: none;
-		transition: color var(--dt-transition);
-	}
-
-	.th-sortable:hover {
-		color: var(--dt-on-surface);
-	}
-
-	.th-foto {
-		width: 60px;
-	}
-
-	.th-num {
-		width: 110px;
-	}
-
-	.th-del {
-		width: 40px;
-	}
-
-	/* ── Crop thumbnail cell ────────────────────────────────────────────── */
-
-	.crop-cell {
-		width: 60px;
-		padding: 0.25rem 0.75rem !important;
-	}
-
-	.crop-btn {
-		display: block;
-		background: none;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-sm);
-		padding: 0;
-		cursor: pointer;
-		overflow: hidden;
-		transition: border-color var(--dt-transition);
-	}
-
-	.crop-btn:hover {
-		border-color: var(--dt-primary);
-	}
-
-	.crop-thumb {
-		display: block;
-		width: 48px;
-		height: 48px;
-		object-fit: cover;
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.no-crop {
-		color: var(--dt-outline-variant);
-		font-size: 0.75rem;
-	}
-
-	/* ── Inline edit inputs ─────────────────────────────────────────────── */
-
-	.edit-input {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		padding: 0.25rem 0.375rem;
-		font-size: 0.8125rem;
-		outline: none;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-		font-family: inherit;
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.edit-input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.edit-name {
-		min-width: 120px;
-	}
-
-	.edit-num {
-		width: 80px;
-		text-align: right;
-	}
-
-	.confidence-cell {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.75rem;
-	}
-
-	.del-cell {
-		width: 40px;
-		text-align: center;
-	}
-
-	.del-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: none;
-		border: none;
-		color: var(--dt-outline-variant);
-		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-
-	.del-btn:hover {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container);
-	}
-
-	.del-cell .del-btn {
-		color: var(--dt-secondary);
-	}
-
-	.del-cell .del-btn :global(svg) {
-		width: calc(14px * 1.3);
-		height: calc(14px * 1.3);
-	}
-
-	/* ── Dirty state indicator for save button ──────────────────────────── */
-
-	.btn-dirty {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container)) !important;
-		color: var(--dt-on-primary) !important;
-		border-color: transparent !important;
-	}
-
-	/* ── Card shell (used for the three section cards) ──────────────────── */
-
-	.card {
-		background: var(--dt-surface-container-lowest);
-		border: none;
-		border-radius: var(--dt-radius-lg);
-		padding: 1.25rem;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.card.full-width {
-		grid-column: 1 / -1;
-	}
-
-	.card h3 {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.75rem;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-	}
-
-	.card-header h3 {
-		margin-bottom: 0;
-	}
-
-	/* ── Button styles (scoped copy of page-level styles) ───────────────── */
-
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.875rem;
-		border-radius: var(--dt-radius-md);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		border: none;
-		cursor: pointer;
-		transition: opacity var(--dt-transition), background var(--dt-transition);
-	}
-
-	.btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.btn-sm {
-		padding: 0.375rem 0.625rem;
-		font-size: 0.75rem;
-		border: var(--dt-ghost-border);
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-lowest);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.btn-sm:hover:not(:disabled) {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-low);
-	}
-
-	.btn-primary {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.btn-primary:hover {
-		opacity: 0.88;
-	}
-
-	/* ── Reviewer lightbox ──────────────────────────────────────────────── */
-
-	.review-backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 9999;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		animation: reviewFadeIn 150ms ease;
-	}
-
-	@keyframes reviewFadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	.review-close {
-		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		z-index: 10001;
-		color: rgba(255, 255, 255, 0.7);
-		padding: 0.5rem;
-		border-radius: var(--dt-radius-md);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(255, 255, 255, 0.1);
-		border: none;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.review-close:hover {
-		color: #ffffff;
-		background: rgba(255, 255, 255, 0.2);
-	}
-
-	.review-nav {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		z-index: 10001;
-		color: rgba(255, 255, 255, 0.7);
-		padding: 0.75rem;
-		border-radius: var(--dt-radius-md);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(255, 255, 255, 0.1);
-		border: none;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.review-nav:hover {
-		color: #ffffff;
-		background: rgba(255, 255, 255, 0.25);
-	}
-
-	.review-prev { left: 1rem; }
-	.review-next { right: 1rem; }
-
-	.review-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-		max-width: 560px;
-		width: 90vw;
-	}
-
-	.review-image-wrap {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		min-height: 200px;
-	}
-
-	.review-image {
-		max-width: 100%;
-		max-height: 55vh;
-		object-fit: contain;
-		border-radius: var(--dt-radius-md);
-		display: block;
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-	}
-
-	.review-no-image {
-		width: 200px;
-		height: 200px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: var(--dt-radius-md);
-		background: rgba(255, 255, 255, 0.05);
-		border: 2px dashed rgba(255, 255, 255, 0.15);
-		color: rgba(255, 255, 255, 0.3);
-		font-size: 0.875rem;
-	}
-
-	.review-panel {
-		width: 100%;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border: var(--dt-glass-border);
-		border-radius: var(--dt-radius-md);
-		padding: 1rem 1.25rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.review-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		flex: 1;
-	}
-
-	.review-field label {
-		font-size: 0.6875rem;
-		font-weight: 600;
-		color: rgba(255, 255, 255, 0.5);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.review-input {
-		background: rgba(255, 255, 255, 0.12);
-		border: 1px solid rgba(255, 255, 255, 0.15);
-		border-radius: var(--dt-radius-sm);
-		color: #ffffff;
-		padding: 0.5rem 0.625rem;
-		font-size: 0.9375rem;
-		font-family: inherit;
-		outline: none;
-		transition: border-color var(--dt-transition);
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.review-input:focus {
-		border-color: var(--dt-on-primary);
-	}
-
-	.review-input-num {
-		width: 100%;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.review-row {
-		display: flex;
-		gap: 0.75rem;
-	}
-
-	.review-actions {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding-top: 0.25rem;
-	}
-
-	.review-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.review-btn-delete {
-		background: rgba(168, 57, 0, 0.2);
-		color: #ffb4a0;
-		border: 1px solid rgba(168, 57, 0, 0.3);
-	}
-
-	.review-btn-delete:hover {
-		background: rgba(168, 57, 0, 0.35);
-		color: #ffffff;
-	}
-
-	.review-btn-add {
-		background: rgba(255, 255, 255, 0.15);
-		color: #ffffff;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-	}
-
-	.review-btn-add:hover {
-		background: rgba(255, 255, 255, 0.25);
-	}
-
-	.review-counter {
-		font-size: 0.8125rem;
-		color: rgba(255, 255, 255, 0.4);
-		font-variant-numeric: tabular-nums;
-	}
-
-	/* ── Photo detail popup ─────────────────────────────────────────────── */
-
-	.photo-detail-backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 300;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1rem;
-	}
-
-	.photo-detail-modal {
-		background: var(--dt-surface);
-		border-radius: var(--dt-radius-lg);
-		width: 90vw;
-		max-width: 1280px;
-		max-height: 90vh;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.photo-detail-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.625rem 1rem;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border-bottom: var(--dt-glass-border);
-		flex-shrink: 0;
-	}
-
-	.photo-detail-header h3 {
-		flex: 1;
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--dt-on-primary);
-		text-align: center;
-		margin: 0;
-	}
-
-	.photo-detail-body {
-		display: grid;
-		grid-template-columns: 1fr 300px;
-		flex: 1;
-		overflow: hidden;
-		min-height: 0;
-	}
-
-	.photo-detail-main {
-		background: var(--dt-tertiary);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
-		position: relative;
-		min-height: 400px;
-	}
-
-	.photo-detail-zoom-back {
-		position: absolute;
-		top: 0.75rem;
-		left: 0.75rem;
-		z-index: 1;
-	}
-
-	.photo-detail-main-img {
-		max-width: 100%;
-		max-height: 100%;
-		object-fit: contain;
-		display: block;
-	}
-
-	.photo-detail-side {
-		background: var(--dt-surface-container-lowest);
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.photo-detail-side-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.625rem 0.875rem;
-		background: var(--dt-surface-container-high);
-		flex-shrink: 0;
-	}
-
-	.photo-detail-side-header h4 {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.photo-detail-items-list {
-		flex: 1;
-		overflow-y: auto;
-		padding: 0.375rem;
-	}
-
-	.photo-detail-item {
-		display: grid;
-		grid-template-columns: 52px 1fr 28px;
-		gap: 0.375rem;
-		padding: 0.375rem;
-		border-radius: var(--dt-radius-sm);
-		border: 1px solid transparent;
-		margin-bottom: 0.25rem;
-		align-items: start;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-	}
-
-	.photo-detail-item:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.photo-detail-item.pdi-zoomed {
-		background: var(--dt-surface-container);
-		border-color: var(--dt-outline-variant);
-	}
-
-	.pdi-thumb-btn {
-		border: none;
-		background: var(--dt-surface-container);
-		padding: 0;
-		cursor: pointer;
-		border-radius: var(--dt-radius-sm);
-		overflow: hidden;
-		width: 52px;
-		height: 52px;
-		transition: outline var(--dt-transition);
-	}
-
-	.pdi-thumb-btn:hover {
-		outline: 2px solid var(--dt-primary);
-	}
-
-	.pdi-thumb {
-		width: 52px;
-		height: 52px;
-		object-fit: cover;
-		display: block;
-	}
-
-	.pdi-no-thumb {
-		width: 52px;
-		height: 52px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--dt-on-surface-variant);
-		font-size: 1rem;
-	}
-
-	.pdi-fields {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		min-width: 0;
-	}
-
-	.pdi-row {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
-
-	.pdi-unit {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.pdi-check {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		margin-left: auto;
-		white-space: nowrap;
-	}
-
-	.pdi-check input[type='checkbox'] {
-		cursor: pointer;
-		accent-color: var(--dt-primary);
-	}
-
-	.photo-detail-save {
-		padding: 0.625rem 0.875rem;
-		border-top: 1px solid var(--dt-outline-variant);
-		flex-shrink: 0;
-	}
-
-	.photo-detail-save .btn-primary {
-		width: 100%;
-	}
-
-	@media (max-width: 768px) {
-		.photo-detail-modal {
-			width: 100vw;
-			max-width: 100vw;
-			height: 100vh;
-			max-height: 100vh;
-			border-radius: 0;
-		}
-
-		.photo-detail-body {
-			grid-template-columns: 1fr;
-			grid-template-rows: 50vh 1fr;
-		}
-
-		.photo-detail-side {
-			border-left: none;
-		}
-
-		.th-num {
-			width: 80px;
-		}
-
-		.th-foto,
-		.crop-cell {
-			width: 50px;
-		}
-
-		.card {
-			max-width: 100%;
-			overflow-x: auto;
-		}
-
-		.btn {
-			min-height: 44px;
-		}
-
-		.btn-sm {
-			min-height: 44px;
-		}
-
-		/* ── Item tables → stacked cards ──────────────────────────────── */
-
-		.items-table-wrap {
-			display: none;
-		}
-
-		.items-cards {
-			display: flex;
-			flex-direction: column;
-			gap: 0.5rem;
-		}
-
-		.item-card {
-			display: flex;
-			flex-direction: column;
-			gap: 0.5rem;
-			padding: 0.75rem;
-			background: var(--dt-surface-container-low);
-			border-radius: var(--dt-radius-md);
-		}
-
-		.item-card-top {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-		}
-
-		.item-card-crop {
-			width: 48px;
-			height: 48px;
-			flex-shrink: 0;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-
-		.card-crop-btn {
-			width: 48px;
-			height: 48px;
-		}
-
-		.card-name-input {
-			flex: 1;
-			font-weight: 600;
-			font-size: 0.9375rem;
-		}
-
-		.card-del-btn {
-			flex-shrink: 0;
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.item-card-fields {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 0.5rem;
-		}
-
-		.card-field {
-			display: flex;
-			flex-direction: column;
-			gap: 0.2rem;
-			flex: 1;
-			min-width: 90px;
-		}
-
-		.card-field-readonly {
-			justify-content: flex-end;
-			padding-bottom: 0.375rem;
-		}
-
-		.card-field-label {
-			font-size: 0.6875rem;
-			font-weight: 600;
-			color: var(--dt-on-surface-variant);
-			text-transform: uppercase;
-			letter-spacing: 0.03em;
-		}
-
-		.items-cards-total {
-			display: flex;
-			justify-content: space-between;
-			padding: 0.625rem 0.75rem;
-			font-weight: 700;
-			color: var(--dt-on-surface);
-			background: var(--dt-surface-container-high);
-			border-radius: var(--dt-radius-md);
-		}
-
-		/* ── Other icon-button touch targets ──────────────────────────── */
-
-		.del-btn {
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.review-close,
-		.review-nav {
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.photo-detail-item {
-			grid-template-columns: 52px 1fr 44px;
-		}
-	}
-</style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { apiFetch, apiDownload } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -258,142 +260,93 @@
 	}
 </script>
 
-<!-- Documents Card -->
-<div class="card full-width">
-	<div class="card-header">
-		<h2>Dokumente</h2>
+{#snippet row(icon: 'file' | 'plus', label: string, sub: string, missing: boolean, actions: import('svelte').Snippet)}
+	<div class="flex items-center gap-3 py-2.5">
+		<span class="inline-flex size-9 shrink-0 items-center justify-center rounded-sm border border-line bg-sunk text-muted">
+			{#if icon === 'file'}<FileText size={17} />{:else}<Plus size={17} />{/if}
+		</span>
+		<span class="flex min-w-0 flex-1 flex-col">
+			<span class="text-sm font-medium">{label}</span>
+			<span class="truncate text-xs {missing ? 'text-warn' : 'text-faint'}">{sub}</span>
+		</span>
+		<span class="flex shrink-0 gap-1">{@render actions()}</span>
 	</div>
-	<div class="docs-grid">
-		{#each ['arbeitsvertrag', 'mitarbeiterfragebogen'] as docType}
+{/snippet}
+
+<Panel title="Dokumente">
+	<div class="-my-2.5 divide-y divide-line">
+		{#each ['arbeitsvertrag', 'mitarbeiterfragebogen'] as docType (docType)}
 			{@const key = docKey(docType)}
-			{@const label = DOC_LABELS[docType]}
 			{@const uploading = uploadingDoc === docType}
 			{@const deleting = deletingDoc === docType}
-			<div class="doc-row">
-				<div class="doc-icon">
-					<FileText size={20} />
-				</div>
-				<div class="doc-info">
-					<span class="doc-label">{label}</span>
-					{#if key}
-						<span class="doc-filename">{key.split('/').pop()}</span>
-					{:else}
-						<span class="doc-missing">Nicht hochgeladen</span>
-					{/if}
-				</div>
-				<div class="doc-actions">
-					{#if key}
-						<button
-							class="btn btn-sm"
-							onclick={() => handleDocDownload(docType)}
-							title="Herunterladen"
-						>
-							<Download size={14} />
-						</button>
-						<button
-							class="btn btn-sm btn-danger-sm"
-							onclick={() => confirmDocDelete(docType)}
-							disabled={deleting}
-							title="Loeschen"
-						>
-							<X size={14} />
-						</button>
-					{:else}
-						<button
-							class="btn btn-sm btn-primary-sm"
-							onclick={() => triggerDocPicker(docType)}
-							disabled={uploading}
-						>
-							{#if uploading}
-								Laden...
-							{:else}
-								<Upload size={14} />
-								Hochladen
-							{/if}
-						</button>
-					{/if}
-				</div>
-				<input
-					id="doc-input-{docType}"
-					type="file"
-					accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-					class="doc-input-hidden"
-					onchange={(e) => handleDocUpload(e, docType)}
-				/>
+			{#snippet docActions()}
+				{#if key}
+					<Button size="icon-sm" variant="ghost" onclick={() => handleDocDownload(docType)} title="Herunterladen" aria-label="Herunterladen"
+						><Download size={14} /></Button
+					>
+					<Button size="icon-sm" variant="ghost" class="hover:text-danger" onclick={() => confirmDocDelete(docType)} disabled={deleting} title="Löschen" aria-label="Dokument löschen"
+						><X size={14} /></Button
+					>
+				{:else}
+					<Button size="sm" onclick={() => triggerDocPicker(docType)} disabled={uploading}>
+						{#if uploading}Laden …{:else}<Upload size={14} /> Hochladen{/if}
+					</Button>
+				{/if}
+			{/snippet}
+			<div>
+				{@render row('file', DOC_LABELS[docType], key ? (key.split('/').pop() ?? '') : 'Nicht hochgeladen', !key, docActions)}
+				<input id="doc-input-{docType}" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="hidden" onchange={(e) => handleDocUpload(e, docType)} />
 			</div>
 		{/each}
 
 		<!-- Free-form documents: whatever the personnel file needs, named by hand. -->
 		{#each documents as doc (doc.id)}
-			<div class="doc-row">
-				<div class="doc-icon">
-					<FileText size={20} />
-				</div>
-				<div class="doc-info">
-					<span class="doc-label">{doc.label}</span>
-					<span class="doc-filename">{doc.filename} · {fmtSize(doc.size_bytes)}</span>
-				</div>
-				<div class="doc-actions">
-					<button
-						class="btn btn-sm"
-						onclick={() => handleExtraDownload(doc)}
-						title="Herunterladen"
-					>
-						<Download size={14} />
-					</button>
-					<button
-						class="btn btn-sm btn-danger-sm"
-						onclick={() => { pendingExtraDoc = doc; }}
-						disabled={deletingExtraId === doc.id}
-						title="Loeschen"
-					>
-						<X size={14} />
-					</button>
-				</div>
-			</div>
+			{#snippet extraActions()}
+				<Button size="icon-sm" variant="ghost" onclick={() => handleExtraDownload(doc)} title="Herunterladen" aria-label="Herunterladen"><Download size={14} /></Button>
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					class="hover:text-danger"
+					onclick={() => {
+						pendingExtraDoc = doc;
+					}}
+					disabled={deletingExtraId === doc.id}
+					title="Löschen"
+					aria-label="Dokument löschen"><X size={14} /></Button
+				>
+			{/snippet}
+			{@render row('file', doc.label, `${doc.filename} · ${fmtSize(doc.size_bytes)}`, false, extraActions)}
 		{/each}
 
-		<div class="doc-row doc-add-row">
-			<div class="doc-icon">
-				<Plus size={20} />
-			</div>
-			<div class="doc-info">
-				<label class="doc-add-label" for="doc-new-label">Weiteres Dokument</label>
+		<div class="flex flex-wrap items-center gap-3 py-2.5">
+			<span class="inline-flex size-9 shrink-0 items-center justify-center rounded-sm border border-dashed border-line-strong text-faint"><Plus size={17} /></span>
+			<span class="flex min-w-48 flex-1 flex-col gap-1">
+				<label class="text-xs font-medium text-muted" for="doc-new-label">Weiteres Dokument</label>
 				<input
 					id="doc-new-label"
-					class="doc-add-input"
+					class="h-8 rounded-sm border border-line-strong bg-panel px-2.5 text-sm outline-none placeholder:text-faint focus:border-fg"
 					type="text"
 					maxlength="100"
 					placeholder="Bezeichnung, z. B. Führungszeugnis"
 					bind:value={newDocLabel}
-					onkeydown={(e) => { if (e.key === 'Enter') triggerExtraPicker(); }}
+					onkeydown={(e) => {
+						if (e.key === 'Enter') triggerExtraPicker();
+					}}
 				/>
-			</div>
-			<div class="doc-actions">
-				<button
-					class="btn btn-sm btn-primary-sm"
-					onclick={triggerExtraPicker}
-					disabled={!canUploadExtra}
-					title={canUploadExtra ? 'Datei auswählen' : 'Bitte zuerst eine Bezeichnung eingeben'}
-				>
-					{#if uploadingExtra}
-						Laden...
-					{:else}
-						<Upload size={14} />
-						Hochladen
-					{/if}
-				</button>
-			</div>
-			<input
-				id="doc-input-extra"
-				type="file"
-				accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-				class="doc-input-hidden"
-				onchange={handleExtraUpload}
-			/>
+			</span>
+			<Button
+				size="sm"
+				class="self-end"
+				onclick={triggerExtraPicker}
+				disabled={!canUploadExtra}
+				title={canUploadExtra ? 'Datei auswählen' : 'Bitte zuerst eine Bezeichnung eingeben'}
+			>
+				{#if uploadingExtra}Laden …{:else}<Upload size={14} /> Hochladen{/if}
+			</Button>
+			<input id="doc-input-extra" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="hidden" onchange={handleExtraUpload} />
 		</div>
 	</div>
-</div>
+</Panel>
 
 <ConfirmationDialog
 	open={pendingExtraDoc !== null}
@@ -402,7 +355,9 @@
 	confirmLabel="Löschen"
 	loading={deletingExtraId !== null}
 	onConfirm={handleExtraDelete}
-	onCancel={() => { pendingExtraDoc = null; }}
+	onCancel={() => {
+		pendingExtraDoc = null;
+	}}
 />
 
 <ConfirmationDialog
@@ -412,139 +367,7 @@
 	confirmLabel="Löschen"
 	loading={deletingDoc !== null}
 	onConfirm={handleDocDelete}
-	onCancel={() => { pendingDocType = null; }}
+	onCancel={() => {
+		pendingDocType = null;
+	}}
 />
-
-<style>
-	.card {
-		padding: 1.25rem;
-		box-shadow: none;
-	}
-
-	.card.full-width {
-		grid-column: 1 / -1;
-	}
-
-	.card-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
-	}
-
-	.card-header h2 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.docs-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.doc-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-low);
-	}
-
-	.doc-icon {
-		color: var(--dt-on-surface-variant);
-		flex-shrink: 0;
-	}
-
-	.doc-info {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
-	.doc-label {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.doc-filename {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.doc-missing {
-		font-size: 0.75rem;
-		color: var(--dt-outline-variant);
-		font-style: italic;
-	}
-
-	.doc-actions {
-		display: flex;
-		gap: 0.375rem;
-		flex-shrink: 0;
-	}
-
-	.doc-input-hidden {
-		display: none;
-	}
-
-	.doc-add-row {
-		background: transparent;
-		border: 1px dashed var(--dt-outline-variant);
-	}
-
-	.doc-add-label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.doc-add-input {
-		width: 100%;
-		padding: 0.375rem 0.5rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-low);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.doc-add-input:focus {
-		outline: none;
-		border-color: var(--dt-primary);
-	}
-
-	.btn-primary-sm {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		border: none;
-	}
-
-	.btn-primary-sm:hover:not(:disabled) {
-		opacity: 0.9;
-	}
-
-	.btn-danger-sm {
-		color: var(--dt-secondary);
-		border-color: rgba(var(--dt-secondary-rgb), 0.2);
-	}
-
-	.btn-danger-sm:hover:not(:disabled) {
-		background: rgba(var(--dt-secondary-rgb), 0.06);
-	}
-
-	@media (max-width: 768px) {
-		.doc-row {
-			flex-wrap: wrap;
-		}
-	}
-</style>

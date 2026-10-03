@@ -5,7 +5,15 @@
 	import MediaDropzone from '$lib/components/MediaDropzone.svelte';
 	import MediaPreviewGrid from '$lib/components/MediaPreviewGrid.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { X, Camera, List, Upload, Video } from 'lucide-svelte';
+	import { X, Camera, List, Video } from 'lucide-svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Section from '$lib/components/ui/Section.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
+	import Check from '$lib/components/ui/Check.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
 	import { fetchKnownAddresses, knownAddressStreetLine, type KnownAddress } from '$lib/utils/addressBook';
 	import AddressFields from './AddressFields.svelte';
@@ -444,86 +452,74 @@
 	}
 </script>
 
-<div
-	class="modal-backdrop"
-	role="presentation"
-	onclick={handleClose}
-	onkeydown={(e) => e.key === 'Escape' && handleClose()}
-	tabindex="-1"
->
-<div
-	class="modal-sheet"
-	role="dialog"
-	aria-labelledby="create-inquiry-title"
-	tabindex="-1"
-	onclick={(e) => e.stopPropagation()}
-	onkeydown={(e) => e.stopPropagation()}
->
-	<div class="create-header">
-		<h2 id="create-inquiry-title">Neue Anfrage</h2>
-		<button type="button" class="create-header__close" onclick={handleClose} aria-label="Schließen">
-			<X size={18} />
-		</button>
-	</div>
-
-	<div class="modal-sheet-body">
-	<!-- 0. Auftragsart -->
-	<div class="create-section__group">
-		<h3>Auftragsart</h3>
-		<div class="svc-type-grid">
-			{#each SERVICE_OPTIONS as [id, label]}
+<Modal title="Neue Anfrage" onclose={handleClose} size="lg">
+	<Section title="Auftragsart">
+		<div class="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+			{#each SERVICE_OPTIONS as [id, label] (id)}
 				<button
 					type="button"
-					class="svc-type-btn"
-					class:selected={selectedServiceType === id}
-					onclick={() => { selectedServiceType = id; }}
+					aria-pressed={selectedServiceType === id}
+					class="h-9 rounded-sm border px-2 text-[13px] transition-colors {selectedServiceType === id
+						? 'border-fg bg-fg text-bg'
+						: 'border-line bg-panel text-muted hover:border-line-strong hover:text-fg'}"
+					onclick={() => {
+						selectedServiceType = id;
+					}}>{label}</button
 				>
-					{label}
-				</button>
 			{/each}
 		</div>
-	</div>
+	</Section>
 
-	<!-- 1. Kunde -->
-	<div class="create-section__group">
-		<h3>Kunde</h3>
-		<div class="customer-mode-toggle">
-			<button
-				class="toggle-btn"
-				class:active={customerMode === 'existing'}
-				onclick={() => { customerMode = 'existing'; clearCustomer(); }}
-			>Bestehend</button>
-			<button
-				class="toggle-btn"
-				class:active={customerMode === 'new'}
-				onclick={() => { customerMode = 'new'; clearCustomer(); }}
-			>Neu anlegen</button>
-		</div>
+	<Section title="Kunde">
+		<Segmented
+			label="Kunde"
+			options={[
+				{ value: 'existing', label: 'Bestehend' },
+				{ value: 'new', label: 'Neu anlegen' }
+			]}
+			bind:value={customerMode}
+			onchange={clearCustomer}
+			class="self-start"
+		/>
 
 		{#if customerMode === 'existing'}
 			{#if selectedCustomer}
-				<div class="selected-customer">
-					<span>{selectedCustomer.name || selectedCustomer.email || 'Kunde'}</span>
-					{#if selectedCustomer.name && selectedCustomer.email}<span class="selected-customer__email">{selectedCustomer.email}</span>{/if}
-					<button class="selected-customer__clear" onclick={clearCustomer}><X size={14} /></button>
+				<div class="flex items-center gap-3 rounded-sm border border-line-strong bg-sunk px-3 py-2">
+					<span class="flex min-w-0 flex-1 flex-col">
+						<span class="truncate text-sm font-medium">{selectedCustomer.name || selectedCustomer.email || 'Kunde'}</span>
+						{#if selectedCustomer.name && selectedCustomer.email}
+							<span class="truncate text-xs text-muted">{selectedCustomer.email}</span>
+						{/if}
+					</span>
+					<Button variant="ghost" size="icon-sm" aria-label="Kunde entfernen" onclick={clearCustomer}><X size={14} /></Button>
 				</div>
 			{:else}
-				<div class="customer-search">
-					<input
-						type="text"
+				<div class="relative">
+					<Input
 						placeholder="Kunde suchen (Name oder E-Mail)..."
 						bind:value={customerSearch}
 						oninput={handleCustomerSearchInput}
-						onfocus={() => { if (customerResults.length) showCustomerDropdown = true; }}
-						onblur={() => { setTimeout(() => { showCustomerDropdown = false; }, 200); }}
-						class="form-input"
+						onfocus={() => {
+							if (customerResults.length) showCustomerDropdown = true;
+						}}
+						onblur={() => {
+							setTimeout(() => {
+								showCustomerDropdown = false;
+							}, 200);
+						}}
 					/>
 					{#if showCustomerDropdown && customerResults.length > 0}
-						<div class="customer-dropdown">
-							{#each customerResults as c}
-								<button class="customer-dropdown__item" onmousedown={() => selectCustomer(c)}>
-									<span class="customer-dropdown__name">{c.name || c.email || 'Kunde'}</span>
-									{#if c.name && c.email}<span class="customer-dropdown__email">{c.email}</span>{/if}
+						<div
+							class="absolute inset-x-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-md border border-line bg-panel p-1 shadow-xl"
+						>
+							{#each customerResults as c (c.id)}
+								<button
+									type="button"
+									class="flex w-full flex-col items-start rounded-sm px-2.5 py-2 text-left hover:bg-sunk"
+									onmousedown={() => selectCustomer(c)}
+								>
+									<span class="text-sm">{c.name || c.email || 'Kunde'}</span>
+									{#if c.name && c.email}<span class="text-xs text-muted">{c.email}</span>{/if}
 								</button>
 							{/each}
 						</div>
@@ -546,12 +542,10 @@
 				bind:recipientEmail
 			/>
 		{/if}
-	</div>
+	</Section>
 
-	<!-- 2. Adressen -->
-	<div class="create-section__group">
-		<h3>Adressen</h3>
-		<div class="address-grid" class:address-grid--single={!addrCfg.showDestination}>
+	<Section title="Adressen">
+		<div class="grid gap-5 {addrCfg.showDestination ? 'sm:grid-cols-2' : ''}">
 			{#if addrCfg.showOrigin}
 				<AddressFields
 					title={addrCfg.originLabel}
@@ -567,7 +561,6 @@
 					onSelect={applyToOrigin}
 				/>
 			{/if}
-
 			{#if addrCfg.showDestination}
 				<AddressFields
 					title={addrCfg.destinationLabel}
@@ -584,67 +577,48 @@
 				/>
 			{/if}
 		</div>
-	</div>
+	</Section>
 
-	<!-- Billing address (when not auto-derived from origin/destination) -->
 	{#if customerType === 'business' || !bookingForSelf}
-	<div class="create-section__group">
-		<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
-			<h3 style="margin:0;">Rechnungsadresse</h3>
-			{#if customerType !== 'business'}
-				<button type="button" class="toggle-btn" style="font-size:0.75rem;padding:0.2rem 0.5rem;"
-					onclick={() => showBilling = !showBilling}>{showBilling ? 'Ausblenden' : 'Abweichend'}</button>
+		<Section title="Rechnungsadresse">
+			{#snippet actions()}
+				{#if customerType !== 'business'}
+					<Button size="xs" variant="ghost" onclick={() => (showBilling = !showBilling)}
+						>{showBilling ? 'Ausblenden' : 'Abweichend'}</Button
+					>
+				{/if}
+			{/snippet}
+			{#if customerType === 'business'}
+				<p class="text-xs text-muted">Firmensitz des Kunden — wird als Rechnungsadresse verwendet.</p>
 			{/if}
-		</div>
-		{#if customerType === 'business'}
-			<p class="form-hint">Firmensitz des Kunden — wird als Rechnungsadresse verwendet.</p>
-		{/if}
-		{#if customerType === 'business' || showBilling}
-			<div class="address-row">
-				<input type="text" placeholder="Straße" bind:value={billingStreet} class="form-input" style="flex:1;" />
-				<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input" style="max-width:80px;" />
-			</div>
-			<div class="address-row">
-				<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input" style="max-width:100px;" />
-				<input type="text" placeholder="Stadt" bind:value={billingCity} class="form-input" style="flex:1;" />
-			</div>
-		{:else}
-			<p class="form-hint">Auszugsadresse wird als Rechnungsadresse verwendet.</p>
-		{/if}
-	</div>
+			{#if customerType === 'business' || showBilling}
+				<div class="grid grid-cols-[minmax(0,1fr)_80px] gap-2">
+					<Input placeholder="Straße" bind:value={billingStreet} />
+					<Input placeholder="Nr." bind:value={billingNumber} />
+				</div>
+				<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+					<Input placeholder="PLZ" bind:value={billingPostal} />
+					<Input placeholder="Stadt" bind:value={billingCity} />
+				</div>
+			{:else}
+				<p class="text-xs text-muted">Auszugsadresse wird als Rechnungsadresse verwendet.</p>
+			{/if}
+		</Section>
 	{/if}
 
-	<!-- 3. Umzugsgut -->
-	<div class="create-section__group">
-		<div class="volume-header">
-			<h3>Umzugsgut</h3>
-			<div class="volume-mode-toggle">
-				<button
-					class="volume-mode-btn"
-					class:active={volumeMode === 'manual'}
-					onclick={() => { volumeMode = 'manual'; }}
-				>
-					<List size={14} />
-					Manuell
-				</button>
-				<button
-					class="volume-mode-btn"
-					class:active={volumeMode === 'photos'}
-					onclick={() => { volumeMode = 'photos'; }}
-				>
-					<Camera size={14} />
-					Fotos
-				</button>
-				<button
-					class="volume-mode-btn"
-					class:active={volumeMode === 'video'}
-					onclick={() => { volumeMode = 'video'; }}
-				>
-					<Video size={14} />
-					Video
-				</button>
-			</div>
-		</div>
+	<Section title="Umzugsgut">
+		{#snippet actions()}
+			<Segmented
+				size="sm"
+				label="Erfassung"
+				options={[
+					{ value: 'manual', label: 'Manuell', icon: List },
+					{ value: 'photos', label: 'Fotos', icon: Camera },
+					{ value: 'video', label: 'Video', icon: Video }
+				]}
+				bind:value={volumeMode}
+			/>
+		{/snippet}
 
 		{#if volumeMode === 'manual'}
 			<VolumeCalculator bind:volumeM3 bind:itemSummary />
@@ -655,11 +629,15 @@
 				mimeFilter="video/"
 				maxSizeMb={500}
 				label="Videos hierher ziehen oder klicken"
-				hint="MP4, MOV, MPEG, AVI, WebM, MKV, 3GP — Raum-Rundgang fuer 3D-Analyse (max. 500 MB)"
+				hint="MP4, MOV, MPEG, AVI, WebM, MKV, 3GP — Raum-Rundgang für 3D-Analyse (max. 500 MB)"
 				hasFiles={videoFiles.length > 0}
 				id="admin-list-videos"
-				onfiles={(files) => { videoFiles = [...videoFiles, ...files]; }}
-				onrejected={(file, reason) => { createError = reason; }}
+				onfiles={(files) => {
+					videoFiles = [...videoFiles, ...files];
+				}}
+				onrejected={(file, reason) => {
+					createError = reason;
+				}}
 			>
 				<MediaPreviewGrid
 					files={videoFiles}
@@ -667,7 +645,9 @@
 					variant="admin"
 					dropzoneId="admin-list-videos"
 					addMoreLabel="Weitere Videos"
-					onremove={(i) => { videoFiles = videoFiles.filter((_, idx) => idx !== i); }}
+					onremove={(i) => {
+						videoFiles = videoFiles.filter((_, idx) => idx !== i);
+					}}
 				/>
 			</MediaDropzone>
 		{:else}
@@ -679,440 +659,61 @@
 				hint="JPG, PNG, WebP, HEIC — Raumfotos für automatische Volumenberechnung"
 				hasFiles={photoFiles.length > 0}
 				id="admin-list-photos"
-				onfiles={(files) => { photoFiles = [...photoFiles, ...files]; }}
-				onrejected={(_, reason) => { createError = reason; }}
+				onfiles={(files) => {
+					photoFiles = [...photoFiles, ...files];
+				}}
+				onrejected={(_, reason) => {
+					createError = reason;
+				}}
 			>
 				<MediaPreviewGrid
 					files={photoFiles}
 					mode="thumbnails"
 					variant="admin"
 					dropzoneId="admin-list-photos"
-					onremove={(i) => { photoFiles = photoFiles.filter((_, idx) => idx !== i); }}
+					onremove={(i) => {
+						photoFiles = photoFiles.filter((_, idx) => idx !== i);
+					}}
 				/>
 			</MediaDropzone>
 		{/if}
-	</div>
+	</Section>
 
-	<!-- 4. Zusatzleistungen -->
-	<div class="create-section__group">
-		<h3>Zusatzleistungen</h3>
-		<div class="services-grid">
-			<label class="form-checkbox"><input type="checkbox" bind:checked={svcEinpacken} /> Einpackservice</label>
-			<label class="form-checkbox"><input type="checkbox" bind:checked={svcMontage} /> Montage</label>
-			<label class="form-checkbox"><input type="checkbox" bind:checked={svcDemontage} /> Demontage</label>
-			<label class="form-checkbox"><input type="checkbox" bind:checked={svcEinlagerung} /> Einlagerung</label>
-			<label class="form-checkbox"><input type="checkbox" bind:checked={svcEntsorgung} /> Entsorgung</label>
-			<label class="form-checkbox"><input type="checkbox" bind:checked={svcTransporter} /> 3,5t Transporter m. Koffer</label>
+	<Section title="Zusatzleistungen">
+		<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
+			<Check bind:checked={svcEinpacken}>Einpackservice</Check>
+			<Check bind:checked={svcMontage}>Montage</Check>
+			<Check bind:checked={svcDemontage}>Demontage</Check>
+			<Check bind:checked={svcEinlagerung}>Einlagerung</Check>
+			<Check bind:checked={svcEntsorgung}>Entsorgung</Check>
+			<Check bind:checked={svcTransporter}>3,5t Transporter m. Koffer</Check>
 		</div>
-	</div>
+	</Section>
 
-	<!-- 5. Details -->
-	<div class="create-section__group">
-		<h3>Details</h3>
-		<div class="details-row">
-			<div class="details-field">
-				<label for="preferred-date">Datum</label>
-				<input id="preferred-date" type="date" bind:value={preferredDate} class="form-input" />
-			</div>
-			<div class="details-field">
-				<label for="distance-km">Entfernung (km)</label>
-				<input id="distance-km" type="number" bind:value={distanceKm} placeholder="optional" class="form-input" min="0" step="1" />
-			</div>
+	<Section title="Details">
+		<div class="grid grid-cols-2 gap-3">
+			<Field label="Datum" for="preferred-date"><Input id="preferred-date" type="date" bind:value={preferredDate} /></Field>
+			<Field label="Entfernung (km)" for="distance-km">
+				<Input id="distance-km" type="number" bind:value={distanceKm} placeholder="optional" min="0" step="1" />
+			</Field>
 		</div>
-		<div class="details-field" style="margin-top: 0.75rem;">
-			<label for="extra-notes">Notizen</label>
-			<textarea id="extra-notes" bind:value={extraNotes} rows="2" placeholder="Weitere Hinweise..." class="form-input form-textarea"></textarea>
-		</div>
-	</div>
-	</div>
+		<Field label="Notizen" for="extra-notes">
+			<Textarea id="extra-notes" bind:value={extraNotes} rows={2} placeholder="Weitere Hinweise …" />
+		</Field>
+	</Section>
 
-	<div class="modal-sheet-actions">
+	{#snippet footer()}
 		{#if createError}
-			<p class="create-section__error">{createError}</p>
+			<p class="text-[13px] text-danger sm:mr-auto" role="alert">{createError}</p>
 		{/if}
-		<button
-			class="create-section__submit"
-			onclick={handleCreateInquiry}
-			disabled={createLoading}
-		>
+		<Button variant="accent" size="lg" onclick={handleCreateInquiry} disabled={createLoading}>
 			{createLoading
-			? (volumeMode === 'photos' ? 'Fotos werden analysiert...' : volumeMode === 'video' ? 'Video wird analysiert...' : 'Erstelle Anfrage...')
-			: 'Anfrage erstellen'}
-		</button>
-	</div>
-</div>
-</div>
-
-<style>
-	/* --- Create Section --- */
-
-	/* Wider than the shared .modal-sheet default (520px) — this form has
-	 * two-column address/detail grids that need the extra room on desktop. */
-	.modal-sheet {
-		width: 92%;
-		max-width: 780px;
-	}
-
-	/* Stack the error message above the full-width submit button instead of
-	 * the shared row layout (this footer only ever has these two children). */
-	.modal-sheet-actions {
-		flex-direction: column;
-		align-items: stretch;
-	}
-
-	.create-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-		flex-shrink: 0;
-	}
-
-	.create-header h2 {
-		font-size: 1.125rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.create-header__close {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.375rem;
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		background: transparent;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.create-header__close:hover {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface);
-	}
-
-	.create-section__group {
-		margin-bottom: 1.25rem;
-	}
-
-
-	.create-section__group h3 {
-		font-size: 0.9375rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		margin: 0 0 0.75rem;
-	}
-
-	.form-input {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		border: none;
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		box-sizing: border-box;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-		border-bottom: 2px solid transparent;
-	}
-
-	.form-input::placeholder {
-		color: var(--dt-on-surface-variant);
-	}
-
-	.form-input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.form-textarea {
-		resize: vertical;
-		font-family: inherit;
-	}
-
-	.form-checkbox {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		white-space: nowrap;
-	}
-
-	.form-checkbox input[type="checkbox"] {
-		accent-color: var(--dt-primary);
-	}
-
-	/* Customer mode toggle */
-	.customer-mode-toggle {
-		display: flex;
-		gap: 0;
-		margin-bottom: 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		overflow: hidden;
-		background: var(--dt-surface-container);
-	}
-
-	.toggle-btn {
-		flex: 1;
-		padding: 0.4rem 0.75rem;
-		border: none;
-		background: transparent;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.toggle-btn.active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-	}
-
-	/* Customer search */
-	.customer-search {
-		position: relative;
-	}
-
-	.customer-dropdown {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		right: 0;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-md);
-		box-shadow: var(--dt-shadow-ambient);
-		z-index: 10;
-		max-height: 240px;
-		overflow-y: auto;
-		margin-top: 4px;
-	}
-
-	.customer-dropdown__item {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		background: transparent;
-		text-align: left;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.customer-dropdown__item:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.customer-dropdown__name {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		font-weight: 500;
-	}
-
-	.customer-dropdown__email {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.selected-customer {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		background: var(--dt-surface-container);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		font-weight: 500;
-	}
-
-	.selected-customer__email {
-		font-weight: 400;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem;
-	}
-
-	.selected-customer__clear {
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		padding: 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		border: var(--dt-ghost-border);
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.selected-customer__clear:hover {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface);
-	}
-
-	/* Addresses */
-	.address-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1.5rem;
-	}
-
-	.address-grid--single {
-		grid-template-columns: 1fr;
-	}
-
-	.address-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	/* Volume mode toggle */
-	.volume-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-	}
-
-	.volume-header h3 {
-		margin: 0 !important;
-	}
-
-	.volume-mode-toggle {
-		display: flex;
-		gap: 0.25rem;
-		background: var(--dt-surface-container);
-		border-radius: var(--dt-radius-sm);
-		padding: 0.1875rem;
-	}
-
-	.volume-mode-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		border: none;
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-		background: transparent;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.volume-mode-btn:hover {
-		color: var(--dt-on-surface);
-	}
-
-	.volume-mode-btn.active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-	}
-
-	/* Services */
-	.services-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem 1.5rem;
-	}
-
-	/* Details */
-	.details-row {
-		display: flex;
-		gap: 1rem;
-	}
-
-	.details-field {
-		flex: 1;
-	}
-
-	.details-field label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.25rem;
-	}
-
-	.create-section__error {
-		margin: 0 0 0.75rem;
-		font-size: 0.8125rem;
-		color: var(--dt-secondary);
-	}
-
-	.create-section__submit {
-		display: block;
-		width: 100%;
-		padding: 0.75rem;
-		border-radius: var(--dt-radius-md);
-		font-size: 0.9375rem;
-		font-weight: 700;
-		color: var(--dt-on-primary);
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		border: none;
-		cursor: pointer;
-		transition: opacity var(--dt-transition);
-	}
-
-	.create-section__submit:hover:not(:disabled) {
-		opacity: 0.88;
-	}
-
-	.create-section__submit:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	@media (max-width: 768px) {
-		.address-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.details-row {
-			flex-direction: column;
-		}
-	}
-	.svc-type-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-
-	.svc-type-btn {
-		padding: 0.35rem 0.65rem;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: 6px;
-		background: var(--dt-surface-container-lowest);
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: all 0.12s;
-	}
-
-	.svc-type-btn:hover {
-		border-color: var(--dt-primary);
-		color: var(--dt-primary);
-	}
-
-	.svc-type-btn.selected {
-		background: var(--dt-primary);
-		border-color: var(--dt-primary);
-		color: #fff;
-	}
-
-	.form-hint {
-		font-size: 0.78rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-	}
-</style>
+				? volumeMode === 'photos'
+					? 'Fotos werden analysiert …'
+					: volumeMode === 'video'
+						? 'Video wird analysiert …'
+						: 'Erstelle Anfrage …'
+				: 'Anfrage erstellen'}
+		</Button>
+	{/snippet}
+</Modal>

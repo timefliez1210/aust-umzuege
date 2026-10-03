@@ -1,10 +1,11 @@
 /// <reference types="vitest/config" />
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [sveltekit(), svelteTesting()],
+	plugins: [tailwindcss(), sveltekit(), svelteTesting()],
 	test: {
 		include: ['src/**/*.test.ts'],
 		// jsdom so component tests can render; pure-logic tests run fine under it too

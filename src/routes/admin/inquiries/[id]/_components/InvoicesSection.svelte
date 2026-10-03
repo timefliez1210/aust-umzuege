@@ -1,8 +1,13 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Check from '$lib/components/ui/Check.svelte';
+	import type { Tone } from '$lib/components/ui/tone';
 	import { apiGet, apiPost, apiPatch, apiDownload, formatEuro } from "$lib/utils/api.svelte";
 	import { calculateBruttoCents } from "$lib/utils/pricing";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
-	import { ChevronRight, Plus, Pencil, Download, Send, X } from "lucide-svelte";
+	import { Plus, Pencil, Download, Send, X } from "lucide-svelte";
 	import ManualInvoiceEditor from "./ManualInvoiceEditor.svelte";
 
 	interface InvoiceExtraService {
@@ -406,16 +411,16 @@
 	}
 
 	/**
-	 * Returns a CSS class suffix for an invoice status badge.
+	 * Returns the badge tone for an invoice status.
 	 *
 	 * Called by: Template (class binding on status badge)
-	 * Purpose: Colours the badge: grey=draft, orange=ready, blue=sent, green=paid.
+	 * Purpose: Colours the badge: neutral=draft, warn=ready, info=sent, ok=paid.
 	 *
 	 * @param status - Invoice status string
-	 * @returns CSS class suffix
+	 * @returns Badge tone
 	 */
-	function invoiceStatusClass(s: string): string {
-		return { draft: 'grey', ready: 'orange', sent: 'blue', paid: 'green' }[s] ?? 'grey';
+	function invoiceStatusTone(s: string): Tone {
+		return ({ draft: 'neutral', ready: 'warn', sent: 'info', paid: 'ok' } as Record<string, Tone>)[s] ?? 'neutral';
 	}
 
 	/**
@@ -469,562 +474,215 @@
 	}
 </script>
 
-<!-- Rechnungen Card (visible for accepted+ statuses) -->
 {#if showInvoiceCard}
-	<div class="invoices-section">
-		<div class="card" class:card--collapsed={!open}>
-			<div class="card-header card-header--toggleable">
-				<button class="card-toggle" onclick={onToggle} aria-expanded={open}>
-					<span class="card-toggle-chev" class:open><ChevronRight size={16} /></span>
-					<h3>Rechnungen</h3>
-				</button>
-				{#if open && invoices.length === 0}
-					<div class="invoice-create-btns">
-						<button
-							class="btn btn-sm btn-primary"
-							disabled={invoiceCreating}
-							onclick={createFullInvoice}
-						>
-							<Plus size={14} />
-							Rechnung Erstellen
-						</button>
-						<button
-							class="btn btn-sm"
-							onclick={() => (showPartialForm = !showPartialForm)}
-						>
-							<Plus size={14} />
-							Partielle Rechnung
-						</button>
-					</div>
-				{/if}
-			</div>
-			{#if open}
+	<Panel title="Rechnungen" {open} {onToggle}>
+		{#snippet actions()}
+			{#if invoices.length === 0}
+				<Button size="sm" variant="solid" disabled={invoiceCreating} onclick={createFullInvoice}><Plus size={14} /> Rechnung erstellen</Button>
+				<Button size="sm" onclick={() => (showPartialForm = !showPartialForm)}><Plus size={14} /> Partielle Rechnung</Button>
+			{/if}
+		{/snippet}
 
-			<!-- Partial invoice form -->
+		<div class="flex flex-col gap-3">
 			{#if showPartialForm && invoices.length === 0}
-				<form class="partial-form" onsubmit={createPartialInvoice}>
-					<div class="partial-form-row">
-						<label for="partial-pct">Anzahlungsprozentsatz (%)</label>
+				<form class="flex flex-col gap-3 rounded-sm border border-line bg-sunk/50 p-3" onsubmit={createPartialInvoice}>
+					<label class="flex items-center justify-between gap-3 text-sm" for="partial-pct">
+						Anzahlungsprozentsatz (%)
 						<input
 							id="partial-pct"
 							type="number"
 							min="1"
 							max="99"
-							class="inline-input"
+							class="num h-9 w-20 rounded-sm border border-line-strong bg-panel px-2 text-right outline-none focus:border-fg"
 							bind:value={partialPercent}
 						/>
-					</div>
+					</label>
 					{#if partialPreview()}
 						{@const preview = partialPreview()!}
-						<div class="partial-preview">
-							<span>Anzahlung: <strong>{formatEuro(preview.first)}</strong></span>
-							<span>Restbetrag: <strong>{formatEuro(preview.remaining)}</strong></span>
+						<div class="num flex flex-wrap gap-x-5 text-[13px] text-muted">
+							<span>Anzahlung <strong class="text-fg">{formatEuro(preview.first)}</strong></span>
+							<span>Restbetrag <strong class="text-fg">{formatEuro(preview.remaining)}</strong></span>
 						</div>
 					{/if}
-					<div class="partial-form-actions">
-						<button type="button" class="btn btn-sm" onclick={() => (showPartialForm = false)}>Abbrechen</button>
-						<button type="submit" class="btn btn-sm btn-primary" disabled={invoiceCreating}>
-							{invoiceCreating ? 'Erstelle...' : 'Erstellen'}
-						</button>
+					<div class="flex justify-end gap-2">
+						<Button size="sm" onclick={() => (showPartialForm = false)}>Abbrechen</Button>
+						<Button size="sm" type="submit" variant="solid" disabled={invoiceCreating}>{invoiceCreating ? 'Erstelle …' : 'Erstellen'}</Button>
 					</div>
 				</form>
 			{/if}
 
 			{#if invoicesLoading}
-				<p class="empty-hint">Rechnungen werden geladen...</p>
+				<p class="text-sm text-muted">Rechnungen werden geladen …</p>
 			{:else if invoices.length === 0}
-				<p class="empty-hint">Noch keine Rechnung erstellt.</p>
+				<p class="text-[13px] text-faint">Noch keine Rechnung erstellt.</p>
 			{:else}
-				<div class="invoices-list">
-					{#each invoices as inv}
-						<div class="invoice-row">
-							<div class="invoice-row-header">
-								<div class="invoice-row-meta">
-									{#if editingNumberId === inv.id}
-										<span class="invoice-number">Nr.</span>
-										<input
-											class="inline-input invoice-number-input"
-											bind:value={numberDraft}
-											placeholder="z.B. 2026-0053"
-											onkeydown={(e) => { if (e.key === 'Enter') saveInvoiceNumber(inv.id); if (e.key === 'Escape') cancelEditNumber(); }}
-										/>
-										<button class="btn btn-sm btn-primary" disabled={numberSaving} onclick={() => saveInvoiceNumber(inv.id)}>
-											{numberSaving ? '...' : 'Speichern'}
-										</button>
-										<button class="btn btn-sm" onclick={cancelEditNumber}>Abbrechen</button>
-									{:else}
-										<span class="invoice-number">Nr. {inv.invoice_number}</span>
-										{#if inv.status !== 'paid'}
-											<button class="btn-icon" title="Rechnungsnummer korrigieren" onclick={() => startEditNumber(inv)}>
-												<Pencil size={13} />
-											</button>
-										{/if}
-									{/if}
-									<span class="invoice-type-label">
-										{#if inv.invoice_type === 'full'}Vollrechnung
-										{:else if inv.invoice_type === 'partial_first'}Anzahlung ({inv.partial_percent}%)
-										{:else}Restbetrag
-										{/if}
-									</span>
-									<span class="invoice-amount">{formatEuro(inv.total_brutto_cents)}</span>
-								</div>
-								<div class="invoice-row-actions">
-									<span class="inv-status inv-status--{invoiceStatusClass(inv.status)}">
-										{invoiceStatusLabel(inv.status)}
-									</span>
-									<button
-										class="btn btn-sm"
-										title="PDF herunterladen"
-										onclick={() => downloadInvoicePdf(inv)}
-									>
-										<Download size={13} />
-										PDF
-									</button>
-									{#if inv.status !== 'sent' && inv.status !== 'paid'}
-										<button
-											class="btn btn-sm btn-primary"
-											disabled={!canSendInvoice(inv)}
-											title={!canSendInvoice(inv) ? 'Erst nach Auftragsabschluss sendbar' : 'Rechnung senden'}
-											onclick={() => sendInvoice(inv.id)}
-										>
-											<Send size={13} />
-											Senden
-										</button>
-									{/if}
-									{#if inv.status === 'sent'}
-										<button
-											class="btn btn-sm"
-											onclick={() => markInvoicePaid(inv.id)}
-										>
-											Als bezahlt markieren
-										</button>
-									{/if}
-								</div>
-							</div>
-
-							<!-- Barzahlung: the PDF prints "in bar beglichen" instead of the bank details -->
-							<div class="manual-section">
-								<label class="manual-toggle">
+				{#each invoices as inv (inv.id)}
+					<article class="flex flex-col divide-y divide-line rounded-sm border border-line">
+						<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5">
+							<div class="flex flex-wrap items-center gap-2">
+								{#if editingNumberId === inv.id}
+									<span class="text-sm">Nr.</span>
 									<input
-										type="checkbox"
-										checked={isCashOpen(inv)}
-										disabled={cashSaving[inv.id]}
-										onchange={(e) => toggleCash(inv, (e.currentTarget as HTMLInputElement).checked)}
+										class="num h-8 w-32 rounded-sm border border-line-strong bg-panel px-2 text-sm outline-none focus:border-fg"
+										bind:value={numberDraft}
+										placeholder="z. B. 2026-53"
+										aria-label="Rechnungsnummer"
+										onkeydown={(e) => {
+											if (e.key === 'Enter') saveInvoiceNumber(inv.id);
+											if (e.key === 'Escape') cancelEditNumber();
+										}}
 									/>
-									<span>Bar Zahlung — Rechnung gilt als Quittung</span>
-								</label>
-								{#if isCashOpen(inv)}
-									<div class="cash-row">
-										<label for="cash-date-{inv.id}">Bezahlt am</label>
-										<input
-											id="cash-date-{inv.id}"
-											type="date"
-											class="inline-input"
-											required
-											value={cashDateDraft[inv.id] ?? inv.cash_paid_on ?? ''}
-											oninput={(e) => (cashDateDraft[inv.id] = (e.currentTarget as HTMLInputElement).value)}
-										/>
-										<button
-											class="btn btn-sm btn-primary"
-											disabled={cashSaving[inv.id] || !(cashDateDraft[inv.id] ?? inv.cash_paid_on)}
-											onclick={() => saveCash(inv, true)}
-										>
-											{cashSaving[inv.id] ? '...' : 'Speichern'}
-										</button>
-									</div>
+									<Button size="xs" variant="solid" disabled={numberSaving} onclick={() => saveInvoiceNumber(inv.id)}>
+										{numberSaving ? '…' : 'Speichern'}
+									</Button>
+									<Button size="xs" onclick={cancelEditNumber}>Abbrechen</Button>
+								{:else}
+									<span class="num text-sm font-semibold">Nr. {inv.invoice_number}</span>
+									{#if inv.status !== 'paid'}
+										<Button variant="ghost" size="icon-sm" aria-label="Rechnungsnummer korrigieren" title="Rechnungsnummer korrigieren" onclick={() => startEditNumber(inv)}>
+											<Pencil size={13} />
+										</Button>
+									{/if}
+								{/if}
+								<span class="text-xs text-muted">
+									{#if inv.invoice_type === 'full'}Vollrechnung{:else if inv.invoice_type === 'partial_first'}Anzahlung ({inv.partial_percent} %){:else}Restbetrag{/if}
+								</span>
+								<span class="num text-sm font-medium">{formatEuro(inv.total_brutto_cents)}</span>
+							</div>
+							<div class="flex flex-wrap items-center gap-1.5">
+								<Badge tone={invoiceStatusTone(inv.status)}>{invoiceStatusLabel(inv.status)}</Badge>
+								<Button size="xs" onclick={() => downloadInvoicePdf(inv)} title="PDF herunterladen"><Download size={13} /> PDF</Button>
+								{#if inv.status !== 'sent' && inv.status !== 'paid'}
+									<Button
+										size="xs"
+										variant="solid"
+										disabled={!canSendInvoice(inv)}
+										title={!canSendInvoice(inv) ? 'Erst nach Auftragsabschluss sendbar' : 'Rechnung senden'}
+										onclick={() => sendInvoice(inv.id)}
+									>
+										<Send size={13} /> Senden
+									</Button>
+								{/if}
+								{#if inv.status === 'sent'}
+									<Button size="xs" onclick={() => markInvoicePaid(inv.id)}>Als bezahlt markieren</Button>
 								{/if}
 							</div>
+						</div>
 
-							<!-- Manual invoice mode (full invoices only): free line-item editing -->
-							{#if inv.invoice_type === 'full'}
-								<div class="manual-section">
-									<label class="manual-toggle">
-										<input
-											type="checkbox"
-											checked={isManualEditorOpen(inv)}
-											disabled={inv.status === 'paid'}
-											onchange={(e) => toggleManual(inv, (e.currentTarget as HTMLInputElement).checked)}
-										/>
-										<span>Manuelle Rechnung — Positionen frei bearbeiten (z.B. Stunden ausweisen)</span>
-									</label>
-									{#if isManualEditorOpen(inv)}
-										<ManualInvoiceEditor
-											inquiryId={inv.inquiry_id}
-											invoice={inv}
-											onSaved={(u) => onManualSaved(inv.id, u as Invoice)}
-											onCancel={() => toggleManual(inv, false)}
-										/>
-									{/if}
-								</div>
-							{/if}
-
-							<!-- Extra services (full / partial_final) — hidden while manual editor is open -->
-							{#if inv.invoice_type !== 'partial_first' && !isManualEditorOpen(inv)}
-								<div class="extras-section">
-									{#if !editingExtras[inv.id]}
-										<div class="extras-header">
-											<span class="extras-label">Zusatzleistungen</span>
-											<button
-												class="btn-link"
-												onclick={() => startEditExtras(inv)}
-											>Bearbeiten</button>
-										</div>
-										{#if inv.extra_services.length > 0}
-											<ul class="extras-list">
-												{#each inv.extra_services as extra}
-													<li>
-														<span>{extra.description}</span>
-														<span class="extras-price">{formatEuro(extra.price_cents)}</span>
-													</li>
-												{/each}
-											</ul>
-										{:else}
-											<p class="empty-hint extras-empty">Keine Zusatzleistungen</p>
-										{/if}
-									{:else}
-										<div class="extras-editor">
-											{#each extrasDraft[inv.id] ?? [] as extra, idx}
-												<div class="extras-editor-row">
-													<input
-														type="text"
-														placeholder="Beschreibung"
-														class="extras-input"
-														bind:value={extrasDraft[inv.id][idx].description}
-													/>
-													<input
-														type="number"
-														placeholder="Preis (Netto €)"
-														class="extras-input extras-input--price"
-														value={(extrasDraft[inv.id][idx].price_cents / 100).toFixed(2)}
-														onchange={(e) => {
-															extrasDraft[inv.id][idx].price_cents = Math.round(
-																parseFloat((e.target as HTMLInputElement).value) * 100
-															);
-														}}
-													/>
-													<button
-														class="btn-icon danger"
-														onclick={() => removeExtraRow(inv.id, idx)}
-													><X size={13} /></button>
-												</div>
-											{/each}
-											<div class="extras-editor-footer">
-												<button class="btn-link" onclick={() => addExtraRow(inv.id)}>
-													<Plus size={12} /> Hinzufügen
-												</button>
-												<div class="extras-editor-actions">
-													<button class="btn btn-sm" onclick={() => { editingExtras[inv.id] = false; }}>Abbrechen</button>
-													<button class="btn btn-sm btn-primary" onclick={() => saveExtras(inv.id)}>Speichern</button>
-												</div>
-											</div>
-										</div>
-									{/if}
+						<!-- Barzahlung: the PDF prints "in bar beglichen" instead of the bank details -->
+						<div class="flex flex-col gap-2 px-3 py-2">
+							<Check
+								checked={isCashOpen(inv)}
+								disabled={cashSaving[inv.id]}
+								onchange={(e) => toggleCash(inv, (e.currentTarget as HTMLInputElement).checked)}
+							>
+								Barzahlung — Rechnung gilt als Quittung
+							</Check>
+							{#if isCashOpen(inv)}
+								<div class="flex flex-wrap items-center gap-2 pl-6 text-[13px]">
+									<label for="cash-date-{inv.id}" class="text-muted">Bezahlt am</label>
+									<input
+										id="cash-date-{inv.id}"
+										type="date"
+										class="h-8 rounded-sm border border-line-strong bg-panel px-2 text-[13px] outline-none focus:border-fg"
+										required
+										value={cashDateDraft[inv.id] ?? inv.cash_paid_on ?? ''}
+										oninput={(e) => (cashDateDraft[inv.id] = (e.currentTarget as HTMLInputElement).value)}
+									/>
+									<Button
+										size="xs"
+										variant="solid"
+										disabled={cashSaving[inv.id] || !(cashDateDraft[inv.id] ?? inv.cash_paid_on)}
+										onclick={() => saveCash(inv, true)}
+									>
+										{cashSaving[inv.id] ? '…' : 'Speichern'}
+									</Button>
 								</div>
 							{/if}
 						</div>
-					{/each}
-				</div>
-			{/if}
+
+						{#if inv.invoice_type === 'full'}
+							<div class="flex flex-col gap-2 px-3 py-2">
+								<Check
+									checked={isManualEditorOpen(inv)}
+									disabled={inv.status === 'paid'}
+									onchange={(e) => toggleManual(inv, (e.currentTarget as HTMLInputElement).checked)}
+								>
+									Manuelle Rechnung — Positionen frei bearbeiten (z. B. Stunden ausweisen)
+								</Check>
+								{#if isManualEditorOpen(inv)}
+									<ManualInvoiceEditor
+										inquiryId={inv.inquiry_id}
+										invoice={inv}
+										onSaved={(u) => onManualSaved(inv.id, u as Invoice)}
+										onCancel={() => toggleManual(inv, false)}
+									/>
+								{/if}
+							</div>
+						{/if}
+
+						{#if inv.invoice_type !== 'partial_first' && !isManualEditorOpen(inv)}
+							<div class="flex flex-col gap-2 px-3 py-2.5">
+								{#if !editingExtras[inv.id]}
+									<div class="flex items-center justify-between gap-2">
+										<span class="label-xs text-faint">Zusatzleistungen</span>
+										<Button size="xs" variant="ghost" onclick={() => startEditExtras(inv)}>Bearbeiten</Button>
+									</div>
+									{#if inv.extra_services.length > 0}
+										<ul class="flex flex-col gap-1 text-[13px]">
+											{#each inv.extra_services as extra, i (i)}
+												<li class="flex justify-between gap-3">
+													<span>{extra.description}</span>
+													<span class="num">{formatEuro(extra.price_cents)}</span>
+												</li>
+											{/each}
+										</ul>
+									{:else}
+										<p class="text-xs text-faint">Keine Zusatzleistungen</p>
+									{/if}
+								{:else}
+									<div class="flex flex-col gap-2">
+										{#each extrasDraft[inv.id] ?? [] as extra, idx (idx)}
+											<div class="grid grid-cols-[minmax(0,1fr)_120px_32px] items-center gap-2">
+												<input
+													type="text"
+													placeholder="Beschreibung"
+													aria-label="Beschreibung"
+													class="h-8 min-w-0 rounded-sm border border-line-strong bg-panel px-2 text-[13px] outline-none focus:border-fg"
+													bind:value={extrasDraft[inv.id][idx].description}
+												/>
+												<input
+													type="number"
+													placeholder="Netto €"
+													aria-label="Preis (Netto €)"
+													class="num h-8 rounded-sm border border-line-strong bg-panel px-2 text-right text-[13px] outline-none focus:border-fg"
+													value={(extrasDraft[inv.id][idx].price_cents / 100).toFixed(2)}
+													onchange={(e) => {
+														extrasDraft[inv.id][idx].price_cents = Math.round(parseFloat((e.target as HTMLInputElement).value) * 100);
+													}}
+												/>
+												<Button variant="ghost" size="icon-sm" aria-label="Entfernen" onclick={() => removeExtraRow(inv.id, idx)}><X size={13} /></Button>
+											</div>
+										{/each}
+										<div class="flex flex-wrap items-center justify-between gap-2">
+											<Button size="xs" variant="ghost" onclick={() => addExtraRow(inv.id)}><Plus size={12} /> Hinzufügen</Button>
+											<span class="flex gap-1.5">
+												<Button
+													size="xs"
+													onclick={() => {
+														editingExtras[inv.id] = false;
+													}}>Abbrechen</Button
+												>
+												<Button size="xs" variant="solid" onclick={() => saveExtras(inv.id)}>Speichern</Button>
+											</span>
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</article>
+				{/each}
 			{/if}
 		</div>
-	</div>
+	</Panel>
 {/if}
-
-<style>
-	.inline-input {
-		width: 60px;
-		padding: 0.25rem 0.375rem;
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-		outline: none;
-		transition: border-bottom var(--dt-transition), background var(--dt-transition);
-	}
-
-	.inline-input:focus {
-		border-bottom-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-	}
-
-	.btn-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.25rem;
-		border: none;
-		background: transparent;
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		color: var(--dt-on-surface-variant);
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-
-	.btn-icon.danger:hover {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container);
-	}
-
-	.empty-hint {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		text-align: center;
-		padding: 1rem 0;
-		margin: 0;
-	}
-
-	/* ── Rechnungen Section ─────────────────────────────────────────── */
-
-	.invoices-section {
-		margin-bottom: 1.5rem;
-	}
-
-	.invoice-create-btns {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.partial-form {
-		padding: 1rem;
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		margin-bottom: 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.partial-form-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.partial-form-row label {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.partial-preview {
-		display: flex;
-		gap: 2rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.partial-form-actions {
-		display: flex;
-		gap: 0.5rem;
-		justify-content: flex-end;
-	}
-
-	.invoices-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.invoice-row {
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		padding: 0.875rem 1rem;
-	}
-
-	.invoice-row-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.invoice-row-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.invoice-number {
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.invoice-number-input {
-		max-width: 150px;
-	}
-
-	.invoice-type-label {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.invoice-amount {
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.invoice-row-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.inv-status {
-		display: inline-block;
-		padding: 0.25rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.6875rem;
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.inv-status--grey   { background: var(--dt-surface-container); color: var(--dt-on-surface-variant); }
-	.inv-status--orange { background: var(--dt-surface-container-high); color: var(--dt-secondary); }
-	.inv-status--blue   { background: var(--dt-info-bg); color: var(--dt-info-text); }
-	.inv-status--green  { background: var(--dt-success-bg); color: var(--dt-success-text); }
-
-	.manual-section {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-surface-container-high);
-	}
-
-	.manual-toggle {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.manual-toggle input {
-		width: 1rem;
-		height: 1rem;
-		cursor: pointer;
-	}
-
-	.cash-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-		font-size: 0.85rem;
-	}
-
-	.extras-section {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-surface-container-high);
-	}
-
-	.extras-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.4rem;
-	}
-
-	.extras-label {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.extras-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.extras-list li {
-		display: flex;
-		justify-content: space-between;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-	}
-
-	.extras-price {
-		font-weight: 500;
-	}
-
-	.extras-empty {
-		margin: 0.25rem 0 0;
-	}
-
-	.extras-editor {
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-	}
-
-	.extras-editor-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.extras-input {
-		flex: 1;
-		padding: 0.3rem 0.5rem;
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		transition: border-bottom var(--dt-transition), background var(--dt-transition);
-	}
-
-	.extras-input:focus {
-		border-bottom-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-	}
-
-	.extras-input--price {
-		flex: 0 0 9rem;
-	}
-
-	.extras-editor-footer {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-top: 0.25rem;
-	}
-
-	.extras-editor-actions {
-		display: flex;
-		gap: 0.4rem;
-	}
-
-	@media (max-width: 768px) {
-		.invoice-row-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.invoice-row-actions {
-			width: 100%;
-		}
-
-		.extras-editor-row {
-			flex-wrap: wrap;
-		}
-
-		.extras-input--price {
-			flex: 1 1 100%;
-		}
-	}
-</style>

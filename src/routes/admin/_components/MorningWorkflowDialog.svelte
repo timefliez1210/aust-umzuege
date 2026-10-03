@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { apiGet, apiPost, apiPatch } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { CheckCircle, Receipt, MessageSquare } from 'lucide-svelte';
@@ -166,111 +169,80 @@
 	});
 </script>
 
+<!-- One step of the close-out checklist. Steps unlock in order. -->
+{#snippet step(Icon: typeof CheckCircle, label: string, done: boolean, locked: boolean, doneLabel: string, actions: import('svelte').Snippet)}
+	<div class="flex items-start gap-3 rounded-md border px-3 py-2.5 {done ? 'border-ok/40 bg-ok/5' : 'border-line'} {locked ? 'opacity-45' : ''}">
+		<span class="mt-0.5 {done ? 'text-ok' : 'text-muted'}"><Icon size={18} /></span>
+		<div class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
+			<span class="text-sm font-medium">{label}</span>
+			{#if done}<Badge tone="ok">✓ {doneLabel}</Badge>{:else}{@render actions()}{/if}
+		</div>
+	</div>
+{/snippet}
+
 {#if morningVisible && morningJobs.length > 0}
 	{@const job = morningJobs[morningIndex]}
 	{@const steps = neededSteps(job)}
 	{@const isInquiry = job.kind === 'inquiry'}
-	<div class="mw-overlay">
-		<div class="mw-dialog">
-			<div class="mw-header">
-				<span class="mw-greeting">Guten Morgen — {morningJobs.length} {morningJobs.length === 1 ? 'Job' : 'Jobs'} zum Abschliessen</span>
-				<div class="mw-header-right">
-					<span class="mw-counter">{morningIndex + 1} / {morningJobs.length}</span>
-					<button class="mw-close" onclick={() => morningVisible = false} title="Alle überspringen">✕</button>
-				</div>
-			</div>
-
-			<div class="mw-job-title">
-				{#if isInquiry}
-					{job.data.customer_name ?? 'Unbekannt'} —
+	<Modal
+		title="Guten Morgen — {morningJobs.length} {morningJobs.length === 1 ? 'Job' : 'Jobs'} abschließen"
+		description="{morningIndex + 1} von {morningJobs.length}"
+		onclose={() => (morningVisible = false)}
+	>
+		<div class="flex flex-col gap-3">
+			<p class="flex flex-wrap items-center gap-2 text-base font-semibold">
+				{isInquiry ? (job.data as { customer_name: string | null }).customer_name ?? 'Unbekannt' : (job.data as { title: string }).title}
+				<span class="num text-sm font-normal text-muted">
 					{new Date(job.data.last_day ?? '').toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
-				{:else}
-					{job.data.title} —
-					{new Date(job.data.last_day ?? '').toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
-					<span class="mw-tag">Termin</span>
-				{/if}
-			</div>
+				</span>
+				{#if !isInquiry}<Badge tone="info">Termin</Badge>{/if}
+			</p>
 
-			<div class="mw-steps">
-				<!-- Step: Mark complete -->
-				{#if steps.includes('complete')}
-					<div class="mw-step" class:done={isStepDone(job, 'complete')}>
-						<div class="mw-step-icon">
-							<CheckCircle size={18} />
-						</div>
-						<div class="mw-step-body">
-							<span class="mw-step-label">Als erledigt markieren</span>
-							{#if !isStepDone(job, 'complete')}
-								<button class="btn btn-primary btn-sm" disabled={sendingStep} onclick={() => doMarkComplete(job)}>
-									Erledigt
-								</button>
-							{:else}
-								<span class="mw-done-badge">✓ Erledigt</span>
-							{/if}
-						</div>
-					</div>
-				{/if}
+			{#if steps.includes('complete')}
+				{#snippet completeActions()}
+					<Button size="sm" variant="solid" disabled={sendingStep} onclick={() => doMarkComplete(job)}>Erledigt</Button>
+				{/snippet}
+				{@render step(CheckCircle, 'Als erledigt markieren', isStepDone(job, 'complete'), false, 'Erledigt', completeActions)}
+			{/if}
 
-				<!-- Step: Send invoice (inquiries only) -->
-				{#if isInquiry && steps.includes('invoice')}
-					{@const prevDone = !steps.includes('complete') || isStepDone(job, 'complete')}
-					<div class="mw-step" class:done={isStepDone(job, 'invoice')} class:locked={!prevDone}>
-						<div class="mw-step-icon">
-							<Receipt size={18} />
-						</div>
-						<div class="mw-step-body">
-							<span class="mw-step-label">Rechnung vorbereiten & senden</span>
-							{#if !isStepDone(job, 'invoice')}
-								<button
-									class="btn btn-primary btn-sm"
-									disabled={!prevDone}
-									onclick={() => openInvoiceModal(job)}
-								>
-									Rechnung &rarr;
-								</button>
-							{:else}
-								<span class="mw-done-badge">✓ Gesendet</span>
-							{/if}
-						</div>
-					</div>
-				{/if}
+			{#if isInquiry && steps.includes('invoice')}
+				{@const prevDone = !steps.includes('complete') || isStepDone(job, 'complete')}
+				{#snippet invoiceActions()}
+					<Button size="sm" variant="solid" disabled={!prevDone} onclick={() => openInvoiceModal(job)}>Rechnung →</Button>
+				{/snippet}
+				{@render step(Receipt, 'Rechnung vorbereiten & senden', isStepDone(job, 'invoice'), !prevDone, 'Gesendet', invoiceActions)}
+			{/if}
 
-				<!-- Step: Review request (inquiries only) -->
-				{#if isInquiry && steps.includes('review')}
-					{@const prevDone = !steps.includes('invoice') || isStepDone(job, 'invoice')}
-					<div class="mw-step" class:done={isStepDone(job, 'review')} class:locked={!prevDone}>
-						<div class="mw-step-icon">
-							<MessageSquare size={18} />
-						</div>
-						<div class="mw-step-body">
-							<span class="mw-step-label">Bewertungsanfrage</span>
-							{#if !isStepDone(job, 'review')}
-								<div class="mw-review-row">
-									<button class="btn btn-primary btn-sm" disabled={sendingStep || !prevDone} onclick={() => doReviewAction(job, 'now')}>
-										Jetzt
-									</button>
-									<button class="btn btn-sm" disabled={sendingStep || !prevDone} onclick={() => doReviewAction(job, 'later')}>
-										In <input type="number" class="mw-days-input" min="1" max="30" bind:value={reviewDays} onclick={(e) => e.stopPropagation()} /> Tagen
-									</button>
-									<button class="btn btn-sm mw-skip-btn" disabled={sendingStep || !prevDone} onclick={() => doReviewAction(job, 'skip')}>
-										Nicht
-									</button>
-								</div>
-							{:else}
-								<span class="mw-done-badge">✓ Erledigt</span>
-							{/if}
-						</div>
-					</div>
-				{/if}
-			</div>
-
-			<div class="mw-footer">
-				<button class="btn btn-sm mw-skip-job" onclick={nextJob}>
-					{allStepsDone(job) ? (morningIndex < morningJobs.length - 1 ? 'Nächster →' : 'Fertig ✓') : 'Überspringen →'}
-				</button>
-			</div>
+			{#if isInquiry && steps.includes('review')}
+				{@const prevDone = !steps.includes('invoice') || isStepDone(job, 'invoice')}
+				{#snippet reviewActions()}
+					<span class="flex flex-wrap items-center gap-1.5">
+						<Button size="sm" variant="solid" disabled={sendingStep || !prevDone} onclick={() => doReviewAction(job, 'now')}>Jetzt</Button>
+						<Button size="sm" disabled={sendingStep || !prevDone} onclick={() => doReviewAction(job, 'later')}>
+							In
+							<input
+								type="number"
+								aria-label="Tage"
+								class="num h-6 w-10 rounded-xs border border-line-strong bg-panel text-center text-xs outline-none"
+								min="1"
+								max="30"
+								bind:value={reviewDays}
+								onclick={(e) => e.stopPropagation()}
+							/>
+							Tagen
+						</Button>
+						<Button size="sm" variant="ghost" disabled={sendingStep || !prevDone} onclick={() => doReviewAction(job, 'skip')}>Nicht</Button>
+					</span>
+				{/snippet}
+				{@render step(MessageSquare, 'Bewertungsanfrage', isStepDone(job, 'review'), !prevDone, 'Erledigt', reviewActions)}
+			{/if}
 		</div>
-	</div>
+		{#snippet footer()}
+			<Button variant={allStepsDone(job) ? 'accent' : 'ghost'} onclick={nextJob}>
+				{allStepsDone(job) ? (morningIndex < morningJobs.length - 1 ? 'Nächster →' : 'Fertig ✓') : 'Überspringen →'}
+			</Button>
+		{/snippet}
+	</Modal>
 {/if}
 
 {#if invoiceModalJob && invoiceModalJob.kind === 'inquiry'}
@@ -280,204 +252,6 @@
 		customerName={invoiceModalJob.data.customer_name}
 		offerPriceCents={invoiceModalJob.data.offer_price_cents}
 		onSent={onInvoiceSent}
-		onClose={() => invoiceModalJob = null}
+		onClose={() => (invoiceModalJob = null)}
 	/>
 {/if}
-
-<style>
-	.mw-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
-
-	.mw-dialog {
-		background: var(--dt-surface);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.75rem;
-		width: min(520px, calc(100vw - 2rem));
-		box-shadow: var(--dt-shadow-lg, 0 8px 32px rgba(0,0,0,.2));
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
-
-	.mw-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-	}
-
-	.mw-greeting {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		font-weight: 500;
-	}
-
-	.mw-header-right {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.mw-counter {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.mw-close {
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: var(--dt-on-surface-variant);
-		font-size: 1rem;
-		line-height: 1;
-		padding: 0.125rem 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-
-	.mw-close:hover {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-	}
-
-	.mw-job-title {
-		font-size: 1rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.mw-tag {
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		background: var(--dt-secondary-container);
-		color: var(--dt-on-secondary-container);
-		padding: 0.1rem 0.4rem;
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.mw-steps {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.mw-step {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.75rem;
-		padding: 0.875rem 1rem;
-		border-radius: var(--dt-radius-md);
-		background: var(--dt-surface-container-low);
-		transition: opacity var(--dt-transition);
-	}
-
-	.mw-step.done {
-		opacity: 0.55;
-	}
-
-	.mw-step.locked {
-		opacity: 0.35;
-		pointer-events: none;
-	}
-
-	.mw-step-icon {
-		color: var(--dt-primary);
-		flex-shrink: 0;
-		padding-top: 0.125rem;
-	}
-
-	.mw-step.done .mw-step-icon {
-		color: #34d399;
-	}
-
-	.mw-step-body {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.mw-step-label {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--dt-on-surface);
-	}
-
-	.mw-done-badge {
-		font-size: 0.8125rem;
-		color: #34d399;
-		font-weight: 600;
-	}
-
-	.mw-review-row {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		flex-wrap: wrap;
-	}
-
-	.mw-days-input {
-		width: 3rem;
-		padding: 0 0.25rem;
-		background: var(--dt-surface-container-high);
-		border: 1px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		text-align: center;
-		outline: none;
-	}
-
-	.mw-skip-btn {
-		color: var(--dt-on-surface-variant);
-	}
-
-	.mw-footer {
-		display: flex;
-		justify-content: flex-end;
-		padding-top: 0.25rem;
-		border-top: 1px solid var(--dt-outline-variant);
-	}
-
-	.mw-skip-job {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem;
-	}
-
-	@media (max-width: 768px) {
-		.mw-overlay {
-			align-items: flex-end;
-			padding: 0;
-		}
-
-		.mw-dialog {
-			width: 100%;
-			max-width: 100%;
-			max-height: 92vh;
-			border-radius: var(--dt-radius-lg) var(--dt-radius-lg) 0 0;
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		.mw-footer {
-			position: sticky;
-			bottom: 0;
-			background: var(--dt-surface);
-			padding-top: 0.75rem;
-		}
-
-		.btn { min-height: 44px; }
-	}
-</style>

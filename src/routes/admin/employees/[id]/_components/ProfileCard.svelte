@@ -1,4 +1,10 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { apiPatch, formatDate } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { Save } from 'lucide-svelte';
@@ -76,89 +82,27 @@
 	}
 </script>
 
-<!-- Profile Card -->
-<div class="card">
-	<div class="card-header">
-		<h2>Profil</h2>
-		<button class="btn btn-primary" onclick={handleSave} disabled={saving}>
-			<Save size={16} />
-			{saving ? 'Speichern...' : 'Speichern'}
-		</button>
-	</div>
-	<div class="form-grid">
-		<div class="field">
-			<label for="edit-sal">Anrede</label>
-			<select id="edit-sal" bind:value={editSalutation}>
+<Panel title="Profil">
+	{#snippet actions()}
+		<Button size="sm" variant="solid" onclick={handleSave} disabled={saving}><Save size={14} /> {saving ? 'Speichern …' : 'Speichern'}</Button>
+	{/snippet}
+	<div class="grid grid-cols-2 gap-3">
+		<Field label="Anrede" for="edit-sal">
+			<Select id="edit-sal" bind:value={editSalutation}>
 				<option value="">—</option>
 				<option value="Herr">Herr</option>
 				<option value="Frau">Frau</option>
 				<option value="D">Divers</option>
-			</select>
-		</div>
-		<div class="field">
-			<label for="edit-target">Monatsstunden</label>
-			<input id="edit-target" type="number" step="0.5" bind:value={editTarget} />
-		</div>
-		<div class="field">
-			<label for="edit-fn">Vorname</label>
-			<input id="edit-fn" type="text" bind:value={editFirstName} />
-		</div>
-		<div class="field">
-			<label for="edit-ln">Nachname</label>
-			<input id="edit-ln" type="text" bind:value={editLastName} />
-		</div>
-		<div class="field">
-			<label for="edit-email">E-Mail</label>
-			<input id="edit-email" type="email" bind:value={editEmail} />
-		</div>
-		<div class="field">
-			<label for="edit-phone">Telefon</label>
-			<input id="edit-phone" type="text" bind:value={editPhone} />
-		</div>
+			</Select>
+		</Field>
+		<Field label="Monatsstunden" for="edit-target"><Input id="edit-target" class="num" type="number" step="0.5" bind:value={editTarget} /></Field>
+		<Field label="Vorname" for="edit-fn"><Input id="edit-fn" bind:value={editFirstName} /></Field>
+		<Field label="Nachname" for="edit-ln"><Input id="edit-ln" bind:value={editLastName} /></Field>
+		<Field label="E-Mail" for="edit-email"><Input id="edit-email" type="email" bind:value={editEmail} /></Field>
+		<Field label="Telefon" for="edit-phone"><Input id="edit-phone" bind:value={editPhone} /></Field>
 	</div>
-	<div class="meta-info">
-		<span>Erstellt: {formatDate(employee.created_at)}</span>
-		<span>Status: {employee.active ? 'Aktiv' : 'Inaktiv'}</span>
+	<div class="mt-4 flex items-center gap-3 border-t border-line pt-3 text-xs text-faint">
+		<span class="num">Erstellt {formatDate(employee.created_at)}</span>
+		<Badge tone={employee.active ? 'ok' : 'neutral'}>{employee.active ? 'Aktiv' : 'Inaktiv'}</Badge>
 	</div>
-</div>
-
-<style>
-	.card {
-		padding: 1.25rem;
-		box-shadow: none;
-	}
-
-	.card-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
-	}
-
-	.card-header h2 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.field input,
-	.field select {
-		padding: 0.5rem;
-	}
-
-	.meta-info {
-		display: flex;
-		gap: 1.5rem;
-		margin-top: 1rem;
-		padding-top: 0.75rem;
-		background: var(--dt-surface-container-low);
-		margin-left: -1.25rem;
-		margin-right: -1.25rem;
-		margin-bottom: -1.25rem;
-		padding: 0.75rem 1.25rem;
-		border-radius: 0 0 var(--dt-radius-lg) var(--dt-radius-lg);
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-</style>
+</Panel>

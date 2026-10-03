@@ -1,7 +1,14 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import KeyValue from '$lib/components/ui/KeyValue.svelte';
 	import { apiPatch } from "$lib/utils/api.svelte";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
-	import { ChevronRight, Pencil } from "lucide-svelte";
+	import { Pencil } from "lucide-svelte";
 
 	interface AddressSnapshot {
 		street: string;
@@ -180,352 +187,139 @@
 	}
 </script>
 
-<!-- Customer -->
-<div class="card" class:card--collapsed={!customerOpen}>
-	<div class="card-header card-header--toggleable">
-		<button class="card-toggle" onclick={onToggleCustomer} aria-expanded={customerOpen}>
-			<span class="card-toggle-chev" class:open={customerOpen}><ChevronRight size={16} /></span>
-			<h3>Kunde</h3>
-		</button>
-		{#if !editingCustomer && customerOpen}
-			<button class="btn btn-sm" onclick={startEditCustomer}>
-				<Pencil size={14} />
-				Bearbeiten
-			</button>
+<Panel title="Kunde" open={customerOpen} onToggle={onToggleCustomer}>
+	{#snippet actions()}
+		{#if !editingCustomer}
+			<Button size="sm" variant="ghost" onclick={startEditCustomer}><Pencil size={14} /> Bearbeiten</Button>
 		{/if}
-	</div>
-	{#if customerOpen}
+	{/snippet}
 	{#if editingCustomer}
-		<div class="form-grid">
-			<div class="field">
-				<label for="cust-type">Kundentyp</label>
-				<select id="cust-type" bind:value={editCustomer.customer_type}>
+		<div class="grid grid-cols-2 gap-3">
+			<Field label="Kundentyp" for="cust-type">
+				<Select id="cust-type" bind:value={editCustomer.customer_type}>
 					<option value={null}>–</option>
 					<option value="private">Privat</option>
 					<option value="business">Gewerbe</option>
-				</select>
-			</div>
-			<div class="field">
-				<label for="cust-company">Firma</label>
-				<input id="cust-company" type="text" bind:value={editCustomer.company_name} placeholder="{editCustomer.customer_type === 'business' ? 'Firmenname' : 'optional'}" />
-			</div>
-			<div class="field">
-				<label for="cust-salutation">Anrede</label>
-				<select id="cust-salutation" bind:value={editCustomer.salutation}>
+				</Select>
+			</Field>
+			<Field label="Firma" for="cust-company">
+				<Input
+					id="cust-company"
+					bind:value={editCustomer.company_name}
+					placeholder={editCustomer.customer_type === 'business' ? 'Firmenname' : 'optional'}
+				/>
+			</Field>
+			<Field label="Anrede" for="cust-salutation" class="col-span-2 sm:col-span-1">
+				<Select id="cust-salutation" bind:value={editCustomer.salutation}>
 					<option value="">–</option>
 					<option value="Herr">Herr</option>
 					<option value="Frau">Frau</option>
 					<option value="D">Divers</option>
-				</select>
-			</div>
-			<div class="field">
-				<label for="cust-first-name">Vorname</label>
-				<input id="cust-first-name" type="text" bind:value={editCustomer.first_name} />
-			</div>
-			<div class="field">
-				<label for="cust-last-name">Nachname</label>
-				<input id="cust-last-name" type="text" bind:value={editCustomer.last_name} />
-			</div>
-			<div class="field full-width">
-				<label for="cust-email">E-Mail</label>
-				<input id="cust-email" type="email" bind:value={editCustomer.email} />
-			</div>
-			<div class="field full-width">
-				<label for="cust-phone">Telefon</label>
-				<input id="cust-phone" type="tel" bind:value={editCustomer.phone} />
-			</div>
-			<div class="field-actions full-width">
-				<button class="btn btn-primary btn-sm" onclick={saveCustomer}>Speichern</button>
-				<button class="btn btn-sm" onclick={() => (editingCustomer = false)}>Abbrechen</button>
+				</Select>
+			</Field>
+			<span class="hidden sm:block"></span>
+			<Field label="Vorname" for="cust-first-name"><Input id="cust-first-name" bind:value={editCustomer.first_name} /></Field>
+			<Field label="Nachname" for="cust-last-name"><Input id="cust-last-name" bind:value={editCustomer.last_name} /></Field>
+			<Field label="E-Mail" for="cust-email" class="col-span-2">
+				<Input id="cust-email" type="email" bind:value={editCustomer.email} />
+			</Field>
+			<Field label="Telefon" for="cust-phone" class="col-span-2">
+				<Input id="cust-phone" type="tel" bind:value={editCustomer.phone} />
+			</Field>
+			<div class="col-span-2 flex gap-2">
+				<Button size="sm" variant="solid" onclick={saveCustomer}>Speichern</Button>
+				<Button size="sm" onclick={() => (editingCustomer = false)}>Abbrechen</Button>
 			</div>
 		</div>
 	{:else}
-		<div class="info-grid">
-			<div class="info-item">
-				<span class="info-label">Name</span>
-				<span class="info-value name-with-salutation">
-					{#if customer?.customer_type === 'business'}
-						<span class="cust-type-badge" data-type="business">Gewerbe</span>
-					{:else}
-						<span class="cust-type-badge" data-type="private">Privat</span>
-					{/if}
+		<dl class="-my-1.5">
+			<KeyValue label="Name">
+				<span class="inline-flex flex-wrap items-center gap-1.5">
+					<Badge>{customer?.customer_type === 'business' ? 'Gewerbe' : 'Privat'}</Badge>
 					{#if customer?.salutation}
-						<span class="salutation-badge">{customer.salutation === "D" ? "Divers" : customer.salutation}</span>
+						<span class="text-muted">{customer.salutation === 'D' ? 'Divers' : customer.salutation}</span>
 					{/if}
-					{customer?.first_name && customer?.last_name
-						? `${customer.first_name} ${customer.last_name}`
-						: (customer?.last_name ?? customer?.name ?? "—")}
+					<span class="font-medium">
+						{customer?.first_name && customer?.last_name
+							? `${customer.first_name} ${customer.last_name}`
+							: (customer?.last_name ?? customer?.name ?? '—')}
+					</span>
 				</span>
-			</div>
+			</KeyValue>
 			{#if customer?.company_name}
-				<div class="info-item">
-					<span class="info-label">Firma</span>
-					<span class="info-value">{customer.company_name}</span>
-				</div>
+				<KeyValue label="Firma">{customer.company_name}</KeyValue>
 			{/if}
-			<div class="info-item">
-				<span class="info-label">E-Mail</span>
-				<span class="info-value">{customer?.email}</span>
-			</div>
+			<KeyValue label="E-Mail">
+				{#if customer?.email}<a class="hover:underline" href="mailto:{customer.email}">{customer.email}</a>{:else}—{/if}
+			</KeyValue>
 			{#if customer?.phone}
-				<div class="info-item">
-					<span class="info-label">Telefon</span>
-					<span class="info-value">{customer?.phone}</span>
-				</div>
+				<KeyValue label="Telefon"><a class="num hover:underline" href="tel:{customer.phone}">{customer.phone}</a></KeyValue>
 			{/if}
-		</div>
+		</dl>
 	{/if}
-	{/if}
-</div>
+</Panel>
 
 {#if recipient}
-	<div class="card" class:card--collapsed={!recipientOpen}>
-		<div class="card-header card-header--toggleable">
-			<button class="card-toggle" onclick={onToggleRecipient} aria-expanded={recipientOpen}>
-				<span class="card-toggle-chev" class:open={recipientOpen}><ChevronRight size={16} /></span>
-				<h3>Leistungsempfänger</h3>
-			</button>
-		</div>
-		{#if recipientOpen}
-		<div class="info-grid">
-			<div class="info-item">
-				<span class="info-label">Name</span>
-				<span class="info-value">
-					{#if recipient.salutation}
-						<span class="salutation-badge">{recipient.salutation === "D" ? "Divers" : recipient.salutation}</span>
-					{/if}
-					{recipient.first_name && recipient.last_name
-						? `${recipient.first_name} ${recipient.last_name}`
-						: (recipient.last_name ?? "—")}
-				</span>
-			</div>
-			<div class="info-item">
-				<span class="info-label">E-Mail</span>
-				<span class="info-value">{recipient.email ?? "—"}</span>
-			</div>
+	<Panel title="Leistungsempfänger" open={recipientOpen} onToggle={onToggleRecipient}>
+		<dl class="-my-1.5">
+			<KeyValue label="Name">
+				{#if recipient.salutation}
+					<span class="mr-1 text-muted">{recipient.salutation === 'D' ? 'Divers' : recipient.salutation}</span>
+				{/if}
+				{recipient.first_name && recipient.last_name
+					? `${recipient.first_name} ${recipient.last_name}`
+					: (recipient.last_name ?? '—')}
+			</KeyValue>
+			<KeyValue label="E-Mail">{recipient.email ?? '—'}</KeyValue>
 			{#if recipient.phone}
-				<div class="info-item">
-					<span class="info-label">Telefon</span>
-					<span class="info-value">{recipient.phone}</span>
-				</div>
+				<KeyValue label="Telefon"><a class="num hover:underline" href="tel:{recipient.phone}">{recipient.phone}</a></KeyValue>
 			{/if}
-		</div>
-		{/if}
-	</div>
+		</dl>
+	</Panel>
 {/if}
 
-<!-- Billing Address -->
-<div class="card card--compact" class:card--collapsed={!billingOpen}>
-	<div class="card-header card-header--action card-header--toggleable">
-		<button class="card-toggle" onclick={onToggleBilling} aria-expanded={billingOpen}>
-			<span class="card-toggle-chev" class:open={billingOpen}><ChevronRight size={16} /></span>
-			<h3>Rechnungsadresse</h3>
-		</button>
-		{#if billingOpen}
-			<button class="btn-edit" onclick={() => billingEditing = !billingEditing}>
-				{billingEditing ? 'Schließen' : 'Bearbeiten'}
-			</button>
-		{/if}
-	</div>
-
-	{#if billingOpen}
+<Panel title="Rechnungsadresse" open={billingOpen} onToggle={onToggleBilling}>
+	{#snippet actions()}
+		<Button size="sm" variant="ghost" onclick={() => (billingEditing = !billingEditing)}>
+			{billingEditing ? 'Schließen' : 'Bearbeiten'}
+		</Button>
+	{/snippet}
 	{#if effectiveBillingAddress}
-		<div class="billing-addr-display">
+		<div class="text-sm leading-relaxed">
 			<div>{effectiveBillingAddress.street ?? ''} {effectiveBillingAddress.house_number ?? ''}</div>
 			<div>{effectiveBillingAddress.postal_code ?? ''} {effectiveBillingAddress.city ?? ''}</div>
-			{#if !billingAddress}
-				<div class="billing-addr-source">
+			<div class="mt-1 text-xs text-faint">
+				{#if !billingAddress}
 					{inquiryStatus === 'completed' || inquiryStatus === 'invoiced' || inquiryStatus === 'paid'
 						? 'Einzugsadresse (Standard nach Umzug)'
 						: 'Auszugsadresse (Standard)'}
-				</div>
-			{:else}
-				<div class="billing-addr-source">Abweichende Rechnungsadresse</div>
-			{/if}
+				{:else}
+					Abweichende Rechnungsadresse
+				{/if}
+			</div>
 		</div>
 	{:else}
-		<p class="billing-addr-hint">Keine Adresse verfügbar.</p>
+		<p class="text-sm text-muted">Keine Adresse verfügbar.</p>
 	{/if}
 
 	{#if billingEditing}
-		<div class="billing-addr-form">
-			<div class="billing-addr-row">
-				<input type="text" placeholder="Strasse" bind:value={billingStreet} class="form-input billing-input--street" />
-				<input type="text" placeholder="Nr." bind:value={billingNumber} class="form-input billing-input--nr" />
+		<div class="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+			<div class="grid grid-cols-[minmax(0,1fr)_80px] gap-2">
+				<Input placeholder="Straße" bind:value={billingStreet} />
+				<Input placeholder="Nr." bind:value={billingNumber} />
 			</div>
-			<div class="billing-addr-row">
-				<input type="text" placeholder="PLZ" bind:value={billingPostal} class="form-input billing-input--plz" />
-				<input type="text" placeholder="Ort" bind:value={billingCity} class="form-input billing-input--city" />
+			<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+				<Input placeholder="PLZ" bind:value={billingPostal} />
+				<Input placeholder="Ort" bind:value={billingCity} />
 			</div>
-			<div class="billing-addr-actions">
-				<button class="btn btn-primary btn-sm" onclick={saveBillingAddress} disabled={billingSaving}>
-					{billingSaving ? 'Speichert…' : 'Speichern'}
-				</button>
+			<div class="flex gap-2">
+				<Button size="sm" variant="solid" onclick={saveBillingAddress} disabled={billingSaving}>
+					{billingSaving ? 'Speichert …' : 'Speichern'}
+				</Button>
 				{#if billingAddress}
-					<button class="btn btn-sm btn-tertiary" onclick={clearBillingAddress} disabled={billingSaving}>
-						Zurücksetzen
-					</button>
+					<Button size="sm" variant="ghost" onclick={clearBillingAddress} disabled={billingSaving}>Zurücksetzen</Button>
 				{/if}
 			</div>
 		</div>
 	{/if}
-	{/if}
-</div>
-
-<style>
-	.card--compact {
-		padding: var(--dt-space-4);
-	}
-
-	/* Billing address: display saved address */
-	.billing-addr-display {
-		padding: var(--dt-space-3) var(--dt-space-4);
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-md);
-		font-size: 0.9375rem;
-		color: var(--dt-on-surface);
-		line-height: 1.5;
-		margin-bottom: var(--dt-space-3);
-	}
-	.billing-addr-source {
-		margin-top: var(--dt-space-2);
-		font-size: 0.75rem;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.billing-addr-hint {
-		font-size: 0.78rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-		font-style: italic;
-	}
-
-	.billing-addr-form {
-		margin-top: 0.75rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.billing-addr-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.billing-addr-actions {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	/* Billing address input sizing — replaces inline flex styles */
-	.billing-input--street { flex: 2; }
-	.billing-input--nr     { flex: 0 0 80px; }
-	.billing-input--plz    { flex: 0 0 100px; }
-	.billing-input--city   { flex: 2; }
-
-	/* Tertiary button — amber text-only per design spec */
-	.btn-tertiary {
-		background: none;
-		border: none;
-		color: var(--dt-secondary);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		padding: 0.375rem 0.625rem;
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn-tertiary:hover:not(:disabled) {
-		background: var(--dt-surface-container-low);
-	}
-
-	.btn-tertiary:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.info-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.info-item {
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
-	.info-label {
-		font-size: 0.6875rem;
-		color: var(--dt-on-surface-variant);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.info-value {
-		font-size: 0.9375rem;
-		color: var(--dt-on-surface);
-	}
-
-	.name-with-salutation {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		flex-wrap: wrap;
-	}
-
-	.salutation-badge {
-		display: inline-block;
-		padding: 0.1rem 0.45rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.75rem;
-		font-weight: 600;
-		background: var(--dt-surface-container);
-		color: var(--dt-primary);
-		letter-spacing: 0.03em;
-	}
-
-	.cust-type-badge {
-		display: inline-block;
-		padding: 0.1rem 0.4rem;
-		border-radius: 4px;
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		margin-right: 0.35rem;
-		vertical-align: middle;
-	}
-
-	.cust-type-badge[data-type="business"] {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.cust-type-badge[data-type="private"] {
-		background: #dbeafe;
-		color: #1e40af;
-	}
-
-	@media (max-width: 768px) {
-		.billing-addr-row {
-			flex-wrap: wrap;
-		}
-
-		.billing-input--nr,
-		.billing-input--plz {
-			flex: 1 1 45%;
-		}
-
-		.billing-input--street,
-		.billing-input--city {
-			flex: 1 1 100%;
-		}
-	}
-</style>
+</Panel>

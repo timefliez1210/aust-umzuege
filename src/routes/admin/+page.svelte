@@ -1,477 +1,187 @@
 <script lang="ts">
-	import { apiGet, apiPost } from '$lib/utils/api.svelte';
-	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { FileText, CalendarDays, Users, Star, Bell } from 'lucide-svelte';
-	import DashboardStatCards from './_components/DashboardStatCards.svelte';
-	import ConflictAlert from './_components/ConflictAlert.svelte';
-	import ActivityFeed from './_components/ActivityFeed.svelte';
+	import { apiGet } from '$lib/utils/api.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
+	import { formatEuroWhole } from '$lib/utils/format';
+	import Kpi from '$lib/components/ui/Kpi.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import SearchButton from '$lib/components/console/SearchButton.svelte';
+	import { Plus, RefreshCw } from 'lucide-svelte';
 	import MorningWorkflowDialog from './_components/MorningWorkflowDialog.svelte';
-
-	interface ConflictDate {
-		date: string;
-		booked: number;
-		capacity: number;
-	}
-
-	interface ActivityItem {
-		type: string;
-		description: string;
-		created_at: string;
-		id: string | null;
-		status: string | null;
-	}
-
-	interface ReviewReminder {
-		inquiry_id: string;
-		remind_after: string;
-		customer_name: string | null;
-		customer_email: string | null;
-	}
-
-	interface InvoiceReminder {
-		id: string;
-		invoice_id: string;
-		inquiry_id: string;
-		invoice_number: string;
-		level: number;
-		remind_after: string;
-		customer_name: string | null;
-		customer_email: string | null;
-	}
-
-	interface DashboardData {
-		open_quotes: number;
-		pending_offers: number;
-		todays_bookings: number;
-		total_customers: number;
-		recent_activity: ActivityItem[];
-		conflict_dates: ConflictDate[];
-		pending_review_count: number;
-	}
-
-	let reviewReminders = $state<ReviewReminder[]>([]);
-
-	async function loadReviewReminders() {
-		try {
-			reviewReminders = await apiGet<ReviewReminder[]>('/api/v1/admin/review-reminders');
-		} catch {
-			reviewReminders = [];
-		}
-	}
-
-	// --- Invoice reminder state ---
-
-	let invoiceReminders = $state<InvoiceReminder[]>([]);
-	let invoiceSnoozedays = $state<Record<string, number>>({});
-	let invoiceReminderSending = $state<Record<string, boolean>>({});
-
-	const DUNNING_LABELS: Record<number, string> = {
-		1: 'Zahlungserinnerung',
-		2: '1. Mahnung',
-		3: '2. Mahnung',
-	};
-
-	async function loadInvoiceReminders() {
-		try {
-			invoiceReminders = await apiGet<InvoiceReminder[]>('/api/v1/admin/invoice-reminders');
-			// Seed default snooze days
-			for (const r of invoiceReminders) {
-				if (!(r.id in invoiceSnoozedays)) {
-					invoiceSnoozedays[r.id] = 7;
-				}
-			}
-		} catch {
-			invoiceReminders = [];
-		}
-	}
-
-	async function doInvoiceAction(id: string, action: 'send' | 'later' | 'paid') {
-		if (invoiceReminderSending[id]) return;
-		invoiceReminderSending[id] = true;
-		try {
-			const body: Record<string, unknown> = { action };
-			if (action === 'later') body.days = invoiceSnoozedays[id] ?? 7;
-			await apiPost(`/api/v1/admin/invoice-reminders/${id}/action`, body);
-			await loadInvoiceReminders();
-			if (action === 'send') showToast('Mahnung gesendet', 'success');
-			else if (action === 'later') showToast('Erinnerung verschoben', 'success');
-			else showToast('Als bezahlt markiert', 'success');
-		} catch (e) {
-			showToast((e as Error).message ?? 'Fehler', 'error');
-		} finally {
-			invoiceReminderSending[id] = false;
-		}
-	}
-
-	async function sendReviewNow(inquiryId: string) {
-		try {
-			await apiPost(`/api/v1/admin/inquiries/${inquiryId}/review-request`, { action: 'now' });
-			showToast('Bewertungsanfrage gesendet', 'success');
-			await loadReviewReminders();
-			if (data) data.pending_review_count = reviewReminders.length;
-		} catch (e) {
-			showToast((e as Error).message ?? 'Fehler', 'error');
-		}
-	}
-
-	let data = $state<DashboardData | null>(null);
-	let error = $state<string | null>(null);
-
-	$effect(() => {
-		loadDashboard();
-		loadReviewReminders();
-		loadInvoiceReminders();
-	});
+	import TodoCard from './_overview/TodoCard.svelte';
+	import JobsCard from './_overview/JobsCard.svelte';
+	import RevenueChart from './_overview/RevenueChart.svelte';
+	import FunnelCard from './_overview/FunnelCard.svelte';
+	import CapacityCard from './_overview/CapacityCard.svelte';
+	import ReceivablesCard from './_overview/ReceivablesCard.svelte';
+	import RemindersCard from './_overview/RemindersCard.svelte';
+	import { buildTodos } from './_overview/todos';
+	import type { Overview } from './_overview/types';
 
 	/**
-	 * Fetches summary KPI data for the admin dashboard from the API.
-	 *
-	 * Called by: $effect (on mount)
-	 * Purpose: Populates the four stat cards (open quotes, pending offers, today's bookings,
-	 *          total customers), the recent activity feed, and the conflict-date alert list.
-	 *          Falls back to zeroed-out mock data on error so the page still renders.
-	 *
-	 * @returns void
+	 * Heute — the console's home: what needs doing, who is out today, and how the
+	 * business is going. One request (`/admin/overview`); every number repeats a
+	 * figure from the page it links to.
 	 */
-	async function loadDashboard() {
+	let data = $state<Overview | null>(null);
+	let error = $state<string | null>(null);
+	let loading = $state(false);
+
+	async function load() {
+		loading = true;
 		try {
-			data = await apiGet<DashboardData>('/api/v1/admin/dashboard');
+			data = await apiGet<Overview>('/api/v1/admin/overview');
+			error = null;
 		} catch (e) {
 			error = (e as Error).message;
-			// Fallback mock data for development
-			data = {
-				open_quotes: 0,
-				pending_offers: 0,
-				todays_bookings: 0,
-				total_customers: 0,
-				recent_activity: [],
-				conflict_dates: [],
-				pending_review_count: 0
-			};
+		} finally {
+			loading = false;
 		}
 	}
 
-	const statCards = $derived(
-		data
-			? [
-					{ label: 'Offene Anfragen', value: data.open_quotes, icon: FileText, color: '#3b82f6', href: '/admin/inquiries' },
-					{ label: 'Ausstehende Angebote', value: data.pending_offers, icon: FileText, color: '#f59e0b', href: '/admin/inquiries?status=offer_ready' },
-					{ label: 'Heutige Buchungen', value: data.todays_bookings, icon: CalendarDays, color: '#22c55e', href: '/admin/calendar' },
-					{ label: 'Kunden gesamt', value: data.total_customers, icon: Users, color: '#a855f7', href: '/admin/customers' }
-				]
-			: []
-	);
+	$effect(() => {
+		load();
+	});
+
+	const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+	const dateLine = $derived.by(() => {
+		const d = data ? new Date(`${data.today}T12:00:00`) : new Date();
+		const kw = (() => {
+			const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+			t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+			return Math.ceil(((t.getTime() - Date.UTC(t.getUTCFullYear(), 0, 1)) / 86_400_000 + 1) / 7);
+		})();
+		return `${d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' })} · KW ${kw}`;
+	});
+
+	const greeting = $derived.by(() => {
+		const h = new Date().getHours();
+		const first = auth.user?.name?.split(/\s+/)[0];
+		const word = h < 11 ? 'Guten Morgen' : h < 18 ? 'Hallo' : 'Guten Abend';
+		return first ? `${word}, ${first}` : word;
+	});
+
+	const todos = $derived(data ? buildTodos(data) : []);
+
+	/** KPI row. Revenue is the last *complete* month — the current one has barely started. */
+	const kpis = $derived.by(() => {
+		if (!data) return [];
+		const rev = data.revenue;
+		const last = rev.at(-2);
+		const prev = rev.at(-3);
+		const monthLabel = last ? MONTHS[Number(last.month.slice(5, 7)) - 1] : '';
+		const tiles = [];
+
+		if (last) {
+			const change = prev && prev.revenue_cents > 0 ? (last.revenue_cents - prev.revenue_cents) / prev.revenue_cents : null;
+			tiles.push({
+				label: `Umsatz · ${monthLabel}`,
+				value: formatEuroWhole(last.revenue_cents),
+				delta: change === null ? undefined : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change * 100))} %`,
+				deltaTone: (change === null ? 'neutral' : change >= 0 ? 'ok' : 'danger') as 'ok' | 'danger' | 'neutral',
+				sub: prev ? `ggü. ${MONTHS[Number(prev.month.slice(5, 7)) - 1]}` : undefined,
+				spark: rev.map((m) => m.revenue_cents),
+				href: '/admin/rechnungsausgangsbuch'
+			});
+		}
+		if (last && last.result_cents !== null) {
+			const margin = last.revenue_cents > 0 ? Math.round((last.result_cents / last.revenue_cents) * 100) : null;
+			tiles.push({
+				label: `Ergebnis · ${monthLabel}`,
+				value: formatEuroWhole(last.result_cents),
+				delta: margin === null ? undefined : `${margin} %`,
+				deltaTone: (last.result_cents < 0 ? 'danger' : 'neutral') as 'danger' | 'neutral',
+				sub: 'vom Umsatz',
+				spark: rev.map((m) => m.result_cents ?? 0),
+				sparkClass: 'text-accent',
+				href: '/admin/gewinn'
+			});
+		} else {
+			tiles.push({
+				label: 'Einsätze heute & morgen',
+				value: String(data.jobs.length),
+				sub: `${data.attention.unstaffed.length} ohne Team`,
+				href: '/admin/calendar'
+			});
+		}
+		tiles.push({
+			label: 'Offene Angebote',
+			value: String(data.pipeline.open_count),
+			delta: formatEuroWhole(data.pipeline.open_netto_cents),
+			deltaTone: 'neutral' as const,
+			sub: 'netto, Umzug noch offen',
+			href: '/admin/kva-buch'
+		});
+		const wr = data.pipeline.win_rate;
+		const wp = data.pipeline.win_rate_previous;
+		const pts = wr !== null && wp !== null ? Math.round((wr - wp) * 100) : null;
+		tiles.push({
+			label: 'Annahmequote · 90 T',
+			value: wr === null ? '—' : `${Math.round(wr * 100)} %`,
+			delta: pts === null ? undefined : `${pts >= 0 ? '▲' : '▼'} ${Math.abs(pts)} Pkt.`,
+			deltaTone: (pts === null ? 'neutral' : pts >= 0 ? 'ok' : 'danger') as 'ok' | 'danger' | 'neutral',
+			sub: pts === null ? 'entschiedene KVAs' : 'ggü. Vorquartal',
+			spark: data.pipeline.win_rate_trend.map((v) => v ?? 0),
+			href: '/admin/kva-buch'
+		});
+		return tiles;
+	});
 </script>
 
-<div class="dashboard">
-	<div class="page-header">
-		<h1>Dashboard</h1>
-	</div>
+<svelte:head><title>Heute</title></svelte:head>
+
+<div class="flex flex-col gap-3.5">
+	<header class="flex flex-wrap items-end justify-between gap-4 pb-2">
+		<div class="flex flex-col gap-1.5">
+			<span class="label-xs text-faint">{dateLine}</span>
+			<h1 class="text-[28px] leading-none font-semibold tracking-[-0.03em] sm:text-[34px]">{greeting}</h1>
+		</div>
+		<div class="flex items-center gap-2">
+			<SearchButton class="hidden lg:flex" />
+			<Button variant="ghost" size="icon" aria-label="Aktualisieren" onclick={load} disabled={loading}>
+				<RefreshCw size={16} class={loading ? 'animate-spin' : ''} />
+			</Button>
+			<Button variant="accent" href="/admin/inquiries?neu=1"><Plus size={16} strokeWidth={2.2} /> Neue Anfrage</Button>
+		</div>
+	</header>
 
 	{#if error}
-		<div class="error-banner">{error}</div>
-	{/if}
-
-	<DashboardStatCards cards={statCards} />
-
-	{#if data && data.conflict_dates && data.conflict_dates.length > 0}
-		<ConflictAlert conflicts={data.conflict_dates} />
-	{/if}
-
-	{#if reviewReminders.length > 0}
-		<div class="section-card review-card">
-			<div class="section-header">
-				<h2><Star size={16} /> Bewertungsanfragen fällig ({reviewReminders.length})</h2>
-			</div>
-			<div class="review-list">
-				{#each reviewReminders as r}
-					<div class="review-item">
-						<div class="review-info">
-							<a href="/admin/inquiries/{r.inquiry_id}" class="review-name">
-								{r.customer_name ?? 'Unbekannt'}
-							</a>
-							<span class="review-date">fällig seit {new Date(r.remind_after).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>
-						</div>
-						<button class="btn btn-sm btn-primary" onclick={() => sendReviewNow(r.inquiry_id)}>
-							Jetzt senden
-						</button>
-					</div>
-				{/each}
-			</div>
+		<div class="rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+			Übersicht konnte nicht geladen werden: {error}
 		</div>
 	{/if}
 
-	{#if invoiceReminders.length > 0}
-		<div class="section-card invoice-reminder-card">
-			<div class="section-header invoice-reminder-header">
-				<h2><Bell size={16} /> Rechnungserinnerungen fällig ({invoiceReminders.length})</h2>
+	{#if !data}
+		{#if !error}
+			<div class="grid grid-cols-2 gap-3.5 lg:grid-cols-4" aria-busy="true">
+				{#each Array(4) as _, i (i)}<div class="h-[118px] animate-pulse rounded-md bg-sunk"></div>{/each}
 			</div>
-			<div class="ir-list">
-				{#each invoiceReminders as r}
-					{@const label = DUNNING_LABELS[r.level] ?? `Level ${r.level}`}
-					{@const sending = invoiceReminderSending[r.id] ?? false}
-					<div class="ir-item">
-						<div class="ir-info">
-							<a href="/admin/inquiries/{r.inquiry_id}" class="ir-name">
-								{r.customer_name ?? 'Unbekannt'}
-							</a>
-							<span class="ir-meta">
-								Rechnung {r.invoice_number} ·
-								<span class="ir-level-badge" data-level={r.level}>{label}</span>
-								· fällig seit {new Date(r.remind_after).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}
-							</span>
-						</div>
-						<div class="ir-actions">
-							<button
-								class="btn btn-sm btn-primary"
-								disabled={sending}
-								onclick={() => doInvoiceAction(r.id, 'send')}
-							>
-								Mahnung schreiben
-							</button>
-							<button
-								class="btn btn-sm ir-later-btn"
-								disabled={sending}
-								onclick={() => doInvoiceAction(r.id, 'later')}
-							>
-								Später (<input
-									type="number"
-									class="ir-days-input"
-									min="1"
-									max="90"
-									bind:value={invoiceSnoozedays[r.id]}
-									onclick={(e) => e.stopPropagation()}
-								/>d)
-							</button>
-							<button
-								class="btn btn-sm ir-paid-btn"
-								disabled={sending}
-								onclick={() => doInvoiceAction(r.id, 'paid')}
-							>
-								Bezahlt
-							</button>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
+			<div class="h-80 animate-pulse rounded-md bg-sunk"></div>
+		{/if}
+	{:else}
+		<section class="grid grid-cols-2 gap-3.5 lg:grid-cols-4" aria-label="Kennzahlen">
+			{#each kpis as k (k.label)}
+				<Kpi {...k} />
+			{/each}
+		</section>
 
-	<ActivityFeed activities={data?.recent_activity ?? []} />
+		<section class="grid gap-3.5 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+			<TodoCard {todos} />
+			<JobsCard jobs={data.jobs} today={data.today} />
+		</section>
+
+		<RemindersCard onChange={load} />
+
+		<section class="grid gap-3.5 xl:grid-cols-[minmax(0,8fr)_minmax(0,4fr)]">
+			<RevenueChart months={data.revenue} />
+			<FunnelCard funnel={data.funnel} pipeline={data.pipeline} />
+		</section>
+
+		<section class="grid gap-3.5 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+			<CapacityCard days={data.capacity} today={data.today} />
+			<ReceivablesCard r={data.receivables} />
+		</section>
+	{/if}
 </div>
 
 <MorningWorkflowDialog />
-
-<style>
-	.dashboard {
-		height: 100%;
-	}
-
-	.page-header {
-		margin-bottom: 1.5rem;
-	}
-
-	.page-header h1 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		letter-spacing: -0.01em;
-		color: var(--dt-on-surface);
-	}
-
-	.error-banner {
-		background: rgba(168, 57, 0, 0.08);
-		color: var(--dt-secondary);
-		padding: 0.75rem 1rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		margin-bottom: 1rem;
-	}
-
-	.section-card {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		overflow: hidden;
-	}
-
-	.section-header {
-		padding: 1rem 1.25rem;
-		background: var(--dt-surface-container);
-	}
-
-	.section-header h2 {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.review-card {
-		margin-bottom: 1.5rem;
-	}
-
-	.review-card .section-header h2 {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: var(--dt-primary);
-	}
-
-	.review-list {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.review-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.625rem 1.25rem;
-		gap: 0.75rem;
-	}
-
-	.review-item:nth-child(even) {
-		background: var(--dt-surface-container-low);
-	}
-
-	.review-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.review-name {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--dt-on-surface);
-		text-decoration: none;
-	}
-
-	.review-name:hover {
-		text-decoration: underline;
-	}
-
-	.review-date {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	/* === Invoice reminders card === */
-
-	.invoice-reminder-card {
-		margin-bottom: 1.5rem;
-	}
-
-	.invoice-reminder-header {
-		background: rgba(234, 160, 0, 0.07);
-	}
-
-	.invoice-reminder-header h2 {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: #c97700;
-	}
-
-	.ir-list {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.ir-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1.25rem;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.ir-item:nth-child(even) {
-		background: var(--dt-surface-container-low);
-	}
-
-	.ir-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.ir-name {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--dt-on-surface);
-		text-decoration: none;
-	}
-
-	.ir-name:hover {
-		text-decoration: underline;
-	}
-
-	.ir-meta {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		flex-wrap: wrap;
-	}
-
-	.ir-level-badge {
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		padding: 0.1rem 0.4rem;
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-secondary-container);
-		color: var(--dt-on-secondary-container);
-	}
-
-	.ir-level-badge[data-level="2"],
-	.ir-level-badge[data-level="3"] {
-		background: rgba(234, 88, 12, 0.15);
-		color: #c2410c;
-	}
-
-	.ir-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-		flex-shrink: 0;
-	}
-
-	.ir-later-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.2rem;
-	}
-
-	.ir-days-input {
-		width: 2.75rem;
-		padding: 0 0.2rem;
-		background: var(--dt-surface-container-high);
-		border: 1px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		text-align: center;
-		outline: none;
-	}
-
-	.ir-paid-btn {
-		color: #16a34a;
-	}
-
-	@media (max-width: 768px) {
-		.page-header {
-			flex-wrap: wrap;
-		}
-
-		.review-item {
-			flex-wrap: wrap;
-		}
-	}
-</style>

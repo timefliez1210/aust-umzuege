@@ -90,7 +90,7 @@ describe('employee documents card', () => {
 		const user = userEvent.setup();
 		renderCard();
 
-		await user.click(screen.getByTitle('Loeschen'));
+		await user.click(screen.getByTitle('Löschen'));
 		expect(await screen.findByText(/Führungszeugnis wirklich löschen\?/)).toBeInTheDocument();
 
 		await user.click(screen.getByRole('button', { name: 'Löschen' }));

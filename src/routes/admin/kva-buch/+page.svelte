@@ -21,13 +21,20 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { formatEuro } from '$lib/utils/format';
 	import KvaMonatsUebersicht from '$lib/components/admin/KvaMonatsUebersicht.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Kpi from '$lib/components/ui/Kpi.svelte';
+	import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import type { Tone } from '$lib/components/ui/tone';
 	import {
 		type KvaRow, type KvaFilters, type KvaSortKey, type KvaSortState, type LageFilter,
 		LAGE_LABELS, NO_FILTERS, availableYears, rowsForYear, kvaKpis, monthlySummaries,
 		followupRows, dateMissingRows, staleRows, viewRows, hasActiveFilters, kvaDate
 	} from '$lib/utils/kvaBuch';
 	import {
-		FileText, Search, X, ArrowUpDown, ArrowUp, ArrowDown, BellOff, Bell, Phone
+		FileText, Search, X, ArrowUpDown, ArrowUp, ArrowDown, BellOff, Bell, Phone, Download, ChevronRight
 	} from 'lucide-svelte';
 
 	let rows = $state<KvaRow[]>([]);
@@ -175,234 +182,199 @@
 		{ key: 'verloren', label: 'Verloren' },
 		{ key: 'nachfassen', label: 'Nachfassen' }
 	];
+
+	const LAGE_TONE: Record<string, Tone> = { gewonnen: 'ok', verloren: 'danger', offen: 'info' };
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<h1>KVA-Buch</h1>
-		<span class="page-count">{rows.length} Kostenvoranschl&auml;ge</span>
-	</div>
+<svelte:head><title>KVA-Buch</title></svelte:head>
 
-	{#if loading}
-		<div class="loading">Lade KVA-Buch...</div>
-	{:else if error}
-		<div class="error-box">{error}</div>
-	{:else if rows.length === 0}
-		<div class="empty">Keine Kostenvoranschl&auml;ge vorhanden.</div>
-	{:else}
-		<!-- ── Nachfassliste ───────────────────────────────────────────────
-		     First on the page because it is the only part that earns money.
-		     Not year-scoped: an old KVA with a future move date still counts. -->
-		<section class="chase" class:chase--empty={chase.length === 0}>
-			<header class="chase-head">
-				<div>
-					<h2><Phone size={16} /> Nachfassen</h2>
-					<p class="chase-sub">
-						Offene KVAs, die l&auml;nger als {followupDays} Tage ohne Antwort sind
-						<strong>und</strong> deren Umzugstermin noch bevorsteht. Genau diese
-						meldet auch der Telegram-Bot.
+<PageHeader title="KVA-Buch" count="{rows.length} Kostenvoranschläge">
+	{#snippet actions()}
+		{#if rows.length > 0}
+			<Button onclick={exportYear}><Download size={15} /> Excel {activeYear}</Button>
+		{/if}
+	{/snippet}
+</PageHeader>
+
+{#if loading}
+	<div class="flex flex-col gap-3.5" aria-busy="true">
+		<div class="h-40 animate-pulse rounded-md bg-sunk"></div>
+		<div class="h-80 animate-pulse rounded-md bg-sunk"></div>
+	</div>
+{:else if error}
+	<p class="rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
+{:else if rows.length === 0}
+	<EmptyState title="Keine Kostenvoranschläge vorhanden" />
+{:else}
+	<div class="flex flex-col gap-3.5">
+		<!-- Nachfassliste first: the only part of the page that earns money. Not year-scoped:
+		     an old KVA with a future move date still counts. -->
+		<section class="rounded-md border bg-panel {chase.length ? 'border-accent/50' : 'border-line'}">
+			<header class="flex flex-wrap items-start justify-between gap-3 px-4 py-3.5">
+				<div class="flex max-w-2xl flex-col gap-1">
+					<h2 class="flex items-center gap-2 text-[15px] font-semibold">
+						<Phone size={16} class="text-accent-text" /> Nachfassen
+						<span class="num text-sm font-normal text-faint">{chase.length}</span>
+					</h2>
+					<p class="text-xs text-muted">
+						Offene KVAs, die länger als {followupDays} Tage ohne Antwort sind <strong class="text-fg">und</strong> deren
+						Umzugstermin noch bevorsteht. Genau diese meldet auch der Telegram-Bot.
 					</p>
 				</div>
-				<label class="days-field">
-					<span>Frist</span>
+				<label class="flex items-center gap-2 text-[13px] text-muted">
+					Frist
 					<input
-						type="number" min="1" max="365" bind:value={followupDays}
-						onblur={saveFollowupDays} disabled={savingDays}
+						type="number"
+						min="1"
+						max="365"
+						class="num h-8 w-16 rounded-sm border border-line-strong bg-panel px-2 text-right text-fg outline-none focus:border-fg"
+						bind:value={followupDays}
+						onblur={saveFollowupDays}
+						disabled={savingDays}
 					/>
-					<span>Tage</span>
+					Tage
 				</label>
 			</header>
 
 			{#if chase.length === 0}
-				<p class="chase-none">Nichts nachzufassen — alle offenen KVAs sind aktuell.</p>
+				<p class="border-t border-line px-4 py-4 text-sm text-muted">Nichts nachzufassen — alle offenen KVAs sind aktuell.</p>
 			{:else}
-				<ul class="chase-list">
-					{#each chase as item}
-						<li>
-							<a class="chase-nr" href="/admin/inquiries/{item.inquiry_id ?? ''}">
-								{item.offer_number || '—'}
-							</a>
-							<span class="chase-name">{item.customer_name || '—'}</span>
-							<span class="chase-num">{formatEuro(item.netto_cents)}</span>
-							<span class="chase-meta">
-								{item.age_days} Tage still &middot; Umzug {fmtDate(item.scheduled_date)}
-							</span>
-							{#if item.followup_last_pinged_on}
-								<span class="chase-pinged">
-									zuletzt erinnert {fmtDate(item.followup_last_pinged_on)}
+				<ul>
+					{#each chase as item (item.id)}
+						<li class="grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line px-4 py-2.5 text-sm sm:grid-cols-[80px_minmax(0,1fr)_110px_auto_auto]">
+							<a class="num text-[13px] text-muted hover:text-fg" href="/admin/inquiries/{item.inquiry_id ?? ''}">{item.offer_number || '—'}</a>
+							<span class="flex min-w-0 flex-col">
+								<a class="truncate font-medium hover:underline" href="/admin/inquiries/{item.inquiry_id ?? ''}">{item.customer_name || '—'}</a>
+								<span class="num text-xs text-faint">
+									{item.age_days} Tage still · Umzug {fmtDate(item.scheduled_date)}
+									{#if item.followup_last_pinged_on}· erinnert {fmtDate(item.followup_last_pinged_on)}{/if}
 								</span>
-							{/if}
-							<button
-								type="button" class="mute-btn" onclick={() => toggleMute(item)}
+							</span>
+							<span class="num text-right font-medium sm:order-none">{formatEuro(item.netto_cents)}</span>
+							<span class="hidden sm:block"></span>
+							<Button
+								size="xs"
+								variant="ghost"
+								class="col-span-3 justify-self-end sm:col-span-1"
+								onclick={() => toggleMute(item)}
 								title="Nicht mehr an diesen KVA erinnern"
 							>
 								<BellOff size={13} /> Stumm
-							</button>
+							</Button>
 						</li>
 					{/each}
 				</ul>
 			{/if}
 
-			{#if missingDate.length > 0}
-				<details class="side-list">
-					<summary>
-						{missingDate.length} &uuml;berf&auml;llige KVAs ohne Umzugsdatum
-					</summary>
-					<!-- Not pinged by design: without a move date there is no way to tell
-					     whether the job is still live. They stay visible here instead. -->
-					<p class="side-note">
-						Diese werden nicht automatisch gemeldet — ohne Termin l&auml;sst sich nicht
-						sagen, ob der Auftrag noch aktuell ist.
-					</p>
-					<ul>
-						{#each missingDate as item}
-							<li>
-								<span class="chase-nr">{item.offer_number || '—'}</span>
-								<span class="chase-name">{item.customer_name || '—'}</span>
-								<span class="chase-num">{formatEuro(item.netto_cents)}</span>
-								<span class="chase-meta">{item.age_days} Tage still</span>
-							</li>
-						{/each}
-					</ul>
-				</details>
-			{/if}
-
-			{#if stale.length > 0}
-				<details class="side-list">
-					<summary>
-						{stale.length} offene KVAs mit vergangenem Umzugsdatum
-						({formatEuro(kpis.deadOpenNetto)})
-					</summary>
-					<!-- These inflate "Offen" without being winnable. Surfaced as a cleanup
-					     queue so the open pipeline figure can be read honestly. -->
-					<p class="side-note">
-						Der Termin ist vorbei — diese lassen sich nicht mehr gewinnen und sollten
-						auf gewonnen oder verloren gesetzt werden.
-					</p>
-					<ul>
-						{#each stale as item}
-							<li>
-								<span class="chase-nr">{item.offer_number || '—'}</span>
-								<span class="chase-name">{item.customer_name || '—'}</span>
-								<span class="chase-num">{formatEuro(item.netto_cents)}</span>
-								<span class="chase-meta">Umzug war {fmtDate(item.scheduled_date)}</span>
-							</li>
-						{/each}
-					</ul>
-				</details>
-			{/if}
+			{#each [{ list: missingDate, title: `${missingDate.length} überfällige KVAs ohne Umzugsdatum`, note: 'Diese werden nicht automatisch gemeldet — ohne Termin lässt sich nicht sagen, ob der Auftrag noch aktuell ist.', meta: (i: KvaRow) => `${i.age_days} Tage still` }, { list: stale, title: `${stale.length} offene KVAs mit vergangenem Umzugsdatum (${formatEuro(kpis.deadOpenNetto)})`, note: 'Der Termin ist vorbei — diese lassen sich nicht mehr gewinnen und sollten auf gewonnen oder verloren gesetzt werden.', meta: (i: KvaRow) => `Umzug war ${fmtDate(i.scheduled_date)}` }] as group (group.title)}
+				{#if group.list.length > 0}
+					<details class="group border-t border-line">
+						<summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-[13px] text-muted hover:text-fg">
+							<ChevronRight size={14} class="transition-transform group-open:rotate-90" />
+							{group.title}
+						</summary>
+						<p class="px-4 pb-2 text-xs text-faint">{group.note}</p>
+						<ul class="pb-2">
+							{#each group.list as item (item.id)}
+								<li class="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-3 px-4 py-1.5 text-[13px] sm:grid-cols-[80px_minmax(0,1fr)_110px_180px]">
+									<span class="num text-muted">{item.offer_number || '—'}</span>
+									<span class="truncate">{item.customer_name || '—'}</span>
+									<span class="num text-right">{formatEuro(item.netto_cents)}</span>
+									<span class="num hidden text-right text-xs text-faint sm:block">{group.meta(item)}</span>
+								</li>
+							{/each}
+						</ul>
+					</details>
+				{/if}
+			{/each}
 		</section>
 
-		<div class="year-nav">
-			{#each years as y}
-				<button
-					type="button" class="year-btn" class:active={y === activeYear}
-					onclick={() => selectYear(y)}
-				>{y}</button>
-			{/each}
-			<button type="button" class="export-btn" onclick={exportYear}>
-				Excel-Export {activeYear}
-			</button>
-		</div>
+		<FilterTabs
+			label="Jahr"
+			options={years.map((y) => ({ value: y, label: y }))}
+			value={activeYear}
+			onchange={(v) => selectYear(v)}
+		/>
 
-		<!-- ── KPIs ─────────────────────────────────────────────────────── -->
-		<div class="kpis">
-			<div class="kpi">
-				<span class="kpi-label">Angebotsvolumen</span>
-				<span class="kpi-value">{formatEuro(kpis.volumeNetto)}</span>
-				<span class="kpi-note">{kpis.count} KVAs netto</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">Gewonnen</span>
-				<span class="kpi-value">{formatEuro(kpis.wonNetto)}</span>
-				<span class="kpi-note">{kpis.wonCount} Auftr&auml;ge</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">Annahmequote</span>
-				<span class="kpi-value">{pct(kpis.winRateByCount)}</span>
-				<!-- Both rates, always: they diverge when won and lost jobs differ in
-				     size, and that gap is the interesting number. -->
-				<span class="kpi-note">nach Wert {pct(kpis.winRateByValue)}</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">Offen</span>
-				<span class="kpi-value">{formatEuro(kpis.liveOpenNetto)}</span>
-				<span class="kpi-note">
-					{#if kpis.deadOpenCount > 0}
-						+ {formatEuro(kpis.deadOpenNetto)} Termin vorbei
-					{:else}
-						{kpis.openCount} KVAs
-					{/if}
-				</span>
-			</div>
-			<div class="kpi" class:kpi--alert={kpis.followupCount > 0}>
-				<span class="kpi-label">Nachfassen</span>
-				<span class="kpi-value">{kpis.followupCount}</span>
-				<span class="kpi-note">{formatEuro(kpis.followupNetto)}</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">&Oslash; Auftragswert</span>
-				<span class="kpi-value">
-					{kpis.avgWonNetto == null ? '—' : formatEuro(kpis.avgWonNetto)}
-				</span>
-				<!-- A systematically higher average on lost KVAs is a pricing signal. -->
-				<span class="kpi-note">
-					verloren {kpis.avgLostNetto == null ? '—' : formatEuro(kpis.avgLostNetto)}
-				</span>
-			</div>
-		</div>
+		<section class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" aria-label="Kennzahlen">
+			<Kpi label="Angebotsvolumen" value={formatEuro(kpis.volumeNetto)} sub="{kpis.count} KVAs netto" />
+			<Kpi label="Gewonnen" value={formatEuro(kpis.wonNetto)} sub="{kpis.wonCount} Aufträge" />
+			<!-- Both rates, always: they diverge when won and lost jobs differ in size. -->
+			<Kpi label="Annahmequote" value={pct(kpis.winRateByCount)} sub="nach Wert {pct(kpis.winRateByValue)}" />
+			<Kpi
+				label="Offen"
+				value={formatEuro(kpis.liveOpenNetto)}
+				sub={kpis.deadOpenCount > 0 ? `+ ${formatEuro(kpis.deadOpenNetto)} Termin vorbei` : `${kpis.openCount} KVAs`}
+			/>
+			<Kpi
+				label="Nachfassen"
+				value={String(kpis.followupCount)}
+				sub={formatEuro(kpis.followupNetto)}
+				class={kpis.followupCount > 0 ? 'border-accent/50' : ''}
+			/>
+			<!-- A systematically higher average on lost KVAs is a pricing signal. -->
+			<Kpi
+				label="Ø Auftragswert"
+				value={kpis.avgWonNetto == null ? '—' : formatEuro(kpis.avgWonNetto)}
+				sub="verloren {kpis.avgLostNetto == null ? '—' : formatEuro(kpis.avgLostNetto)}"
+			/>
+		</section>
 
 		<KvaMonatsUebersicht {months} selected={filters.month} onSelect={setMonth} />
 
-		<!-- ── filter bar ───────────────────────────────────────────────── -->
-		<div class="filter-bar">
-			<div class="chips">
-				{#each LAGE_FILTERS as f}
-					<button
-						type="button" class="chip" class:active={filters.lage === f.key}
-						onclick={() => setLage(f.key)}
-					>{f.label}</button>
-				{/each}
-			</div>
-			<label class="search">
+		<div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+			<FilterTabs
+				label="Lage"
+				options={LAGE_FILTERS.map((f) => ({ value: f.key, label: f.label }))}
+				value={filters.lage}
+				onchange={(v) => setLage(v as typeof filters.lage)}
+			/>
+			<label
+				class="flex h-9 items-center gap-2 rounded-sm border border-line-strong bg-panel px-3 text-faint focus-within:border-fg lg:ml-auto lg:w-72"
+			>
 				<Search size={14} />
 				<input
-					type="search" placeholder="Nr., Kunde oder Rechnung…"
+					type="search"
+					placeholder="Nr., Kunde oder Rechnung …"
+					class="min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-faint"
 					value={filters.search}
 					oninput={(e) => (filters = { ...filters, search: e.currentTarget.value })}
 				/>
 			</label>
 			{#if hasActiveFilters(filters)}
-				<button type="button" class="clear-btn" onclick={clearFilters}>
-					<X size={14} /> Filter zur&uuml;cksetzen
-				</button>
+				<Button size="sm" variant="ghost" onclick={clearFilters}><X size={14} /> Zurücksetzen</Button>
 			{/if}
-			<span class="result-count">{visible.length} von {yearRows.length}</span>
+			<span class="num text-xs text-faint">{visible.length} von {yearRows.length}</span>
 		</div>
 
-		<!-- ── register table ───────────────────────────────────────────── -->
-		<div class="table-wrapper">
-			<table>
+		<div class="overflow-x-auto rounded-md border border-line bg-panel">
+			<table class="w-full min-w-[860px] border-collapse text-sm">
 				<thead>
-					<tr>
-						{#each COLUMNS as col}
+					<tr class="border-b border-line">
+						{#each COLUMNS as col (col.key)}
 							{@const Icon = sortIcon(col.key)}
-							<th class:num={col.num}>
-								<button type="button" class="sort-btn" onclick={() => toggleSort(col.key)}>
+							<th class="px-3 py-2.5 font-normal first:pl-4 {col.num ? 'text-right' : 'text-left'}">
+								<button
+									type="button"
+									class="label-xs inline-flex items-center gap-1 text-faint hover:text-fg"
+									onclick={() => toggleSort(col.key)}
+								>
 									{col.label}<Icon size={12} />
 								</button>
 							</th>
 						{/each}
-						<th>Rechnung</th>
+						<th class="label-xs px-3 py-2.5 pr-4 text-left font-normal text-faint">Rechnung</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each visible as item}
-						<tr class:won={item.lage === 'gewonnen'} class:lost={item.lage === 'verloren'}>
-							<td class="mono">
+					{#each visible as item (item.id)}
+						<tr class="border-b border-line last:border-b-0 hover:bg-sunk/60">
+							<td class="num px-3 py-2 pl-4 text-[13px]">
 								{#if item.pdf_s3_key}
 									<button
-										type="button" class="link-btn" onclick={() => openKvaPdf(item)}
+										type="button"
+										class="inline-flex items-center gap-1 text-accent-text hover:underline"
+										onclick={() => openKvaPdf(item)}
 										title="KVA öffnen"
 									>
 										<FileText size={12} />{item.offer_number || '—'}
@@ -411,304 +383,37 @@
 									{item.offer_number || '—'}
 								{/if}
 							</td>
-							<td>{fmtDate(kvaDate(item))}</td>
-							<td>
-								<a class="row-link" href="/admin/inquiries/{item.inquiry_id ?? ''}">
-									{item.customer_name || '—'}
-								</a>
+							<td class="num px-3 py-2 text-[13px] text-muted">{fmtDate(kvaDate(item))}</td>
+							<td class="px-3 py-2">
+								<a class="font-medium hover:underline" href="/admin/inquiries/{item.inquiry_id ?? ''}">{item.customer_name || '—'}</a>
 							</td>
-							<td class:past={item.move_date_passed}>{fmtDate(item.scheduled_date)}</td>
-							<td class="num">{formatEuro(item.netto_cents)}</td>
-							<td class="num">{formatEuro(item.brutto_cents)}</td>
-							<td class="num">{item.age_days} T</td>
-							<td>
-								<span class="lage lage--{item.lage}">
-									{LAGE_LABELS[item.lage] ?? item.lage}
+							<td class="num px-3 py-2 text-[13px] {item.move_date_passed ? 'text-faint line-through' : ''}">{fmtDate(item.scheduled_date)}</td>
+							<td class="num px-3 py-2 text-right">{formatEuro(item.netto_cents)}</td>
+							<td class="num px-3 py-2 text-right text-muted">{formatEuro(item.brutto_cents)}</td>
+							<td class="num px-3 py-2 text-right text-[13px] text-muted">{item.age_days} T</td>
+							<td class="px-3 py-2">
+								<span class="flex flex-wrap items-center gap-1">
+									<Badge tone={LAGE_TONE[item.lage] ?? 'neutral'}>{LAGE_LABELS[item.lage] ?? item.lage}</Badge>
+									{#if item.needs_followup}
+										<Badge tone="accent">nachfassen</Badge>
+									{:else if item.followup_muted && item.lage === 'offen'}
+										<button
+											type="button"
+											class="inline-flex h-5 items-center gap-1 rounded-xs border border-dashed border-line-strong px-1.5 text-[11px] text-faint hover:text-fg"
+											onclick={() => toggleMute(item)}
+											title="Wieder erinnern"><Bell size={11} /> stumm</button
+										>
+									{/if}
 								</span>
-								{#if item.needs_followup}
-									<span class="tag tag--chase" title="Auf der Nachfassliste">nachfassen</span>
-								{:else if item.followup_muted && item.lage === 'offen'}
-									<button
-										type="button" class="tag tag--muted" onclick={() => toggleMute(item)}
-										title="Wieder erinnern"
-									><Bell size={11} /> stumm</button>
-								{/if}
 							</td>
-							<td class="mono">{item.invoice_number || '—'}</td>
+							<td class="num px-3 py-2 pr-4 text-[13px] text-muted">{item.invoice_number || '—'}</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 			{#if visible.length === 0}
-				<p class="no-rows">Keine KVAs f&uuml;r diese Filter.</p>
+				<p class="py-8 text-center text-sm text-muted">Keine KVAs für diese Filter.</p>
 			{/if}
 		</div>
-	{/if}
-</div>
-
-<style>
-	.page { padding: var(--dt-space-6); }
-
-	.page-header {
-		display: flex; align-items: baseline; gap: 0.75rem;
-		margin-bottom: var(--dt-space-5);
-	}
-	.page-header h1 {
-		font-size: 1.5rem; font-weight: 700; color: var(--dt-on-surface); margin: 0;
-	}
-	.page-count { font-size: 0.8125rem; color: var(--dt-on-surface-variant); }
-
-	.loading, .empty {
-		color: var(--dt-on-surface-variant); padding: var(--dt-space-10); text-align: center;
-	}
-	.error-box {
-		background: var(--dt-error-bg); border: 1px solid var(--dt-error-text);
-		color: var(--dt-error-text); padding: var(--dt-space-4);
-		border-radius: var(--dt-radius-md);
-	}
-
-	/* ── Nachfassliste ──────────────────────────────── */
-	.chase {
-		background: var(--dt-surface-container-lowest);
-		border: 1px solid var(--dt-outline-variant);
-		border-left: 3px solid #1b6ca8;
-		border-radius: var(--dt-radius-lg);
-		padding: var(--dt-space-5) var(--dt-space-6);
-		margin-bottom: var(--dt-space-5);
-	}
-	.chase--empty { border-left-color: var(--dt-outline-variant); }
-
-	.chase-head {
-		display: flex; justify-content: space-between; align-items: flex-start;
-		gap: var(--dt-space-4); flex-wrap: wrap; margin-bottom: var(--dt-space-3);
-	}
-	.chase-head h2 {
-		display: flex; align-items: center; gap: 0.4rem;
-		margin: 0; font-size: 1rem; font-weight: 700; color: var(--dt-on-surface);
-	}
-	.chase-sub {
-		margin: 0.15rem 0 0; font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant); max-width: 60ch;
-	}
-	.chase-none {
-		margin: 0; font-size: 0.875rem; color: var(--dt-on-surface-variant);
-	}
-
-	.days-field {
-		display: inline-flex; align-items: center; gap: 0.35rem;
-		font-size: 0.8125rem; color: var(--dt-on-surface-variant); white-space: nowrap;
-	}
-	.days-field input {
-		width: 4rem; padding: 0.3rem 0.4rem; text-align: right;
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-low); color: var(--dt-on-surface);
-		font-variant-numeric: tabular-nums;
-	}
-
-	.chase-list { list-style: none; margin: 0; padding: 0; }
-	.chase-list > li, .side-list li {
-		display: flex; align-items: center; gap: var(--dt-space-3);
-		flex-wrap: wrap; padding: 0.5rem 0;
-		border-top: 1px solid var(--dt-outline-variant);
-		font-size: 0.8125rem;
-	}
-	.chase-nr {
-		font-family: var(--font-mono); font-size: 0.75rem;
-		color: var(--dt-primary); text-decoration: underline; flex: 0 0 auto;
-	}
-	.chase-name { font-weight: 600; color: var(--dt-on-surface); }
-	.chase-num {
-		font-variant-numeric: tabular-nums; font-weight: 600;
-		color: var(--dt-on-surface); margin-left: auto;
-	}
-	.chase-meta, .chase-pinged {
-		color: var(--dt-on-surface-variant); font-size: 0.75rem;
-	}
-	.chase-pinged { font-style: italic; }
-
-	.mute-btn {
-		display: inline-flex; align-items: center; gap: 0.25rem;
-		padding: 0.2rem 0.5rem; border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-sm); background: var(--dt-surface-container-low);
-		color: var(--dt-on-surface-variant); font-size: 0.6875rem; cursor: pointer;
-	}
-	.mute-btn:hover { background: var(--dt-surface-container-high); }
-
-	.side-list { margin-top: var(--dt-space-4); }
-	.side-list summary {
-		cursor: pointer; font-size: 0.8125rem; color: var(--dt-on-surface-variant);
-		padding: 0.25rem 0;
-	}
-	.side-list summary:hover { color: var(--dt-on-surface); }
-	.side-list ul { list-style: none; margin: 0; padding: 0; }
-	.side-note {
-		margin: 0.25rem 0 0.5rem; font-size: 0.75rem;
-		color: var(--dt-on-surface-variant); max-width: 70ch;
-	}
-
-	/* ── year nav ───────────────────────────────────── */
-	.year-nav {
-		display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
-		gap: var(--dt-space-2); margin-bottom: var(--dt-space-4);
-	}
-	.year-btn {
-		padding: 0.35rem 0.9rem; border-radius: var(--dt-radius-md);
-		border: var(--dt-ghost-border); background: var(--dt-surface-container-low);
-		color: var(--dt-on-surface-variant); font-size: 0.875rem; font-weight: 600;
-		cursor: pointer; transition: background var(--dt-transition);
-	}
-	.year-btn:hover { background: var(--dt-surface-container-high); }
-	.year-btn.active {
-		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
-	}
-	.export-btn {
-		margin-left: var(--dt-space-3); padding: 0.35rem 0.9rem;
-		border-radius: var(--dt-radius-md); border: var(--dt-ghost-border);
-		background: var(--dt-surface-container-low); color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem; font-weight: 600; cursor: pointer;
-	}
-	.export-btn:hover { background: var(--dt-surface-container-high); }
-
-	/* ── KPIs ───────────────────────────────────────── */
-	.kpis {
-		display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: var(--dt-space-3); margin-bottom: var(--dt-space-4);
-	}
-	.kpi {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg); padding: var(--dt-space-4);
-		display: flex; flex-direction: column; gap: 0.15rem;
-	}
-	.kpi--alert { border-left: 3px solid #1b6ca8; }
-	.kpi-label {
-		font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;
-		color: var(--dt-on-surface-variant); font-weight: 500;
-	}
-	.kpi-value {
-		font-size: 1.125rem; font-weight: 700; color: var(--dt-on-surface);
-		font-variant-numeric: tabular-nums;
-	}
-	.kpi-note { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
-
-	/* ── filter bar ─────────────────────────────────── */
-	.filter-bar {
-		display: flex; align-items: center; gap: var(--dt-space-3);
-		flex-wrap: wrap; margin-bottom: var(--dt-space-3);
-	}
-	.chips { display: flex; gap: var(--dt-space-2); flex-wrap: wrap; }
-	.chip {
-		padding: 0.3rem 0.75rem; border-radius: 999px; border: var(--dt-ghost-border);
-		background: var(--dt-surface-container-low); color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem; cursor: pointer;
-	}
-	.chip:hover { background: var(--dt-surface-container-high); }
-	.chip.active {
-		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
-	}
-
-	.search {
-		display: inline-flex; align-items: center; gap: 0.35rem;
-		padding: 0.3rem 0.6rem; border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md); background: var(--dt-surface-container-low);
-		color: var(--dt-on-surface-variant);
-	}
-	.search input {
-		border: none; background: none; outline: none; color: var(--dt-on-surface);
-		font-size: 0.8125rem; min-width: 12rem;
-	}
-
-	.clear-btn {
-		display: inline-flex; align-items: center; gap: 0.25rem;
-		padding: 0.3rem 0.6rem; border: none; background: none;
-		color: var(--dt-primary); font-size: 0.8125rem; cursor: pointer;
-	}
-	.result-count {
-		margin-left: auto; font-size: 0.8125rem; color: var(--dt-on-surface-variant);
-		font-variant-numeric: tabular-nums;
-	}
-
-	/* ── table ──────────────────────────────────────── */
-	/* Same scroll box as the Rechnungsausgangsbuch: the sticky header row and the
-	 * horizontal scrollbar on the bottom edge stay in view while scrolling rows,
-	 * with the same 14rem reserve for the sticky topbar. */
-	.table-wrapper {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		max-height: calc(100vh - 14rem);
-		overflow: auto;
-	}
-	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-	thead { background: var(--dt-surface-container-high); }
-	th {
-		padding: 8px var(--dt-space-4); text-align: left; font-weight: 500;
-		color: var(--dt-on-surface-variant); font-size: 12px;
-		text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
-	}
-	thead th {
-		position: sticky; top: 0; z-index: 2;
-		background: var(--dt-surface-container-high);
-	}
-	th.num { text-align: right; }
-	th.num .sort-btn { justify-content: flex-end; width: 100%; }
-	.sort-btn {
-		display: inline-flex; align-items: center; gap: 0.3rem;
-		padding: 0; border: none; background: none; cursor: pointer;
-		color: inherit; font: inherit; text-transform: inherit;
-		letter-spacing: inherit;
-	}
-	.sort-btn:hover { color: var(--dt-on-surface); }
-
-	td {
-		padding: 8px var(--dt-space-4); color: var(--dt-on-surface); white-space: nowrap;
-	}
-	td.num { text-align: right; font-variant-numeric: tabular-nums; }
-	td.past { color: var(--dt-error-text, #b3261e); }
-	tbody tr:nth-child(even) { background: var(--dt-surface-container-low); }
-	tbody tr:nth-child(odd) { background: var(--dt-surface-container-lowest); }
-	tbody tr:hover { background: var(--dt-surface-container-high) !important; }
-	tbody tr.lost td { opacity: 0.7; }
-
-	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
-	.link-btn {
-		display: inline-flex; align-items: center; gap: 0.25rem;
-		padding: 0; border: none; background: none; cursor: pointer;
-		font-family: var(--font-mono); font-size: 0.75rem;
-		color: var(--dt-primary); text-decoration: underline;
-	}
-	.link-btn:hover { opacity: 0.75; }
-	.row-link { color: var(--dt-on-surface); text-decoration: underline; }
-	.row-link:hover { color: var(--dt-primary); }
-
-	/* Lage is never colour-alone — the label always carries the word. */
-	.lage {
-		padding: 1px 8px; border-radius: var(--dt-radius-sm);
-		font-size: 0.6875rem; font-weight: 600; white-space: nowrap;
-		background: var(--dt-surface-container-high); color: var(--dt-on-surface-variant);
-	}
-	.lage--gewonnen { color: var(--admin-success, #2e7d32); }
-	.lage--verloren { color: var(--dt-error-text, #b3261e); }
-
-	.tag {
-		margin-left: 0.35rem; padding: 1px 6px; border-radius: var(--dt-radius-sm);
-		font-size: 0.625rem; font-weight: 600; white-space: nowrap;
-		border: none; cursor: default;
-	}
-	.tag--chase { background: #1b6ca8; color: #fff; }
-	.tag--muted {
-		display: inline-flex; align-items: center; gap: 0.2rem;
-		background: var(--dt-surface-container-high); color: var(--dt-on-surface-variant);
-		cursor: pointer;
-	}
-
-	.no-rows {
-		padding: var(--dt-space-6); text-align: center;
-		color: var(--dt-on-surface-variant); font-size: 0.875rem;
-	}
-
-	@media (max-width: 768px) {
-		.page { padding: var(--dt-space-4); }
-		.year-btn, .export-btn, .chip { min-height: 40px; }
-		.chase-num { margin-left: 0; }
-		.result-count { margin-left: 0; }
-	}
-</style>
+	</div>
+{/if}

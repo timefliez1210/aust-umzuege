@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { apiPost } from "$lib/utils/api.svelte";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 
@@ -33,102 +35,26 @@
 	}
 </script>
 
-<!-- Review request popup — shown after marking an inquiry as "Erledigt".
-     Uses the shared .modal-overlay/.modal/.modal-actions classes so it
-     automatically becomes a bottom sheet on mobile (admin-components.css). -->
+<!-- Shown after marking an inquiry as "Erledigt". -->
 {#if open}
-	<div
-		class="modal-overlay"
-		role="presentation"
-		onclick={() => (open = false)}
-		onkeydown={(e) => e.key === 'Escape' && (open = false)}
-		tabindex="-1"
-	>
-		<div
-			class="modal review-dialog"
-			role="dialog"
-			aria-modal="true"
-			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
-			<h2>Bewertungsanfrage senden?</h2>
-			<p>
-				Möchten Sie dem Kunden jetzt eine E-Mail mit der Bitte um eine Google-Bewertung schicken?
-			</p>
-			<div class="review-later-row">
-				<label for="review-days">Bei „Später" erinnern in</label>
-				<input
-					id="review-days"
-					type="number"
-					min="1"
-					max="30"
-					bind:value={reviewReminderDays}
-				/>
-				<span>Tagen</span>
-			</div>
-			<div class="modal-actions review-actions">
-				<button
-					class="btn btn-primary"
-					disabled={sendingReview}
-					onclick={() => submitReviewAction('now')}
-				>
-					Jetzt senden
-				</button>
-				<button
-					class="btn"
-					disabled={sendingReview}
-					onclick={() => submitReviewAction('later')}
-				>
-					Später ({reviewReminderDays}d)
-				</button>
-				<button
-					class="btn btn-muted"
-					disabled={sendingReview}
-					onclick={() => submitReviewAction('skip')}
-				>
-					Nicht
-				</button>
-			</div>
-		</div>
-	</div>
+	<Modal title="Bewertungsanfrage senden?" size="sm" onclose={() => (open = false)}>
+		<p class="text-sm text-muted">Möchten Sie dem Kunden jetzt eine E-Mail mit der Bitte um eine Google-Bewertung schicken?</p>
+		<label class="mt-4 flex items-center gap-2 text-[13px]" for="review-days">
+			Bei „Später“ erinnern in
+			<input
+				id="review-days"
+				type="number"
+				min="1"
+				max="30"
+				class="num h-8 w-16 rounded-sm border border-line-strong bg-panel px-2 text-right outline-none focus:border-fg"
+				bind:value={reviewReminderDays}
+			/>
+			Tagen
+		</label>
+		{#snippet footer()}
+			<Button variant="ghost" disabled={sendingReview} onclick={() => submitReviewAction('skip')}>Nicht</Button>
+			<Button disabled={sendingReview} onclick={() => submitReviewAction('later')}>Später ({reviewReminderDays} T)</Button>
+			<Button variant="accent" disabled={sendingReview} onclick={() => submitReviewAction('now')}>Jetzt senden</Button>
+		{/snippet}
+	</Modal>
 {/if}
-
-<style>
-	.review-dialog {
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
-
-	.review-dialog p {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-	}
-
-	.review-later-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.review-later-row input[type="number"] {
-		width: 4rem;
-		padding: 0.25rem 0.375rem;
-		background: var(--dt-surface-container-high);
-		border: 1px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-	}
-
-	.review-actions .btn {
-		flex: 1;
-		min-width: 7rem;
-		justify-content: center;
-	}
-</style>

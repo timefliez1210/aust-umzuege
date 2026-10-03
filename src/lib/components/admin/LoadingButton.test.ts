@@ -29,19 +29,19 @@ describe('LoadingButton', () => {
 		expect(screen.getByRole('button')).toBeDisabled();
 	});
 
-	it('applies variant and size classes from admin-components.css', () => {
+	it('maps variant and size onto the console button', () => {
 		const { container, unmount } = render(LoadingButton, {
 			children: label,
 			variant: 'danger',
 			size: 'sm',
 		});
 		const btn = container.querySelector('button')!;
-		expect(btn.classList.contains('btn-danger')).toBe(true);
-		expect(btn.classList.contains('btn-sm')).toBe(true);
+		expect(btn.dataset.variant === 'danger').toBe(true);
+		expect(btn.dataset.size === 'sm').toBe(true);
 		unmount();
 
 		const { container: c2 } = render(LoadingButton, { children: label, variant: 'ghost' });
-		expect(c2.querySelector('button')!.classList.contains('btn-ghost')).toBe(true);
+		expect(c2.querySelector('button')!.dataset.variant === 'ghost').toBe(true);
 	});
 
 	it('defaults to type="button" so it never submits forms accidentally', () => {

@@ -1,5 +1,13 @@
 <script lang="ts">
-	import CTAButton from "$lib/components/CTAButton.svelte";
+	/**
+	 * Root error page — only reached by URLs that match no route at all.
+	 *
+	 * Deliberately imports nothing: SvelteKit loads the root error component on every
+	 * page, so any stylesheet imported here (global.css, the site navbar) would leak
+	 * into the console. Errors *inside* the marketing site use `(site)/+error.svelte`,
+	 * which has the full site chrome.
+	 */
+	import { page } from '$app/stores';
 </script>
 
 <svelte:head>
@@ -8,12 +16,12 @@
 </svelte:head>
 
 <section class="error-page">
-	<h1>404</h1>
-	<p class="error-message">Wir haben hier leider keine Seite gefunden</p>
-	<p class="error-hint">Die Seite existiert nicht mehr oder die Adresse wurde falsch eingegeben.</p>
-	<div class="error-actions">
-		<CTAButton text="Zur Startseite" href="/" />
-		<CTAButton text="Kostenloses Angebot" href="/kostenloses-angebot" />
+	<p class="code">{$page.status}</p>
+	<h1>Wir haben hier leider keine Seite gefunden</h1>
+	<p class="hint">Die Seite existiert nicht mehr oder die Adresse wurde falsch eingegeben.</p>
+	<div class="actions">
+		<a class="primary" href="/">Zur Startseite</a>
+		<a href="/kostenloses-angebot">Kostenloses Angebot</a>
 	</div>
 </section>
 
@@ -23,35 +31,54 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 60vh;
-		text-align: center;
+		gap: 0.75rem;
+		min-height: 100vh;
+		margin: 0;
 		padding: 2rem;
+		text-align: center;
+		font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		background: #f7f7f5;
+		color: #111;
+	}
+
+	.code {
+		margin: 0;
+		font-size: 5rem;
+		font-weight: 700;
+		line-height: 1;
+		color: #1e3a5f;
 	}
 
 	h1 {
-		font-size: 5rem;
-		font-weight: 700;
-		color: var(--color-primary);
-		margin: 0 0 0.5rem;
-		line-height: 1;
-	}
-
-	.error-message {
+		margin: 0;
 		font-size: 1.25rem;
-		color: #333;
-		margin: 0 0 0.5rem;
+		font-weight: 600;
 	}
 
-	.error-hint {
-		font-size: 1rem;
-		color: #666;
-		margin-bottom: 2rem;
+	.hint {
+		margin: 0 0 1.25rem;
+		color: #555;
 	}
 
-	.error-actions {
+	.actions {
 		display: flex;
-		gap: 1rem;
 		flex-wrap: wrap;
 		justify-content: center;
+		gap: 0.75rem;
+	}
+
+	.actions a {
+		padding: 0.75rem 1.25rem;
+		border: 1px solid #1e3a5f;
+		border-radius: 6px;
+		color: #1e3a5f;
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.actions a.primary {
+		background: #ff6b00;
+		border-color: #ff6b00;
+		color: #fff;
 	}
 </style>

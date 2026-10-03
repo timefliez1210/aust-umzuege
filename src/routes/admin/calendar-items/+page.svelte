@@ -4,7 +4,18 @@
 	import { normalizeTimeInput } from '$lib/utils/format';
 	import { DEFAULT_START_TIME, DEFAULT_END_TIME } from '$lib/utils/time';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { Plus, CalendarCheck } from 'lucide-svelte';
+	import { Plus } from 'lucide-svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Stepper from '$lib/components/ui/Stepper.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
+	import type { Tone } from '$lib/components/ui/tone';
 
 	interface CalendarItem {
 		id: string;
@@ -122,14 +133,21 @@
 	 *
 	 * @param status - Raw status string from the API
 	 */
-	function statusClass(status: string): string {
-		const map: Record<string, string> = {
-			scheduled: 'badge-indigo',
-			completed: 'badge-green',
-			cancelled: 'badge-red'
-		};
-		return map[status] ?? 'badge-gray';
+	function statusTone(status: string): Tone {
+		const map: Record<string, Tone> = { scheduled: 'info', completed: 'ok', cancelled: 'danger' };
+		return map[status] ?? 'neutral';
 	}
+
+	/** "2026-10" ± n months. */
+	function shiftMonth(key: string, n: number): string {
+		const [y, m] = key.split('-').map(Number);
+		const d = new Date(y, m - 1 + n, 1);
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+	}
+
+	const monthLabel = $derived(
+		new Date(`${selectedMonth}-01T12:00:00`).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+	);
 
 	/**
 	 * Returns the German label for a status string.
@@ -149,291 +167,106 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Termine | AUST Admin</title>
-</svelte:head>
+<svelte:head><title>Termine</title></svelte:head>
 
-<div class="page-header">
-	<div class="page-header-left">
-		<h1>Termine</h1>
-		{#if items.length > 0}
-			<span class="count-badge">{items.length}</span>
-		{/if}
-	</div>
-	<button class="btn btn-primary" onclick={() => (showCreate = true)}>
-		<Plus size={16} />
-		Neuer Termin
-	</button>
+<PageHeader title="Termine" count={items.length ? `${items.length} im Monat` : undefined}>
+	{#snippet actions()}
+		<Button variant="accent" onclick={() => (showCreate = true)}><Plus size={16} /> Neuer Termin</Button>
+	{/snippet}
+</PageHeader>
+
+<div class="mb-4">
+	<Stepper
+		label={monthLabel}
+		onprev={() => (selectedMonth = shiftMonth(selectedMonth, -1))}
+		onnext={() => (selectedMonth = shiftMonth(selectedMonth, 1))}
+		prevLabel="Vorheriger Monat"
+		nextLabel="Nächster Monat"
+	/>
 </div>
-
-<div class="toolbar">
-	<div class="month-picker">
-		<label for="month-select">Monat:</label>
-		<input
-			id="month-select"
-			type="month"
-			bind:value={selectedMonth}
-		/>
-	</div>
-</div>
-
-{#if showCreate}
-	<div
-		class="modal-overlay"
-		role="presentation"
-		onclick={() => (showCreate = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showCreate = false)}
-		tabindex="-1"
-	>
-		<div
-			class="modal"
-			role="dialog"
-			aria-modal="true"
-			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
-			<h2>Neuer Termin</h2>
-			{#if createError}
-				<div class="alert-error">{createError}</div>
-			{/if}
-			<form onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
-				<div class="form-grid">
-					<div class="field span-2">
-						<label for="c-title">Titel *</label>
-						<input id="c-title" type="text" bind:value={createTitle} required />
-					</div>
-					<div class="field">
-						<label for="c-cat">Kategorie</label>
-						<input id="c-cat" type="text" list="cal-categories" bind:value={createCategory} placeholder="z.B. Intern, Umzug, eigene…" />
-						<datalist id="cal-categories">
-							<option value="intern">Intern</option>
-							<option value="umzug">Umzug</option>
-							<option value="entruempelung">Entrümpelung</option>
-							<option value="montage">Montage</option>
-							<option value="streichen">Streichen</option>
-							<option value="kartons_auslieferung">Kartons Auslieferung</option>
-							<option value="kartons_abholung">Kartons Abholung</option>
-						</datalist>
-					</div>
-					<div class="field">
-						<label for="c-date">Datum</label>
-						<input id="c-date" type="date" bind:value={createDate} />
-					</div>
-					<div class="field">
-						<label for="c-start">Startzeit *</label>
-						<input id="c-start" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={createStartTime} required />
-					</div>
-					<div class="field">
-						<label for="c-end">Endzeit</label>
-						<input id="c-end" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={createEndTime} />
-					</div>
-					<div class="field">
-						<label for="c-dur">Dauer (h)</label>
-						<input id="c-dur" type="number" step="0.5" min="0" bind:value={createDuration} />
-					</div>
-					<div class="field">
-						<label for="c-loc">Ort</label>
-						<input id="c-loc" type="text" bind:value={createLocation} />
-					</div>
-					<div class="field span-2">
-						<label for="c-desc">Beschreibung</label>
-						<textarea id="c-desc" rows={3} bind:value={createDescription}></textarea>
-					</div>
-				</div>
-				<div class="modal-actions">
-					<button type="button" class="btn" onclick={() => (showCreate = false)}>Abbrechen</button>
-					<button type="submit" class="btn btn-primary" disabled={createLoading}>
-						{createLoading ? 'Erstelle...' : 'Erstellen'}
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
 
 {#if loading}
-	<div class="empty-state">Laden...</div>
+	<div class="h-64 animate-pulse rounded-md bg-sunk"></div>
 {:else if items.length === 0}
-	<div class="empty-state">
-		<CalendarCheck size={40} style="color:#cbd5e0;margin-bottom:0.75rem" />
-		<p>Keine Termine in diesem Monat.</p>
-	</div>
+	<EmptyState title="Keine Termine in diesem Monat" hint="Besichtigungen, Kartonlieferungen und interne Termine erscheinen hier und im Kalender." />
 {:else}
-	<div class="table-wrapper table-scroll">
-		<table class="data-table">
-			<thead>
-				<tr>
-					<th>Datum</th>
-					<th>Zeit</th>
-					<th>Titel</th>
-					<th>Kategorie</th>
-					<th>Ort</th>
-					<th class="num">Dauer (h)</th>
-					<th>Status</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each items as item}
-					<tr class="clickable-row" onclick={() => goto(`/admin/calendar-items/${item.id}`)}>
-						<td>{item.scheduled_date ? formatDate(item.scheduled_date) : '—'}</td>
-						<td>{item.start_time ? item.start_time.slice(0, 5) : '—'}{item.end_time ? ' – ' + item.end_time.slice(0, 5) : ''}</td>
-						<td class="title-cell">{item.title}</td>
-						<td><span class="badge badge-gray">{CATEGORY_LABELS[item.category] ?? item.category}</span></td>
-						<td>{item.location ?? '—'}</td>
-						<td class="num">{item.duration_hours.toFixed(1)}</td>
-						<td><span class="badge {statusClass(item.status)}">{statusLabel(item.status)}</span></td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+	<ul class="divide-y divide-line rounded-md border border-line bg-panel">
+		{#each items as item (item.id)}
+			<li>
+				<a
+					href="/admin/calendar-items/{item.id}"
+					class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-sunk/60 sm:grid-cols-[92px_110px_minmax(0,1fr)_auto_auto]"
+				>
+					<span class="num flex flex-col text-[13px]">
+						<span class="font-medium">{item.scheduled_date ? formatDate(item.scheduled_date) : '—'}</span>
+						<span class="text-xs text-faint sm:hidden">{item.start_time ? item.start_time.slice(0, 5) : ''}</span>
+					</span>
+					<span class="num hidden text-[13px] text-muted sm:block"
+						>{item.start_time ? item.start_time.slice(0, 5) : '—'}{item.end_time ? ' – ' + item.end_time.slice(0, 5) : ''}</span
+					>
+					<span class="flex min-w-0 flex-col">
+						<span class="truncate text-sm font-medium">{item.title}</span>
+						<span class="truncate text-xs text-faint">
+							{CATEGORY_LABELS[item.category] ?? item.category}{item.location ? ` · ${item.location}` : ''}
+						</span>
+					</span>
+					<span class="num hidden text-right text-xs text-muted sm:block">{item.duration_hours.toFixed(1)} h</span>
+					<Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge>
+				</a>
+			</li>
+		{/each}
+	</ul>
 {/if}
 
-<style>
-	.page-header {
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-	}
-
-	.page-header-left {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.count-badge {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-		font-size: 0.75rem;
-		font-weight: 600;
-		padding: 0.125rem 0.5rem;
-		border-radius: 999px;
-	}
-
-	.toolbar {
-		margin-bottom: 1.25rem;
-	}
-
-	.month-picker {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-		font-weight: 500;
-	}
-
-	.month-picker input {
-		padding: 0.375rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		font-family: inherit;
-		outline: none;
-		transition: var(--dt-transition);
-	}
-
-	.month-picker input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.table-wrapper {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-		overflow: hidden;
-	}
-
-	.data-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-
-	.data-table th {
-		text-align: left;
-		padding: 0.75rem 1rem;
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface-variant);
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.data-table td {
-		padding: 0.75rem 1rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface);
-	}
-
-	.data-table tbody tr + tr td {
-		border-top: 1px solid var(--dt-surface-container);
-	}
-
-	.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-
-	.title-cell { font-weight: 500; color: var(--dt-on-surface); }
-
-	.clickable-row { cursor: pointer; transition: background var(--dt-transition); }
-	.clickable-row:hover td { background: var(--dt-surface-container-low); }
-
-	.badge {
-		font-size: 0.6875rem;
-		font-weight: 600;
-		padding: 0.2rem 0.5rem;
-		border-radius: 999px;
-	}
-
-	.badge-gray   { background: var(--dt-surface-container); color: var(--dt-on-surface-variant); }
-	.badge-indigo { background: var(--dt-primary-container); color: var(--dt-on-primary); }
-	.badge-green  { background: var(--dt-success-bg); color: var(--dt-success-text); }
-	.badge-red    { background: var(--dt-error-bg);   color: var(--dt-error-text); }
-
-	.modal {
-		padding: 0;
-		max-width: 540px;
-		overflow: hidden;
-	}
-
-	.modal h2 {
-		margin: 0;
-		font-size: 1.0625rem;
-		color: var(--dt-on-primary);
-		padding: 1rem 1.25rem;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border-bottom: var(--dt-glass-border);
-	}
-
-	.modal form {
-		padding: 1.25rem;
-	}
-
-	.field.span-2 { grid-column: span 2; }
-
-	.field input,
-	.field textarea {
-		padding: 0.5rem 0.625rem;
-		font-family: inherit;
-		resize: vertical;
-	}
-
-	.alert-error {
-		background: var(--dt-error-bg);
-		color: var(--dt-error-text);
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		margin-bottom: 0.75rem;
-	}
-</style>
+{#if showCreate}
+	<Modal title="Neuer Termin" onclose={() => (showCreate = false)}>
+		<form
+			id="item-create"
+			class="grid grid-cols-2 gap-3"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleCreate();
+			}}
+		>
+			{#if createError}<Notice tone="danger" class="col-span-2">{createError}</Notice>{/if}
+			<Field label="Titel *" for="c-title" class="col-span-2"><Input id="c-title" bind:value={createTitle} required /></Field>
+			<Field label="Kategorie" for="c-cat">
+				<Input id="c-cat" list="cal-categories" bind:value={createCategory} placeholder="Intern, Umzug, eigene …" />
+				<datalist id="cal-categories">
+					{#each Object.entries(CATEGORY_LABELS) as [v, l] (v)}<option value={v}>{l}</option>{/each}
+				</datalist>
+			</Field>
+			<Field label="Datum" for="c-date"><Input id="c-date" type="date" bind:value={createDate} /></Field>
+			<Field label="Startzeit *" for="c-start">
+				<Input
+					id="c-start"
+					class="num"
+					inputmode="numeric"
+					pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+					placeholder="HH:MM"
+					maxlength={5}
+					bind:value={createStartTime}
+					required
+				/>
+			</Field>
+			<Field label="Endzeit" for="c-end">
+				<Input
+					id="c-end"
+					class="num"
+					inputmode="numeric"
+					pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+					placeholder="HH:MM"
+					maxlength={5}
+					bind:value={createEndTime}
+				/>
+			</Field>
+			<Field label="Dauer (h)" for="c-dur"><Input id="c-dur" class="num" type="number" step="0.5" min="0" bind:value={createDuration} /></Field>
+			<Field label="Ort" for="c-loc"><Input id="c-loc" bind:value={createLocation} /></Field>
+			<Field label="Beschreibung" for="c-desc" class="col-span-2"><Textarea id="c-desc" rows={3} bind:value={createDescription} /></Field>
+		</form>
+		{#snippet footer()}
+			<Button onclick={() => (showCreate = false)}>Abbrechen</Button>
+			<Button type="submit" form="item-create" variant="solid" disabled={createLoading}>{createLoading ? 'Erstelle …' : 'Erstellen'}</Button>
+		{/snippet}
+	</Modal>
+{/if}

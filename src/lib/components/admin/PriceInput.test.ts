@@ -8,7 +8,7 @@ describe('PriceInput — brutto/netto conversion (19% VAT)', () => {
 		render(PriceInput, { bruttoCents: 123456, label: 'Preis' });
 		expect(screen.getByLabelText('Preis')).toHaveValue(1234.56);
 		// hint shows the derived netto: 123456 / 1.19 = 103745.38… → rounded cents
-		expect(screen.getByText('Netto: 1037.45 EUR')).toBeInTheDocument();
+		expect(screen.getByText('Netto: 1037.45 €')).toBeInTheDocument();
 	});
 
 	it('typing a brutto euro amount converts it to integer cents', async () => {
@@ -19,7 +19,7 @@ describe('PriceInput — brutto/netto conversion (19% VAT)', () => {
 		await user.clear(input);
 		await user.type(input, '119');
 		// netto hint proves bruttoCents became 11900
-		expect(screen.getByText('Netto: 100.00 EUR')).toBeInTheDocument();
+		expect(screen.getByText('Netto: 100.00 €')).toBeInTheDocument();
 	});
 
 	it('switching to netto mode shows the netto value and converts input back to brutto', async () => {
@@ -28,13 +28,13 @@ describe('PriceInput — brutto/netto conversion (19% VAT)', () => {
 
 		await user.click(screen.getByRole('button', { name: 'Netto' }));
 		expect(screen.getByLabelText('Preis')).toHaveValue(100);
-		expect(screen.getByText('Brutto: 119.00 EUR')).toBeInTheDocument();
+		expect(screen.getByText('Brutto: 119.00 €')).toBeInTheDocument();
 
 		const input = screen.getByLabelText('Preis');
 		await user.clear(input);
 		await user.type(input, '200');
 		// 200 € netto × 1.19 = 238 € brutto
-		expect(screen.getByText('Brutto: 238.00 EUR')).toBeInTheDocument();
+		expect(screen.getByText('Brutto: 238.00 €')).toBeInTheDocument();
 	});
 
 	it('ignores unparseable input instead of corrupting the price', async () => {
@@ -44,7 +44,7 @@ describe('PriceInput — brutto/netto conversion (19% VAT)', () => {
 
 		await user.clear(input);
 		// cleared field parses as NaN → bruttoCents must stay 5000
-		expect(screen.getByText('Netto: 42.02 EUR')).toBeInTheDocument();
+		expect(screen.getByText('Netto: 42.02 €')).toBeInTheDocument();
 	});
 
 	it('snaps the field to the canonical two-decimal format on blur', async () => {
@@ -56,7 +56,7 @@ describe('PriceInput — brutto/netto conversion (19% VAT)', () => {
 		await user.type(input, '99.9');
 		await user.tab(); // blur
 		expect(input).toHaveValue(99.9);
-		expect(screen.getByText('Netto: 83.95 EUR')).toBeInTheDocument();
+		expect(screen.getByText('Netto: 83.95 €')).toBeInTheDocument();
 	});
 
 	it('can be disabled', () => {

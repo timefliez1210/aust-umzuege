@@ -1,8 +1,15 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import { Users, User, MapPin } from 'lucide-svelte';
 	import { apiGet, apiPatch, apiPost, apiDelete } from "$lib/utils/api.svelte";
 	import { normalizeTimeInput } from "$lib/utils/format";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
-	import { ChevronRight } from "lucide-svelte";
 	import EmployeeAssignmentPanel from "$lib/components/admin/EmployeeAssignmentPanel.svelte";
 
 	/** A crew member assigned to an appointment (paid Zusatztermin). */
@@ -174,174 +181,125 @@
 	}
 </script>
 
-<!-- Termine & Besichtigungen Card -->
-<div class="appointments-section">
-	<div class="card" class:card--collapsed={!open}>
-		<div class="card-header card-header--toggleable">
-			<button class="card-toggle" onclick={onOpenAppointments} aria-expanded={open}>
-				<span class="card-toggle-chev" class:open><ChevronRight size={16} /></span>
-				<h3>Termine &amp; Besichtigungen{#if (appointments?.length ?? 0) > 0} ({appointments?.length}){/if}</h3>
-			</button>
-		</div>
-		{#if open}
-		<div class="appt-body">
-			<p class="appt-hint">Zusätzliche Termine zu diesem Auftrag an eigenen Daten (z.&nbsp;B. eine Besichtigung vor dem Umzug). Unabhängig vom Umzugstermin.</p>
+<Panel
+	title="Termine & Besichtigungen{(appointments?.length ?? 0) > 0 ? ` (${appointments?.length})` : ''}"
+	{open}
+	onToggle={onOpenAppointments}
+>
+	<div class="flex flex-col gap-4">
+		<p class="text-xs text-muted">
+			Zusätzliche Termine zu diesem Auftrag an eigenen Daten (z. B. eine Besichtigung vor dem Umzug). Unabhängig vom
+			Umzugstermin.
+		</p>
 
-			{#if (appointments?.length ?? 0) > 0}
-				<div class="appt-list">
-					{#each appointments ?? [] as a (a.id)}
-						<div class="appt-row" class:appt-editing={editingApptId === a.id}>
-							<div class="appt-info">
-								<div class="appt-main">
-									<span class="appt-kind">{apptKindLabel(a.kind)}</span>
-									<span class="appt-date">{formatApptDate(a.scheduled_date)}</span>
-									{#if a.start_time}<span class="appt-time">{a.start_time.slice(0, 5)}{a.end_time ? '–' + a.end_time.slice(0, 5) : ''}</span>{/if}
-									<span class="appt-status appt-status-{a.status}">{APPT_STATUS_LABELS[a.status] ?? a.status}</span>
-								</div>
-								{#if (a.employees?.length ?? 0) > 0 || a.assignee_name || a.location || a.description || a.notes}
-									<div class="appt-sub">
-										{#if (a.employees?.length ?? 0) > 0}
-											<span>👥 {a.employees?.map((e) => `${e.first_name} ${e.last_name}`).join(', ')}</span>
-										{:else if a.assignee_name}
-											<span>👤 {a.assignee_name}</span>
-										{/if}
-										{#if a.location}<span>📍 {a.location}</span>{/if}
-										{#if a.description}<span class="appt-desc">{a.description}</span>{/if}
-										{#if a.notes}<span class="appt-notes">{a.notes}</span>{/if}
-									</div>
+		{#if (appointments?.length ?? 0) > 0}
+			<div class="flex flex-col divide-y divide-line rounded-sm border border-line">
+				{#each appointments ?? [] as a (a.id)}
+					<div class="flex flex-wrap items-start justify-between gap-3 px-3 py-2.5 {editingApptId === a.id ? 'bg-sunk' : ''}">
+						<div class="flex min-w-0 flex-1 flex-col gap-1">
+							<div class="flex flex-wrap items-center gap-2 text-sm">
+								<span class="font-medium">{apptKindLabel(a.kind)}</span>
+								<span class="num text-muted">{formatApptDate(a.scheduled_date)}</span>
+								{#if a.start_time}
+									<span class="num text-muted"
+										>{a.start_time.slice(0, 5)}{a.end_time ? '–' + a.end_time.slice(0, 5) : ''}</span
+									>
 								{/if}
+								<Badge tone={a.status === 'done' ? 'ok' : a.status === 'cancelled' ? 'danger' : 'info'}
+									>{APPT_STATUS_LABELS[a.status] ?? a.status}</Badge
+								>
 							</div>
-							<div class="appt-actions">
-								<button class="btn btn-sm" onclick={() => editAppt(a)}>Bearbeiten</button>
-								<button class="btn btn-sm btn-danger" onclick={() => deleteAppt(a)}>Löschen</button>
-							</div>
+							{#if (a.employees?.length ?? 0) > 0 || a.assignee_name || a.location || a.description || a.notes}
+								<div class="flex flex-col gap-0.5 text-xs text-muted">
+									{#if (a.employees?.length ?? 0) > 0}
+										<span class="flex items-center gap-1.5"
+											><Users size={12} />{a.employees?.map((e) => `${e.first_name} ${e.last_name}`).join(', ')}</span
+										>
+									{:else if a.assignee_name}
+										<span class="flex items-center gap-1.5"><User size={12} />{a.assignee_name}</span>
+									{/if}
+									{#if a.location}<span class="flex items-center gap-1.5"><MapPin size={12} />{a.location}</span>{/if}
+									{#if a.description}<span class="text-fg">{a.description}</span>{/if}
+									{#if a.notes}<span class="italic">{a.notes}</span>{/if}
+								</div>
+							{/if}
 						</div>
-					{/each}
+						<div class="flex gap-1.5">
+							<Button size="xs" onclick={() => editAppt(a)}>Bearbeiten</Button>
+							<Button size="xs" variant="danger" onclick={() => deleteAppt(a)}>Löschen</Button>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-[13px] text-faint">Noch keine Termine.</p>
+		{/if}
+
+		<div class="flex flex-col gap-3 rounded-sm border border-line bg-sunk/50 p-3">
+			<h4 class="label-xs text-faint">{editingApptId ? 'Termin bearbeiten' : 'Neuer Termin'}</h4>
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+				<Field label="Art" for="appt-kind">
+					<Input id="appt-kind" bind:value={apptForm.kind} placeholder="besichtigung" list="appt-kinds" />
+					<datalist id="appt-kinds"><option value="besichtigung"></option><option value="nachtermin"></option></datalist>
+				</Field>
+				<Field label="Datum" for="appt-date"><Input id="appt-date" type="date" bind:value={apptForm.scheduled_date} /></Field>
+				<Field label="Status" for="appt-status">
+					<Select id="appt-status" bind:value={apptForm.status}>
+						<option value="scheduled">Geplant</option>
+						<option value="done">Erledigt</option>
+						<option value="cancelled">Storniert</option>
+					</Select>
+				</Field>
+				<Field label="Von" for="appt-from"><Input id="appt-from" type="time" bind:value={apptForm.start_time} /></Field>
+				<Field label="Bis" for="appt-to"><Input id="appt-to" type="time" bind:value={apptForm.end_time} /></Field>
+				<Field label="Mitarbeiter" for="appt-assignee">
+					<Select id="appt-assignee" bind:value={apptForm.assignee_id}>
+						<option value="">— keiner —</option>
+						{#each apptEmployees as e (e.id)}
+							<option value={e.id}>{e.first_name} {e.last_name}</option>
+						{/each}
+					</Select>
+				</Field>
+				<Field label="Ort" for="appt-loc" class="col-span-2 sm:col-span-3">
+					<Input id="appt-loc" bind:value={apptForm.location} placeholder="Adresse (optional, sonst Auszugsadresse)" />
+				</Field>
+				<Field label="Beschreibung" for="appt-desc" class="col-span-2 sm:col-span-3">
+					<Textarea id="appt-desc" rows={2} bind:value={apptForm.description} placeholder="Was ist zu tun? (z. B. Halteverbotszone aufstellen)" />
+				</Field>
+				<Field label="Notiz für Mitarbeiter" for="appt-empnote" class="col-span-2 sm:col-span-3">
+					<Textarea
+						id="appt-empnote"
+						rows={2}
+						bind:value={apptForm.employee_notes}
+						placeholder="Hinweis, den alle zugewiesenen Mitarbeiter sehen"
+					/>
+				</Field>
+				<Field label="Interne Notiz" for="appt-note" class="col-span-2 sm:col-span-3">
+					<Textarea id="appt-note" rows={2} bind:value={apptForm.notes} />
+				</Field>
+			</div>
+			<div class="flex gap-2">
+				<Button size="sm" variant="solid" onclick={saveAppt} disabled={apptSaving}>{editingApptId ? 'Speichern' : 'Anlegen'}</Button>
+				{#if editingApptId}<Button size="sm" onclick={resetApptForm} disabled={apptSaving}>Abbrechen</Button>{/if}
+			</div>
+
+			{#if editingApptId}
+				<!-- Crew for paid Zusatztermin work (Halteverbotszone etc.); needs a saved appointment id. -->
+				<div class="border-t border-line pt-3">
+					<EmployeeAssignmentPanel
+						entityType="appointment"
+						entityId={editingApptId}
+						{inquiryId}
+						preferredDate={apptForm.scheduled_date}
+						onUpdated={onSaved}
+					/>
 				</div>
 			{:else}
-				<p class="appt-empty">Noch keine Termine.</p>
+				<p class="text-xs text-muted">
+					Mitarbeiter für bezahlte Zusatztermine (z. B. Halteverbotszone) lassen sich nach dem Anlegen zuweisen — Termin
+					speichern, dann „Bearbeiten“.
+				</p>
 			{/if}
-
-			<div class="appt-form">
-				<h4>{editingApptId ? 'Termin bearbeiten' : 'Neuer Termin'}</h4>
-				<div class="appt-grid">
-					<label>Art
-						<input type="text" bind:value={apptForm.kind} placeholder="besichtigung" list="appt-kinds" />
-						<datalist id="appt-kinds"><option value="besichtigung"></option><option value="nachtermin"></option></datalist>
-					</label>
-					<label>Datum
-						<input type="date" bind:value={apptForm.scheduled_date} />
-					</label>
-					<label>Von
-						<input type="time" bind:value={apptForm.start_time} />
-					</label>
-					<label>Bis
-						<input type="time" bind:value={apptForm.end_time} />
-					</label>
-					<label>Mitarbeiter
-						<select bind:value={apptForm.assignee_id}>
-							<option value="">— keiner —</option>
-							{#each apptEmployees as e}
-								<option value={e.id}>{e.first_name} {e.last_name}</option>
-							{/each}
-						</select>
-					</label>
-					<label>Status
-						<select bind:value={apptForm.status}>
-							<option value="scheduled">Geplant</option>
-							<option value="done">Erledigt</option>
-							<option value="cancelled">Storniert</option>
-						</select>
-					</label>
-					<label class="appt-wide">Ort
-						<input type="text" bind:value={apptForm.location} placeholder="Adresse (optional, sonst Auszugsadresse)" />
-					</label>
-					<label class="appt-wide">Beschreibung
-						<textarea rows={2} bind:value={apptForm.description} placeholder="Was ist zu tun? (z.&nbsp;B. Halteverbotszone aufstellen)"></textarea>
-					</label>
-					<label class="appt-wide">Notiz für Mitarbeiter
-						<textarea rows={2} bind:value={apptForm.employee_notes} placeholder="Hinweis, den alle zugewiesenen Mitarbeiter sehen"></textarea>
-					</label>
-					<label class="appt-wide">Interne Notiz
-						<textarea rows={2} bind:value={apptForm.notes}></textarea>
-					</label>
-				</div>
-				<div class="appt-form-actions">
-					<button class="btn btn-primary btn-sm" onclick={saveAppt} disabled={apptSaving}>
-						{editingApptId ? 'Speichern' : 'Anlegen'}
-					</button>
-					{#if editingApptId}
-						<button class="btn btn-sm" onclick={resetApptForm} disabled={apptSaving}>Abbrechen</button>
-					{/if}
-				</div>
-
-				{#if editingApptId}
-					<!-- Crew: paid Zusatztermin work (Halteverbotszone etc.). Only for a
-					     saved appointment — the crew endpoints need its id. -->
-					<div class="appt-crew">
-						<EmployeeAssignmentPanel
-							entityType="appointment"
-							entityId={editingApptId}
-							{inquiryId}
-							preferredDate={apptForm.scheduled_date}
-							onUpdated={onSaved}
-						/>
-					</div>
-				{:else}
-					<p class="appt-crew-hint">Mitarbeiter für bezahlte Zusatztermine (z.&nbsp;B. Halteverbotszone) lassen sich nach dem Anlegen zuweisen — Termin speichern, dann „Bearbeiten“.</p>
-				{/if}
-			</div>
 		</div>
-		{/if}
 	</div>
-</div>
-
-<style>
-	.appt-body { padding: 0.75rem 1rem 1rem; }
-	.appt-hint { font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin: 0 0 0.75rem; }
-	.appt-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-	.appt-row {
-		display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
-		padding: 0.5rem 0.65rem; border: 1px solid var(--dt-border, #e2e8f0);
-		border-radius: 8px; border-left: 3px solid #0891b2;
-	}
-	.appt-row.appt-editing { background: #ecfeff; }
-	.appt-info { min-width: 0; }
-	.appt-main { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-	.appt-kind { font-weight: 600; }
-	.appt-date { color: var(--dt-primary, #022448); font-variant-numeric: tabular-nums; }
-	.appt-time { color: var(--dt-text-muted, #64748b); font-size: 0.85rem; }
-	.appt-status { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: #e2e8f0; color: #334155; }
-	.appt-status-scheduled { background: #cffafe; color: #155e75; }
-	.appt-status-done { background: #dcfce7; color: #14532d; }
-	.appt-status-cancelled { background: #fee2e2; color: #991b1b; }
-	.appt-sub { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--dt-text-muted, #64748b); margin-top: 0.25rem; }
-	.appt-notes { font-style: italic; }
-	.appt-desc { color: var(--dt-text, #334155); }
-	.appt-crew { border-top: 1px solid var(--dt-border, #e2e8f0); margin-top: 0.85rem; padding-top: 0.85rem; }
-	.appt-crew-hint { font-size: 0.78rem; color: var(--dt-text-muted, #64748b); margin: 0.85rem 0 0; padding-top: 0.6rem; border-top: 1px dashed var(--dt-border, #e2e8f0); }
-	.appt-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
-	.appt-empty { font-size: 0.85rem; color: var(--dt-text-muted, #64748b); margin: 0 0 1rem; }
-	.appt-form { border-top: 1px solid var(--dt-border, #e2e8f0); padding-top: 0.75rem; }
-	.appt-form h4 { margin: 0 0 0.6rem; font-size: 0.9rem; }
-	.appt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
-	.appt-grid label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--dt-text-muted, #64748b); }
-	.appt-grid input, .appt-grid select, .appt-grid textarea {
-		padding: 0.4rem 0.5rem; border: 1px solid var(--dt-border, #cbd5e1);
-		border-radius: 6px; font-size: 0.85rem; font-family: inherit;
-	}
-	.appt-grid .appt-wide { grid-column: 1 / -1; }
-	.appt-form-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-
-	@media (max-width: 768px) {
-		.appt-row {
-			flex-direction: column;
-		}
-		.appt-actions {
-			width: 100%;
-		}
-		.appt-actions .btn {
-			flex: 1;
-		}
-	}
-</style>
+</Panel>

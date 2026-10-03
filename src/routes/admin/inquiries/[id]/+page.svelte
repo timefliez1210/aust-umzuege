@@ -11,6 +11,9 @@
 	import { normalizeTimeInput } from "$lib/utils/format";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 	import StatusBadge from "$lib/components/admin/StatusBadge.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
+	import Badge from "$lib/components/ui/Badge.svelte";
+	import Select from "$lib/components/ui/Select.svelte";
 	import { floorLabel, parseFloor } from "$lib/utils/floor";
 	import AddressEditor from "./_components/AddressEditor.svelte";
 	import ReviewRequestModal from "./_components/ReviewRequestModal.svelte";
@@ -509,9 +512,29 @@
 	);
 	let calculatedNettoCents = $derived(nonLaborCents + laborCents);
 	let calculatedBruttoCents = $derived(calculateBruttoCents(calculatedNettoCents));
-	const COST_PER_PERSON_HOUR = 18.23;
+	/**
+	 * What one crew hour really costs Alex, in €. Starts at the €18.50 default and
+	 * becomes the company's real rate (booked wages ÷ transferred hours) once the
+	 * Gewinn tab has data. Bürokraft users can't read it and keep the default.
+	 */
+	let costPerPersonHour = $state(18.5);
+	/** Vollkostensatz from the Gewinn tab: below it, the job loses money. */
+	let hourlyFloor = $state<{ break_even_cents: number; target_rate_cents: number; inaccurate: boolean } | null>(null);
+	$effect(() => {
+		const id = $page.params.id;
+		if (!id) return;
+		apiGet<{
+			rates: { company_rate_cents: number };
+			hourly: { break_even_cents: number; target_rate_cents: number; inaccurate: boolean } | null;
+		}>(`/api/v1/admin/profit/inquiries/${id}`)
+			.then((r) => {
+				costPerPersonHour = r.rates.company_rate_cents / 100;
+				hourlyFloor = r.hourly;
+			})
+			.catch(() => {});
+	});
 	let laborProfit = $derived(
-		editPersons * editHours * (editRateCents / 100 - COST_PER_PERSON_HOUR),
+		editPersons * editHours * (editRateCents / 100 - costPerPersonHour),
 	);
 
 	/**
@@ -908,6 +931,15 @@
 		}
 	}
 
+	/** "Firma GmbH" / "Max Mustermann" / e-mail — the page title. */
+	function customerTitle(d: NonNullable<typeof data>): string {
+		const c = d.customer;
+		if (!c) return 'Anfrage';
+		if (c.company_name) return c.company_name;
+		const full = [c.first_name, c.last_name].filter(Boolean).join(' ');
+		return full || c.name || c.email || 'Anfrage';
+	}
+
 	const statusOptions: { value: string; label: string }[] = [
 		{ value: "pending", label: "Ausstehend" },
 		{ value: "info_requested", label: "Info angefragt" },
@@ -1010,60 +1042,61 @@
 
 </script>
 
-<div class="page">
-	<a href="/admin/inquiries" class="back-link">
-		<ArrowLeft size={16} />
-		Zurueck zu Anfragen
-	</a>
+<svelte:head><title>{data ? customerTitle(data) : 'Anfrage'}</title></svelte:head>
 
-	{#if loading}
-		<div class="loading">Laden...</div>
-	{:else if data}
-		<div class="page-header">
-			<div class="header-left">
-				<h1>Anfrage</h1>
+<a href="/admin/inquiries" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg">
+	<ArrowLeft size={15} /> Anfragen
+</a>
+
+{#if loading}
+	<div class="flex flex-col gap-3.5" aria-busy="true">
+		<div class="h-16 animate-pulse rounded-md bg-sunk"></div>
+		<div class="grid gap-3.5 lg:grid-cols-2">
+			{#each Array(4) as _, i (i)}<div class="h-44 animate-pulse rounded-md bg-sunk"></div>{/each}
+		</div>
+	</div>
+{:else if data}
+	<header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 pb-4">
+		<div class="flex min-w-0 flex-col gap-2">
+			<span class="label-xs text-faint">Anfrage</span>
+			<h1 class="truncate text-[26px] leading-none font-semibold tracking-[-0.03em] sm:text-[30px]">{customerTitle(data)}</h1>
+			<div class="flex flex-wrap items-center gap-1.5">
 				<StatusBadge status={data.status} />
-				{#if data.service_type}
-					<span class="svc-badge" data-type={data.service_type}>{SERVICE_TYPE_LABELS[data.service_type] ?? data.service_type}</span>
-				{/if}
-				{#if data.submission_mode && data.submission_mode !== 'termin'}
-					<span class="svc-badge svc-badge--mode">{data.submission_mode}</span>
-				{/if}
-			</div>
-			<div class="header-actions">
-				{#if latestOffer}
-					<button class="btn btn-primary" onclick={reEstimateOffer} disabled={offerBusy}>
-						<RotateCcw size={16} />
-						{offerBusy ? "Wird erstellt..." : "Neu berechnen"}
-					</button>
-				{:else}
-					<button class="btn btn-primary" onclick={generateOffer} disabled={offerBusy}>
-						<FileOutput size={16} />
-						{offerBusy ? "Wird erstellt..." : "Angebot erstellen"}
-					</button>
-				{/if}
-				<select
-					class="status-select"
-					value={data.status}
-					onchange={(e) =>
-						setInquiryStatus((e.target as HTMLSelectElement).value)}
-					disabled={changingStatus}
-				>
-					{#each statusOptions as opt}
-						<option
-							value={opt.value}
-							selected={opt.value === data.status}
-							>{opt.label}</option
-						>
-					{/each}
-				</select>
-				<button class="btn btn-danger" onclick={deleteInquiry}>
-					<Trash2 size={16} />
-				</button>
+				{#if data.service_type}<Badge>{SERVICE_TYPE_LABELS[data.service_type] ?? data.service_type}</Badge>{/if}
+				{#if data.submission_mode && data.submission_mode !== 'termin'}<Badge>{data.submission_mode}</Badge>{/if}
 			</div>
 		</div>
+		<div class="flex flex-wrap items-center gap-2">
+			<Select
+				class="w-44"
+				aria-label="Status"
+				value={data.status}
+				onchange={(e) => setInquiryStatus((e.target as HTMLSelectElement).value)}
+				disabled={changingStatus}
+			>
+				{#each statusOptions as opt (opt.value)}
+					<option value={opt.value} selected={opt.value === data.status}>{opt.label}</option>
+				{/each}
+			</Select>
+			{#if latestOffer}
+				<Button variant="solid" onclick={reEstimateOffer} disabled={offerBusy}>
+					<RotateCcw size={16} />
+					{offerBusy ? 'Wird erstellt …' : 'Neu berechnen'}
+				</Button>
+			{:else}
+				<Button variant="accent" onclick={generateOffer} disabled={offerBusy}>
+					<FileOutput size={16} />
+					{offerBusy ? 'Wird erstellt …' : 'Angebot erstellen'}
+				</Button>
+			{/if}
+			<Button variant="danger" size="icon" onclick={deleteInquiry} aria-label="Anfrage löschen" title="Anfrage löschen">
+				<Trash2 size={16} />
+			</Button>
+		</div>
+	</header>
 
-		<div class="detail-grid">
+	<div class="grid items-start gap-3.5 lg:grid-cols-2">
+		<div class="flex min-w-0 flex-col gap-3.5">
 			<CustomerSection
 				inquiryId={data.id}
 				inquiryStatus={data.status}
@@ -1079,8 +1112,6 @@
 				onToggleBilling={() => toggleCard('billing')}
 				onSaved={loadInquiry}
 			/>
-
-			<!-- Addresses -->
 			<AddressEditor
 				originAddress={data.origin_address}
 				destinationAddress={data.destination_address}
@@ -1088,7 +1119,6 @@
 				inquiryId={data.id}
 				onSaved={loadInquiry}
 			/>
-
 			<DetailsSection
 				bind:editVolume
 				bind:editDistance
@@ -1109,21 +1139,9 @@
 				onToggleMessage={() => toggleCard('message')}
 				onSave={saveInquiry}
 			/>
+		</div>
 
-			<PhotoEstimationSection
-				inquiryId={data.id}
-				estimations={data.estimations}
-				estimation={data.estimation}
-				items={data.items ?? []}
-				bind:filterPhotoIndex
-				bind:saveIfDirty={saveIfDirtyFn}
-				bind:photosOpen={cardOpen.photos}
-				bind:itemsOpen={cardOpen.items}
-				onTogglePhotos={() => toggleCard('photos')}
-				onToggleItems={() => toggleCard('items')}
-				onUpdated={loadInquiry}
-			/>
-
+		<div class="flex min-w-0 flex-col gap-3.5">
 			<PricingSection
 				bind:editBruttoCents
 				bind:editPersons
@@ -1134,6 +1152,8 @@
 				bind:editHeadlineOverride
 				{editVolume}
 				{laborProfit}
+				{costPerPersonHour}
+				{hourlyFloor}
 				{laborCents}
 				{calculatedNettoCents}
 				{calculatedBruttoCents}
@@ -1168,56 +1188,58 @@
 				{generateOffer}
 				{reEstimateOffer}
 			/>
+			<EmployeesSection
+				inquiryId={data.id}
+				status={data.status}
+				scheduledDate={data.scheduled_date}
+				isMultiDay={data.is_multi_day}
+				employees={data.employees ?? []}
+				bind:hasPauschale={editHasPauschale}
+				bind:employeeNotes={editEmployeeNotes}
+				bind:open={cardOpen.employees}
+				onToggle={() => toggleCard('employees')}
+				onFieldBlur={persistInquiry}
+			/>
+			<InvoicesSection
+				inquiryId={data.id}
+				status={data.status}
+				offerNettoCents={data.offer?.total_netto_cents ?? null}
+				bind:open={cardOpen.invoices}
+				onToggle={() => toggleCard('invoices')}
+				onStatusChange={reloadInquiry}
+			/>
+			<AppointmentsSection
+				inquiryId={data.id}
+				scheduledDate={data.scheduled_date}
+				appointments={data.appointments ?? []}
+				bind:open={cardOpen.appointments}
+				onToggle={() => toggleCard('appointments')}
+				onSaved={loadInquiry}
+			/>
 		</div>
-	{:else}
-		<div class="loading" style="color: var(--dt-secondary)">
-			<p>Anfrage konnte nicht geladen werden.</p>
-			<p style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--dt-on-surface-variant)">
-				Bitte überprüfe die Browser-Konsole oder lade die Seite neu.
-			</p>
+
+		<div class="flex min-w-0 flex-col gap-3.5 lg:col-span-2">
+			<PhotoEstimationSection
+				inquiryId={data.id}
+				estimations={data.estimations}
+				estimation={data.estimation}
+				items={data.items ?? []}
+				bind:filterPhotoIndex
+				bind:saveIfDirty={saveIfDirtyFn}
+				bind:photosOpen={cardOpen.photos}
+				bind:itemsOpen={cardOpen.items}
+				onTogglePhotos={() => toggleCard('photos')}
+				onToggleItems={() => toggleCard('items')}
+				onUpdated={loadInquiry}
+			/>
+			<EmailThreadSection inquiryId={data.id} />
 		</div>
-	{/if}
-</div>
-
-{#if data}
-	<EmployeesSection
-		inquiryId={data.id}
-		status={data.status}
-		scheduledDate={data.scheduled_date}
-		isMultiDay={data.is_multi_day}
-		employees={data.employees ?? []}
-		bind:hasPauschale={editHasPauschale}
-		bind:employeeNotes={editEmployeeNotes}
-		bind:open={cardOpen.employees}
-		onToggle={() => toggleCard('employees')}
-		onFieldBlur={persistInquiry}
-	/>
-{/if}
-
-{#if data}
-	<AppointmentsSection
-		inquiryId={data.id}
-		scheduledDate={data.scheduled_date}
-		appointments={data.appointments ?? []}
-		bind:open={cardOpen.appointments}
-		onToggle={() => toggleCard('appointments')}
-		onSaved={loadInquiry}
-	/>
-{/if}
-
-{#if data}
-	<InvoicesSection
-		inquiryId={data.id}
-		status={data.status}
-		offerNettoCents={data.offer?.total_netto_cents ?? null}
-		bind:open={cardOpen.invoices}
-		onToggle={() => toggleCard('invoices')}
-		onStatusChange={reloadInquiry}
-	/>
-{/if}
-
-{#if data}
-	<EmailThreadSection inquiryId={data.id} />
+	</div>
+{:else}
+	<div class="rounded-md border border-danger/40 bg-danger/10 px-4 py-6 text-center">
+		<p class="text-sm font-medium text-danger">Anfrage konnte nicht geladen werden.</p>
+		<p class="mt-1 text-[13px] text-muted">Bitte die Seite neu laden. Bleibt der Fehler, über „Melden“ Bescheid geben.</p>
+	</div>
 {/if}
 
 <svelte:window onkeydown={handleKeydown} />
@@ -1225,274 +1247,3 @@
 {#if data}
 	<ReviewRequestModal bind:open={showReviewPopup} inquiryId={data.id} />
 {/if}
-
-<style>
-	.page {
-		/* No height:100% — Mitarbeiter/Rechnungen/E-Mail sections render as
-		   siblings of .page, so a fixed page height pushes them off-screen. */
-		display: block;
-	}
-
-	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem;
-		text-decoration: none;
-		margin-bottom: 1rem;
-		transition: color var(--dt-transition);
-	}
-
-	.back-link:hover {
-		color: var(--dt-on-surface);
-	}
-
-	.loading {
-		color: var(--dt-on-surface-variant);
-		padding: 2rem;
-		text-align: center;
-	}
-
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-	}
-
-	.header-left {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.header-left h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-	}
-
-	.header-actions {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.detail-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-	}
-
-	/* :global — the "card" chrome (background/toggle/chevron) is used by
-	   every extracted _components/*.svelte section; Svelte's scoped CSS
-	   wouldn't otherwise reach elements rendered by a child component. */
-	:global(.card) {
-		background: var(--dt-surface-container-lowest);
-		border: none;
-		border-radius: var(--dt-radius-lg);
-		padding: 1.25rem;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	:global(.card.full-width) {
-		grid-column: 1 / -1;
-	}
-
-	/* Mode badge variant */
-	.svc-badge--mode {
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface-variant);
-	}
-
-	:global(.card h3) {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		letter-spacing: -0.01em;
-		margin-bottom: 0.75rem;
-	}
-
-	:global(.card-header) {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-	}
-
-	:global(.card-header h3) {
-		margin-bottom: 0;
-	}
-
-	:global(.card-header--toggleable) {
-		gap: 0.75rem;
-	}
-
-	:global(.card--collapsed) {
-		padding-bottom: 0.75rem;
-	}
-
-	:global(.card--collapsed .card-header),
-	:global(.card--collapsed .card-header--toggleable) {
-		margin-bottom: 0;
-	}
-
-	:global(.card-toggle) {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex: 1;
-		min-width: 0;
-		background: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		text-align: left;
-		cursor: pointer;
-		color: inherit;
-		font: inherit;
-	}
-
-	:global(.card-toggle:hover h3) {
-		color: var(--dt-primary);
-	}
-
-	:global(.card-toggle-chev) {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		transition: transform 150ms ease;
-		color: var(--dt-on-surface-variant);
-		flex-shrink: 0;
-	}
-
-	:global(.card-toggle-chev.open) {
-		transform: rotate(90deg);
-	}
-
-	/* Flatten nested card chrome when a child component already renders its own .card */
-	:global(.card > .card),
-	:global(.card > .route-map-card) {
-		background: none;
-		border: none;
-		box-shadow: none;
-		padding: 0;
-		margin: 0;
-		border-radius: 0;
-	}
-
-	.svc-badge {
-		display: inline-block;
-		padding: 0.15rem 0.45rem;
-		border-radius: 4px;
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		white-space: nowrap;
-		background: #e8eef6;
-		color: #1a3a5c;
-	}
-
-	.svc-badge[data-type="firmenumzug"] { background: #d1fae5; color: #065f46; }
-	.svc-badge[data-type="entruempelung"] { background: #fce7f3; color: #9d174d; }
-	.svc-badge[data-type="haushaltsaufloesung"] { background: #fef3c7; color: #92400e; }
-	.svc-badge[data-type="lagerung"] { background: #e0e7ff; color: #3730a3; }
-	.svc-badge[data-type="montage"] { background: #fef9c3; color: #854d0e; }
-	.svc-badge[data-type="umzugshelfer"] { background: #f0fdf4; color: #166534; }
-	.svc-badge[data-type="seniorenumzug"] { background: #fce7f3; color: #9d174d; }
-
-	/* :global — this "field"/"form-grid" design pattern is shared by several
-	   extracted _components/*.svelte children; Svelte's scoped CSS wouldn't
-	   otherwise reach elements rendered by a child component. */
-	:global(.form-grid) {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	:global(.field) {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	:global(.field.full-width) {
-		grid-column: 1 / -1;
-	}
-
-	:global(.field label) {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-	}
-
-	:global(.field input),
-	:global(.field textarea),
-	:global(.form-input) {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		padding: 0.5rem 0.625rem;
-		font-size: 0.875rem;
-		outline: none;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-		font-family: inherit;
-		box-sizing: border-box;
-		min-width: 0;
-	}
-
-	:global(.field input:focus),
-	:global(.field textarea:focus),
-	:global(.form-input:focus) {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	/* :global — used by both this page (Pricing header actions) and InvoicesSection.svelte */
-	:global(.btn-link) {
-		color: var(--dt-primary);
-		font-size: 0.75rem;
-		text-align: left;
-		background: none;
-		border: none;
-		padding: 0;
-		cursor: pointer;
-		transition: color var(--dt-transition);
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
-
-	:global(.btn-link:hover) {
-		text-decoration: underline;
-	}
-
-	@media (max-width: 768px) {
-		.detail-grid {
-			grid-template-columns: 1fr;
-		}
-
-		:global(.form-grid) {
-			grid-template-columns: 1fr;
-		}
-
-		:global(.card) {
-			max-width: 100%;
-			overflow-x: auto;
-		}
-
-		:global(.btn) {
-			min-height: 44px;
-		}
-		:global(.btn-sm) {
-			min-height: 44px;
-		}
-		.header-actions {
-			flex-wrap: wrap;
-		}
-	}
-</style>

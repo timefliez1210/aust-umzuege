@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { apiGet, apiPost, apiPatch, apiDelete, formatDate } from '$lib/utils/api.svelte';
-	import { Truck, Wrench, Plus, Trash2, Bell, Check, RotateCcw, Pencil, X } from 'lucide-svelte';
+	import { Truck, Wrench, Plus, Trash2, Bell, Check, RotateCcw, Pencil, X, RefreshCw } from 'lucide-svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import type { Tone } from '$lib/components/ui/tone';
 
 	interface Reminder {
 		id: string;
@@ -192,452 +199,138 @@
 	$effect(() => {
 		load();
 	});
+
+	const URGENCY_TONE: Record<ReturnType<typeof urgency>, Tone> = {
+		done: 'neutral',
+		overdue: 'danger',
+		soon: 'warn',
+		upcoming: 'info'
+	};
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<div class="page-title">
-			<Truck size={22} />
-			<h1>Fuhrpark</h1>
-		</div>
-		<button class="btn-refresh" onclick={load} disabled={loading}>
-			{loading ? 'Lädt …' : 'Aktualisieren'}
-		</button>
+<svelte:head><title>Fuhrpark</title></svelte:head>
+
+<PageHeader title="Fuhrpark" count="{vehicles.length} Fahrzeuge">
+	{#snippet actions()}
+		<Button variant="ghost" size="icon" onclick={load} disabled={loading} aria-label="Aktualisieren">
+			<RefreshCw size={16} class={loading ? 'animate-spin' : ''} />
+		</Button>
+	{/snippet}
+</PageHeader>
+
+{#if error}<Notice tone="danger" class="mb-3">{error}</Notice>{/if}
+
+<form
+	class="mb-5 grid gap-2 rounded-md border border-line bg-panel p-3 sm:grid-cols-[minmax(0,1fr)_200px_auto]"
+	onsubmit={(e) => {
+		e.preventDefault();
+		addVehicle();
+	}}
+>
+	<Input placeholder="Bezeichnung (z. B. Mercedes Sprinter)" bind:value={newVehicleLabel} maxlength={120} aria-label="Bezeichnung" />
+	<Input placeholder="Kennzeichen (z. B. HI-AB 1234)" bind:value={newVehicleKennzeichen} maxlength={20} aria-label="Kennzeichen" class="num uppercase" />
+	<Button type="submit" variant="accent" disabled={busy || !newVehicleLabel.trim() || !newVehicleKennzeichen.trim()}>
+		<Plus size={16} /> Fahrzeug
+	</Button>
+</form>
+
+{#if loading && vehicles.length === 0}
+	<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+		{#each Array(3) as _, i (i)}<div class="h-48 animate-pulse rounded-md bg-sunk"></div>{/each}
 	</div>
-
-	{#if error}
-		<p class="error">{error}</p>
-	{/if}
-
-	<!-- Add vehicle -->
-	<form class="add-vehicle" onsubmit={(e) => { e.preventDefault(); addVehicle(); }}>
-		<input
-			type="text"
-			class="vehicle-label-input"
-			placeholder="Bezeichnung (z. B. Mercedes Sprinter)"
-			bind:value={newVehicleLabel}
-			maxlength="120"
-		/>
-		<input
-			type="text"
-			class="vehicle-kennzeichen-input"
-			placeholder="Kennzeichen (z. B. HI-AB 1234)"
-			bind:value={newVehicleKennzeichen}
-			maxlength="20"
-		/>
-		<button
-			type="submit"
-			class="btn-primary"
-			disabled={busy || !newVehicleLabel.trim() || !newVehicleKennzeichen.trim()}
-		>
-			<Plus size={16} /> Fahrzeug
-		</button>
-	</form>
-
-	{#if loading && vehicles.length === 0}
-		<p class="empty">Lädt …</p>
-	{:else if vehicles.length === 0}
-		<p class="empty">Noch keine Fahrzeuge angelegt.</p>
-	{:else}
-		<div class="fleet">
-			{#each vehicles as v (v.id)}
-				<section class="vehicle-card">
-					<header class="vehicle-head">
-						{#if editingId === v.id}
-							<form class="edit-vehicle" onsubmit={(e) => { e.preventDefault(); saveEdit(v); }}>
-								<input type="text" class="vehicle-label-input" bind:value={editLabel} maxlength="120" placeholder="Bezeichnung" />
-								<input type="text" class="vehicle-kennzeichen-input" bind:value={editKennzeichen} maxlength="20" placeholder="Kennzeichen" />
-								<button type="submit" class="icon-btn" title="Speichern" disabled={busy || !editLabel.trim() || !editKennzeichen.trim()}>
-									<Check size={16} />
-								</button>
-								<button type="button" class="icon-btn" title="Abbrechen" onclick={cancelEdit}>
-									<X size={16} />
-								</button>
-							</form>
-						{:else}
-							{@const upcoming = nextReminder(v)}
-							<div class="vehicle-name">
-								<Truck size={18} />
-								<h2>{v.label}</h2>
-								{#if v.kennzeichen}
-									<span class="kennzeichen">{v.kennzeichen}</span>
-								{/if}
-								{#if upcoming}
-									<span class="badge badge--{urgency(upcoming)}" title={upcoming.label}>
-										{dueLabel(upcoming.due_date)}
-									</span>
-								{/if}
-							</div>
-							<div class="vehicle-head-actions">
-								<button class="icon-btn" title="Fahrzeug bearbeiten" onclick={() => startEdit(v)}>
-									<Pencil size={16} />
-								</button>
-								<button class="icon-btn danger" title="Fahrzeug löschen" onclick={() => deleteVehicle(v)}>
-									<Trash2 size={16} />
-								</button>
-							</div>
-						{/if}
-					</header>
-
-					{#if v.reminders.length === 0}
-						<p class="empty small">Keine Erinnerungen.</p>
+{:else if vehicles.length === 0}
+	<EmptyState title="Noch keine Fahrzeuge angelegt" hint="Fahrzeuge mit TÜV-, Öl- und Versicherungsterminen — Josie erinnert rechtzeitig." />
+{:else}
+	<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+		{#each vehicles as v (v.id)}
+			<section class="flex flex-col rounded-md border border-line bg-panel">
+				<header class="flex items-center gap-2 border-b border-line px-4 py-3">
+					{#if editingId === v.id}
+						<form
+							class="grid w-full grid-cols-[minmax(0,1fr)_110px_auto_auto] items-center gap-1.5"
+							onsubmit={(e) => {
+								e.preventDefault();
+								saveEdit(v);
+							}}
+						>
+							<Input bind:value={editLabel} maxlength={120} placeholder="Bezeichnung" aria-label="Bezeichnung" />
+							<Input bind:value={editKennzeichen} maxlength={20} placeholder="Kennzeichen" aria-label="Kennzeichen" class="num uppercase" />
+							<Button type="submit" variant="ghost" size="icon-sm" aria-label="Speichern" disabled={busy || !editLabel.trim() || !editKennzeichen.trim()}
+								><Check size={16} /></Button
+							>
+							<Button variant="ghost" size="icon-sm" aria-label="Abbrechen" onclick={cancelEdit}><X size={16} /></Button>
+						</form>
 					{:else}
-						<ul class="reminders">
-							{#each v.reminders as r (r.id)}
-								{@const tier = urgency(r)}
-								<li class="reminder" class:done={!r.active}>
-									<span class="reminder-icon"><Wrench size={14} /></span>
-									<span class="reminder-label">{r.label}</span>
-									<span class="reminder-date">{formatDate(r.due_date)}</span>
-									<span class="badge badge--{tier}">
-										{#if !r.active}erledigt{:else}{dueLabel(r.due_date)}{/if}
-									</span>
-									<span class="reminder-actions">
-										{#if r.active}
-											<button class="icon-btn" title="Als erledigt markieren" onclick={() => setReminderActive(v, r, false)}>
-												<Check size={15} />
-											</button>
-										{:else}
-											<button class="icon-btn" title="Wieder aktivieren" onclick={() => setReminderActive(v, r, true)}>
-												<RotateCcw size={15} />
-											</button>
-										{/if}
-										<button class="icon-btn danger" title="Löschen" onclick={() => deleteReminder(v, r)}>
-											<Trash2 size={15} />
-										</button>
-									</span>
-								</li>
-							{/each}
-						</ul>
+						{@const upcoming = nextReminder(v)}
+						<Truck size={18} class="shrink-0 text-muted" />
+						<span class="flex min-w-0 flex-1 flex-col">
+							<h2 class="truncate text-[15px] font-semibold">{v.label}</h2>
+							{#if v.kennzeichen}<span class="num text-xs tracking-wide text-faint uppercase">{v.kennzeichen}</span>{/if}
+						</span>
+						{#if upcoming}
+							<Badge tone={URGENCY_TONE[urgency(upcoming)]} title={upcoming.label}>{dueLabel(upcoming.due_date)}</Badge>
+						{/if}
+						<Button variant="ghost" size="icon-sm" aria-label="Fahrzeug bearbeiten" title="Fahrzeug bearbeiten" onclick={() => startEdit(v)}
+							><Pencil size={15} /></Button
+						>
+						<Button variant="ghost" size="icon-sm" class="hover:text-danger" aria-label="Fahrzeug löschen" title="Fahrzeug löschen" onclick={() => deleteVehicle(v)}
+							><Trash2 size={15} /></Button
+						>
 					{/if}
+				</header>
 
-					<!-- Add reminder -->
-					<form class="add-reminder" onsubmit={(e) => { e.preventDefault(); addReminder(v); }}>
-						<Bell size={14} class="add-reminder-icon" />
+				{#if v.reminders.length === 0}
+					<p class="px-4 py-3 text-[13px] text-faint">Keine Erinnerungen.</p>
+				{:else}
+					<ul class="divide-y divide-line">
+						{#each v.reminders as r (r.id)}
+							{@const tier = urgency(r)}
+							<li class="flex items-center gap-2.5 px-4 py-2 {r.active ? '' : 'text-faint'}">
+								<Wrench size={14} class="shrink-0 text-faint" />
+								<span class="min-w-0 flex-1 truncate text-sm {r.active ? '' : 'line-through'}">{r.label}</span>
+								<span class="num text-xs text-muted">{formatDate(r.due_date)}</span>
+								<Badge tone={URGENCY_TONE[tier]}>{r.active ? dueLabel(r.due_date) : 'erledigt'}</Badge>
+								{#if r.active}
+									<Button variant="ghost" size="icon-sm" aria-label="Als erledigt markieren" title="Als erledigt markieren" onclick={() => setReminderActive(v, r, false)}
+										><Check size={15} /></Button
+									>
+								{:else}
+									<Button variant="ghost" size="icon-sm" aria-label="Wieder aktivieren" title="Wieder aktivieren" onclick={() => setReminderActive(v, r, true)}
+										><RotateCcw size={15} /></Button
+									>
+								{/if}
+								<Button variant="ghost" size="icon-sm" class="hover:text-danger" aria-label="Löschen" title="Löschen" onclick={() => deleteReminder(v, r)}
+									><Trash2 size={15} /></Button
+								>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				<form
+					class="mt-auto grid grid-cols-[minmax(0,1fr)_140px_auto] items-center gap-1.5 border-t border-line p-3"
+					onsubmit={(e) => {
+						e.preventDefault();
+						addReminder(v);
+					}}
+				>
+					<label class="flex h-9 items-center gap-2 rounded-sm border border-line-strong bg-panel px-2.5 focus-within:border-fg">
+						<Bell size={14} class="shrink-0 text-faint" />
 						<input
 							type="text"
-							placeholder="Erinnerung (z. B. TÜV, Ölwechsel)"
+							placeholder="TÜV, Ölwechsel …"
+							aria-label="Erinnerung"
+							class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
 							bind:value={reminderDrafts[v.id].label}
 							maxlength="120"
 						/>
-						<input type="date" bind:value={reminderDrafts[v.id].due_date} />
-						<button
-							type="submit"
-							class="btn-secondary"
-							disabled={busy || !reminderDrafts[v.id].label.trim() || !reminderDrafts[v.id].due_date}
-						>
-							<Plus size={14} />
-						</button>
-					</form>
-				</section>
-			{/each}
-		</div>
-	{/if}
-</div>
-
-<style>
-	.page {
-		padding: 1.5rem;
-		max-width: 920px;
-		margin: 0 auto;
-	}
-
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.25rem;
-	}
-
-	.page-title {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.page-title h1 {
-		font-size: 1.4rem;
-		margin: 0;
-	}
-
-	.btn-refresh {
-		background: var(--dt-surface-variant, #e7edf3);
-		border: 1px solid var(--dt-outline, #c2cbd4);
-		border-radius: 8px;
-		padding: 0.45rem 0.9rem;
-		cursor: pointer;
-		font-size: 0.85rem;
-	}
-
-	.error {
-		background: #fdecea;
-		color: #b3261e;
-		border-radius: 8px;
-		padding: 0.6rem 0.9rem;
-		margin-bottom: 1rem;
-	}
-
-	.empty {
-		color: var(--dt-on-surface-variant, #6b7680);
-		font-style: italic;
-	}
-	.empty.small {
-		font-size: 0.85rem;
-		margin: 0.25rem 0 0.75rem;
-	}
-
-	.add-vehicle {
-		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 1.5rem;
-		flex-wrap: wrap;
-	}
-	.vehicle-label-input {
-		flex: 2 1 220px;
-	}
-	.vehicle-kennzeichen-input {
-		flex: 1 1 150px;
-	}
-
-	input[type='text'],
-	input[type='date'] {
-		padding: 0.5rem 0.7rem;
-		border: 1px solid var(--dt-outline, #c2cbd4);
-		border-radius: 8px;
-		font-size: 0.9rem;
-		background: var(--dt-surface, #fff);
-		color: inherit;
-	}
-
-	.btn-primary,
-	.btn-secondary {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		border: none;
-		border-radius: 8px;
-		cursor: pointer;
-		font-size: 0.85rem;
-		padding: 0.5rem 0.9rem;
-		white-space: nowrap;
-	}
-	.btn-primary {
-		background: var(--dt-primary, #1e3a5f);
-		color: #fff;
-	}
-	.btn-secondary {
-		background: var(--dt-surface-variant, #e7edf3);
-		color: var(--dt-on-surface, #191c1e);
-		padding: 0.5rem 0.7rem;
-	}
-	.btn-primary:disabled,
-	.btn-secondary:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.fleet {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.vehicle-card {
-		background: var(--dt-surface, #fff);
-		border: 1px solid var(--dt-outline-variant, #dde3ea);
-		border-radius: 12px;
-		padding: 1rem 1.1rem;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	.vehicle-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-	.vehicle-head-actions {
-		display: flex;
-		gap: 0.2rem;
-		flex-shrink: 0;
-	}
-	.vehicle-name {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-	.edit-vehicle {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex: 1;
-		flex-wrap: wrap;
-	}
-	.edit-vehicle .vehicle-label-input,
-	.edit-vehicle .vehicle-kennzeichen-input {
-		padding: 0.4rem 0.6rem;
-	}
-	.vehicle-name h2 {
-		font-size: 1.05rem;
-		margin: 0;
-		color: var(--dt-on-surface, #191c1e);
-	}
-	.kennzeichen {
-		font-family: 'Courier New', ui-monospace, monospace;
-		font-weight: 700;
-		font-size: 0.8rem;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		padding: 0.15rem 0.5rem;
-		border: 1.5px solid var(--dt-outline, #c2cbd4);
-		border-radius: 5px;
-		background: #fff;
-		color: #1a1a1a;
-		white-space: nowrap;
-	}
-
-	.reminders {
-		list-style: none;
-		padding: 0;
-		margin: 0 0 0.75rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-	}
-
-	.reminder {
-		display: grid;
-		grid-template-columns: auto 1fr auto auto auto;
-		align-items: center;
-		gap: 0.6rem;
-		padding: 0.45rem 0.5rem;
-		border-radius: 8px;
-		background: var(--dt-surface-variant, #f3f6f9);
-	}
-	.reminder.done {
-		opacity: 0.55;
-	}
-	.reminder.done .reminder-label {
-		text-decoration: line-through;
-	}
-
-	.reminder-icon {
-		display: flex;
-		color: var(--dt-on-surface-variant, #6b7680);
-	}
-	.reminder-label {
-		font-weight: 500;
-	}
-	.reminder-date {
-		font-size: 0.82rem;
-		color: var(--dt-on-surface-variant, #6b7680);
-	}
-
-	.badge {
-		font-size: 0.72rem;
-		font-weight: 600;
-		padding: 0.18rem 0.5rem;
-		border-radius: 999px;
-		white-space: nowrap;
-	}
-	.badge--overdue {
-		background: #fdecea;
-		color: #b3261e;
-	}
-	.badge--soon {
-		background: #fff4e5;
-		color: #b25e00;
-	}
-	.badge--upcoming {
-		background: #e7f0e9;
-		color: #2e6b3e;
-	}
-	.badge--done {
-		background: #eceff1;
-		color: #6b7680;
-	}
-
-	.reminder-actions {
-		display: flex;
-		gap: 0.2rem;
-	}
-
-	.icon-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: transparent;
-		border: none;
-		border-radius: 6px;
-		padding: 0.3rem;
-		cursor: pointer;
-		color: var(--dt-on-surface-variant, #6b7680);
-	}
-	.icon-btn:hover {
-		background: rgba(0, 0, 0, 0.06);
-	}
-	.icon-btn.danger:hover {
-		background: #fdecea;
-		color: #b3261e;
-	}
-
-	.add-reminder {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		border-top: 1px dashed var(--dt-outline-variant, #dde3ea);
-		padding-top: 0.75rem;
-	}
-	.add-reminder input[type='text'] {
-		flex: 1;
-	}
-	:global(.add-reminder-icon) {
-		color: var(--dt-on-surface-variant, #6b7680);
-		flex-shrink: 0;
-	}
-
-	@media (max-width: 768px) {
-		.page {
-			padding: 1rem;
-		}
-		.reminder {
-			grid-template-columns: auto 1fr auto;
-			grid-template-areas:
-				'icon label actions'
-				'icon date badge';
-		}
-		.reminder-icon {
-			grid-area: icon;
-		}
-		.reminder-label {
-			grid-area: label;
-		}
-		.reminder-date {
-			grid-area: date;
-		}
-		.badge {
-			grid-area: badge;
-			justify-self: start;
-		}
-		.reminder-actions {
-			grid-area: actions;
-		}
-		.add-reminder {
-			flex-wrap: wrap;
-		}
-		.add-vehicle {
-			flex-direction: column;
-			align-items: stretch;
-		}
-		.add-vehicle .btn-primary {
-			width: 100%;
-		}
-		.edit-vehicle .vehicle-label-input,
-		.edit-vehicle .vehicle-kennzeichen-input {
-			flex: 1 1 100%;
-		}
-	}
-</style>
+					</label>
+					<Input type="date" aria-label="Fällig am" bind:value={reminderDrafts[v.id].due_date} />
+					<Button type="submit" size="icon" aria-label="Erinnerung hinzufügen" disabled={busy || !reminderDrafts[v.id].label.trim() || !reminderDrafts[v.id].due_date}>
+						<Plus size={15} />
+					</Button>
+				</form>
+			</section>
+		{/each}
+	</div>
+{/if}

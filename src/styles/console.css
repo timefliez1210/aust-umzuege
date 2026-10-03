@@ -1,0 +1,249 @@
+/* ================================================================
+ * Console design system — admin dashboard (and later the worker portal).
+ *
+ * Everything is a CSS variable on <html data-console>, so three things can change
+ * at runtime without a rebuild:
+ *   - light / dark          → html[data-theme="dark"]   (lib/stores/theme.svelte.ts)
+ *   - the company's accent  → --accent set inline on <html> (tenant settings, SaaS)
+ *   - nothing else; components never contain a raw colour.
+ *
+ * Tailwind utilities read the same variables (`bg-panel`, `text-muted`,
+ * `border-line`, `bg-accent text-accent-ink`, …) via the @theme block below.
+ * Every console screen is built from these utilities and `lib/components/ui/*`;
+ * there are no per-page stylesheets.
+ * ================================================================ */
+
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ─── Tokens ─────────────────────────────────────────────────── */
+
+html[data-console] {
+	--bg: #f5f5f3;
+	--panel: #ffffff;
+	--sunk: #efefec;
+	--sunk-2: #e8e8e4;
+	--line: #e3e3df;
+	--line-strong: #cfcfca;
+	--fg: #0c0c0d;
+	--muted: #505056;
+	--faint: #6b6b72;
+	--bar: #dededa;
+	--bar-strong: #bdbdb7;
+	--ok: #17803a;
+	--warn: #a85a00;
+	--danger: #c4291b;
+	--info: #2456c9;
+
+	/* Tenant brand colour. Fill only — text on it is --accent-ink; accent-coloured
+	 * text uses --accent-text, which is darkened in light mode for contrast. */
+	--accent: #ff5a1f;
+	--accent-ink: #0c0c0d;
+	--accent-text: color-mix(in oklab, var(--accent) 72%, black);
+
+	--fg-rgb: 12, 12, 13;
+	--danger-rgb: 196, 41, 27;
+
+	color-scheme: light;
+	background: var(--bg);
+	color: var(--fg);
+}
+
+html[data-console][data-theme='dark'] {
+	--bg: #09090a;
+	--panel: #111113;
+	--sunk: #1a1a1d;
+	--sunk-2: #202024;
+	--line: #232327;
+	--line-strong: #34343b;
+	--fg: #f2f2f3;
+	--muted: #a4a4ac;
+	--faint: #85858e;
+	--bar: #25252a;
+	--bar-strong: #3d3d45;
+	--ok: #46c46e;
+	--warn: #f0a42a;
+	--danger: #ff6a5b;
+	--info: #7da2ff;
+	--accent-text: var(--accent);
+	--fg-rgb: 242, 242, 243;
+	--danger-rgb: 255, 106, 91;
+	color-scheme: dark;
+}
+
+@theme inline {
+	--color-bg: var(--bg);
+	--color-panel: var(--panel);
+	--color-sunk: var(--sunk);
+	--color-sunk-2: var(--sunk-2);
+	--color-line: var(--line);
+	--color-line-strong: var(--line-strong);
+	--color-fg: var(--fg);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+	--color-bar: var(--bar);
+	--color-bar-strong: var(--bar-strong);
+	--color-ok: var(--ok);
+	--color-warn: var(--warn);
+	--color-danger: var(--danger);
+	--color-info: var(--info);
+	--color-accent: var(--accent);
+	--color-accent-ink: var(--accent-ink);
+	--color-accent-text: var(--accent-text);
+
+	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+
+	--radius-xs: 2px;
+	--radius-sm: 3px;
+	--radius-md: 4px;
+	--radius-lg: 6px;
+}
+
+/* ─── Base ───────────────────────────────────────────────────── */
+
+@layer base {
+	html[data-console] body {
+		font-family: var(--font-sans);
+		font-size: 14px;
+		line-height: 1.45;
+		-webkit-font-smoothing: antialiased;
+		background: var(--bg);
+		color: var(--fg);
+	}
+	html[data-console] :focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+	html[data-console] ::selection {
+		background: color-mix(in oklab, var(--accent) 35%, transparent);
+	}
+}
+
+/* Numbers are always mono with tabular figures. */
+@utility num {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+}
+
+/* Micro label: mono, uppercase, tracked. */
+@utility label-xs {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	line-height: 1.2;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+/* ─── Calendar entries ───────────────────────────────────────── *
+ * Categorical colours for calendar entries (Termin categories, Zusatztermine).
+ * Booked moves use the tenant accent; tentative ones stay neutral. Each entry is a
+ * tinted surface with a solid left rule, so the hue never carries meaning alone.   */
+
+html[data-console] {
+	--cat-violet: #6a55d6;
+	--cat-orange: #d06a12;
+	--cat-blue: #2766d4;
+	--cat-pink: #c23c86;
+	--cat-yellow: #a8840a;
+	--cat-teal: #0f8277;
+}
+html[data-console][data-theme='dark'] {
+	--cat-violet: #9d8cff;
+	--cat-orange: #f09a4e;
+	--cat-blue: #6d9dff;
+	--cat-pink: #f07ab8;
+	--cat-yellow: #e5c04a;
+	--cat-teal: #45c4b4;
+}
+
+@utility entry-green {
+	background: color-mix(in oklab, var(--accent) 16%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--accent);
+}
+@utility entry-yellow {
+	background: var(--sunk);
+	color: var(--muted);
+	box-shadow: inset 2px 0 0 var(--line-strong);
+}
+@utility entry-violet {
+	background: color-mix(in oklab, var(--cat-violet) 15%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--cat-violet);
+}
+@utility entry-orange {
+	background: color-mix(in oklab, var(--cat-orange) 15%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--cat-orange);
+}
+@utility entry-blue {
+	background: color-mix(in oklab, var(--cat-blue) 15%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--cat-blue);
+}
+@utility entry-pink {
+	background: color-mix(in oklab, var(--cat-pink) 15%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--cat-pink);
+}
+@utility entry-kartons {
+	background: color-mix(in oklab, var(--cat-yellow) 15%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--cat-yellow);
+}
+@utility entry-appt {
+	background: color-mix(in oklab, var(--cat-teal) 15%, var(--panel));
+	color: var(--fg);
+	box-shadow: inset 2px 0 0 var(--cat-teal);
+}
+
+/* ─── Shared with the public site ───────────────────────────────── *
+ * VolumeCalculator / MediaDropzone are also used on the marketing site and read its
+ * global.css names. Here those names point at console tokens. On the site,
+ * --color-text is the LIGHT colour and --color-info-bar the dark fill; panel/fg keep
+ * that pairing inverted in both themes.                                          */
+
+html[data-console] {
+	--color-text: var(--panel);
+	--color-text-muted: var(--muted);
+	--color-info-bar: var(--fg);
+	--color-nav-accent: var(--accent);
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 1.5rem;
+	--space-8: 2rem;
+	--font-medium: 500;
+	--font-semibold: 600;
+	--font-bold: 700;
+	--transition-fast: 150ms ease;
+	--shadow-lg: 0 0 0 1px var(--line);
+}
+
+/* ─── Motion ─────────────────────────────────────────────────── */
+
+@keyframes sheet-up {
+	from {
+		transform: translateY(16px);
+		opacity: 0;
+	}
+}
+@keyframes sheet-left {
+	from {
+		transform: translateX(16px);
+		opacity: 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	html[data-console] * {
+		animation-duration: 0s !important;
+		transition-duration: 0s !important;
+	}
+}

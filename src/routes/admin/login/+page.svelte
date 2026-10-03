@@ -2,7 +2,14 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { apiFetch } from '$lib/utils/api.svelte';
-	import { LogIn, KeyRound, ArrowLeft } from 'lucide-svelte';
+	import { LogIn, ArrowLeft } from 'lucide-svelte';
+	import { tenant } from '$lib/tenant';
+	import TenantMark from '$lib/components/console/TenantMark.svelte';
+	import ThemeButton from '$lib/components/console/ThemeButton.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
 
 	type View = 'login' | 'request' | 'verify';
 
@@ -114,332 +121,94 @@
 	}
 </script>
 
-<div class="login-page">
-	<div class="login-card">
+<svelte:head><title>Anmelden · {tenant.name}</title></svelte:head>
+
+<div class="relative flex min-h-dvh items-center justify-center bg-bg px-4 py-10 text-fg">
+	<ThemeButton class="absolute top-4 right-4" />
+
+	<div class="w-full max-w-sm">
+		<div class="mb-8 flex items-center gap-3">
+			<TenantMark class="size-10 text-sm" />
+			<span class="flex flex-col">
+				<span class="text-base font-semibold">{tenant.name}</span>
+				<span class="label-xs text-faint">Console</span>
+			</span>
+		</div>
 
 		{#if view === 'login'}
-			<div class="login-header">
-				<h1>AUST Admin</h1>
-				<p>Melden Sie sich an, um fortzufahren</p>
-			</div>
+			<h1 class="text-[28px] leading-tight font-semibold tracking-[-0.03em]">Anmelden</h1>
+			<p class="mt-1 mb-6 text-sm text-muted">Melden Sie sich an, um fortzufahren.</p>
 
-			<form onsubmit={handleSubmit}>
-				{#if auth.error}
-					<div class="login-error">{auth.error}</div>
-				{/if}
-
-				<div class="field">
-					<label for="email">E-Mail</label>
-					<input
-						id="email"
-						type="email"
-						bind:value={email}
-						placeholder="admin@aust-umzuege.de"
-						required
-						autocomplete="email"
-					/>
-				</div>
-
-				<div class="field">
-					<label for="password">Passwort</label>
-					<input
+			<form class="flex flex-col gap-4" onsubmit={handleSubmit}>
+				{#if auth.error}<Notice tone="danger">{auth.error}</Notice>{/if}
+				<Field label="E-Mail" for="email">
+					<Input id="email" type="email" class="h-11" bind:value={email} placeholder="name@firma.de" required autocomplete="email" />
+				</Field>
+				<Field label="Passwort" for="password">
+					<Input
 						id="password"
 						type="password"
+						class="h-11"
 						bind:value={password}
 						placeholder="Passwort eingeben"
 						required
 						autocomplete="current-password"
 					/>
-				</div>
-
-				<button type="submit" class="login-btn" disabled={auth.loading}>
-					{#if auth.loading}
-						Anmeldung...
-					{:else}
-						<LogIn size={18} />
-						Anmelden
-					{/if}
-				</button>
+				</Field>
+				<Button type="submit" variant="accent" size="lg" class="mt-1" disabled={auth.loading}>
+					{#if auth.loading}Anmeldung …{:else}<LogIn size={18} /> Anmelden{/if}
+				</Button>
 			</form>
 
-			<div class="forgot-row">
-				<button class="forgot-link" onclick={openReset}>Passwort vergessen?</button>
-			</div>
-
+			<button class="mt-5 text-[13px] text-muted hover:text-fg hover:underline" onclick={openReset}>Passwort vergessen?</button>
 		{:else if view === 'request'}
-			<div class="login-header">
-				<div class="reset-icon"><KeyRound size={28} /></div>
-				<h1>Passwort zurücksetzen</h1>
-				<p>Geben Sie Ihre E-Mail ein. Sie erhalten einen 6-stelligen Code.</p>
-			</div>
+			<h1 class="text-[28px] leading-tight font-semibold tracking-[-0.03em]">Passwort zurücksetzen</h1>
+			<p class="mt-1 mb-6 text-sm text-muted">Geben Sie Ihre E-Mail ein. Sie erhalten einen 6-stelligen Code.</p>
 
-			<form onsubmit={handleResetRequest}>
-				{#if resetError}
-					<div class="login-error">{resetError}</div>
-				{/if}
-
-				<div class="field">
-					<label for="reset-email">E-Mail</label>
-					<input
-						id="reset-email"
-						type="email"
-						bind:value={resetEmail}
-						placeholder="admin@aust-umzuege.de"
-						required
-						autocomplete="email"
-					/>
-				</div>
-
-				<button type="submit" class="login-btn" disabled={resetLoading}>
-					{resetLoading ? 'Wird gesendet...' : 'Code senden'}
-				</button>
+			<form class="flex flex-col gap-4" onsubmit={handleResetRequest}>
+				{#if resetError}<Notice tone="danger">{resetError}</Notice>{/if}
+				<Field label="E-Mail" for="reset-email">
+					<Input id="reset-email" type="email" class="h-11" bind:value={resetEmail} placeholder="name@firma.de" required autocomplete="email" />
+				</Field>
+				<Button type="submit" variant="accent" size="lg" disabled={resetLoading}>{resetLoading ? 'Wird gesendet …' : 'Code senden'}</Button>
 			</form>
 
-			<div class="forgot-row">
-				<button class="forgot-link" onclick={() => view = 'login'}>
-					<ArrowLeft size={14} /> Zurück zur Anmeldung
-				</button>
-			</div>
-
+			<button class="mt-5 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg" onclick={() => (view = 'login')}>
+				<ArrowLeft size={14} /> Zurück zur Anmeldung
+			</button>
 		{:else if view === 'verify'}
-			<div class="login-header">
-				<div class="reset-icon"><KeyRound size={28} /></div>
-				<h1>Code eingeben</h1>
-				<p>Wir haben einen Code an <strong>{resetEmail}</strong> gesendet.</p>
-			</div>
+			<h1 class="text-[28px] leading-tight font-semibold tracking-[-0.03em]">Code eingeben</h1>
+			<p class="mt-1 mb-6 text-sm text-muted">Wir haben einen Code an <strong class="text-fg">{resetEmail}</strong> gesendet.</p>
 
-			<form onsubmit={handleResetVerify}>
-				{#if resetError}
-					<div class="login-error">{resetError}</div>
-				{/if}
-				{#if resetSuccess}
-					<div class="login-success">{resetSuccess}</div>
-				{/if}
-
-				<div class="field">
-					<label for="reset-otp">6-stelliger Code</label>
-					<input
+			<form class="flex flex-col gap-4" onsubmit={handleResetVerify}>
+				{#if resetError}<Notice tone="danger">{resetError}</Notice>{/if}
+				{#if resetSuccess}<Notice>{resetSuccess}</Notice>{/if}
+				<Field label="6-stelliger Code" for="reset-otp">
+					<Input
 						id="reset-otp"
-						type="text"
 						inputmode="numeric"
+						class="num h-11 text-center text-lg tracking-[0.4em]"
 						bind:value={resetOtp}
 						placeholder="123456"
-						maxlength="6"
+						maxlength={6}
 						required
 						autocomplete="one-time-code"
 					/>
-				</div>
-
-				<div class="field">
-					<label for="reset-pw">Neues Passwort</label>
-					<input
-						id="reset-pw"
-						type="password"
-						bind:value={resetNewPassword}
-						placeholder="Mindestens 8 Zeichen"
-						required
-						autocomplete="new-password"
-					/>
-				</div>
-
-				<div class="field">
-					<label for="reset-pw2">Passwort bestätigen</label>
-					<input
-						id="reset-pw2"
-						type="password"
-						bind:value={resetConfirm}
-						placeholder="Passwort wiederholen"
-						required
-						autocomplete="new-password"
-					/>
-				</div>
-
-				<button type="submit" class="login-btn" disabled={resetLoading || !!resetSuccess}>
-					{resetLoading ? 'Wird gespeichert...' : 'Passwort ändern'}
-				</button>
+				</Field>
+				<Field label="Neues Passwort" for="reset-pw">
+					<Input id="reset-pw" type="password" class="h-11" bind:value={resetNewPassword} placeholder="Mindestens 8 Zeichen" required autocomplete="new-password" />
+				</Field>
+				<Field label="Passwort bestätigen" for="reset-pw2">
+					<Input id="reset-pw2" type="password" class="h-11" bind:value={resetConfirm} placeholder="Passwort wiederholen" required autocomplete="new-password" />
+				</Field>
+				<Button type="submit" variant="accent" size="lg" disabled={resetLoading || !!resetSuccess}>
+					{resetLoading ? 'Wird gespeichert …' : 'Passwort ändern'}
+				</Button>
 			</form>
 
-			<div class="forgot-row">
-				<button class="forgot-link" onclick={() => view = 'request'}>
-					<ArrowLeft size={14} /> Code erneut senden
-				</button>
-			</div>
+			<button class="mt-5 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg" onclick={() => (view = 'request')}>
+				<ArrowLeft size={14} /> Code erneut senden
+			</button>
 		{/if}
-
 	</div>
 </div>
-
-<style>
-	.login-page {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 100vh;
-		background: var(--dt-surface);
-		padding: 1rem;
-	}
-
-	.login-card {
-		width: 100%;
-		max-width: 400px;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-		padding: 2rem;
-	}
-
-	.login-header {
-		text-align: center;
-		margin-bottom: 2rem;
-	}
-
-	.login-header h1 {
-		color: var(--dt-primary);
-		font-size: 1.5rem;
-		font-weight: 700;
-		margin-bottom: 0.5rem;
-	}
-
-	.login-header p {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-	}
-
-	.login-header p strong {
-		color: var(--dt-on-surface);
-	}
-
-	.reset-icon {
-		display: flex;
-		justify-content: center;
-		margin-bottom: 0.75rem;
-		color: var(--dt-primary);
-	}
-
-	.login-error {
-		background: rgba(168, 57, 0, 0.08);
-		color: var(--dt-secondary);
-		padding: 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		margin-bottom: 1rem;
-	}
-
-	.login-success {
-		background: rgba(22, 101, 52, 0.08);
-		color: #166534;
-		padding: 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		margin-bottom: 1rem;
-	}
-
-	.field {
-		margin-bottom: 1rem;
-	}
-
-	label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-
-	input {
-		width: 100%;
-		padding: 0.625rem 0.75rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-md);
-		color: var(--dt-on-surface);
-		font-size: 0.9375rem;
-		outline: none;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-		box-sizing: border-box;
-	}
-
-	input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom-color: var(--dt-primary);
-	}
-
-	input::placeholder {
-		color: var(--dt-outline-variant);
-	}
-
-	.login-btn {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.75rem var(--dt-space-6);
-		margin-top: 0.5rem;
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-		border: none;
-		color: var(--dt-on-primary);
-		font-weight: 600;
-		font-size: 0.9375rem;
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: opacity var(--dt-transition);
-	}
-
-	.login-btn:hover:not(:disabled) {
-		opacity: 0.9;
-	}
-
-	.login-btn:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.forgot-row {
-		display: flex;
-		justify-content: center;
-		margin-top: 1.25rem;
-	}
-
-	.forgot-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.8125rem;
-		color: var(--dt-primary);
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 0;
-		transition: opacity var(--dt-transition);
-	}
-
-	.forgot-link:hover {
-		opacity: 0.75;
-		text-decoration: underline;
-	}
-
-	@media (max-width: 768px) {
-		.login-card {
-			padding: 1.5rem;
-		}
-
-		/* Local font-size (0.9375rem) would otherwise beat the shared 16px
-		 * mobile rule via scoped-selector specificity and trigger iOS zoom-on-focus. */
-		input {
-			font-size: 16px;
-			min-height: 44px;
-		}
-
-		.login-btn {
-			min-height: 44px;
-		}
-
-		.forgot-link {
-			min-height: 44px;
-			display: inline-flex;
-			align-items: center;
-		}
-	}
-</style>

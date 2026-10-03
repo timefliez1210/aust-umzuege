@@ -33,10 +33,10 @@ describe('StatusBadge', () => {
 
 	it('colors success-like and failure-like statuses differently', () => {
 		const { container: ok, unmount } = render(StatusBadge, { status: 'accepted' });
-		const okStyle = ok.querySelector('.badge')!.getAttribute('style');
+		const okStyle = ok.querySelector('.badge')!.getAttribute('data-tone');
 		unmount();
 		const { container: bad } = render(StatusBadge, { status: 'rejected' });
-		const badStyle = bad.querySelector('.badge')!.getAttribute('style');
+		const badStyle = bad.querySelector('.badge')!.getAttribute('data-tone');
 		expect(okStyle).not.toBe(badStyle);
 	});
 });

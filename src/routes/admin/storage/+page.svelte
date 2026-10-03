@@ -4,6 +4,17 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { formatEuro, formatDate } from '$lib/utils/format';
 	import { Plus, Trash2, FileText, Check, X, RefreshCw, Pencil } from 'lucide-svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Table from '$lib/components/ui/Table.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import type { Tone } from '$lib/components/ui/tone';
 
 	/** A storage-rental contract as returned by the API (prices in brutto cents). */
 	interface Contract {
@@ -74,6 +85,15 @@
 		pending_approval: 'Wartet auf Freigabe',
 		sent: 'Versendet',
 		paid: 'Bezahlt'
+	};
+
+	const statusTone: Record<string, Tone> = {
+		active: 'ok',
+		ended: 'neutral',
+		cancelled: 'danger',
+		pending_approval: 'warn',
+		sent: 'info',
+		paid: 'ok'
 	};
 
 	onMount(load);
@@ -277,550 +297,196 @@
 	const previewMwst = $derived(Math.round(num(fBrutto) * 100) - previewNetto);
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<div class="page-title">
-			<h1>Lagerung</h1>
-			<p class="subtitle">Einlagerungsverträge & monatliche Rechnungen</p>
-		</div>
-		<div class="header-actions">
-			<button class="btn-refresh" onclick={load} disabled={loading} title="Aktualisieren">
-				<RefreshCw size={16} />
-			</button>
-			<button class="btn-primary" onclick={openCreate}>
-				<Plus size={16} /> Neuer Vertrag
-			</button>
-		</div>
-	</div>
+<svelte:head><title>Lagerung</title></svelte:head>
 
-	{#if error}
-		<p class="error">{error}</p>
-	{/if}
+<PageHeader title="Lagerung" eyebrow="Einlagerungsverträge & monatliche Rechnungen">
+	{#snippet actions()}
+		<Button variant="ghost" size="icon" onclick={load} disabled={loading} aria-label="Aktualisieren">
+			<RefreshCw size={16} class={loading ? 'animate-spin' : ''} />
+		</Button>
+		<Button variant="accent" onclick={openCreate}><Plus size={16} /> Neuer Vertrag</Button>
+	{/snippet}
+</PageHeader>
 
-	<!-- ── Pending approval invoices ──────────────────────────────────────── -->
+{#if error}
+	<p class="mb-3 rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
+{/if}
+
+<div class="flex flex-col gap-5">
 	{#if pendingInvoices.length > 0}
-		<section class="card highlight">
-			<h2>Warten auf Freigabe ({pendingInvoices.length})</h2>
-			<div class="table-wrap">
-				<table>
-					<thead>
+		<section class="flex flex-col gap-2">
+			<h2 class="flex items-center gap-2 text-[15px] font-semibold">
+				Warten auf Freigabe <Badge tone="warn">{pendingInvoices.length}</Badge>
+			</h2>
+			<Table minWidth="640px" class="border-warn/50">
+				<thead>
+					<tr><th>Kunde</th><th>Zeitraum</th><th>Rechnung</th><th class="text-right">Brutto</th><th class="text-right">Aktionen</th></tr>
+				</thead>
+				<tbody>
+					{#each pendingInvoices as inv (inv.id)}
 						<tr>
-							<th>Kunde</th>
-							<th>Zeitraum</th>
-							<th>Rechnung</th>
-							<th class="right">Betrag (brutto)</th>
-							<th class="right">Aktionen</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each pendingInvoices as inv (inv.id)}
-							<tr>
-								<td>{inv.customer_name ?? '—'}</td>
-								<td>{inv.period_label}</td>
-								<td class="mono">{inv.invoice_number}</td>
-								<td class="right">{formatEuro(inv.brutto_cents)}</td>
-								<td class="right actions">
+							<td class="font-medium">{inv.customer_name ?? '—'}</td>
+							<td class="text-muted">{inv.period_label}</td>
+							<td class="num text-[13px]">{inv.invoice_number}</td>
+							<td class="num text-right">{formatEuro(inv.brutto_cents)}</td>
+							<td>
+								<span class="flex justify-end gap-1">
 									{#if inv.has_pdf}
-										<button class="icon-btn" title="PDF" onclick={() => downloadPdf(inv)}>
-											<FileText size={15} />
-										</button>
+										<Button variant="ghost" size="icon-sm" aria-label="PDF" title="PDF" onclick={() => downloadPdf(inv)}><FileText size={15} /></Button>
 									{/if}
-									<button
-										class="icon-btn success"
-										title="Freigeben & Senden"
-										disabled={busyId === inv.id}
-										onclick={() => approve(inv)}
-									>
-										<Check size={15} />
-									</button>
-									<button
-										class="icon-btn danger"
-										title="Ablehnen"
-										disabled={busyId === inv.id}
-										onclick={() => reject(inv)}
-									>
+									<Button size="sm" variant="solid" disabled={busyId === inv.id} onclick={() => approve(inv)}>
+										<Check size={14} /> Freigeben & senden
+									</Button>
+									<Button variant="ghost" size="icon-sm" class="hover:text-danger" aria-label="Ablehnen" title="Ablehnen" disabled={busyId === inv.id} onclick={() => reject(inv)}>
 										<X size={15} />
-									</button>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+									</Button>
+								</span>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</Table>
 		</section>
 	{/if}
 
-	<!-- ── Contracts ──────────────────────────────────────────────────────── -->
-	<section class="card">
-		<h2>Verträge</h2>
+	<section class="flex flex-col gap-2">
+		<h2 class="text-[15px] font-semibold">Verträge</h2>
 		{#if loading}
-			<p class="empty">Lädt …</p>
+			<div class="h-40 animate-pulse rounded-md bg-sunk"></div>
 		{:else if contracts.length === 0}
-			<p class="empty">Noch keine Einlagerungsverträge angelegt.</p>
+			<EmptyState title="Noch keine Einlagerungsverträge" hint="Lege einen Vertrag an — die Monatsrechnungen entstehen dann automatisch.">
+				<Button size="sm" variant="solid" class="mt-2" onclick={openCreate}><Plus size={14} /> Neuer Vertrag</Button>
+			</EmptyState>
 		{:else}
-			<div class="table-wrap">
-				<table>
-					<thead>
+			<Table minWidth="760px">
+				<thead>
+					<tr>
+						<th>Kunde</th><th>Zeitraum</th><th class="text-right">Fläche</th><th class="text-right">Monat brutto</th><th>Abrechnung</th><th
+							>Status</th
+						><th class="text-right">Aktionen</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each contracts as c (c.id)}
 						<tr>
-							<th>Kunde</th>
-							<th>Zeitraum</th>
-							<th class="right">Fläche</th>
-							<th class="right">Monat (brutto)</th>
-							<th>Abrechnungstag</th>
-							<th>Status</th>
-							<th class="right">Aktionen</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each contracts as c (c.id)}
-							<tr>
-								<td>{c.customer_name ?? '—'}</td>
-								<td>
-									{formatDate(c.contract_start)}
-									{#if c.contract_end}– {formatDate(c.contract_end)}{:else}– offen{/if}
-								</td>
-								<td class="right">{String(c.sqm).replace('.', ',')} m²</td>
-								<td class="right">{formatEuro(c.monthly_brutto_cents)}</td>
-								<td>{c.billing_day}. des Monats</td>
-								<td><span class="badge badge--{c.status}">{statusLabel[c.status] ?? c.status}</span></td>
-								<td class="right actions">
-									<button
-										class="icon-btn"
+							<td class="font-medium">{c.customer_name ?? '—'}</td>
+							<td class="num text-[13px] whitespace-nowrap text-muted">
+								{formatDate(c.contract_start)} – {c.contract_end ? formatDate(c.contract_end) : 'offen'}
+							</td>
+							<td class="num text-right">{String(c.sqm).replace('.', ',')} m²</td>
+							<td class="num text-right">{formatEuro(c.monthly_brutto_cents)}</td>
+							<td class="text-[13px] text-muted">{c.billing_day}. des Monats</td>
+							<td><Badge tone={statusTone[c.status] ?? 'neutral'}>{statusLabel[c.status] ?? c.status}</Badge></td>
+							<td>
+								<span class="flex justify-end gap-1">
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label="Rechnung jetzt erzeugen"
 										title="Rechnung jetzt erzeugen"
 										disabled={busyId === c.id || c.status !== 'active'}
-										onclick={() => generateNow(c)}
+										onclick={() => generateNow(c)}><FileText size={15} /></Button
 									>
-										<FileText size={15} />
-									</button>
-									<button class="icon-btn" title="Bearbeiten" onclick={() => openEdit(c)}>
-										<Pencil size={15} />
-									</button>
-									<button
-										class="icon-btn danger"
+									<Button variant="ghost" size="icon-sm" aria-label="Bearbeiten" title="Bearbeiten" onclick={() => openEdit(c)}><Pencil size={15} /></Button>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										class="hover:text-danger"
+										aria-label="Löschen"
 										title="Löschen"
 										disabled={busyId === c.id}
-										onclick={() => deleteContract(c)}
+										onclick={() => deleteContract(c)}><Trash2 size={15} /></Button
 									>
-										<Trash2 size={15} />
-									</button>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+								</span>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</Table>
 		{/if}
 	</section>
 
-	<!-- ── History (sent / other) ─────────────────────────────────────────── -->
 	{#if otherInvoices.length > 0}
-		<section class="card">
-			<h2>Rechnungen</h2>
-			<div class="table-wrap">
-				<table>
-					<thead>
+		<section class="flex flex-col gap-2">
+			<h2 class="text-[15px] font-semibold">Rechnungen</h2>
+			<Table minWidth="600px">
+				<thead>
+					<tr><th>Kunde</th><th>Zeitraum</th><th>Rechnung</th><th class="text-right">Brutto</th><th>Status</th><th></th></tr>
+				</thead>
+				<tbody>
+					{#each otherInvoices as inv (inv.id)}
 						<tr>
-							<th>Kunde</th>
-							<th>Zeitraum</th>
-							<th>Rechnung</th>
-							<th class="right">Betrag (brutto)</th>
-							<th>Status</th>
-							<th class="right"></th>
+							<td class="font-medium">{inv.customer_name ?? '—'}</td>
+							<td class="text-muted">{inv.period_label}</td>
+							<td class="num text-[13px]">{inv.invoice_number}</td>
+							<td class="num text-right">{formatEuro(inv.brutto_cents)}</td>
+							<td><Badge tone={statusTone[inv.status] ?? 'neutral'}>{statusLabel[inv.status] ?? inv.status}</Badge></td>
+							<td class="text-right">
+								{#if inv.has_pdf}
+									<Button variant="ghost" size="icon-sm" aria-label="PDF" title="PDF" onclick={() => downloadPdf(inv)}><FileText size={15} /></Button>
+								{/if}
+							</td>
 						</tr>
-					</thead>
-					<tbody>
-						{#each otherInvoices as inv (inv.id)}
-							<tr>
-								<td>{inv.customer_name ?? '—'}</td>
-								<td>{inv.period_label}</td>
-								<td class="mono">{inv.invoice_number}</td>
-								<td class="right">{formatEuro(inv.brutto_cents)}</td>
-								<td><span class="badge badge--{inv.status}">{statusLabel[inv.status] ?? inv.status}</span></td>
-								<td class="right actions">
-									{#if inv.has_pdf}
-										<button class="icon-btn" title="PDF" onclick={() => downloadPdf(inv)}>
-											<FileText size={15} />
-										</button>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+					{/each}
+				</tbody>
+			</Table>
 		</section>
 	{/if}
 </div>
 
-<!-- ── Contract form modal ────────────────────────────────────────────────── -->
 {#if showForm}
-	<div
-		class="modal-backdrop"
-		onclick={() => (showForm = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showForm = false)}
-		role="presentation"
-	>
-		<div
-			class="modal"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-			role="dialog"
-			tabindex="-1"
-		>
-			<h2>{editingId ? 'Vertrag bearbeiten' : 'Neuer Vertrag'}</h2>
-
-			<label class="field">
-				<span>Kunde</span>
-				<div class="autocomplete">
-					<input
-						type="text"
-						placeholder="Name oder E-Mail suchen…"
+	<Modal title={editingId ? 'Vertrag bearbeiten' : 'Neuer Vertrag'} onclose={() => (showForm = false)}>
+		<div class="flex flex-col gap-3">
+			<Field label="Kunde" for="st-customer">
+				<div class="relative">
+					<Input
+						id="st-customer"
+						placeholder="Name oder E-Mail suchen …"
 						bind:value={fCustomerSearch}
 						oninput={onCustomerInput}
 						disabled={!!editingId}
 					/>
 					{#if fShowDropdown && fCustomerResults.length > 0}
-						<ul class="dropdown">
+						<ul class="absolute inset-x-0 top-full z-10 mt-1 max-h-60 overflow-y-auto rounded-md border border-line bg-panel p-1 shadow-xl">
 							{#each fCustomerResults as c (c.id)}
 								<li>
-									<button type="button" onclick={() => pickCustomer(c)}>
+									<button type="button" class="w-full rounded-sm px-2.5 py-2 text-left text-sm hover:bg-sunk" onclick={() => pickCustomer(c)}>
 										{c.name || c.email || 'Unbenannt'}
-										{#if c.email}<span class="muted">· {c.email}</span>{/if}
+										{#if c.email}<span class="text-xs text-muted">· {c.email}</span>{/if}
 									</button>
 								</li>
 							{/each}
 						</ul>
 					{/if}
 				</div>
-			</label>
-
-			<div class="row">
-				<label class="field">
-					<span>Vertragsbeginn</span>
-					<input type="date" bind:value={fStart} />
-				</label>
-				<label class="field">
-					<span>Vertragsende (optional)</span>
-					<input type="date" bind:value={fEnd} />
-				</label>
+			</Field>
+			<div class="grid grid-cols-2 gap-3">
+				<Field label="Vertragsbeginn" for="st-start"><Input id="st-start" type="date" bind:value={fStart} /></Field>
+				<Field label="Vertragsende (optional)" for="st-end"><Input id="st-end" type="date" bind:value={fEnd} /></Field>
+				<Field label="Fläche (m²)" for="st-sqm"><Input id="st-sqm" class="num" inputmode="decimal" placeholder="12,5" bind:value={fSqm} /></Field>
+				<Field label="Monatspreis (brutto €)" for="st-brutto">
+					<Input id="st-brutto" class="num" inputmode="decimal" placeholder="150,00" bind:value={fBrutto} />
+				</Field>
 			</div>
-
-			<div class="row">
-				<label class="field">
-					<span>Fläche (m²)</span>
-					<input type="text" inputmode="decimal" placeholder="12,5" bind:value={fSqm} />
-				</label>
-				<label class="field">
-					<span>Monatspreis (brutto €)</span>
-					<input type="text" inputmode="decimal" placeholder="150,00" bind:value={fBrutto} />
-				</label>
-			</div>
-
-			<p class="preview">
-				Netto <strong>{formatEuro(previewNetto)}</strong> · MwSt 19%
-				<strong>{formatEuro(previewMwst)}</strong> · Brutto
-				<strong>{formatEuro(Math.round(num(fBrutto) * 100))}</strong>
+			<p class="num rounded-sm bg-sunk px-3 py-2 text-xs text-muted">
+				Netto <strong class="text-fg">{formatEuro(previewNetto)}</strong> · MwSt 19 %
+				<strong class="text-fg">{formatEuro(previewMwst)}</strong> · Brutto
+				<strong class="text-fg">{formatEuro(Math.round(num(fBrutto) * 100))}</strong>
 			</p>
-
 			{#if editingId}
-				<label class="field">
-					<span>Status</span>
-					<select bind:value={fStatus}>
+				<Field label="Status" for="st-status">
+					<Select id="st-status" bind:value={fStatus}>
 						<option value="active">Aktiv</option>
 						<option value="ended">Beendet</option>
 						<option value="cancelled">Storniert</option>
-					</select>
-				</label>
+					</Select>
+				</Field>
 			{/if}
-
-			<label class="field">
-				<span>Notiz (optional)</span>
-				<textarea rows="2" bind:value={fNote}></textarea>
-			</label>
-
-			<div class="modal-actions">
-				<button class="btn" onclick={() => (showForm = false)} disabled={saving}>Abbrechen</button>
-				<button class="btn-primary" onclick={saveContract} disabled={saving}>
-					{saving ? 'Speichert…' : 'Speichern'}
-				</button>
-			</div>
+			<Field label="Notiz (optional)" for="st-note"><Textarea id="st-note" rows={2} bind:value={fNote} /></Field>
 		</div>
-	</div>
+		{#snippet footer()}
+			<Button onclick={() => (showForm = false)} disabled={saving}>Abbrechen</Button>
+			<Button variant="solid" onclick={saveContract} disabled={saving}>{saving ? 'Speichert …' : 'Speichern'}</Button>
+		{/snippet}
+	</Modal>
 {/if}
-
-<style>
-	.page {
-		padding: 1.5rem;
-		max-width: 1100px;
-		margin: 0 auto;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-	.page-title h1 {
-		margin: 0;
-		font-size: 1.5rem;
-	}
-	.subtitle {
-		margin: 0.2rem 0 0;
-		opacity: 0.7;
-		font-size: 0.9rem;
-	}
-	.header-actions {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-	.btn-primary {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.5rem 0.9rem;
-		border: none;
-		border-radius: 8px;
-		background: var(--dt-primary, #2563eb);
-		color: #fff;
-		cursor: pointer;
-		font-size: 0.9rem;
-	}
-	.btn {
-		padding: 0.5rem 0.9rem;
-		border: 1px solid var(--dt-outline, #c4c7c5);
-		border-radius: 8px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-	.btn-refresh {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.5rem;
-		border: 1px solid var(--dt-outline, #c4c7c5);
-		border-radius: 8px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-	.btn-primary:disabled,
-	.btn:disabled,
-	.btn-refresh:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-	.card {
-		background: var(--dt-surface, #fff);
-		border: 1px solid var(--dt-outline-variant, #e1e3e1);
-		border-radius: 12px;
-		padding: 1rem 1.15rem;
-	}
-	.card.highlight {
-		border-color: var(--dt-primary, #2563eb);
-	}
-	.card h2 {
-		margin: 0 0 0.75rem;
-		font-size: 1.05rem;
-	}
-	.table-wrap {
-		overflow-x: auto;
-	}
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.88rem;
-	}
-	th,
-	td {
-		padding: 0.5rem 0.6rem;
-		text-align: left;
-		border-bottom: 1px solid var(--dt-outline-variant, #e1e3e1);
-		white-space: nowrap;
-	}
-	th {
-		font-size: 0.72rem;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		opacity: 0.65;
-	}
-	.right {
-		text-align: right;
-	}
-	.mono {
-		font-variant-numeric: tabular-nums;
-	}
-	.actions {
-		display: flex;
-		gap: 0.3rem;
-		justify-content: flex-end;
-	}
-	.icon-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.35rem;
-		border: 1px solid var(--dt-outline-variant, #e1e3e1);
-		border-radius: 6px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-	.icon-btn:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
-	.icon-btn.success {
-		color: #16a34a;
-		border-color: #16a34a55;
-	}
-	.icon-btn.danger {
-		color: #dc2626;
-		border-color: #dc262655;
-	}
-	.badge {
-		display: inline-block;
-		padding: 0.15rem 0.5rem;
-		border-radius: 999px;
-		font-size: 0.72rem;
-		background: var(--dt-outline-variant, #e1e3e1);
-	}
-	.badge--active,
-	.badge--sent {
-		background: #16a34a22;
-		color: #15803d;
-	}
-	.badge--pending_approval {
-		background: #f59e0b22;
-		color: #b45309;
-	}
-	.badge--cancelled,
-	.badge--ended {
-		background: #6b728022;
-		color: #4b5563;
-	}
-	.badge--paid {
-		background: #2563eb22;
-		color: #1d4ed8;
-	}
-	.empty {
-		opacity: 0.6;
-		padding: 0.5rem 0;
-	}
-	.error {
-		color: #dc2626;
-	}
-	/* Modal — backdrop/card sizing now comes from the shared .modal-backdrop/.modal
-	 * foundation (admin-components.css), which also handles the mobile bottom-sheet. */
-	.modal {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-	@media (min-width: 769px) {
-		.modal {
-			max-width: 480px;
-		}
-	}
-	.modal h2 {
-		margin: 0;
-		font-size: 1.15rem;
-	}
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		font-size: 0.85rem;
-	}
-	.field > span {
-		opacity: 0.75;
-	}
-	.field input,
-	.field select,
-	.field textarea {
-		padding: 0.45rem 0.55rem;
-		border: 1px solid var(--dt-outline, #c4c7c5);
-		border-radius: 7px;
-		background: var(--dt-surface, #fff);
-		color: inherit;
-		font-size: 0.9rem;
-	}
-	.row {
-		display: flex;
-		gap: 0.75rem;
-	}
-	.row .field {
-		flex: 1;
-	}
-	.autocomplete {
-		position: relative;
-	}
-	.dropdown {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		right: 0;
-		margin: 0.2rem 0 0;
-		padding: 0.25rem;
-		list-style: none;
-		background: var(--dt-surface, #fff);
-		border: 1px solid var(--dt-outline, #c4c7c5);
-		border-radius: 8px;
-		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-		z-index: 10;
-		max-height: 220px;
-		overflow-y: auto;
-	}
-	.dropdown li button {
-		width: 100%;
-		text-align: left;
-		padding: 0.4rem 0.5rem;
-		border: none;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-		border-radius: 6px;
-		font-size: 0.88rem;
-	}
-	.dropdown li button:hover {
-		background: var(--dt-outline-variant, #e1e3e1);
-	}
-	.muted {
-		opacity: 0.6;
-	}
-	.preview {
-		margin: 0;
-		font-size: 0.82rem;
-		opacity: 0.85;
-	}
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 0.25rem;
-	}
-	@media (max-width: 768px) {
-		.row {
-			flex-direction: column;
-		}
-
-		.page-header {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.header-actions {
-			justify-content: flex-end;
-		}
-
-		.icon-btn,
-		.btn-refresh {
-			min-width: 44px;
-			min-height: 44px;
-		}
-	}
-</style>

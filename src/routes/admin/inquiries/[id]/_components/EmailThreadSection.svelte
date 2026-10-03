@@ -1,4 +1,8 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import { tenant } from '$lib/tenant';
 	import { apiGet, apiPost, apiPatch, apiPreview, formatDateTime } from "$lib/utils/api.svelte";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 	import { Save, Send, Pencil, RotateCcw, X, Paperclip } from "lucide-svelte";
@@ -248,471 +252,125 @@
 	}
 </script>
 
-<!-- Email Thread Section (below the main grid) -->
-<div class="email-section">
-	<div class="email-section__header">
-		<h2 class="email-section__title">E-Mail-Verlauf</h2>
+<Panel title="E-Mail-Verlauf" class="lg:col-span-2">
+	{#snippet actions()}
 		{#if emailThreads.length > 0}
-			<a
-				href="/admin/emails/{emailThreads[0].thread.id}"
-				class="email-section__link"
-			>
-				Vollansicht
-			</a>
+			<a href="/admin/emails/{emailThreads[0].thread.id}" class="label-xs text-muted hover:text-fg">Vollansicht →</a>
 		{/if}
-	</div>
+	{/snippet}
 
 	{#if emailsLoading}
-		<div class="email-loading">E-Mails werden geladen...</div>
+		<p class="text-sm text-muted">E-Mails werden geladen …</p>
 	{:else if emailThreads.length === 0}
-		<div class="email-empty">Noch keine E-Mails für diese Anfrage.</div>
+		<p class="text-[13px] text-faint">Noch keine E-Mails für diese Anfrage.</p>
 	{:else}
-		{#each emailThreads as { thread, messages }}
-			<div class="email-thread">
-				{#if thread.subject}
-					<div class="email-thread__subject">
-						{thread.subject}
-					</div>
-				{/if}
-				{#if thread.offer_pdf_filename}
-					<button
-						type="button"
-						class="offer-pdf-banner"
-						onclick={() => emailPreviewOfferPdf()}
-					>
-						<Paperclip size={13} />
-						Angebot wird als Anhang mitgesendet: {thread.offer_pdf_filename}
-					</button>
-				{/if}
-				<div class="email-conversation">
-					<!-- Newest first, matching the mailbox view: the mail that needs an
-					     answer is the last one in, not the first. -->
-					{#each [...messages].reverse() as msg}
-						<div
-							class="email-msg"
-							class:email-msg--inbound={msg.direction ===
-								"inbound"}
-							class:email-msg--outbound={msg.direction ===
-								"outbound" && msg.status !== "draft"}
-							class:email-msg--draft={msg.status === "draft"}
+		<div class="flex flex-col gap-5">
+			{#each emailThreads as { thread, messages } (thread.id)}
+				<div class="flex flex-col gap-2">
+					{#if thread.subject}<h4 class="text-sm font-semibold">{thread.subject}</h4>{/if}
+					{#if thread.offer_pdf_filename}
+						<button
+							type="button"
+							class="flex items-center gap-2 self-start rounded-sm border border-info/40 bg-info/10 px-2.5 py-1.5 text-xs text-info hover:bg-info/15"
+							onclick={() => emailPreviewOfferPdf()}
 						>
-							<div class="email-msg__header">
-								<span class="email-msg__from">
-									{#if msg.status === "draft"}
-										Entwurf an {msg.to_address}
-									{:else if msg.direction === "inbound"}
-										{msg.from_address}
-									{:else}
-										AUST Umzuege
-									{/if}
-								</span>
-								<div class="email-msg__meta">
-									{#if msg.status === "draft"}
-										<span
-											class="email-badge email-badge--draft"
-											>Entwurf</span
-										>
-									{/if}
-									{#if msg.llm_generated}
-										<span
-											class="email-badge email-badge--ai"
-											>KI</span
-										>
-									{/if}
-									<span class="email-msg__date"
-										>{formatDateTime(
-											msg.created_at,
-										)}</span
-									>
-								</div>
-							</div>
-
-							{#if emailEditingId === msg.id}
-								<div class="email-edit-fields">
-									<input
-										class="email-edit-subject"
-										type="text"
-										placeholder="Betreff"
-										bind:value={emailEditSubject}
-									/>
-									<textarea
-										class="email-edit-body"
-										rows="8"
-										placeholder="Nachrichtentext..."
-										bind:value={emailEditBody}
-									></textarea>
-								</div>
-								<div class="email-draft-actions">
-									<button
-										class="btn btn-sm btn-save"
-										onclick={() =>
-											emailSaveEdit(msg.id)}
-										disabled={emailSaving}
-									>
-										<Save size={14} />
-										{emailSaving
-											? "Speichere..."
-											: "Speichern"}
-									</button>
-									<button
-										class="btn btn-sm"
-										onclick={emailCancelEdit}
-										disabled={emailSaving}
-									>
-										Abbrechen
-									</button>
-								</div>
-							{:else}
-								{#if msg.subject}
-									<div class="email-msg__subject">
-										{msg.subject}
-									</div>
-								{/if}
-								<div class="email-msg__body">
-									{msg.body_text || ""}
-								</div>
-
-								{#if msg.attachment_keys.length > 0}
-									<div class="email-attachment-list">
-										{#each msg.attachment_keys as key, i}
-											{@const fname = key.split("/").pop() ?? `Anhang ${i + 1}`}
-											<button
-												type="button"
-												class="email-attachment-link"
-												onclick={() => emailPreviewAttachment(msg.id, i)}
-											>
-												<Paperclip size={11} />
-												{fname}
-											</button>
-										{/each}
-									</div>
-								{/if}
-
-								{#if msg.status === "draft"}
-									<div class="email-draft-actions">
-										<button
-											class="btn btn-sm btn-primary"
-											onclick={() =>
-												emailSendDraft(msg.id)}
-											disabled={emailActionLoading ===
-												msg.id}
-										>
-											<Send size={14} />
-											{emailActionLoading === msg.id
-												? "Bitte warten..."
-												: "Senden"}
-										</button>
-										<button
-											class="btn btn-sm"
-											onclick={() =>
-												emailStartEdit(msg)}
-											disabled={emailActionLoading ===
-												msg.id}
-										>
-											<Pencil size={14} />
-											Bearbeiten
-										</button>
-										{#if msg.llm_generated}
-											<button
-												class="btn btn-sm"
-												onclick={() =>
-													emailRegenerateLlm(
-														msg.id,
-													)}
-												disabled={emailActionLoading ===
-													msg.id}
-											>
-												<RotateCcw size={14} />
-												Neu generieren
-											</button>
-										{/if}
-										<button
-											class="btn btn-sm btn-danger"
-											onclick={() =>
-												emailDiscardDraft(msg.id)}
-											disabled={emailActionLoading ===
-												msg.id}
-										>
-											<X size={14} />
-											Verwerfen
-										</button>
-									</div>
-								{/if}
-							{/if}
-						</div>
-					{/each}
-					{#if messages.length === 0}
-						<div class="email-empty">
-							Keine Nachrichten in diesem Thread.
-						</div>
+							<Paperclip size={13} /> Angebot wird als Anhang mitgesendet: {thread.offer_pdf_filename}
+						</button>
 					{/if}
+					<!-- Newest first, matching the mailbox: the mail that needs an answer is the last one in. -->
+					<div class="flex flex-col gap-2">
+						{#each [...messages].reverse() as msg (msg.id)}
+							{@const draft = msg.status === 'draft'}
+							{@const inbound = msg.direction === 'inbound'}
+							<article
+								class="rounded-sm border px-3 py-2.5 {draft
+									? 'border-dashed border-warn/60 bg-warn/5'
+									: inbound
+										? 'border-line bg-panel'
+										: 'border-line bg-sunk sm:ml-8'}"
+							>
+								<header class="flex flex-wrap items-center justify-between gap-2">
+									<span class="text-[13px] font-medium">
+										{#if draft}Entwurf an {msg.to_address}{:else if inbound}{msg.from_address}{:else}{tenant.name}{/if}
+									</span>
+									<span class="flex items-center gap-1.5">
+										{#if draft}<Badge tone="warn">Entwurf</Badge>{/if}
+										{#if msg.llm_generated}<Badge tone="info">KI</Badge>{/if}
+										<span class="num text-[11px] text-faint">{formatDateTime(msg.created_at)}</span>
+									</span>
+								</header>
+
+								{#if emailEditingId === msg.id}
+									<div class="mt-2 flex flex-col gap-2">
+										<input
+											class="h-9 rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-fg"
+											type="text"
+											placeholder="Betreff"
+											aria-label="Betreff"
+											bind:value={emailEditSubject}
+										/>
+										<textarea
+											class="min-h-40 rounded-sm border border-line-strong bg-panel px-3 py-2 text-sm leading-relaxed outline-none focus:border-fg"
+											rows="8"
+											placeholder="Nachrichtentext …"
+											aria-label="Nachrichtentext"
+											bind:value={emailEditBody}
+										></textarea>
+										<div class="flex gap-1.5">
+											<Button size="xs" variant="solid" onclick={() => emailSaveEdit(msg.id)} disabled={emailSaving}>
+												<Save size={13} />
+												{emailSaving ? 'Speichere …' : 'Speichern'}
+											</Button>
+											<Button size="xs" onclick={emailCancelEdit} disabled={emailSaving}>Abbrechen</Button>
+										</div>
+									</div>
+								{:else}
+									{#if msg.subject}<div class="mt-1.5 text-[13px] font-medium">{msg.subject}</div>{/if}
+									<div class="mt-1 text-[13px] leading-relaxed whitespace-pre-wrap text-muted">{msg.body_text || ''}</div>
+
+									{#if msg.attachment_keys.length > 0}
+										<div class="mt-2 flex flex-wrap gap-1.5">
+											{#each msg.attachment_keys as key, i (key)}
+												{@const fname = key.split('/').pop() ?? `Anhang ${i + 1}`}
+												<button
+													type="button"
+													class="inline-flex h-7 items-center gap-1.5 rounded-sm border border-line px-2 text-xs hover:bg-sunk"
+													onclick={() => emailPreviewAttachment(msg.id, i)}
+												>
+													<Paperclip size={11} />{fname}
+												</button>
+											{/each}
+										</div>
+									{/if}
+
+									{#if draft}
+										<div class="mt-2.5 flex flex-wrap gap-1.5">
+											<Button size="xs" variant="accent" onclick={() => emailSendDraft(msg.id)} disabled={emailActionLoading === msg.id}>
+												<Send size={13} />
+												{emailActionLoading === msg.id ? 'Bitte warten …' : 'Senden'}
+											</Button>
+											<Button size="xs" onclick={() => emailStartEdit(msg)} disabled={emailActionLoading === msg.id}>
+												<Pencil size={13} /> Bearbeiten
+											</Button>
+											{#if msg.llm_generated}
+												<Button size="xs" onclick={() => emailRegenerateLlm(msg.id)} disabled={emailActionLoading === msg.id}>
+													<RotateCcw size={13} /> Neu generieren
+												</Button>
+											{/if}
+											<Button size="xs" variant="danger" onclick={() => emailDiscardDraft(msg.id)} disabled={emailActionLoading === msg.id}>
+												<X size={13} /> Verwerfen
+											</Button>
+										</div>
+									{/if}
+								{/if}
+							</article>
+						{/each}
+						{#if messages.length === 0}
+							<p class="text-[13px] text-faint">Keine Nachrichten in diesem Thread.</p>
+						{/if}
+					</div>
 				</div>
-			</div>
-		{/each}
+			{/each}
+		</div>
 	{/if}
-</div>
-
-<style>
-	.email-section {
-		height: 100%;
-		margin-top: 1.5rem;
-	}
-
-	.email-section__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1rem;
-	}
-
-	.email-section__title {
-		font-size: 1.125rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-	}
-
-	.email-section__link {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		text-decoration: none;
-		padding: 0.375rem 0.75rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-lowest);
-		transition: background var(--dt-transition);
-	}
-
-	.email-section__link:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.email-loading,
-	.email-empty {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		padding: 1.5rem;
-		text-align: center;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-thread {
-		margin-bottom: 1rem;
-	}
-
-	.email-thread__subject {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.5rem;
-		padding-left: 0.25rem;
-	}
-
-	.email-conversation {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.email-msg {
-		border-radius: var(--dt-radius-md);
-		padding: 1rem 1.25rem;
-		max-width: 85%;
-	}
-
-	.email-msg--inbound {
-		align-self: flex-start;
-		background: var(--dt-surface-container-lowest);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-msg--outbound {
-		align-self: flex-end;
-		background: var(--dt-surface-container);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-msg--draft {
-		align-self: flex-end;
-		background: var(--dt-surface-container-low);
-		border: 2px dashed var(--dt-outline-variant);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.email-msg__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.email-msg__from {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.email-msg__meta {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-	}
-
-	.email-msg__date {
-		font-size: 0.6875rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.email-badge {
-		display: inline-block;
-		padding: 0.0625rem 0.375rem;
-		border-radius: 9999px;
-		font-size: 0.625rem;
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.email-badge--draft {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.email-badge--ai {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.email-msg__subject {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-
-	.email-msg__body {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		line-height: 1.6;
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-
-	.offer-pdf-banner {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-		margin-bottom: 0.75rem;
-		padding: 0.5rem 0.875rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary);
-		font-size: 0.75rem;
-		font-weight: 600;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		text-align: left;
-		transition: background var(--dt-transition);
-	}
-
-	.offer-pdf-banner:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.email-attachment-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.375rem;
-		margin-top: 0.5rem;
-	}
-
-	.email-attachment-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3125rem;
-		padding: 0.1875rem 0.5625rem;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-primary);
-		font-size: 0.6875rem;
-		font-weight: 500;
-		border: var(--dt-ghost-border);
-		border-radius: 9999px;
-		cursor: pointer;
-		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		transition: background var(--dt-transition);
-	}
-
-	.email-attachment-link:hover {
-		background: var(--dt-surface-container);
-	}
-
-	.email-draft-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-outline-variant);
-		flex-wrap: wrap;
-	}
-
-	.email-edit-fields {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.email-edit-subject,
-	.email-edit-body {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		outline: none;
-		box-sizing: border-box;
-		font-family: inherit;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.email-edit-subject:focus,
-	.email-edit-body:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.email-edit-body {
-		resize: vertical;
-		line-height: 1.5;
-	}
-
-	.btn-save {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container)) !important;
-		color: var(--dt-on-primary) !important;
-	}
-
-	.btn-save:hover:not(:disabled) {
-		opacity: 0.88;
-	}
-
-	@media (max-width: 768px) {
-		.email-msg {
-			max-width: 100%;
-		}
-
-		.email-msg__header {
-			gap: 0.375rem;
-		}
-	}
-</style>
+</Panel>

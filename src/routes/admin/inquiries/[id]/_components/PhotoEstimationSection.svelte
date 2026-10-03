@@ -1,6 +1,6 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
 	import { API_BASE } from "$lib/utils/api.svelte";
-	import { ChevronRight } from "lucide-svelte";
 	import PhotoVideoUpload from "$lib/components/admin/PhotoVideoUpload.svelte";
 	import EstimationItemsTable from "$lib/components/admin/EstimationItemsTable.svelte";
 
@@ -128,44 +128,28 @@
 	}
 </script>
 
-<!-- Photo/Video Upload & Gallery -->
-<div class="card" class:card--collapsed={!photosOpen}>
-	<div class="card-header card-header--toggleable">
-		<button class="card-toggle" onclick={onTogglePhotos} aria-expanded={photosOpen}>
-			<span class="card-toggle-chev" class:open={photosOpen}><ChevronRight size={16} /></span>
-			<h3>Foto- &amp; Videoanalyse</h3>
-		</button>
-	</div>
-	{#if photosOpen}
-		<PhotoVideoUpload
-			{inquiryId}
-			{estimationsList}
-			{filterPhotoIndex}
-			openPhotoDetail={openPhotoDetailFn}
-			onTogglePhotoFilter={togglePhotoFilter}
-			onFilterClear={() => { filterPhotoIndex = null; }}
-			{onUpdated}
-		/>
-	{/if}
-</div>
+<Panel title="Foto- & Videoanalyse" open={photosOpen} onToggle={onTogglePhotos}>
+	<PhotoVideoUpload
+		{inquiryId}
+		{estimationsList}
+		{filterPhotoIndex}
+		openPhotoDetail={openPhotoDetailFn}
+		onTogglePhotoFilter={togglePhotoFilter}
+		onFilterClear={() => {
+			filterPhotoIndex = null;
+		}}
+		{onUpdated}
+	/>
+</Panel>
 
-<!-- Estimation Items Table (Sections A / B / C) -->
-<div class="card" class:card--collapsed={!itemsOpen}>
-	<div class="card-header card-header--toggleable">
-		<button class="card-toggle" onclick={onToggleItems} aria-expanded={itemsOpen}>
-			<span class="card-toggle-chev" class:open={itemsOpen}><ChevronRight size={16} /></span>
-			<h3>Möbel und Gegenstände</h3>
-		</button>
-	</div>
-	{#if itemsOpen}
-		<EstimationItemsTable
-			{inquiryId}
-			items={items ?? []}
-			{filterPhotoIndex}
-			{galleryImages}
-			bind:openPhotoDetail={openPhotoDetailFn}
-			bind:saveIfDirty
-			{onUpdated}
-		/>
-	{/if}
-</div>
+<Panel title="Möbel und Gegenstände" open={itemsOpen} onToggle={onToggleItems} bodyClass="px-0 py-0">
+	<EstimationItemsTable
+		{inquiryId}
+		items={items ?? []}
+		{filterPhotoIndex}
+		{galleryImages}
+		bind:openPhotoDetail={openPhotoDetailFn}
+		bind:saveIfDirty
+		{onUpdated}
+	/>
+</Panel>

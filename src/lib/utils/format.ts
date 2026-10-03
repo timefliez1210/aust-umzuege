@@ -135,3 +135,27 @@ export function parseEuroInput(value: string): number | null {
 	if (!Number.isFinite(amount)) return null;
 	return Math.round(amount * 100);
 }
+
+/**
+ * Whole-euro amount for dashboards, where cents are noise: 1642000 → "16.420 €".
+ *
+ * Called by: console overview tiles and charts.
+ */
+export function formatEuroWhole(cents: number): string {
+	return new Intl.NumberFormat('de-DE', {
+		style: 'currency',
+		currency: 'EUR',
+		maximumFractionDigits: 0
+	}).format(Math.round(cents / 100));
+}
+
+/**
+ * Compact euro for chart labels: 1642000 → "16,4k", 98000 → "980".
+ *
+ * Called by: console overview revenue chart.
+ */
+export function formatEuroCompact(cents: number): string {
+	const euros = cents / 100;
+	if (Math.abs(euros) < 1000) return String(Math.round(euros));
+	return `${(euros / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 })}k`;
+}

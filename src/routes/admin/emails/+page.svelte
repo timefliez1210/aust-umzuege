@@ -1,8 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDateTime } from '$lib/utils/api.svelte';
-	import { Search, Plus, BellOff, Mail } from 'lucide-svelte';
-	import DataTable from '$lib/components/admin/DataTable.svelte';
+	import { Plus, BellOff, ArrowDownLeft, ArrowUpRight } from 'lucide-svelte';
+	import { untrack } from 'svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import SearchInput from '$lib/components/ui/SearchInput.svelte';
+	import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 
@@ -67,17 +77,9 @@
 			.filter((a) => a.length > 0);
 	}
 
-	const columns = [
-		{ key: 'customer', label: 'Kunde', sortable: true },
-		{ key: 'subject', label: 'Betreff', sortable: true },
-		{ key: 'message_count', label: 'Nachrichten', width: '120px' },
-		{ key: 'unread', label: 'Status', width: '130px' },
-		{ key: 'last_message_at', label: 'Letzte Nachricht', sortable: true, width: '160px' },
-		{ key: 'direction', label: 'Richtung', width: '100px' }
-	];
-
+	// Once on mount; search/paging reload explicitly (untrack: not on every keystroke).
 	$effect(() => {
-		loadThreads();
+		untrack(loadThreads);
 	});
 
 	/**
@@ -174,286 +176,114 @@
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<h1>E-Mails</h1>
-		<span class="page-count">{total} gesamt</span>
-		<button class="btn btn-new" onclick={() => { showCompose = !showCompose; }}>
-			<Plus size={16} /> Neue E-Mail
-		</button>
-	</div>
+<svelte:head><title>E-Mails</title></svelte:head>
 
-	<div class="toolbar">
-		<div class="search-box">
-			<Search size={16} />
-			<input
-				type="text"
-				placeholder="Name, E-Mail, Betreff oder Nachrichtentext suchen..."
-				bind:value={searchQuery}
-				onkeydown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-			/>
-		</div>
-		<button
-			class="filter-toggle"
-			class:active={unreadOnly}
-			onclick={() => (unreadOnly = !unreadOnly)}
-			aria-pressed={unreadOnly}
-		>
-			<Mail size={14} />
-			Nur ungelesene{unreadThreadCount > 0 ? ` (${unreadThreadCount})` : ''}
-		</button>
-	</div>
+<PageHeader title="E-Mails" count="{total} Unterhaltungen">
+	{#snippet actions()}
+		<Button variant="accent" onclick={() => (showCompose = true)}><Plus size={16} /> Neue E-Mail</Button>
+	{/snippet}
+</PageHeader>
 
-	<DataTable
-		{columns}
-		rows={visibleThreads}
-		onRowClick={(row) => goto(`/admin/emails/${(row as EmailThread).id}`)}
-	>
-		{#snippet row(item, _i)}
-			{@const t = item as EmailThread}
-			<td class="cell-customer" class:is-unread={t.unread_count > 0}>
-				<div class="customer-info">
-					<span class="customer-name">{t.customer_name || t.customer_email || '(unbekannter Absender)'}</span>
-					{#if t.customer_name}
-						<span class="customer-email">{t.customer_email}</span>
-					{/if}
-				</div>
-			</td>
-			<td class="text-muted">{t.subject || '(kein Betreff)'}</td>
-			<td class="text-center">{t.message_count}</td>
-			<td>
-				{#if t.unread_count > 0}
-					<span class="badge badge-unread">{t.unread_count} ungelesen</span>
-				{:else if t.unhandled_count > 0}
-					<span class="badge badge-open">offen</span>
-				{:else}
-					<span class="text-muted">erledigt</span>
-				{/if}
-				{#if t.muted}
-					<span class="muted-icon" title="Erinnerungen stummgeschaltet"><BellOff size={13} /></span>
-				{/if}
-			</td>
-			<td class="text-muted">{t.last_message_at ? formatDateTime(t.last_message_at) : '—'}</td>
-			<td>
-				{#if t.last_direction === 'inbound'}
-					<span class="badge badge-inbound">Eingang</span>
-				{:else if t.last_direction === 'outbound'}
-					<span class="badge badge-outbound">Ausgang</span>
-				{:else}
-					<span class="text-muted">—</span>
-				{/if}
-			</td>
-		{/snippet}
-	</DataTable>
-
-	{#if totalPages > 1}
-		<PaginationControls
-			page={Math.floor(offset / limit)}
-			total={total}
-			limit={limit}
-			onPrev={() => { offset = Math.max(0, offset - limit); loadThreads(); }}
-			onNext={() => { offset += limit; loadThreads(); }}
-		/>
-	{/if}
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+	<FilterTabs
+		label="Filter"
+		options={[
+			{ value: 'all', label: 'Alle' },
+			{ value: 'unread', label: 'Ungelesen', count: unreadThreadCount || undefined }
+		]}
+		value={unreadOnly ? 'unread' : 'all'}
+		onchange={(v) => (unreadOnly = v === 'unread')}
+	/>
+	<SearchInput bind:value={searchQuery} onsearch={handleSearch} placeholder="Name, E-Mail, Betreff, Text …" class="sm:ml-auto sm:w-80" />
 </div>
 
-{#if showCompose}
-	<div
-		class="modal-backdrop"
-		role="presentation"
-		onclick={cancelCompose}
-		onkeydown={(e) => e.key === 'Escape' && cancelCompose()}
-		tabindex="-1"
-	>
-		<div
-			class="modal"
-			role="dialog"
-			aria-labelledby="compose-title"
-			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
-			<h2 id="compose-title">Neue E-Mail verfassen</h2>
-			<div class="form-field">
-				<label for="compose-email">Empfänger</label>
-				<input id="compose-email" type="email" placeholder="kunde@beispiel.de" bind:value={composeEmail} />
-			</div>
-			<div class="form-field">
-				<label for="compose-cc">CC <span class="optional">(optional, mit Komma trennen)</span></label>
-				<input id="compose-cc" type="text" placeholder="kollege@beispiel.de, buero@beispiel.de" bind:value={composeCc} />
-			</div>
-			<div class="form-field">
-				<label for="compose-bcc">BCC <span class="optional">(optional)</span></label>
-				<input id="compose-bcc" type="text" placeholder="archiv@beispiel.de" bind:value={composeBcc} />
-			</div>
-			<div class="form-field">
-				<label for="compose-subject">Betreff</label>
-				<input id="compose-subject" type="text" placeholder="Betreff..." bind:value={composeSubject} />
-			</div>
-			<div class="form-field">
-				<label for="compose-body">Nachricht</label>
-				<textarea id="compose-body" rows="6" placeholder="Nachrichtentext..." bind:value={composeBody}></textarea>
-			</div>
-			<div class="modal-actions">
-				<button class="btn btn-create" onclick={handleCompose} disabled={composing || !composeEmail.trim() || !composeSubject.trim() || !composeBody.trim()}>
-					{composing ? 'Erstelle...' : 'Erstellen'}
-				</button>
-				<button class="btn btn-cancel" onclick={cancelCompose} disabled={composing}>Abbrechen</button>
-			</div>
-		</div>
-	</div>
+{#if loading && threads.length === 0}
+	<div class="h-80 animate-pulse rounded-md bg-sunk"></div>
+{:else if visibleThreads.length === 0}
+	<EmptyState title={unreadOnly ? 'Keine ungelesenen E-Mails' : 'Keine E-Mails gefunden'} />
+{:else}
+	<ul class="divide-y divide-line overflow-hidden rounded-md border border-line bg-panel {loading ? 'opacity-60' : ''}">
+		{#each visibleThreads as t (t.id)}
+			{@const unread = t.unread_count > 0}
+			<li>
+				<a
+					href="/admin/emails/{t.id}"
+					class="grid grid-cols-[10px_minmax(0,1fr)_auto] items-start gap-x-3 px-4 py-3 hover:bg-sunk/60 {unread ? 'bg-accent/[0.04]' : ''}"
+				>
+					<span class="mt-1.5 size-2 rounded-full {unread ? 'bg-accent' : ''}" aria-hidden="true"></span>
+					<span class="flex min-w-0 flex-col gap-0.5">
+						<span class="flex items-center gap-2">
+							<span class="truncate text-sm {unread ? 'font-semibold' : 'font-medium'}">
+								{t.customer_name || t.customer_email || '(unbekannter Absender)'}
+							</span>
+							{#if t.message_count > 1}<span class="num text-xs text-faint">{t.message_count}</span>{/if}
+							{#if t.muted}<span class="text-faint" title="Erinnerungen stummgeschaltet"><BellOff size={13} /></span>{/if}
+						</span>
+						<span class="truncate text-[13px] {unread ? 'text-fg' : 'text-muted'}">{t.subject || '(kein Betreff)'}</span>
+						{#if t.customer_name}<span class="truncate text-xs text-faint">{t.customer_email}</span>{/if}
+					</span>
+					<span class="flex flex-col items-end gap-1.5">
+						<span class="num text-xs whitespace-nowrap text-faint">{t.last_message_at ? formatDateTime(t.last_message_at) : '—'}</span>
+						<span class="flex items-center gap-1.5">
+							{#if t.last_direction === 'inbound'}
+								<ArrowDownLeft size={13} class="text-info" aria-label="Eingang" />
+							{:else if t.last_direction === 'outbound'}
+								<ArrowUpRight size={13} class="text-faint" aria-label="Ausgang" />
+							{/if}
+							{#if unread}
+								<Badge tone="accent">{t.unread_count} neu</Badge>
+							{:else if t.unhandled_count > 0}
+								<Badge tone="warn">offen</Badge>
+							{:else}
+								<Badge>erledigt</Badge>
+							{/if}
+						</span>
+					</span>
+				</a>
+			</li>
+		{/each}
+	</ul>
 {/if}
 
-<style>
-	.page {
-		height: 100%;
-	}
+{#if totalPages > 1}
+	<PaginationControls
+		page={Math.floor(offset / limit)}
+		{total}
+		{limit}
+		onPrev={() => {
+			offset = Math.max(0, offset - limit);
+			loadThreads();
+		}}
+		onNext={() => {
+			offset += limit;
+			loadThreads();
+		}}
+	/>
+{/if}
 
-	.page-header h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-	}
-
-	.page-count {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		flex: 1;
-	}
-
-	.form-field {
-		margin-bottom: 0.75rem;
-	}
-
-	.form-field label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.25rem;
-	}
-
-	.form-field input,
-	.form-field textarea {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		outline: none;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-		box-sizing: border-box;
-	}
-
-	.form-field input:focus,
-	.form-field textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.form-field textarea {
-		resize: vertical;
-		font-family: inherit;
-		line-height: 1.5;
-	}
-
-	.customer-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
-	.customer-name {
-		font-weight: 500;
-		color: var(--dt-on-surface);
-	}
-
-	.customer-email {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.text-muted {
-		color: var(--dt-on-surface-variant);
-	}
-
-	.text-center {
-		text-align: center;
-	}
-
-	.badge {
-		display: inline-block;
-		padding: 0.125rem 0.5rem;
-		border-radius: 9999px;
-		font-size: 0.6875rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-	}
-
-	.toolbar {
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-		flex-wrap: wrap;
-	}
-
-	.badge-unread {
-		background: var(--dt-primary, #1b6ca8);
-		color: #fff;
-	}
-
-	.badge-open {
-		background: color-mix(in srgb, var(--dt-primary, #1b6ca8) 15%, transparent);
-		color: var(--dt-primary, #1b6ca8);
-	}
-
-	.cell-customer.is-unread .customer-name {
-		font-weight: 700;
-	}
-
-	.muted-icon {
-		display: inline-flex;
-		vertical-align: middle;
-		margin-left: 0.35rem;
-		color: var(--text-muted, #888);
-	}
-
-	.filter-toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.5rem 0.75rem;
-		border: 1px solid var(--border, #d7dde3);
-		border-radius: 6px;
-		background: var(--surface, #fff);
-		color: var(--text, inherit);
-		font-size: 0.875rem;
-		cursor: pointer;
-	}
-
-	.filter-toggle.active {
-		border-color: var(--dt-primary, #1b6ca8);
-		color: var(--dt-primary, #1b6ca8);
-		background: color-mix(in srgb, var(--dt-primary, #1b6ca8) 10%, transparent);
-	}
-
-	.optional {
-		font-weight: 400;
-		color: var(--text-muted, #888);
-		font-size: 0.8em;
-	}
-
-	.badge-inbound {
-		background: var(--dt-surface-container);
-		color: var(--dt-primary);
-	}
-
-	.badge-outbound {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-</style>
+{#if showCompose}
+	<Modal title="Neue E-Mail" size="lg" onclose={cancelCompose}>
+		<div class="flex flex-col gap-3">
+			<Field label="Empfänger" for="compose-email"><Input id="compose-email" type="email" placeholder="kunde@beispiel.de" bind:value={composeEmail} /></Field>
+			<div class="grid gap-3 sm:grid-cols-2">
+				<Field label="CC (optional, mit Komma trennen)" for="compose-cc">
+					<Input id="compose-cc" placeholder="kollege@beispiel.de, buero@beispiel.de" bind:value={composeCc} />
+				</Field>
+				<Field label="BCC (optional)" for="compose-bcc"><Input id="compose-bcc" placeholder="archiv@beispiel.de" bind:value={composeBcc} /></Field>
+			</div>
+			<Field label="Betreff" for="compose-subject"><Input id="compose-subject" placeholder="Betreff …" bind:value={composeSubject} /></Field>
+			<Field label="Nachricht" for="compose-body"><Textarea id="compose-body" rows={8} placeholder="Nachrichtentext …" bind:value={composeBody} /></Field>
+			<p class="text-xs text-faint">Wird als Entwurf angelegt — Senden in der Unterhaltung.</p>
+		</div>
+		{#snippet footer()}
+			<Button onclick={cancelCompose} disabled={composing}>Abbrechen</Button>
+			<Button
+				variant="solid"
+				onclick={handleCompose}
+				disabled={composing || !composeEmail.trim() || !composeSubject.trim() || !composeBody.trim()}
+			>
+				{composing ? 'Erstelle …' : 'Entwurf erstellen'}
+			</Button>
+		{/snippet}
+	</Modal>
+{/if}

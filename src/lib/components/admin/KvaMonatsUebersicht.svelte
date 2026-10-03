@@ -90,262 +90,107 @@
 	}
 </script>
 
-<section class="panel">
-	<header class="panel-head">
-		<h2>Monats&uuml;bersicht</h2>
-		<p class="panel-sub">
-			Angebotsvolumen netto je Monat, nach KVA-Datum. Der dunkle Teil ist der
-			bereits gewonnene Anteil.
-		</p>
+<!--
+	Nested measures (won ⊂ quoted), so one hue at two strengths: the bar is the quoted
+	volume, its tenant-coloured foot the won share. Identity is never colour-alone — the
+	legend names both and the table repeats every number.
+-->
+<section class="rounded-md border border-line bg-panel">
+	<header class="flex flex-wrap items-start justify-between gap-3 px-4 py-3.5">
+		<div class="flex flex-col gap-1">
+			<h2 class="text-[15px] font-semibold">Monatsübersicht</h2>
+			<p class="text-xs text-muted">Angebotsvolumen netto je Monat, nach KVA-Datum. Klick auf einen Monat filtert die Liste.</p>
+		</div>
+		{#if yearTotals.count > 0}
+			<span class="flex items-center gap-3.5 text-xs text-muted">
+				<span class="flex items-center gap-1.5"><span class="size-2.5 bg-accent"></span>Gewonnen</span>
+				<span class="flex items-center gap-1.5"><span class="size-2.5 bg-bar-strong"></span>Offen / verloren</span>
+			</span>
+		{/if}
 	</header>
 
 	{#if yearTotals.count === 0}
-		<p class="empty">Keine Kostenvoranschl&auml;ge in diesem Jahr.</p>
+		<p class="border-t border-line px-4 py-6 text-center text-sm text-muted">Keine Kostenvoranschläge in diesem Jahr.</p>
 	{:else}
-		<!-- Two nested measures, so identity is never colour-alone: the legend names
-		     both and the table below repeats every number. -->
-		<div class="legend">
-			<span class="legend-item">
-				<span class="swatch swatch--won"></span>Gewonnen
-			</span>
-			<span class="legend-item">
-				<span class="swatch swatch--open"></span>Noch offen / verloren
-			</span>
-		</div>
-
-		<div class="chart">
-			<div class="y-axis" aria-hidden="true">
-				{#each gridTicks as tick}
-					<span class="y-tick">{Math.round(tick / 100).toLocaleString('de-DE')}</span>
+		<div class="px-4 pb-4">
+			<div class="relative grid h-48 grid-cols-12 items-end gap-1.5 border-b border-line-strong sm:gap-2">
+				<div class="pointer-events-none absolute inset-0 flex flex-col justify-between" aria-hidden="true">
+					{#each gridTicks as tick, i (i)}
+						<span class="num relative border-t border-dashed border-line text-[10px] text-faint"
+							><span class="absolute -top-2 right-0 bg-panel pl-1">{Math.round(tick / 100).toLocaleString('de-DE')}</span></span
+						>
+					{/each}
+				</div>
+				{#each months as m (m.month)}
+					<button
+						type="button"
+						class="relative z-[1] flex h-full flex-col justify-end transition-opacity {selected != null && selected !== m.month
+							? 'opacity-35'
+							: ''}"
+						onclick={() => toggle(m.month)}
+						title={tooltip(m)}
+						aria-label={tooltip(m)}
+						aria-pressed={selected === m.month}
+					>
+						{#if m.month === peakMonth}
+							<span class="num mb-1 text-center text-[10px] text-fg">{Math.round(m.volumeNetto / 100).toLocaleString('de-DE')} €</span>
+						{/if}
+						<span
+							class="flex flex-col justify-end overflow-hidden rounded-t-xs {selected === m.month ? 'bg-bar-strong ring-2 ring-fg' : 'bg-bar-strong/70'}"
+							style:height="{heightPercent(m.volumeNetto)}%"
+						>
+							<span class="bg-accent" style:height="{wonPercentOfColumn(m)}%"></span>
+						</span>
+					</button>
 				{/each}
 			</div>
-			<div class="plot">
-				<div class="grid" aria-hidden="true">
-					{#each gridTicks as _tick}
-						<span class="grid-line"></span>
-					{/each}
-				</div>
-				<div class="bars">
-					{#each months as m}
-						<button
-							type="button"
-							class="bar-slot"
-							class:dimmed={selected != null && selected !== m.month}
-							class:active={selected === m.month}
-							onclick={() => toggle(m.month)}
-							title={tooltip(m)}
-							aria-label={tooltip(m)}
-							aria-pressed={selected === m.month}
-						>
-							<span class="bar-track">
-								{#if m.month === peakMonth}
-									<span class="bar-value" style:bottom="{heightPercent(m.volumeNetto)}%">
-										{Math.round(m.volumeNetto / 100).toLocaleString('de-DE')}&nbsp;&euro;
-									</span>
-								{/if}
-								<span class="bar" style:height="{heightPercent(m.volumeNetto)}%">
-									<span class="bar-won" style:height="{wonPercentOfColumn(m)}%"></span>
-								</span>
-							</span>
-							<span class="bar-label">{m.label}</span>
-						</button>
-					{/each}
-				</div>
+			<div class="grid grid-cols-12 gap-1.5 pt-2 sm:gap-2">
+				{#each months as m (m.month)}
+					<span class="num text-center text-[10.5px] {selected === m.month ? 'text-fg' : 'text-faint'}">{m.label}</span>
+				{/each}
 			</div>
 		</div>
 
-		<!-- The record. Same twelve months, never collapsed away. -->
-		<div class="table-wrap">
-			<table>
+		<!-- The record: the same twelve months, never collapsed away. -->
+		<div class="overflow-x-auto border-t border-line">
+			<table class="num w-full min-w-[520px] border-collapse text-[13px]">
 				<thead>
-					<tr>
-						<th>Monat</th>
-						<th class="num">KVAs</th>
-						<th class="num">Volumen</th>
-						<th class="num">Gewonnen</th>
-						<th class="num">Quote</th>
-						<th class="num">Offen</th>
+					<tr class="label-xs text-faint">
+						<th class="px-4 py-2 text-left font-normal">Monat</th>
+						<th class="px-3 py-2 text-right font-normal">KVAs</th>
+						<th class="px-3 py-2 text-right font-normal">Volumen</th>
+						<th class="px-3 py-2 text-right font-normal">Gewonnen</th>
+						<th class="px-3 py-2 text-right font-normal">Quote</th>
+						<th class="px-4 py-2 text-right font-normal">Offen</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each months as m}
-						<tr class:empty-month={m.count === 0} class:selected={selected === m.month}>
-							<td>
-								<button type="button" class="month-btn" onclick={() => toggle(m.month)}>
-									{m.label}
-								</button>
+					{#each months as m (m.month)}
+						<tr class="border-t border-line {m.count === 0 ? 'text-faint' : ''} {selected === m.month ? 'bg-sunk' : ''}">
+							<td class="px-4 py-1.5">
+								<button type="button" class="font-sans hover:underline" onclick={() => toggle(m.month)}>{m.label}</button>
 							</td>
-							<td class="num">{m.count || '—'}</td>
-							<td class="num">{m.count ? formatEuro(m.volumeNetto) : '—'}</td>
-							<td class="num">{m.count ? formatEuro(m.wonNetto) : '—'}</td>
-							<td class="num">
+							<td class="px-3 py-1.5 text-right">{m.count || '—'}</td>
+							<td class="px-3 py-1.5 text-right">{m.count ? formatEuro(m.volumeNetto) : '—'}</td>
+							<td class="px-3 py-1.5 text-right">{m.count ? formatEuro(m.wonNetto) : '—'}</td>
+							<td class="px-3 py-1.5 text-right">
 								{m.wonCount + m.lostCount > 0 ? quota(m.wonCount, m.wonCount + m.lostCount) : '—'}
 							</td>
-							<td class="num">{m.openCount || '—'}</td>
+							<td class="px-4 py-1.5 text-right">{m.openCount || '—'}</td>
 						</tr>
 					{/each}
 				</tbody>
 				<tfoot>
-					<tr>
-						<th>Jahr</th>
-						<th class="num">{yearTotals.count}</th>
-						<th class="num">{formatEuro(yearTotals.volumeNetto)}</th>
-						<th class="num">{formatEuro(yearTotals.wonNetto)}</th>
-						<th class="num">
-							{quota(yearTotals.wonCount, yearTotals.wonCount + yearTotals.lostCount)}
-						</th>
-						<th class="num">{yearTotals.openCount}</th>
+					<tr class="border-t border-line-strong font-semibold">
+						<th class="px-4 py-2 text-left font-sans">Jahr</th>
+						<th class="px-3 py-2 text-right">{yearTotals.count}</th>
+						<th class="px-3 py-2 text-right">{formatEuro(yearTotals.volumeNetto)}</th>
+						<th class="px-3 py-2 text-right">{formatEuro(yearTotals.wonNetto)}</th>
+						<th class="px-3 py-2 text-right">{quota(yearTotals.wonCount, yearTotals.wonCount + yearTotals.lostCount)}</th>
+						<th class="px-4 py-2 text-right">{yearTotals.openCount}</th>
 					</tr>
 				</tfoot>
 			</table>
 		</div>
 	{/if}
 </section>
-
-<style>
-	/* One hue at two steps, because the two measures are nested rather than
-	 * categorical: won volume is part of quoted volume. #1b6ca8 passes the palette
-	 * validator against the white chart surface; #7fb5da sits ΔE 23.8 from it in
-	 * normal vision and 20+ under every CVD simulation, so the split stays legible.
-	 * The lighter step is under 3:1 against the surface on its own — relieved by the
-	 * legend above and the full table below, both always present. */
-	.panel {
-		--chart-won: #1b6ca8;
-		--chart-open: #7fb5da;
-		/* De-emphasis, not erasure: a filtered-out month must still read as a column. */
-		--chart-won-dim: color-mix(in srgb, #1b6ca8 32%, transparent);
-		--chart-open-dim: color-mix(in srgb, #7fb5da 32%, transparent);
-
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: var(--dt-space-5) var(--dt-space-6);
-		margin-bottom: var(--dt-space-4);
-	}
-
-	.panel-head { margin-bottom: var(--dt-space-4); }
-	.panel-head h2 {
-		margin: 0; font-size: 1rem; font-weight: 700; color: var(--dt-on-surface);
-	}
-	.panel-sub {
-		margin: 0.15rem 0 0; font-size: 0.8125rem; color: var(--dt-on-surface-variant);
-	}
-	.empty {
-		color: var(--dt-on-surface-variant); padding: var(--dt-space-6) 0;
-		text-align: center; font-size: 0.875rem;
-	}
-
-	/* ── legend ─────────────────────────────────────── */
-	.legend {
-		display: flex; flex-wrap: wrap; gap: var(--dt-space-4);
-		margin-bottom: var(--dt-space-3);
-	}
-	.legend-item {
-		display: inline-flex; align-items: center; gap: 0.4rem;
-		font-size: 0.75rem; color: var(--dt-on-surface-variant);
-	}
-	.swatch {
-		width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto;
-	}
-	.swatch--won { background: var(--chart-won); }
-	.swatch--open { background: var(--chart-open); }
-
-	/* ── chart ──────────────────────────────────────── */
-	.chart { display: flex; gap: var(--dt-space-2); height: 190px; }
-
-	.y-axis {
-		display: flex; flex-direction: column; justify-content: space-between;
-		align-items: flex-end; padding-bottom: 20px; width: 3.5rem; flex: 0 0 auto;
-	}
-	.y-tick {
-		font-size: 0.6875rem; color: var(--dt-on-surface-variant);
-		font-variant-numeric: tabular-nums; line-height: 1;
-	}
-
-	.plot { position: relative; flex: 1 1 auto; min-width: 0; }
-	.grid {
-		position: absolute; inset: 0 0 20px 0; display: flex;
-		flex-direction: column; justify-content: space-between; pointer-events: none;
-	}
-	.grid-line { border-top: 1px solid var(--dt-outline-variant); opacity: 0.5; }
-
-	.bars {
-		position: absolute; inset: 0; display: flex; align-items: flex-end;
-		gap: 2px; /* surface gap between adjacent fills */
-	}
-	.bar-slot {
-		flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
-		align-items: center; height: 100%; padding: 0; border: none;
-		background: none; cursor: pointer;
-	}
-	.bar-track {
-		position: relative; flex: 1 1 auto; width: 100%;
-		display: flex; align-items: flex-end; justify-content: center;
-	}
-	.bar {
-		position: relative; width: 100%; max-width: 24px;
-		background: var(--chart-open); border-radius: 4px 4px 0 0;
-		transition: background var(--dt-transition);
-		display: flex; flex-direction: column; justify-content: flex-end;
-	}
-	/* Anchored to the baseline, so the won portion grows up from the axis. */
-	.bar-won {
-		width: 100%; background: var(--chart-won);
-		border-radius: 0 0 0 0; transition: background var(--dt-transition);
-	}
-	.bar-label {
-		font-size: 0.625rem; color: var(--dt-on-surface-variant);
-		height: 20px; line-height: 20px; overflow: hidden;
-		white-space: nowrap; max-width: 100%;
-	}
-	.bar-value {
-		position: absolute; left: 50%; transform: translate(-50%, -2px);
-		font-size: 0.625rem; font-weight: 600; color: var(--dt-on-surface);
-		font-variant-numeric: tabular-nums; white-space: nowrap;
-	}
-
-	/* Dimming is a fill change only — never stacked with opacity, or the column
-	 * disappears instead of receding. */
-	.bar-slot.dimmed .bar { background: var(--chart-open-dim); }
-	.bar-slot.dimmed .bar-won { background: var(--chart-won-dim); }
-
-	/* Hover and selection must not look alike: hover restores full ink, selection
-	 * uses the brand step. */
-	.bar-slot:hover .bar { background: var(--chart-open); }
-	.bar-slot:hover .bar-won { background: var(--chart-won); }
-	.bar-slot.active .bar-won,
-	.bar-slot.active:hover .bar-won { background: var(--dt-primary); }
-
-	/* ── table ──────────────────────────────────────── */
-	.table-wrap { margin-top: var(--dt-space-4); overflow-x: auto; }
-	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-	th {
-		padding: 6px var(--dt-space-3); text-align: left; font-weight: 500;
-		color: var(--dt-on-surface-variant); font-size: 11px;
-		text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
-	}
-	th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
-	td {
-		padding: 6px var(--dt-space-3); color: var(--dt-on-surface); white-space: nowrap;
-	}
-	tbody tr.empty-month td { color: var(--dt-on-surface-variant); }
-	tbody tr.selected { background: var(--dt-surface-container-high); }
-	tbody tr:hover { background: var(--dt-surface-container-low); }
-
-	.month-btn {
-		padding: 0; border: none; background: none; cursor: pointer;
-		color: inherit; font: inherit; text-align: left;
-	}
-	.month-btn:hover { text-decoration: underline; }
-
-	tfoot th {
-		border-top: 2px solid var(--dt-outline-variant);
-		color: var(--dt-on-surface); font-weight: 700;
-		font-size: 0.8125rem; text-transform: none; letter-spacing: 0;
-	}
-
-	@media (max-width: 768px) {
-		.panel { padding: var(--dt-space-4); }
-		.chart { height: 160px; }
-		.bar-label { font-size: 0.5rem; }
-	}
-</style>

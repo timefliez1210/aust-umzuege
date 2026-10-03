@@ -78,134 +78,39 @@
 	}
 </script>
 
-<div class="price-input">
-	<label class="price-label" for={`price-${label.replace(/\s/g, '-').toLowerCase()}`}>{label}</label>
-	<div class="input-row">
-		<div class="input-wrapper">
+<div class="flex flex-col gap-1.5">
+	<label class="text-xs font-medium text-muted" for={`price-${label.replace(/\s/g, '-').toLowerCase()}`}>{label}</label>
+	<div class="flex items-center gap-2">
+		<div
+			class="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-sm border border-line-strong bg-panel px-3 focus-within:border-fg"
+		>
 			<input
 				id={`price-${label.replace(/\s/g, '-').toLowerCase()}`}
 				type="number"
 				step="0.01"
+				class="num min-w-0 flex-1 bg-transparent text-xl font-medium outline-none"
 				value={editing ? inputText : displayValue}
 				oninput={handleInput}
 				onfocus={handleFocus}
 				onblur={handleBlur}
 				{disabled}
 			/>
-			<span class="currency">EUR</span>
+			<span class="text-sm text-faint">€</span>
 		</div>
-		<div class="mode-toggle">
-			<button
-				class:active={mode === 'brutto'}
-				onclick={() => (mode = 'brutto')}
-				type="button"
-			>
-				Brutto
-			</button>
-			<button
-				class:active={mode === 'netto'}
-				onclick={() => (mode = 'netto')}
-				type="button"
-			>
-				Netto
-			</button>
+		<div role="group" aria-label="Preisart" class="inline-flex gap-0.5 rounded-md border border-line bg-sunk p-0.5">
+			{#each [['brutto', 'Brutto'], ['netto', 'Netto']] as const as [m, l] (m)}
+				<button
+					type="button"
+					aria-pressed={mode === m}
+					onclick={() => (mode = m)}
+					class="h-9 rounded-sm border px-3 text-[13px] {mode === m
+						? 'border-line-strong bg-panel text-fg'
+						: 'border-transparent text-muted hover:text-fg'}">{l}</button
+				>
+			{/each}
 		</div>
 	</div>
-	<span class="price-hint">
-		{mode === 'brutto'
-			? `Netto: ${nettoEuro.toFixed(2)} EUR`
-			: `Brutto: ${bruttoEuro.toFixed(2)} EUR`}
+	<span class="num text-xs text-faint">
+		{mode === 'brutto' ? `Netto: ${nettoEuro.toFixed(2)} €` : `Brutto: ${bruttoEuro.toFixed(2)} €`}
 	</span>
 </div>
-
-<style>
-	.price-input {
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-	}
-
-	.price-label {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.input-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.input-wrapper {
-		display: flex;
-		align-items: center;
-		background: var(--dt-surface-container-high);
-		border-radius: var(--dt-radius-md);
-		padding: 0 0.75rem;
-		flex: 1;
-		transition: background var(--dt-transition), border-bottom-color var(--dt-transition);
-		border-bottom: 2px solid transparent;
-	}
-
-	.input-wrapper:focus-within {
-		background: var(--dt-surface-container-lowest);
-		border-bottom-color: var(--dt-primary);
-	}
-
-	input {
-		background: transparent;
-		border: none;
-		color: var(--dt-on-surface);
-		padding: 0.5rem 0;
-		width: 100%;
-		font-size: 0.9375rem;
-		font-weight: 600;
-		outline: none;
-	}
-
-	input::-webkit-inner-spin-button,
-	input::-webkit-outer-spin-button {
-		-webkit-appearance: none;
-	}
-
-	input[type='number'] {
-		-moz-appearance: textfield;
-		appearance: textfield;
-	}
-
-	.currency {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		margin-left: 0.5rem;
-	}
-
-	.mode-toggle {
-		display: flex;
-		border-radius: var(--dt-radius-md);
-		overflow: hidden;
-		border: var(--dt-ghost-border);
-	}
-
-	.mode-toggle button {
-		padding: 0.5rem 0.625rem;
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-lowest);
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.mode-toggle button.active {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-	}
-
-	.price-hint {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-</style>

@@ -1,15 +1,13 @@
 <script lang="ts">
+	import { Loader } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	/**
 	 * A reusable confirmation dialog that replaces inline `confirm()` calls.
 	 *
 	 * Renders a modal overlay with a title, message, and two action buttons.
 	 * Use `bind:open` to control visibility. The `onConfirm` callback fires
 	 * when the user presses the confirm button; `onCancel` fires on cancel or
-	 * backdrop click.
-	 *
-	 * Styling depends on global classes from `admin-components.css`:
-	 * `.modal-backdrop`, `.modal`, `.modal-actions`, `.btn-cancel`,
-	 * `.btn-danger`, `.btn-primary`.
+	 * backdrop click. Bottom sheet on phones, centred panel from `sm` up.
 	 */
 
 	/**
@@ -20,7 +18,7 @@
 	 * @prop message      - Body text describing what will be confirmed.
 	 * @prop confirmLabel - Label for the confirm button. Default: 'Bestätigen'.
 	 * @prop cancelLabel  - Label for the cancel button. Default: 'Abbrechen'.
-	 * @prop variant      - Button style: 'danger' (red) or 'primary' (blue). Default: 'danger'.
+	 * @prop variant      - Confirm style: 'danger' (destructive) or 'primary' (solid). Default: 'danger'.
 	 * @prop loading      - When true the confirm button shows a spinner and is disabled.
 	 * @prop onConfirm    - Callback invoked when the user presses the confirm button.
 	 * @prop onCancel     - Optional callback invoked on cancel or backdrop click.
@@ -75,14 +73,15 @@
 
 {#if open}
 	<div
-		class="modal-backdrop"
+		class="fixed inset-0 z-[650] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
 		role="presentation"
+		data-backdrop
 		onclick={handleCancel}
 		onkeydown={(e) => e.key === 'Escape' && handleCancel()}
 		tabindex="-1"
 	>
 		<div
-			class="modal"
+			class="w-full max-w-md rounded-t-lg border border-line bg-panel p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-fg shadow-2xl sm:rounded-md sm:pb-5"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="confirm-dialog-title"
@@ -90,53 +89,20 @@
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
-			<h2 id="confirm-dialog-title">{title}</h2>
-			<p class="dialog-message">{message}</p>
-			<div class="modal-actions">
-				<button class="btn-cancel" onclick={handleCancel} disabled={loading}>
-					{cancelLabel}
-				</button>
-				{#if variant === 'danger'}
-					<button class="btn-danger" onclick={handleConfirm} disabled={loading}>
-						{#if loading}
-							<svg class="spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
-							</svg>
-						{/if}
-						{confirmLabel}
-					</button>
-				{:else}
-					<button class="btn-primary" onclick={handleConfirm} disabled={loading}>
-						{#if loading}
-							<svg class="spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
-							</svg>
-						{/if}
-						{confirmLabel}
-					</button>
-				{/if}
+			<h2 id="confirm-dialog-title" class="text-[15px] font-semibold">{title}</h2>
+			<p class="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">{message}</p>
+			<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+				<Button onclick={handleCancel} disabled={loading}>{cancelLabel}</Button>
+				<Button
+					variant={variant === 'danger' ? 'destructive' : 'solid'}
+					data-variant={variant}
+					onclick={handleConfirm}
+					disabled={loading}
+				>
+					{#if loading}<Loader size={15} class="animate-spin" aria-hidden="true" />{/if}
+					{confirmLabel}
+				</Button>
 			</div>
 		</div>
 	</div>
 {/if}
-
-<style>
-	.dialog-message {
-		font-size: 0.9375rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0 0 0.5rem;
-		line-height: 1.5;
-	}
-
-	.spinner {
-		width: 16px;
-		height: 16px;
-		animation: spin 0.8s linear infinite;
-		flex-shrink: 0;
-	}
-
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to   { transform: rotate(360deg); }
-	}
-</style>

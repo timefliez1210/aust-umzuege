@@ -2,7 +2,17 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
 	import { CUSTOMER_TYPE_LABELS } from '$lib/utils/constants';
-	import { Search, Plus } from 'lucide-svelte';
+	import { Plus } from 'lucide-svelte';
+	import { untrack } from 'svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import SearchInput from '$lib/components/ui/SearchInput.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 
@@ -41,21 +51,22 @@
 	let createLastName = $state('');
 	let createEmail = $state('');
 	let createPhone = $state('');
-	let createCustomerType = $state('private');
+	let createCustomerType = $state<'private' | 'business'>('private');
 	let createCompanyName = $state('');
 	let createError = $state('');
 	let createLoading = $state(false);
 
 	const columns = [
 		{ key: 'customer_type', label: 'Typ', width: '80px' },
-		{ key: 'name', label: 'Name', sortable: true },
-		{ key: 'email', label: 'E-Mail', sortable: true },
+		{ key: 'name', label: 'Name' },
+		{ key: 'email', label: 'E-Mail' },
 		{ key: 'phone', label: 'Telefon', width: '150px' },
-		{ key: 'created_at', label: 'Erstellt', sortable: true, width: '120px' }
+		{ key: 'created_at', label: 'Erstellt', width: '120px' }
 	];
 
+	// Once on mount; search and paging reload explicitly (untrack: not on every keystroke).
 	$effect(() => {
-		loadCustomers();
+		untrack(loadCustomers);
 	});
 
 	/**
@@ -139,231 +150,110 @@
 	let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<h1>Kunden</h1>
-		<span class="page-count">{total} gesamt</span>
-		<button class="btn-create" onclick={() => { showCreateForm = !showCreateForm; }}>
-			<Plus size={16} />
-			Neuer Kunde
-		</button>
-	</div>
+<svelte:head><title>Kunden</title></svelte:head>
 
-	{#if showCreateForm}
-		<div class="create-form">
-			<div class="create-form__row">
-				<select bind:value={createSalutation} class="create-form__input create-form__select">
-					<option value="">Anrede</option>
-					<option value="Herr">Herr</option>
-					<option value="Frau">Frau</option>
-					<option value="D">Divers</option>
-				</select>
-				<input type="text" placeholder="Vorname" bind:value={createFirstName} class="create-form__input" />
-				<input type="text" placeholder="Nachname" bind:value={createLastName} class="create-form__input" />
-				<input type="email" placeholder="E-Mail" bind:value={createEmail} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
-				<input type="tel" placeholder="Telefon" bind:value={createPhone} class="create-form__input" onkeydown={(e) => { if (e.key === 'Enter') handleCreateCustomer(); }} />
-			</div>
-			<div class="create-form__row">
-				<div class="type-toggle">
-					<button type="button" class="type-btn" class:active={createCustomerType === 'private'} onclick={() => createCustomerType = 'private'}>Privat</button>
-					<button type="button" class="type-btn" class:active={createCustomerType === 'business'} onclick={() => createCustomerType = 'business'}>Gewerbe</button>
-				</div>
-				{#if createCustomerType === 'business'}
-					<input type="text" placeholder="Firmenname" bind:value={createCompanyName} class="create-form__input" />
-				{/if}
-				<button class="create-form__submit" onclick={handleCreateCustomer} disabled={createLoading}>
-					{createLoading ? 'Erstelle...' : 'Erstellen'}
-				</button>
-			</div>
-			{#if createError}
-				<p class="create-form__error">{createError}</p>
-			{/if}
-		</div>
-	{/if}
+<PageHeader title="Kunden" count="{total} gesamt">
+	{#snippet actions()}
+		<Button variant="accent" onclick={() => (showCreateForm = true)}><Plus size={16} /> Neuer Kunde</Button>
+	{/snippet}
+</PageHeader>
 
-	<div class="toolbar">
-		<div class="search-box">
-			<Search size={16} />
-			<input
-				type="text"
-				placeholder="Name oder E-Mail suchen..."
-				bind:value={searchQuery}
-				onkeydown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-			/>
-		</div>
-	</div>
+<SearchInput bind:value={searchQuery} onsearch={handleSearch} placeholder="Name oder E-Mail suchen …" class="mb-4 sm:w-80" />
 
+<div class={loading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
 	<DataTable
 		{columns}
 		rows={customers}
 		bind:sortKey
 		bind:sortDir
+		emptyMessage={loading ? 'Laden …' : 'Keine Kunden gefunden'}
 		onRowClick={(row) => goto(`/admin/customers/${(row as Customer).id}`)}
 	>
+		{#snippet card(item, _i)}
+			{@const c = item as Customer}
+			<span class="flex items-start justify-between gap-3">
+				<span class="flex min-w-0 flex-col">
+					<span class="truncate font-semibold">{c.company_name || c.name || '—'}</span>
+					<span class="truncate text-[13px] text-muted">{c.email ?? '—'}</span>
+				</span>
+				<Badge>{CUSTOMER_TYPE_LABELS[c.customer_type ?? 'private'] ?? 'Privat'}</Badge>
+			</span>
+			<span class="num mt-1.5 flex justify-between text-xs text-faint">
+				<span>{c.phone || ''}</span><span>seit {formatDate(c.created_at)}</span>
+			</span>
+		{/snippet}
 		{#snippet row(item, _i)}
 			{@const c = item as Customer}
+			<td><Badge>{CUSTOMER_TYPE_LABELS[c.customer_type ?? 'private'] ?? c.customer_type}</Badge></td>
 			<td>
-			{#if c.customer_type}
-				<span class="cust-type-badge" data-type={c.customer_type}>{CUSTOMER_TYPE_LABELS[c.customer_type] ?? c.customer_type}</span>
-			{:else}
-				<span class="cust-type-badge" data-type="private">Privat</span>
-			{/if}
-		</td>
-		<td class="cell-name">
-			{#if c.salutation}<span class="sal-badge">{c.salutation === 'D' ? 'Div.' : c.salutation}</span>{/if}{c.name || '—'}
-			{#if c.company_name}<span class="cell-company">({c.company_name})</span>{/if}
-		</td>
-			<td>{c.email ?? '—'}</td>
-			<td class="text-muted">{c.phone || '—'}</td>
-			<td class="text-muted">{formatDate(c.created_at)}</td>
+				<span class="font-medium">
+					{#if c.salutation}<span class="mr-1 font-normal text-faint">{c.salutation === 'D' ? 'Div.' : c.salutation}</span>{/if}{c.name ||
+						'—'}
+				</span>
+				{#if c.company_name}<span class="ml-1 text-muted">({c.company_name})</span>{/if}
+			</td>
+			<td class="text-[13px]">{c.email ?? '—'}</td>
+			<td class="num text-[13px] text-muted">{c.phone || '—'}</td>
+			<td class="num text-[13px] text-muted">{formatDate(c.created_at)}</td>
 		{/snippet}
 	</DataTable>
-
-	{#if totalPages > 1}
-		<PaginationControls
-			page={Math.floor(offset / limit)}
-			total={total}
-			limit={limit}
-			onPrev={() => { offset = Math.max(0, offset - limit); loadCustomers(); }}
-			onNext={() => { offset += limit; loadCustomers(); }}
-		/>
-	{/if}
 </div>
 
-<style>
-	.page {
-		height: 100%;
-	}
+{#if totalPages > 1}
+	<PaginationControls
+		page={Math.floor(offset / limit)}
+		{total}
+		{limit}
+		onPrev={() => {
+			offset = Math.max(0, offset - limit);
+			loadCustomers();
+		}}
+		onNext={() => {
+			offset += limit;
+			loadCustomers();
+		}}
+	/>
+{/if}
 
-	.page-count {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		flex: 1;
-	}
-
-	.create-form {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-md);
-		padding: 1rem 1.25rem;
-		margin-bottom: 1rem;
-	}
-
-	.create-form__row {
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-		flex-wrap: wrap;
-		margin-bottom: 0.5rem;
-	}
-	.create-form__row:last-of-type { margin-bottom: 0; }
-
-	.create-form__input {
-		flex: 1;
-		min-width: 150px;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		border: none;
-		border-bottom: 2px solid transparent;
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-	}
-
-	.create-form__input::placeholder {
-		color: var(--dt-outline-variant);
-	}
-
-	.create-form__input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom-color: var(--dt-primary);
-	}
-
-	.create-form__submit {
-		padding: 0.5rem 1.25rem;
-		border-radius: var(--dt-radius-md);
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-primary);
-		background: linear-gradient(135deg, #022448, #1e3a5f);
-		border: none;
-		cursor: pointer;
-		transition: opacity var(--dt-transition);
-	}
-
-	.create-form__submit:hover:not(:disabled) {
-		opacity: 0.9;
-	}
-
-	.create-form__submit:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.create-form__select {
-		max-width: 120px;
-	}
-	.create-form__error {
-		margin: 0.5rem 0 0;
-		font-size: 0.8125rem;
-		color: var(--dt-secondary);
-	}
-	.type-toggle {
-		display: inline-flex;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: 6px;
-		overflow: hidden;
-	}
-	.type-btn {
-		padding: 0.35rem 0.85rem;
-		border: none;
-		background: var(--dt-surface-container-lowest);
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: all 0.12s;
-	}
-	.type-btn:not(:first-child) { border-left: 1.5px solid var(--dt-outline-variant); }
-	.type-btn.active { background: var(--dt-primary); color: #fff; }
-
-	.cust-type-badge {
-		display: inline-block;
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		padding: 0.1rem 0.35rem;
-		border-radius: 4px;
-		letter-spacing: 0.03em;
-	}
-	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
-	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
-	.cell-company {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		margin-left: 0.3rem;
-	}
-	.sal-badge {
-		display: inline-block;
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-high);
-		padding: 0.05rem 0.3rem;
-		border-radius: var(--dt-radius-sm);
-		margin-right: 0.3rem;
-		vertical-align: middle;
-	}
-
-	.cell-name {
-		font-weight: 500;
-		color: var(--dt-on-surface);
-	}
-
-	.text-muted {
-		color: var(--dt-on-surface-variant);
-	}
-
-</style>
+{#if showCreateForm}
+	<Modal title="Neuer Kunde" onclose={() => (showCreateForm = false)}>
+		<form
+			id="customer-create"
+			class="flex flex-col gap-3"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleCreateCustomer();
+			}}
+		>
+			<Segmented
+				label="Kundentyp"
+				options={[
+					{ value: 'private', label: 'Privat' },
+					{ value: 'business', label: 'Gewerbe' }
+				]}
+				bind:value={createCustomerType}
+				class="self-start"
+			/>
+			{#if createCustomerType === 'business'}<Input placeholder="Firmenname" bind:value={createCompanyName} />{/if}
+			<div class="grid gap-2 sm:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)]">
+				<Select bind:value={createSalutation} aria-label="Anrede">
+					<option value="">Anrede</option>
+					<option value="Herr">Herr</option>
+					<option value="Frau">Frau</option>
+					<option value="D">Divers</option>
+				</Select>
+				<Input placeholder="Vorname" bind:value={createFirstName} />
+				<Input placeholder="Nachname" bind:value={createLastName} />
+			</div>
+			<div class="grid gap-2 sm:grid-cols-2">
+				<Input type="email" placeholder="E-Mail" bind:value={createEmail} />
+				<Input type="tel" placeholder="Telefon" bind:value={createPhone} />
+			</div>
+			{#if createError}<Notice tone="danger">{createError}</Notice>{/if}
+		</form>
+		{#snippet footer()}
+			<Button onclick={() => (showCreateForm = false)}>Abbrechen</Button>
+			<Button type="submit" form="customer-create" variant="solid" disabled={createLoading}>{createLoading ? 'Erstelle …' : 'Erstellen'}</Button>
+		{/snippet}
+	</Modal>
+{/if}

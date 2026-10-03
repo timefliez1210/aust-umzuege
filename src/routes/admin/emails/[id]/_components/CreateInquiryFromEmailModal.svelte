@@ -13,7 +13,13 @@
 	import { apiPost, apiPatch } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
-	import { X } from 'lucide-svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
 
 	let {
 		threadId,
@@ -120,157 +126,45 @@
 	}
 </script>
 
-<div
-	class="backdrop"
-	role="presentation"
-	onclick={(e) => { if (e.target === e.currentTarget) onClose(); }}
->
-	<div class="modal" role="dialog" aria-modal="true" aria-label="Anfrage aus E-Mail erstellen">
-		<div class="modal-head">
-			<h3>Anfrage aus E-Mail erstellen</h3>
-			<button type="button" class="icon-btn" onclick={onClose} aria-label="Schließen">
-				<X size={18} />
-			</button>
-		</div>
-
-		<p class="customer-line">
-			Kunde: <strong>{customerName || customerEmail || 'Unbekannt'}</strong>
-			{#if customerName && customerEmail}<span class="muted"> · {customerEmail}</span>{/if}
+<Modal title="Anfrage aus E-Mail erstellen" onclose={onClose}>
+	<form id="inquiry-from-email" class="flex flex-col gap-3" onsubmit={submit}>
+		<p class="text-[13px] text-muted">
+			Kunde: <strong class="text-fg">{customerName || customerEmail || 'Unbekannt'}</strong>
+			{#if customerName && customerEmail}<span class="text-faint"> · {customerEmail}</span>{/if}
 		</p>
-
-		<form onsubmit={submit}>
-			<label>
-				Auftragsart
-				<select bind:value={serviceType}>
-					{#each SERVICE_OPTIONS as [value, label]}
-						<option {value}>{label}</option>
-					{/each}
-				</select>
-			</label>
-
-			<label>
-				Umzugsdatum (optional)
-				<input type="date" bind:value={scheduledDate} />
-			</label>
-
-			{#if addrCfg.showOrigin}
-				<fieldset>
-					<legend>{addrCfg.originLabel}</legend>
-					<input type="text" placeholder="Straße und Hausnummer" bind:value={originStreet} />
-					<div class="row">
-						<input class="plz" type="text" placeholder="PLZ" bind:value={originPostal} />
-						<input type="text" placeholder="Stadt" bind:value={originCity} />
+		<div class="grid gap-3 sm:grid-cols-2">
+			<Field label="Auftragsart" for="ife-type">
+				<Select id="ife-type" bind:value={serviceType}>
+					{#each SERVICE_OPTIONS as [value, label] (value)}<option {value}>{label}</option>{/each}
+				</Select>
+			</Field>
+			<Field label="Umzugsdatum (optional)" for="ife-date"><Input id="ife-date" type="date" bind:value={scheduledDate} /></Field>
+		</div>
+		{#each [addrCfg.showOrigin ? 'origin' : null, addrCfg.showDestination ? 'dest' : null].filter(Boolean) as which (which)}
+			<fieldset class="flex flex-col gap-2">
+				<legend class="mb-1.5 text-xs font-medium text-muted">{which === 'origin' ? addrCfg.originLabel : addrCfg.destinationLabel}</legend>
+				{#if which === 'origin'}
+					<Input placeholder="Straße und Hausnummer" bind:value={originStreet} />
+					<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+						<Input placeholder="PLZ" bind:value={originPostal} />
+						<Input placeholder="Stadt" bind:value={originCity} />
 					</div>
-				</fieldset>
-			{/if}
-
-			{#if addrCfg.showDestination}
-				<fieldset>
-					<legend>{addrCfg.destinationLabel}</legend>
-					<input type="text" placeholder="Straße und Hausnummer" bind:value={destStreet} />
-					<div class="row">
-						<input class="plz" type="text" placeholder="PLZ" bind:value={destPostal} />
-						<input type="text" placeholder="Stadt" bind:value={destCity} />
+				{:else}
+					<Input placeholder="Straße und Hausnummer" bind:value={destStreet} />
+					<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+						<Input placeholder="PLZ" bind:value={destPostal} />
+						<Input placeholder="Stadt" bind:value={destCity} />
 					</div>
-				</fieldset>
-			{/if}
-
-			<label>
-				Notizen
-				<textarea rows="5" bind:value={notes}></textarea>
-				<span class="hint">Vorbelegt mit dem Text der letzten Kundennachricht.</span>
-			</label>
-
-			{#if error}
-				<div class="error-box">{error}</div>
-			{/if}
-
-			<div class="actions">
-				<button type="button" class="btn-ghost" onclick={onClose}>Abbrechen</button>
-				<button type="submit" class="btn-primary" disabled={submitting}>
-					{submitting ? 'Wird erstellt…' : 'Anfrage erstellen'}
-				</button>
-			</div>
-		</form>
-	</div>
-</div>
-
-<style>
-	.backdrop {
-		position: fixed; inset: 0; z-index: 60;
-		background: rgba(0, 0, 0, 0.45);
-		display: flex; align-items: center; justify-content: center;
-		padding: var(--dt-space-4);
-	}
-	.modal {
-		width: min(560px, 100%); max-height: 90vh; overflow-y: auto;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg); padding: var(--dt-space-6);
-		box-shadow: var(--dt-elevation-3, 0 8px 32px rgba(0, 0, 0, 0.25));
-	}
-	.modal-head {
-		display: flex; align-items: center; justify-content: space-between;
-		margin-bottom: var(--dt-space-2);
-	}
-	.modal-head h3 { margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--dt-on-surface); }
-	.icon-btn {
-		border: none; background: none; cursor: pointer;
-		color: var(--dt-on-surface-variant); padding: 4px; line-height: 0;
-	}
-
-	.customer-line {
-		margin: 0 0 var(--dt-space-4); font-size: 0.875rem; color: var(--dt-on-surface);
-	}
-	.muted { color: var(--dt-on-surface-variant); }
-
-	form { display: flex; flex-direction: column; gap: var(--dt-space-4); }
-	label {
-		display: flex; flex-direction: column; gap: 0.35rem;
-		font-size: 0.8125rem; font-weight: 600; color: var(--dt-on-surface-variant);
-	}
-	fieldset {
-		display: flex; flex-direction: column; gap: 0.5rem;
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-md);
-		padding: var(--dt-space-3);
-	}
-	legend {
-		font-size: 0.8125rem; font-weight: 600; color: var(--dt-on-surface-variant);
-		padding: 0 0.35rem;
-	}
-	.row { display: flex; gap: 0.5rem; }
-	.row .plz { flex: 0 0 90px; }
-	.row input:not(.plz) { flex: 1; }
-
-	input, select, textarea {
-		width: 100%; padding: 0.55rem 0.7rem;
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-md);
-		background: var(--dt-surface-container-low); color: var(--dt-on-surface);
-		font-size: 0.9375rem; font-weight: 400; font-family: inherit;
-	}
-	textarea { resize: vertical; }
-	.hint { font-size: 0.75rem; font-weight: 400; color: var(--dt-on-surface-variant); }
-
-	.error-box {
-		background: var(--dt-error-bg); border: 1px solid var(--dt-error-text);
-		color: var(--dt-error-text); padding: var(--dt-space-3);
-		border-radius: var(--dt-radius-md); font-size: 0.875rem;
-	}
-
-	.actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
-	.btn-ghost, .btn-primary {
-		padding: 0.55rem 1.1rem; border-radius: var(--dt-radius-md);
-		font-size: 0.875rem; font-weight: 600; cursor: pointer;
-	}
-	.btn-ghost {
-		border: var(--dt-ghost-border); background: transparent; color: var(--dt-on-surface);
-	}
-	.btn-primary {
-		border: none; background: var(--dt-primary); color: var(--dt-on-primary);
-	}
-	.btn-primary:disabled { opacity: 0.6; cursor: default; }
-
-	@media (max-width: 768px) {
-		.modal { padding: var(--dt-space-4); }
-		input, select, textarea, .btn-ghost, .btn-primary { min-height: 44px; }
-	}
-</style>
+				{/if}
+			</fieldset>
+		{/each}
+		<Field label="Notizen" for="ife-notes" hint="Vorbelegt mit dem Text der letzten Kundennachricht.">
+			<Textarea id="ife-notes" rows={5} bind:value={notes} />
+		</Field>
+		{#if error}<Notice tone="danger">{error}</Notice>{/if}
+	</form>
+	{#snippet footer()}
+		<Button onclick={onClose}>Abbrechen</Button>
+		<Button type="submit" form="inquiry-from-email" variant="solid" disabled={submitting}>{submitting ? 'Wird erstellt …' : 'Anfrage erstellen'}</Button>
+	{/snippet}
+</Modal>

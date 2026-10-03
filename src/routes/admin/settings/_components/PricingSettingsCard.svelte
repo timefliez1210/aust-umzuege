@@ -1,4 +1,8 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { apiGet, apiPut } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { Euro, Hash, ListOrdered } from 'lucide-svelte';
@@ -160,223 +164,88 @@
 	}
 </script>
 
-<!-- Pricing Card -->
-<div class="card">
-	<div class="card-header">
-		<Euro size={20} />
-		<h2>Preise</h2>
-	</div>
-
+<Panel title="Preise">
 	{#if settingsLoading}
-		<div class="loading">Lade Einstellungen...</div>
+		<div class="h-28 animate-pulse rounded-sm bg-sunk"></div>
 	{:else}
-		<form class="create-form" onsubmit={savePricing}>
-			<div class="form-row">
-				<div class="field">
-					<label for="labor-rate">Stundensatz pro Helfer (EUR, netto)</label>
-					<input id="labor-rate" type="number" step="0.01" min="0" bind:value={laborRateEur} required />
-				</div>
-				<div class="field">
-					<label for="saturday">Samstagszuschlag (EUR)</label>
-					<input id="saturday" type="number" step="0.01" min="0" bind:value={saturdaySurchargeEur} required />
-				</div>
+		<form class="flex flex-col gap-3" onsubmit={savePricing}>
+			<div class="grid gap-3 sm:grid-cols-3">
+				<Field label="Stundensatz pro Helfer (€, netto)" for="labor-rate">
+					<Input id="labor-rate" class="num" type="number" step="0.01" min="0" bind:value={laborRateEur} required />
+				</Field>
+				<Field label="Samstagszuschlag (€)" for="saturday">
+					<Input id="saturday" class="num" type="number" step="0.01" min="0" bind:value={saturdaySurchargeEur} required />
+				</Field>
+				<Field label="Fahrkosten pro km (€)" for="fahrt">
+					<Input id="fahrt" class="num" type="number" step="0.01" min="0" bind:value={fahrtRatePerKm} required />
+				</Field>
 			</div>
-			<div class="form-row">
-				<div class="field">
-					<label for="fahrt">Fahrkosten pro km (EUR)</label>
-					<input id="fahrt" type="number" step="0.01" min="0" bind:value={fahrtRatePerKm} required />
-				</div>
-				<div class="field"></div>
-			</div>
-			<p class="hint">
-				De-/Montage, Halteverbotszone, Umzugsmaterial und Transporter stehen
-				jetzt unten bei den Positionen.
-			</p>
-			<button type="submit" class="btn-create" disabled={savingPricing}>
-				{#if savingPricing}
-					Wird gespeichert...
-				{:else}
-					<Euro size={16} />
-					Preise speichern
-				{/if}
-			</button>
+			<p class="text-xs text-muted">De-/Montage, Halteverbotszone, Umzugsmaterial und Transporter stehen unten bei den Positionen.</p>
+			<Button type="submit" variant="solid" class="self-start" disabled={savingPricing}>
+				{#if savingPricing}Wird gespeichert …{:else}<Euro size={15} /> Preise speichern{/if}
+			</Button>
 		</form>
 	{/if}
-</div>
+</Panel>
 
-<!-- Positions Card -->
-<div class="card">
-	<div class="card-header">
-		<ListOrdered size={20} />
-		<h2>Positionen</h2>
-	</div>
-
+<Panel title="Positionen">
 	{#if settingsLoading}
-		<div class="loading">Lade Einstellungen...</div>
+		<div class="h-60 animate-pulse rounded-sm bg-sunk"></div>
 	{:else}
-		<form class="create-form" onsubmit={savePositions}>
-			<div class="positions">
+		<form class="flex flex-col gap-3" onsubmit={savePositions}>
+			<div class="grid gap-x-6 sm:grid-cols-2">
 				{#each positions as p, i (p.key)}
-					<div class="position-row">
-						<label for="pos-{p.key}">
+					<div class="flex items-center justify-between gap-3 border-b border-line py-2">
+						<label for="pos-{p.key}" class="flex min-w-0 flex-col text-sm">
 							{p.label}
-							{#if p.remark}<span class="remark">{p.remark}</span>{/if}
+							{#if p.remark}<span class="text-xs text-faint">{p.remark}</span>{/if}
 						</label>
-						<input
-							id="pos-{p.key}"
-							type="number"
-							step="0.01"
-							min="0"
-							bind:value={positions[i].priceEur}
-							required
-						/>
+						<span class="flex items-center gap-1.5 text-xs text-faint">
+							<input
+								id="pos-{p.key}"
+								type="number"
+								step="0.01"
+								min="0"
+								class="num h-8 w-24 rounded-sm border border-line-strong bg-panel px-2 text-right text-sm text-fg outline-none focus:border-fg"
+								bind:value={positions[i].priceEur}
+								required
+							/>
+							€
+						</span>
 					</div>
 				{/each}
 			</div>
-			<p class="hint">
-				Einzelpreise (netto) der festen Positionen. Sie werden beim Anlegen einer
-				Position im KVA vorgeschlagen und lassen sich dort weiterhin einzeln
-				überschreiben. Bereits erstellte Kostenvoranschläge bleiben unverändert.
+			<p class="text-xs text-muted">
+				Einzelpreise (netto) der festen Positionen. Sie werden beim Anlegen einer Position im KVA vorgeschlagen und lassen sich
+				dort weiterhin einzeln überschreiben. Bereits erstellte Kostenvoranschläge bleiben unverändert.
 			</p>
-			<button type="submit" class="btn-create" disabled={savingPositions}>
-				{#if savingPositions}
-					Wird gespeichert...
-				{:else}
-					<ListOrdered size={16} />
-					Positionspreise speichern
-				{/if}
-			</button>
+			<Button type="submit" variant="solid" class="self-start" disabled={savingPositions}>
+				{#if savingPositions}Wird gespeichert …{:else}<ListOrdered size={15} /> Positionspreise speichern{/if}
+			</Button>
 		</form>
 	{/if}
-</div>
+</Panel>
 
-<!-- Number Sequences Card -->
-<div class="card">
-	<div class="card-header">
-		<Hash size={20} />
-		<h2>Nummernkreise</h2>
-	</div>
-
+<Panel title="Nummernkreise">
 	{#if settingsLoading}
-		<div class="loading">Lade Einstellungen...</div>
+		<div class="h-28 animate-pulse rounded-sm bg-sunk"></div>
 	{:else}
-		<form class="create-form" onsubmit={saveNumbers}>
-			<div class="form-row">
-				<div class="field">
-					<label for="next-invoice">Nächste Rechnungsnummer</label>
-					<input id="next-invoice" type="number" step="1" min="1" bind:value={nextInvoiceNumber} required />
-				</div>
-				<div class="field">
-					<label for="next-offer">Nächste KVA-Nummer</label>
-					<input id="next-offer" type="number" step="1" min="1" bind:value={nextOfferNumber} required />
-				</div>
+		<form class="flex flex-col gap-3" onsubmit={saveNumbers}>
+			<div class="grid gap-3 sm:grid-cols-2">
+				<Field label="Nächste Rechnungsnummer" for="next-invoice">
+					<Input id="next-invoice" class="num" type="number" step="1" min="1" bind:value={nextInvoiceNumber} required />
+				</Field>
+				<Field label="Nächste KVA-Nummer" for="next-offer">
+					<Input id="next-offer" class="num" type="number" step="1" min="1" bind:value={nextOfferNumber} required />
+				</Field>
 			</div>
-			<p class="hint">
-				Legt fest, mit welcher Nummer die nächste Rechnung bzw. der nächste
-				Kostenvoranschlag erzeugt wird. Danach wird automatisch hochgezählt.
+			<p class="text-xs text-muted">
+				Legt fest, mit welcher Nummer die nächste Rechnung bzw. der nächste Kostenvoranschlag erzeugt wird. Danach wird
+				automatisch hochgezählt.
 			</p>
-			<button type="submit" class="btn-create" disabled={savingNumbers}>
-				{#if savingNumbers}
-					Wird gespeichert...
-				{:else}
-					<Hash size={16} />
-					Nummernkreise speichern
-				{/if}
-			</button>
+			<Button type="submit" variant="solid" class="self-start" disabled={savingNumbers}>
+				{#if savingNumbers}Wird gespeichert …{:else}<Hash size={15} /> Nummernkreise speichern{/if}
+			</Button>
 		</form>
 	{/if}
-</div>
-
-<style>
-	.card {
-		box-shadow: none;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 1.25rem;
-		color: var(--dt-on-surface);
-	}
-
-	.card-header h2 {
-		font-size: 1.0625rem;
-		font-weight: 600;
-	}
-
-	.create-form {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.form-row {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-	}
-
-	.field input {
-		padding: 0.625rem 0.75rem;
-		font-size: 0.9375rem;
-	}
-
-	.btn-create {
-		padding: 0.75rem var(--dt-space-6);
-		font-size: 0.9375rem;
-		align-self: flex-start;
-		justify-content: center;
-	}
-
-	.positions {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	/* Label left, price right: the whole card reads as one price list rather
-	   than as a grid of unrelated fields. */
-	.position-row {
-		display: grid;
-		grid-template-columns: 1fr 9rem;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.position-row label {
-		font-size: 0.9375rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-	}
-
-	.position-row .remark {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.position-row input {
-		padding: 0.5rem 0.625rem;
-		font-size: 0.9375rem;
-		text-align: right;
-	}
-
-	.hint {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		line-height: 1.5;
-	}
-
-	.loading {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		padding: 1rem 0;
-	}
-
-	@media (max-width: 768px) {
-		.form-row {
-			grid-template-columns: 1fr;
-		}
-	}
-</style>
+</Panel>

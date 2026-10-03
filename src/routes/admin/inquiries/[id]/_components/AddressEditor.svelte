@@ -1,4 +1,11 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Check from '$lib/components/ui/Check.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { apiPatch } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { floorLabel } from '$lib/utils/floor';
@@ -210,352 +217,112 @@
 	}
 </script>
 
-{#if originAddress}
-	<div class="card">
-		<div class="card-header">
-			<h3>Von</h3>
-			{#if !editingOrigin}
-				<button class="btn btn-sm" onclick={startEditOrigin}>
-					<Pencil size={14} />
-					Bearbeiten
-				</button>
-			{/if}
-		</div>
-		{#if editingOrigin}
-			<div class="form-grid">
-				<div class="field">
-					<label for="origin-street">Strasse</label>
-					<input id="origin-street" type="text" bind:value={editOrigin.street} />
-				</div>
-				<div class="field field--shrink">
-					<label for="origin-number">Nr.</label>
-					<input id="origin-number" type="text" bind:value={editOrigin.house_number} />
-				</div>
-				<div class="field">
-					<label for="origin-plz">PLZ</label>
-					<input id="origin-plz" type="text" bind:value={editOrigin.postal_code} />
-				</div>
-				<div class="field">
-					<label for="origin-city">Stadt</label>
-					<input id="origin-city" type="text" bind:value={editOrigin.city} />
-				</div>
-				<div class="field">
-					<label for="origin-floor">Stockwerk</label>
-					<select id="origin-floor" bind:value={editOrigin.floor}>
-						<option value="-1">Keller</option>
-						<option value="0">Erdgeschoss</option>
-						<option value="1">1. OG</option>
-						<option value="2">2. OG</option>
-						<option value="3">3. OG</option>
-						<option value="4">4. OG</option>
-						<option value="5">5. OG</option>
-					</select>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editOrigin.elevator} />
-						Aufzug
-					</label>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editOrigin.parking_ban} />
-						Halteverbot
-					</label>
-				</div>
-				<div class="field full-width addr-actions">
-					<button class="btn btn-sm btn-save" onclick={() => saveAddress(originAddress!.id, editOrigin, (v) => (editingOrigin = v))}>
-						<Save size={14} />
-						Speichern
-					</button>
-					<button class="btn btn-sm" onclick={() => (editingOrigin = false)}>Abbrechen</button>
-				</div>
-			</div>
-		{:else}
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-value">
-						{originAddress.street}{originAddress.house_number ? ` ${originAddress.house_number}` : ''}, {originAddress.postal_code || ''} {originAddress.city}
-					</span>
-				</div>
-				<div class="info-item">
-					<span class="info-label">Stockwerk</span>
-					<span class="info-value">
-						{floorLabel(originAddress.floor)}
-						{#if originAddress.elevator}(Aufzug){/if}
-					</span>
-				</div>
-				{#if originAddress.parking_ban}
-					<div class="info-item">
-						<span class="info-label">Halteverbot</span>
-						<span class="info-value">Ja</span>
-					</div>
-				{/if}
-			</div>
-		{/if}
+<!-- One edit form for Von / Nach / Zwischenstopp; `p` prefixes the element ids. -->
+{#snippet addrForm(p: string, f: typeof editStop, onSave: () => void, onCancel: () => void)}
+	<div class="grid grid-cols-[minmax(0,1fr)_88px] gap-3">
+		<Field label="Straße" for="{p}-street"><Input id="{p}-street" bind:value={f.street} /></Field>
+		<Field label="Nr." for="{p}-number"><Input id="{p}-number" bind:value={f.house_number} /></Field>
 	</div>
+	<div class="mt-3 grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+		<Field label="PLZ" for="{p}-plz"><Input id="{p}-plz" bind:value={f.postal_code} class="num" /></Field>
+		<Field label="Stadt" for="{p}-city"><Input id="{p}-city" bind:value={f.city} /></Field>
+	</div>
+	<div class="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
+		<Field label="Stockwerk" for="{p}-floor" class="w-40">
+			<Select id="{p}-floor" bind:value={f.floor}>
+				<option value="-1">Keller</option>
+				<option value="0">Erdgeschoss</option>
+				<option value="1">1. OG</option>
+				<option value="2">2. OG</option>
+				<option value="3">3. OG</option>
+				<option value="4">4. OG</option>
+				<option value="5">5. OG</option>
+			</Select>
+		</Field>
+		<Check bind:checked={f.elevator}>Aufzug</Check>
+		<Check bind:checked={f.parking_ban}>Halteverbot</Check>
+	</div>
+	<div class="mt-4 flex gap-2">
+		<Button size="sm" variant="solid" onclick={onSave}><Save size={14} /> Speichern</Button>
+		<Button size="sm" onclick={onCancel}>Abbrechen</Button>
+	</div>
+{/snippet}
+
+{#snippet addrView(a: NonNullable<typeof originAddress>)}
+	<p class="text-sm font-medium">
+		{a.street}{a.house_number ? ` ${a.house_number}` : ''}, <span class="num">{a.postal_code || ''}</span> {a.city}
+	</p>
+	<div class="mt-2 flex flex-wrap gap-1.5">
+		<Badge>{floorLabel(a.floor)}</Badge>
+		{#if a.elevator}<Badge tone="ok">Aufzug</Badge>{/if}
+		{#if a.parking_ban}<Badge tone="warn">Halteverbot</Badge>{/if}
+	</div>
+{/snippet}
+
+{#if originAddress}
+	<Panel title="Von">
+		{#snippet actions()}
+			{#if !editingOrigin}<Button size="sm" variant="ghost" onclick={startEditOrigin}><Pencil size={14} /> Bearbeiten</Button>{/if}
+		{/snippet}
+		{#if editingOrigin}
+			{@render addrForm(
+				'origin',
+				editOrigin,
+				() => saveAddress(originAddress!.id, editOrigin, (v) => (editingOrigin = v)),
+				() => (editingOrigin = false)
+			)}
+		{:else}
+			{@render addrView(originAddress)}
+		{/if}
+	</Panel>
 {/if}
 
 {#if destinationAddress}
-	<div class="card">
-		<div class="card-header">
-			<h3>Nach</h3>
-			{#if !editingDest}
-				<button class="btn btn-sm" onclick={startEditDest}>
-					<Pencil size={14} />
-					Bearbeiten
-				</button>
-			{/if}
-		</div>
+	<Panel title="Nach">
+		{#snippet actions()}
+			{#if !editingDest}<Button size="sm" variant="ghost" onclick={startEditDest}><Pencil size={14} /> Bearbeiten</Button>{/if}
+		{/snippet}
 		{#if editingDest}
-			<div class="form-grid">
-				<div class="field">
-					<label for="dest-street">Strasse</label>
-					<input id="dest-street" type="text" bind:value={editDest.street} />
-				</div>
-				<div class="field field--shrink">
-					<label for="dest-number">Nr.</label>
-					<input id="dest-number" type="text" bind:value={editDest.house_number} />
-				</div>
-				<div class="field">
-					<label for="dest-plz">PLZ</label>
-					<input id="dest-plz" type="text" bind:value={editDest.postal_code} />
-				</div>
-				<div class="field">
-					<label for="dest-city">Stadt</label>
-					<input id="dest-city" type="text" bind:value={editDest.city} />
-				</div>
-				<div class="field">
-					<label for="dest-floor">Stockwerk</label>
-					<select id="dest-floor" bind:value={editDest.floor}>
-						<option value="-1">Keller</option>
-						<option value="0">Erdgeschoss</option>
-						<option value="1">1. OG</option>
-						<option value="2">2. OG</option>
-						<option value="3">3. OG</option>
-						<option value="4">4. OG</option>
-						<option value="5">5. OG</option>
-					</select>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editDest.elevator} />
-						Aufzug
-					</label>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editDest.parking_ban} />
-						Halteverbot
-					</label>
-				</div>
-				<div class="field full-width addr-actions">
-					<button class="btn btn-sm btn-save" onclick={() => saveAddress(destinationAddress!.id, editDest, (v) => (editingDest = v))}>
-						<Save size={14} />
-						Speichern
-					</button>
-					<button class="btn btn-sm" onclick={() => (editingDest = false)}>Abbrechen</button>
-				</div>
-			</div>
+			{@render addrForm(
+				'dest',
+				editDest,
+				() => saveAddress(destinationAddress!.id, editDest, (v) => (editingDest = v)),
+				() => (editingDest = false)
+			)}
 		{:else}
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-value">
-						{destinationAddress.street}{destinationAddress.house_number ? ` ${destinationAddress.house_number}` : ''}, {destinationAddress.postal_code || ''} {destinationAddress.city}
-					</span>
-				</div>
-				<div class="info-item">
-					<span class="info-label">Stockwerk</span>
-					<span class="info-value">
-						{floorLabel(destinationAddress.floor)}
-						{#if destinationAddress.elevator}(Aufzug){/if}
-					</span>
-				</div>
-				{#if destinationAddress.parking_ban}
-					<div class="info-item">
-						<span class="info-label">Halteverbot</span>
-						<span class="info-value">Ja</span>
-					</div>
-				{/if}
-			</div>
+			{@render addrView(destinationAddress)}
 		{/if}
-	</div>
+	</Panel>
 {/if}
 
 {#if stopAddress}
-	<div class="card">
-		<div class="card-header">
-			<h3>Zwischenstopp</h3>
+	<Panel title="Zwischenstopp">
+		{#snippet actions()}
 			{#if !editingStop}
-				<div class="addr-actions">
-					<button class="btn btn-sm" onclick={startEditStop}>
-						<Pencil size={14} />
-						Bearbeiten
-					</button>
-					<button class="btn btn-sm" onclick={removeStop}>
-						Entfernen
-					</button>
-				</div>
+				<Button size="sm" variant="ghost" onclick={startEditStop}><Pencil size={14} /> Bearbeiten</Button>
+				<Button size="sm" variant="ghost" onclick={removeStop}>Entfernen</Button>
 			{/if}
-		</div>
+		{/snippet}
 		{#if editingStop}
-			<div class="form-grid">
-				<div class="field">
-					<label for="stop-street">Strasse</label>
-					<input id="stop-street" type="text" bind:value={editStop.street} />
-				</div>
-				<div class="field field--shrink">
-					<label for="stop-number">Nr.</label>
-					<input id="stop-number" type="text" bind:value={editStop.house_number} />
-				</div>
-				<div class="field">
-					<label for="stop-plz">PLZ</label>
-					<input id="stop-plz" type="text" bind:value={editStop.postal_code} />
-				</div>
-				<div class="field">
-					<label for="stop-city">Stadt</label>
-					<input id="stop-city" type="text" bind:value={editStop.city} />
-				</div>
-				<div class="field">
-					<label for="stop-floor">Stockwerk</label>
-					<select id="stop-floor" bind:value={editStop.floor}>
-						<option value="-1">Keller</option>
-						<option value="0">Erdgeschoss</option>
-						<option value="1">1. OG</option>
-						<option value="2">2. OG</option>
-						<option value="3">3. OG</option>
-						<option value="4">4. OG</option>
-						<option value="5">5. OG</option>
-					</select>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editStop.elevator} />
-						Aufzug
-					</label>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editStop.parking_ban} />
-						Halteverbot
-					</label>
-				</div>
-				<div class="field full-width addr-actions">
-					<button class="btn btn-sm btn-save" onclick={() => saveAddress(stopAddress!.id, editStop, (v) => (editingStop = v))}>
-						<Save size={14} />
-						Speichern
-					</button>
-					<button class="btn btn-sm" onclick={() => (editingStop = false)}>Abbrechen</button>
-				</div>
-			</div>
+			{@render addrForm(
+				'stop',
+				editStop,
+				() => saveAddress(stopAddress!.id, editStop, (v) => (editingStop = v)),
+				() => (editingStop = false)
+			)}
 		{:else}
-			<div class="info-grid">
-				<div class="info-item">
-					<span class="info-value">
-						{stopAddress.street}{stopAddress.house_number ? ` ${stopAddress.house_number}` : ''}, {stopAddress.postal_code || ''} {stopAddress.city}
-					</span>
-				</div>
-				<div class="info-item">
-					<span class="info-label">Stockwerk</span>
-					<span class="info-value">
-						{floorLabel(stopAddress.floor)}
-						{#if stopAddress.elevator}(Aufzug){/if}
-					</span>
-				</div>
-				{#if stopAddress.parking_ban}
-					<div class="info-item">
-						<span class="info-label">Halteverbot</span>
-						<span class="info-value">Ja</span>
-					</div>
-				{/if}
-			</div>
+			{@render addrView(stopAddress)}
 		{/if}
-	</div>
+	</Panel>
 {:else}
-	<div class="card">
-		<div class="card-header">
-			<h3>Zwischenstopp</h3>
-			{#if !addingStop}
-				<button class="btn btn-sm" onclick={startAddStop}>
-					Hinzufügen
-				</button>
-			{/if}
-		</div>
+	<Panel title="Zwischenstopp">
+		{#snippet actions()}
+			{#if !addingStop}<Button size="sm" variant="ghost" onclick={startAddStop}>Hinzufügen</Button>{/if}
+		{/snippet}
 		{#if addingStop}
-			<div class="form-grid">
-				<div class="field">
-					<label for="stop-new-street">Strasse</label>
-					<input id="stop-new-street" type="text" bind:value={editStop.street} />
-				</div>
-				<div class="field field--shrink">
-					<label for="stop-new-number">Nr.</label>
-					<input id="stop-new-number" type="text" bind:value={editStop.house_number} />
-				</div>
-				<div class="field">
-					<label for="stop-new-plz">PLZ</label>
-					<input id="stop-new-plz" type="text" bind:value={editStop.postal_code} />
-				</div>
-				<div class="field">
-					<label for="stop-new-city">Stadt</label>
-					<input id="stop-new-city" type="text" bind:value={editStop.city} />
-				</div>
-				<div class="field">
-					<label for="stop-new-floor">Stockwerk</label>
-					<select id="stop-new-floor" bind:value={editStop.floor}>
-						<option value="-1">Keller</option>
-						<option value="0">Erdgeschoss</option>
-						<option value="1">1. OG</option>
-						<option value="2">2. OG</option>
-						<option value="3">3. OG</option>
-						<option value="4">4. OG</option>
-						<option value="5">5. OG</option>
-					</select>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editStop.elevator} />
-						Aufzug
-					</label>
-				</div>
-				<div class="field">
-					<label class="checkbox-label">
-						<input type="checkbox" bind:checked={editStop.parking_ban} />
-						Halteverbot
-					</label>
-				</div>
-				<div class="field full-width addr-actions">
-					<button class="btn btn-sm btn-save" onclick={saveNewStop}>
-						<Save size={14} />
-						Speichern
-					</button>
-					<button class="btn btn-sm" onclick={() => (addingStop = false)}>Abbrechen</button>
-				</div>
-			</div>
+			{@render addrForm('stop-new', editStop, saveNewStop, () => (addingStop = false))}
+		{:else}
+			<p class="text-[13px] text-faint">Kein Zwischenstopp.</p>
 		{/if}
-	</div>
+	</Panel>
 {/if}
-
-<style>
-	.addr-actions {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.btn-save {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-	}
-
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.875rem;
-		cursor: pointer;
-	}
-
-	.field--shrink {
-		flex: 0 0 80px;
-	}
-</style>

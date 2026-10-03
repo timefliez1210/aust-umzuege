@@ -1,7 +1,11 @@
 <script lang="ts">
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { apiDownload, formatEuro, formatDate } from "$lib/utils/api.svelte";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
-	import { ChevronRight, Plus, X, GripVertical, Download, RotateCcw, FileOutput } from "lucide-svelte";
+	import { Plus, X, GripVertical, Download, RotateCcw, FileOutput } from "lucide-svelte";
 	import PriceInput from "$lib/components/admin/PriceInput.svelte";
 	import StatusBadge from "$lib/components/admin/StatusBadge.svelte";
 
@@ -43,6 +47,8 @@
 		editHeadlineOverride = $bindable(),
 		editVolume,
 		laborProfit,
+		costPerPersonHour = 18.5,
+		hourlyFloor = null,
 		laborCents,
 		calculatedNettoCents,
 		calculatedBruttoCents,
@@ -90,6 +96,8 @@
 		editHeadlineOverride: string;
 		editVolume: number | null;
 		laborProfit: number;
+		costPerPersonHour?: number;
+		hourlyFloor?: { break_even_cents: number; target_rate_cents: number; inaccurate: boolean } | null;
 		laborCents: number;
 		calculatedNettoCents: number;
 		calculatedBruttoCents: number;
@@ -160,58 +168,76 @@
 	}
 </script>
 
-<!-- Pricing Editor -->
-<div class="card" class:card--collapsed={!pricingOpen}>
-	<div class="card-header card-header--toggleable">
-		<button class="card-toggle" onclick={onTogglePricing} aria-expanded={pricingOpen}>
-			<span class="card-toggle-chev" class:open={pricingOpen}><ChevronRight size={16} /></span>
-			<h3>Preisgestaltung</h3>
-		</button>
-	</div>
-	{#if pricingOpen}
-	<div class="pricing-section">
-		<PriceInput
-			bind:bruttoCents={editBruttoCents}
-			label="Gesamtpreis"
-		/>
+{#snippet euroInput(li: (typeof editLineItems)[number])}
+	<input
+		type="number"
+		aria-label="Einzelpreis (EUR)"
+		class="num h-8 w-24 rounded-sm border border-line bg-transparent px-2 text-right text-[13px] outline-none hover:border-line-strong focus:border-fg"
+		min={0}
+		step={0.5}
+		value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)}
+		oninput={(e) => {
+			const t = e.target as HTMLInputElement;
+			li._priceText = t.value;
+			const v = parseFloat(t.value);
+			if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100);
+		}}
+		onfocus={() => {
+			li._editing = true;
+		}}
+		onblur={() => {
+			li._editing = false;
+		}}
+	/>
+{/snippet}
 
-		<div class="pricing-fields">
-			<div class="field">
-				<label for="persons">Helfer</label>
-				<input
-					id="persons"
-					type="number"
-					min={1}
-					max={10}
-					bind:value={editPersons}
-				/>
-			</div>
-			<div class="field">
-				<label for="hours">Stunden</label>
-				<input
-					id="hours"
-					type="number"
-					min={1}
-					max={24}
-					step={0.5}
-					bind:value={editHours}
-				/>
-			</div>
-			<div class="field">
-				<label for="rate">Stundensatz (EUR)</label>
-				<input
+{#snippet qtyRemark(li: (typeof editLineItems)[number])}
+	<div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+		<input
+			type="text"
+			class="col-span-2 h-8 min-w-0 rounded-sm border border-line bg-transparent px-2 text-[13px] outline-none placeholder:text-faint hover:border-line-strong focus:border-fg sm:col-span-1"
+			bind:value={li.remark}
+			placeholder="Bemerkung"
+			aria-label="Bemerkung"
+		/>
+		<span class="flex items-center gap-1.5 text-xs text-faint">
+			<input
+				type="number"
+				aria-label="Menge"
+				class="num h-8 w-16 rounded-sm border border-line bg-transparent px-2 text-right text-[13px] text-fg outline-none hover:border-line-strong focus:border-fg"
+				min={0}
+				step={1}
+				bind:value={li.quantity}
+			/>
+			×
+			{@render euroInput(li)}
+			€
+		</span>
+		<span class="num min-w-24 text-right text-sm font-medium">{formatEuro(li.quantity * li.unitPriceCents)}</span>
+	</div>
+{/snippet}
+
+<Panel title="Preisgestaltung" open={pricingOpen} onToggle={onTogglePricing}>
+	<div class="flex flex-col gap-4">
+		<PriceInput bind:bruttoCents={editBruttoCents} label="Gesamtpreis" />
+
+		<div class="grid grid-cols-3 gap-3">
+			<Field label="Helfer" for="persons"><Input id="persons" type="number" min={1} max={10} bind:value={editPersons} class="num" /></Field>
+			<Field label="Stunden" for="hours">
+				<Input id="hours" type="number" min={1} max={24} step={0.5} bind:value={editHours} class="num" />
+			</Field>
+			<Field label="Stundensatz (€)" for="rate">
+				<Input
 					id="rate"
 					type="number"
 					step={0.5}
-					value={rateEditing
-						? rateText
-						: (editRateCents / 100).toFixed(2)}
+					class="num"
+					value={rateEditing ? rateText : (editRateCents / 100).toFixed(2)}
 					oninput={(e) => {
 						const target = e.target as HTMLInputElement;
 						rateText = target.value;
 						const val = parseFloat(target.value);
-						if (!isNaN(val))
-							editRateCents = Math.round(val * 100);
+						if (!isNaN(val)) editRateCents = Math.round(val * 100);
 					}}
 					onfocus={() => {
 						rateEditing = true;
@@ -220,516 +246,163 @@
 						rateEditing = false;
 					}}
 				/>
-			</div>
+			</Field>
 		</div>
 
-		<button class="btn-link" onclick={onBruttoChange}>
-			Rate aus Gesamtpreis berechnen
-		</button>
-		<span class="labor-profit" class:negative={laborProfit < 0}
-			>{laborProfit.toFixed(2)} &euro;</span
-		>
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<Button size="sm" variant="ghost" onclick={onBruttoChange}>Rate aus Gesamtpreis berechnen</Button>
+			<span
+				class="num text-sm font-medium {laborProfit < 0 ? 'text-danger' : 'text-ok'}"
+				title="Marge auf die Arbeitsstunden: Personen × Stunden × (Stundensatz − {costPerPersonHour.toFixed(2)} € Lohnkosten/h)"
+				>Marge {laborProfit.toFixed(2)} €</span
+			>
+		</div>
+		{#if hourlyFloor && editRateCents < hourlyFloor.target_rate_cents}
+			{@const below = editRateCents < hourlyFloor.break_even_cents}
+			<p class="text-xs {below ? 'text-danger' : 'text-warn'}">
+				{below ? 'Unter dem Vollkostensatz' : 'Unter dem Ziel-Stundensatz'}
+				({((below ? hourlyFloor.break_even_cents : hourlyFloor.target_rate_cents) / 100).toFixed(2)} €/h netto{hourlyFloor.inaccurate
+					? ', vorläufig'
+					: ''}) — {below
+					? 'jede verkaufte Stunde deckt Löhne, Miete und Fixkosten nicht.'
+					: 'deckt die Kosten, aber nicht den Zielgewinn.'}
+			</p>
+		{/if}
 
-		<div class="field" style="margin-top: 0.75rem">
-			<label for="kva-headline">KVA-Überschrift überschreiben</label>
-			<input
+		<Field
+			label="KVA-Überschrift überschreiben"
+			for="kva-headline"
+			hint="Leer lassen für Standard. Praktisch für Umzugshelfer, Lagerung u. ä. ohne Volumenangabe."
+		>
+			<Input
 				id="kva-headline"
-				type="text"
 				bind:value={editHeadlineOverride}
-				placeholder={editVolume != null ? `Umzugspauschale ${editVolume.toFixed(1)} m³` : "Umzugspauschale"}
+				placeholder={editVolume != null ? `Umzugspauschale ${editVolume.toFixed(1)} m³` : 'Umzugspauschale'}
 				onblur={onHeadlineBlur}
 			/>
-			<small class="hint">Leer lassen für Standard. Praktisch für Umzugshelfer, Lagerung u.ä. ohne Volumenangabe.</small>
-		</div>
+		</Field>
 	</div>
-	{/if}
-</div>
+</Panel>
 
-<!-- Line Items (Editable) -->
-<div class="card" class:card--collapsed={!positionsOpen}>
-	<div class="card-header card-header--toggleable">
-		<button class="card-toggle" onclick={onTogglePositions} aria-expanded={positionsOpen}>
-			<span class="card-toggle-chev" class:open={positionsOpen}><ChevronRight size={16} /></span>
-			<h3>Positionen</h3>
-		</button>
-		{#if positionsOpen}
-			<div class="header-actions">
-				<button class="btn btn-sm" onclick={addLineItem}>
-					<Plus size={14} />
-					Position
-				</button>
-			</div>
-		{/if}
-	</div>
-	{#if positionsOpen}
-	<div class="line-items">
+<Panel title="Positionen" open={positionsOpen} onToggle={onTogglePositions} bodyClass="px-0 py-0">
+	{#snippet actions()}
+		<Button size="sm" onclick={addLineItem}><Plus size={14} /> Position</Button>
+	{/snippet}
+	<div role="list">
 		{#each editLineItems as li, idx (li._id)}
-		<div
-			class="line-item editable"
-			class:drag-over={dragOverIdx === idx}
-			class:dragging={dragIdx === idx}
-			draggable={armedIdx === idx}
-			role="listitem"
-			ondragstart={(e) => onDragStart(e, idx)}
-			ondragover={(e) => onDragOver(e, idx)}
-			ondragleave={onDragLeave}
-			ondrop={(e) => onDrop(e, idx)}
-			ondragend={onDragEnd}
-		>
-			<span
-				role="button"
-				tabindex="-1"
-				aria-label="Ziehen zum Sortieren"
-				class="drag-handle"
-				title="Ziehen zum Sortieren"
-				onmousedown={() => armDrag(idx)}
-				onmouseup={disarmDrag}
+			<div
+				class="flex gap-2 border-b border-line py-3 pr-4 pl-2 transition-colors {dragOverIdx === idx
+					? 'bg-accent/10 shadow-[inset_0_2px_0_var(--accent)]'
+					: ''} {dragIdx === idx ? 'opacity-40' : ''}"
+				draggable={armedIdx === idx}
+				role="listitem"
+				ondragstart={(e) => onDragStart(e, idx)}
+				ondragover={(e) => onDragOver(e, idx)}
+				ondragleave={onDragLeave}
+				ondrop={(e) => onDrop(e, idx)}
+				ondragend={onDragEnd}
 			>
-				<GripVertical size={14} />
-			</span>
+				<span
+					role="button"
+					tabindex="-1"
+					aria-label="Ziehen zum Sortieren"
+					class="flex w-5 shrink-0 cursor-grab items-start justify-center pt-1.5 text-faint hover:text-fg active:cursor-grabbing"
+					title="Ziehen zum Sortieren"
+					onmousedown={() => armDrag(idx)}
+					onmouseup={disarmDrag}
+				>
+					<GripVertical size={14} />
+				</span>
 
-			{#if li.kind === 'labor'}
-				<div class="li-fixed">
-					<span class="li-name">{editPersons} Umzugshelfer</span>
-					<div class="li-detail">
-						<span class="li-qty">{editHours} Std.</span>
-						<span class="li-unit">&times; {(editRateCents / 100).toFixed(2)} EUR</span>
-						<span class="li-total">{formatEuro(laborCents)}</span>
-					</div>
-				</div>
-			{:else if li.kind === 'insurance'}
-				<div class="li-fixed">
-					<span class="li-name">Nürnbergerversicherung</span>
-					<div class="li-detail">
-						<span class="li-qty">{li.remark || 'Deckungssumme: 620,00 Euro / m³'}</span>
-						<span class="li-total">inklusive</span>
-					</div>
-				</div>
-				<button class="del-btn" onclick={() => removeLineItem(idx)} title="Versicherung entfernen"><X size={14} /></button>
-			{:else if li.kind === 'fahrt'}
-				<div class="li-edit-top"><span class="li-name">Fahrkostenpauschale</span></div>
-				<div class="li-edit-bottom">
-					<input type="text" class="edit-li-remark" bind:value={li.remark} placeholder="Bemerkung" />
-					<input type="number" class="edit-li-qty" min={0} step={1} bind:value={li.quantity} />
-					<span class="li-times">&times;</span>
-					<input type="number" class="edit-li-price" min={0} step={0.5} value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)} oninput={(e) => { const t = e.target as HTMLInputElement; li._priceText = t.value; const v = parseFloat(t.value); if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100); }} onfocus={() => { li._editing = true; }} onblur={() => { li._editing = false; }} />
-					<span class="li-eur">EUR</span>
-					<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
-				</div>
-			{:else}
-				<div class="li-edit-top">
-					<select bind:value={li.label} onchange={() => onCustomLabelChange(idx)}>
-						<option value="" disabled>Position wählen…</option>
-						{#each customLabelOptions as opt}
-							<option value={opt}>{opt}</option>
-						{/each}
-					</select>
-					{#if li.isCustomLabel}
-						<input type="text" class="edit-li-label" bind:value={li.label} placeholder="Bezeichnung" />
+				<div class="min-w-0 flex-1">
+					{#if li.kind === 'labor'}
+						<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+							<span class="text-sm font-medium">{editPersons} Umzugshelfer</span>
+							<span class="num flex items-baseline gap-3 text-[13px] text-muted">
+								{editHours} Std. × {(editRateCents / 100).toFixed(2)} €
+								<span class="min-w-24 text-right text-sm font-medium text-fg">{formatEuro(laborCents)}</span>
+							</span>
+						</div>
+					{:else if li.kind === 'insurance'}
+						<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+							<span class="text-sm font-medium">Nürnbergerversicherung</span>
+							<span class="flex items-center gap-2 text-[13px] text-muted">
+								{li.remark || 'Deckungssumme: 620,00 Euro / m³'}
+								<span class="min-w-24 text-right text-sm text-fg">inklusive</span>
+								<Button variant="ghost" size="icon-sm" onclick={() => removeLineItem(idx)} aria-label="Versicherung entfernen"
+									><X size={14} /></Button
+								>
+							</span>
+						</div>
+					{:else if li.kind === 'fahrt'}
+						<span class="text-sm font-medium">Fahrkostenpauschale</span>
+						{@render qtyRemark(li)}
+					{:else}
+						<div class="flex items-center gap-2">
+							<select
+								bind:value={li.label}
+								onchange={() => onCustomLabelChange(idx)}
+								aria-label="Position"
+								class="h-8 min-w-0 flex-1 rounded-sm border border-line bg-panel px-2 text-sm font-medium text-fg outline-none hover:border-line-strong focus:border-fg"
+							>
+								<option value="" disabled>Position wählen…</option>
+								{#each customLabelOptions as opt (opt)}
+									<option value={opt}>{opt}</option>
+								{/each}
+							</select>
+							<Button variant="ghost" size="icon-sm" onclick={() => removeLineItem(idx)} aria-label="Entfernen"><X size={14} /></Button>
+						</div>
+						{#if li.isCustomLabel}
+							<input
+								type="text"
+								class="mt-2 h-8 w-full rounded-sm border border-line bg-transparent px-2 text-sm outline-none focus:border-fg"
+								bind:value={li.label}
+								placeholder="Bezeichnung"
+								aria-label="Bezeichnung"
+							/>
+						{/if}
+						{@render qtyRemark(li)}
 					{/if}
-					<button class="del-btn" onclick={() => removeLineItem(idx)} title="Entfernen"><X size={14} /></button>
 				</div>
-				<div class="li-edit-bottom">
-					<input type="text" class="edit-li-remark" bind:value={li.remark} placeholder="Bemerkung" />
-					<input type="number" class="edit-li-qty" min={0} step={1} bind:value={li.quantity} />
-					<span class="li-times">&times;</span>
-					<input type="number" class="edit-li-price" min={0} step={0.5} value={li._editing ? li._priceText : (li.unitPriceCents / 100).toFixed(2)} oninput={(e) => { const t = e.target as HTMLInputElement; li._priceText = t.value; const v = parseFloat(t.value); if (!isNaN(v)) li.unitPriceCents = Math.round(v * 100); }} onfocus={() => { li._editing = true; }} onblur={() => { li._editing = false; }} />
-					<span class="li-eur">EUR</span>
-					<span class="li-total">{formatEuro(li.quantity * li.unitPriceCents)}</span>
-				</div>
-			{/if}
-		</div>
-	{/each}
+			</div>
+		{/each}
+	</div>
 
 	{#if !editLineItems.some((li) => li.kind === 'insurance')}
-		<button class="btn-link" onclick={addInsurance}><Plus size={14} /> Versicherung hinzufügen</button>
+		<div class="px-4 pt-2">
+			<Button size="sm" variant="ghost" onclick={addInsurance}><Plus size={14} /> Versicherung hinzufügen</Button>
+		</div>
 	{/if}
 
-		<div class="line-item total">
-			<span class="li-name">Netto</span>
-			<span class="li-total"
-				>{formatEuro(calculatedNettoCents)}</span
-			>
+	<dl class="num flex flex-col gap-1 px-4 pt-3 pb-4 text-sm">
+		<div class="flex justify-between text-muted"><dt>Netto</dt><dd>{formatEuro(calculatedNettoCents)}</dd></div>
+		<div class="flex justify-between text-base font-semibold">
+			<dt>Brutto <span class="text-xs font-normal text-faint">inkl. 19 % MwSt.</span></dt>
+			<dd>{formatEuro(calculatedBruttoCents)}</dd>
 		</div>
-		<div class="line-item total grand">
-			<span class="li-name">Brutto (inkl. 19% MwSt.)</span>
-			<span class="li-total"
-				>{formatEuro(calculatedBruttoCents)}</span
-			>
+	</dl>
+</Panel>
+
+{#if offer}
+	<Panel title="Angebot" open={offerOpen} onToggle={onToggleOffer} class="lg:col-span-2">
+		{#snippet actions()}
+			<Button size="sm" onclick={downloadPdf} disabled={downloadingPdf}>
+				<Download size={14} />
+				{downloadingPdf ? 'Wird geladen …' : 'PDF herunterladen'}
+			</Button>
+		{/snippet}
+		<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+			<span class="num text-sm text-muted">{formatDate(offer.created_at)}</span>
+			<span class="num text-base font-semibold">{offer.total_brutto_cents != null ? formatEuro(offer.total_brutto_cents) : '—'}</span>
+			<StatusBadge status={offer.status} />
 		</div>
-	</div>
+	</Panel>
+{/if}
+
+<div class="lg:col-span-2">
+	{#if latestOffer}
+		<Button variant="solid" size="lg" class="w-full" onclick={reEstimateOffer}><RotateCcw size={18} /> Neu berechnen</Button>
+	{:else}
+		<Button variant="accent" size="lg" class="w-full" onclick={generateOffer}><FileOutput size={18} /> Angebot erstellen</Button>
 	{/if}
 </div>
-
-<!-- Linked Offer -->
-{#if offer}
-	<div class="card full-width" class:card--collapsed={!offerOpen}>
-		<div class="card-header card-header--toggleable">
-			<button class="card-toggle" onclick={onToggleOffer} aria-expanded={offerOpen}>
-				<span class="card-toggle-chev" class:open={offerOpen}><ChevronRight size={16} /></span>
-				<h3>Angebot</h3>
-			</button>
-			{#if offerOpen}
-				<button
-					class="btn btn-sm"
-					onclick={downloadPdf}
-					disabled={downloadingPdf}
-				>
-					<Download size={14} />
-					{downloadingPdf
-						? "Wird geladen..."
-						: "PDF herunterladen"}
-				</button>
-			{/if}
-		</div>
-		{#if offerOpen}
-		<div class="offers-list">
-			<div class="offer-row">
-				<span class="offer-date"
-					>{formatDate(offer.created_at)}</span
-				>
-				<span class="offer-price"
-					>{offer.total_brutto_cents != null
-						? formatEuro(offer.total_brutto_cents)
-						: "—"}</span
-				>
-				<StatusBadge status={offer.status} />
-			</div>
-		</div>
-		{/if}
-	</div>
-{/if}
-
-{#if latestOffer}
-	<button class="btn-generate-bottom" onclick={reEstimateOffer}>
-		<RotateCcw size={20} />
-		Neu berechnen
-	</button>
-{:else}
-	<button class="btn-generate-bottom" onclick={generateOffer}>
-		<FileOutput size={20} />
-		Angebot erstellen
-	</button>
-{/if}
-
-<style>
-	.pricing-section {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.pricing-fields {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
-		gap: 0.75rem;
-	}
-
-	.labor-profit {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		font-family: "JetBrains Mono", "Fira Code", monospace;
-	}
-
-	.labor-profit.negative {
-		color: var(--dt-secondary);
-	}
-
-	/* Line Items */
-	.line-items {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.line-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.625rem 0;
-		border-bottom: 1px solid var(--dt-surface-container);
-	}
-
-	.line-item.total {
-		border-bottom: none;
-		border-top: 1px solid var(--dt-outline-variant);
-		padding-top: 0.75rem;
-	}
-
-	.line-item.grand {
-		border-top: none;
-		padding-top: 0.25rem;
-	}
-
-	.line-item.grand .li-name,
-	.line-item.grand .li-total {
-		font-size: 1rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-	}
-
-	.li-name {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		font-weight: 500;
-	}
-
-	.li-detail {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.li-qty {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.li-unit {
-		font-size: 0.8125rem;
-		color: var(--dt-outline-variant);
-	}
-
-	.li-total {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		min-width: 80px;
-		text-align: right;
-		font-family: "JetBrains Mono", "Fira Code", monospace;
-	}
-
-	.offers-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.offer-row {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		text-decoration: none;
-		transition: background var(--dt-transition);
-	}
-
-	.offer-row:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.offer-date {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.offer-price {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		flex: 1;
-	}
-
-	/* Editable line items */
-	.line-item.editable {
-		padding: 0.5rem 0;
-		padding-left: 1.5rem;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.375rem;
-		transition: background var(--dt-transition), opacity var(--dt-transition);
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.line-item.editable.dragging {
-		opacity: 0.4;
-	}
-
-	.line-item.editable.drag-over {
-		background: var(--dt-surface-container-high);
-		box-shadow: inset 0 2px 0 0 var(--dt-primary);
-	}
-
-	.drag-handle {
-		position: absolute;
-		left: 0;
-		top: 0.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: transparent;
-		border: none;
-		color: var(--dt-on-surface-variant);
-		cursor: grab;
-		padding: 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.drag-handle:hover {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface);
-	}
-
-	.drag-handle:active {
-		cursor: grabbing;
-	}
-
-	.li-fixed {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		flex: 1;
-	}
-
-	.li-fixed .li-detail {
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-	}
-
-	.li-edit-top {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.li-edit-top select {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		min-width: 140px;
-		transition: background var(--dt-transition);
-	}
-
-	.li-edit-top select:focus {
-		background: var(--dt-surface-container-lowest);
-		outline: 2px solid var(--dt-primary);
-	}
-
-	.li-edit-bottom {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.edit-li-qty,
-	.edit-li-price {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		width: 70px;
-		text-align: right;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-li-qty:focus,
-	.edit-li-price:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.edit-li-label {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		flex: 1;
-		min-width: 100px;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-li-label:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.edit-li-remark {
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.375rem 0.5rem;
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		outline: none;
-		flex: 1;
-		min-width: 80px;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-li-remark:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.li-times {
-		color: var(--dt-outline-variant);
-		font-size: 0.8125rem;
-	}
-
-	.li-eur {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.75rem;
-	}
-
-	.btn-generate-bottom {
-		grid-column: 1 / -1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 1rem;
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-primary);
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		border: none;
-		border-radius: var(--dt-radius-lg);
-		cursor: pointer;
-		box-shadow: var(--dt-shadow-ambient);
-		transition: opacity var(--dt-transition);
-	}
-
-	.btn-generate-bottom:hover {
-		opacity: 0.88;
-	}
-
-	@media (max-width: 768px) {
-		.pricing-fields {
-			grid-template-columns: 1fr;
-		}
-
-		.li-edit-top select {
-			min-width: 0;
-			flex: 1;
-		}
-
-		.edit-li-qty,
-		.edit-li-price {
-			width: 60px;
-		}
-
-		.line-items {
-			max-width: 100%;
-			overflow-x: auto;
-		}
-	}
-</style>

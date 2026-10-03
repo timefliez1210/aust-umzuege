@@ -2,7 +2,7 @@
 
 > **Full context**: [AGENTS.md](AGENTS.md)
 
-Client-side SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
+Client-side SPA at `/admin/*`. JWT auth, REST API. Design system: [DESIGN.md](DESIGN.md).
 
 Pages, components, auth flow, API client, shared constants — all documented in [AGENTS.md](AGENTS.md).
 

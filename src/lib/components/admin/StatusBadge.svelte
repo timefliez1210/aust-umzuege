@@ -1,56 +1,56 @@
-<script lang="ts">
-	let { status, label }: { status: string; label?: string } = $props();
+<script lang="ts" module>
+	import type { Tone } from '$lib/components/ui/tone';
 
-	const statusConfig: Record<string, { bg: string; color: string; text: string }> = {
-		draft: { bg: '#f1f5f9', color: '#64748b', text: 'Entwurf' },
-		open: { bg: '#dbeafe', color: '#2563eb', text: 'Offen' },
-		new: { bg: '#dbeafe', color: '#2563eb', text: 'Neu' },
-		pending: { bg: '#fef3c7', color: '#b45309', text: 'Ausstehend' },
-		info_requested: { bg: '#fef3c7', color: '#b45309', text: 'Info angefragt' },
-		expired: { bg: '#f1f5f9', color: '#64748b', text: 'Abgelaufen' },
-		estimating: { bg: '#ede9fe', color: '#7c3aed', text: 'Schaetzung' },
-		estimated: { bg: '#ede9fe', color: '#7c3aed', text: 'Volumen' },
-		offer_ready: { bg: '#e0e7ff', color: '#4338ca', text: 'Angebot' },
-		sent: { bg: '#e0e7ff', color: '#4338ca', text: 'Gesendet' },
-		accepted: { bg: '#d1fae5', color: '#059669', text: 'Akzeptiert' },
-		confirmed: { bg: '#d1fae5', color: '#059669', text: 'Bestaetigt' },
-		scheduled: { bg: '#dbeafe', color: '#2563eb', text: 'Geplant' },
-		completed: { bg: '#d1fae5', color: '#059669', text: 'Erledigt' },
-		invoiced: { bg: '#fef3c7', color: '#d97706', text: 'Fakturiert' },
-		rejected: { bg: '#fee2e2', color: '#dc2626', text: 'Abgelehnt' },
-		cancelled: { bg: '#fee2e2', color: '#dc2626', text: 'Storniert' },
-		offer_created: { bg: '#e0e7ff', color: '#4338ca', text: 'Angebot erstellt' },
-		volume_estimated: { bg: '#ede9fe', color: '#7c3aed', text: 'Volumen' },
-		offer_generated: { bg: '#e0e7ff', color: '#4338ca', text: 'Angebot' },
-		offer_sent: { bg: '#dbeafe', color: '#2563eb', text: 'Gesendet' },
-		done: { bg: '#d1fae5', color: '#059669', text: 'Erledigt' },
-		paid: { bg: '#bbf7d0', color: '#15803d', text: 'Bezahlt' },
-		tentative: { bg: '#fef3c7', color: '#d97706', text: 'Vorlaeufig' }
+	/**
+	 * Every status any list can show → German label + semantic tone.
+	 * Tone groups: accent = needs us, info = in the offer pipeline, ok = booked/done,
+	 * warn = money outstanding or tentative, danger = lost, neutral = inert.
+	 */
+	export const STATUS_STYLE: Record<string, { tone: Tone; text: string }> = {
+		draft: { tone: 'neutral', text: 'Entwurf' },
+		open: { tone: 'accent', text: 'Offen' },
+		new: { tone: 'accent', text: 'Neu' },
+		pending: { tone: 'accent', text: 'Ausstehend' },
+		info_requested: { tone: 'warn', text: 'Info angefragt' },
+		expired: { tone: 'neutral', text: 'Abgelaufen' },
+		estimating: { tone: 'info', text: 'Schätzung' },
+		estimated: { tone: 'info', text: 'Volumen' },
+		offer_ready: { tone: 'info', text: 'Angebot' },
+		sent: { tone: 'info', text: 'Gesendet' },
+		accepted: { tone: 'ok', text: 'Akzeptiert' },
+		confirmed: { tone: 'ok', text: 'Bestätigt' },
+		scheduled: { tone: 'ok', text: 'Geplant' },
+		completed: { tone: 'ok', text: 'Erledigt' },
+		invoiced: { tone: 'warn', text: 'Fakturiert' },
+		rejected: { tone: 'danger', text: 'Abgelehnt' },
+		cancelled: { tone: 'danger', text: 'Storniert' },
+		offer_created: { tone: 'info', text: 'Angebot erstellt' },
+		volume_estimated: { tone: 'info', text: 'Volumen' },
+		offer_generated: { tone: 'info', text: 'Angebot' },
+		offer_sent: { tone: 'info', text: 'Gesendet' },
+		done: { tone: 'ok', text: 'Erledigt' },
+		paid: { tone: 'ok', text: 'Bezahlt' },
+		tentative: { tone: 'warn', text: 'Vorläufig' }
 	};
+</script>
 
-	let config = $derived(
-		statusConfig[status] || { bg: '#f1f5f9', color: '#64748b', text: status }
-	);
+<script lang="ts">
+	import { cn } from '$lib/utils/cn';
+	import { toneChip, toneFill } from '$lib/components/ui/tone';
+
+	let { status, label, class: className }: { status: string; label?: string; class?: string } = $props();
+
+	const config = $derived(STATUS_STYLE[status] ?? { tone: 'neutral' as Tone, text: status });
 </script>
 
 <span
-	class="badge"
-	style="background: {config.bg}; color: {config.color};"
+	class={cn(
+		'badge num inline-flex h-5 items-center gap-1.5 rounded-xs border px-1.5 text-[11px] leading-none whitespace-nowrap',
+		toneChip[config.tone],
+		className
+	)}
+	data-tone={config.tone}
 >
+	<span aria-hidden="true" class="size-1.5 rounded-full {toneFill[config.tone]}"></span>
 	{label || config.text}
 </span>
-
-<style>
-	.badge {
-		display: inline-flex;
-		align-items: center;
-		padding: 4px 8px;
-		border-radius: var(--dt-radius-sm);
-		font-size: 11px;
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		white-space: nowrap;
-		line-height: 1.2;
-	}
-</style>

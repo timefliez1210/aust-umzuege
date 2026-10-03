@@ -8,6 +8,13 @@
 	import { ArrowLeft, Save, Trash2, X } from 'lucide-svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import EmployeeAssignmentPanel from '$lib/components/admin/EmployeeAssignmentPanel.svelte';
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
 
 	interface CalendarItemDetail {
 		id: string;
@@ -237,44 +244,34 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{data?.title ?? 'Termin'} | AUST Admin</title>
-</svelte:head>
+<svelte:head><title>{data?.title ?? 'Termin'}</title></svelte:head>
 
-<div class="page-header">
-	<button class="btn btn-back" onclick={() => goto('/admin/calendar-items')}>
-		<ArrowLeft size={16} />
-		Termine
-	</button>
-	{#if data}
-		<div class="header-actions">
-			<button class="btn btn-primary" onclick={handleSave} disabled={saving}>
-				<Save size={16} />
-				{saving ? 'Speichern...' : 'Speichern'}
-			</button>
-			<button class="btn btn-danger" onclick={() => { showDeleteDialog = true; }}>
-				<Trash2 size={16} />
-				Löschen
-			</button>
-		</div>
-	{/if}
-</div>
+<a href="/admin/calendar-items" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg"><ArrowLeft size={15} /> Termine</a>
 
 {#if loading}
-	<div class="loading">Laden...</div>
+	<div class="grid gap-3.5 lg:grid-cols-2" aria-busy="true">
+		{#each Array(3) as _, i (i)}<div class="h-48 animate-pulse rounded-md bg-sunk"></div>{/each}
+	</div>
 {:else if data}
-	<div class="layout">
-		<!-- Edit form -->
-		<div class="card">
-			<div class="card-header"><h2>Details</h2></div>
-			<div class="form-grid">
-				<div class="field span-2">
-					<label for="e-title">Titel</label>
-					<input id="e-title" type="text" bind:value={editTitle} />
-				</div>
-				<div class="field">
-					<label for="e-cat">Kategorie</label>
-					<input id="e-cat" type="text" list="cal-categories" bind:value={editCategory} placeholder="z.B. Intern, Umzug, eigene…" />
+	<header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 pb-4">
+		<div class="flex min-w-0 flex-col gap-1.5">
+			<span class="label-xs text-faint">Termin · erstellt {formatDate(data.created_at)}</span>
+			<h1 class="truncate text-[26px] leading-none font-semibold tracking-[-0.03em] sm:text-[30px]">{data.title}</h1>
+		</div>
+		<div class="flex gap-2">
+			<Button variant="accent" onclick={handleSave} disabled={saving}><Save size={16} /> {saving ? 'Speichern …' : 'Speichern'}</Button>
+			<Button variant="danger" size="icon" aria-label="Termin löschen" title="Termin löschen" onclick={() => (showDeleteDialog = true)}>
+				<Trash2 size={16} />
+			</Button>
+		</div>
+	</header>
+
+	<div class="grid items-start gap-3.5 lg:grid-cols-2">
+		<Panel title="Details">
+			<div class="grid grid-cols-2 gap-3">
+				<Field label="Titel" for="e-title" class="col-span-2"><Input id="e-title" bind:value={editTitle} /></Field>
+				<Field label="Kategorie" for="e-cat">
+					<Input id="e-cat" list="cal-categories" bind:value={editCategory} placeholder="Intern, Umzug, eigene …" />
 					<datalist id="cal-categories">
 						<option value="intern">Intern</option>
 						<option value="umzug">Umzug</option>
@@ -284,136 +281,122 @@
 						<option value="kartons_auslieferung">Kartons Auslieferung</option>
 						<option value="kartons_abholung">Kartons Abholung</option>
 					</datalist>
-				</div>
-				<div class="field">
-					<label for="e-status">Status</label>
-					<select id="e-status" bind:value={editStatus}>
+				</Field>
+				<Field label="Status" for="e-status">
+					<Select id="e-status" bind:value={editStatus}>
 						<option value="scheduled">Geplant</option>
 						<option value="completed">Erledigt</option>
 						<option value="cancelled">Abgesagt</option>
-					</select>
-				</div>
-				<div class="field">
-					<label for="e-date">Datum</label>
-					<input id="e-date" type="date" bind:value={editDate} />
-				</div>
-				<div class="field">
-					<label for="e-start">Startzeit *</label>
-					<input id="e-start" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editStartTime} />
-				</div>
-				<div class="field">
-					<label for="e-end">Endzeit</label>
-					<input id="e-end" type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" bind:value={editEndTime} />
-				</div>
-				<div class="field">
-					<label for="e-dur">Dauer (h)</label>
-					<input id="e-dur" type="number" step="0.5" min="0" bind:value={editDuration} />
-				</div>
-				<div class="field span-2">
-					<label for="e-loc">Ort</label>
-					<input id="e-loc" type="text" bind:value={editLocation} />
-				</div>
-				<div class="field span-2">
-					<label for="e-desc">Beschreibung</label>
-					<textarea id="e-desc" rows={3} bind:value={editDescription}></textarea>
-				</div>
+					</Select>
+				</Field>
+				<Field label="Datum" for="e-date"><Input id="e-date" type="date" bind:value={editDate} /></Field>
+				<Field label="Dauer (h)" for="e-dur"><Input id="e-dur" class="num" type="number" step="0.5" min="0" bind:value={editDuration} /></Field>
+				<Field label="Startzeit *" for="e-start">
+					<Input id="e-start" class="num" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength={5} bind:value={editStartTime} />
+				</Field>
+				<Field label="Endzeit" for="e-end">
+					<Input id="e-end" class="num" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength={5} bind:value={editEndTime} />
+				</Field>
+				<Field label="Ort" for="e-loc" class="col-span-2"><Input id="e-loc" bind:value={editLocation} /></Field>
+				<Field label="Beschreibung" for="e-desc" class="col-span-2"><Textarea id="e-desc" rows={3} bind:value={editDescription} /></Field>
 			</div>
-			<div class="meta">Erstellt: {formatDate(data.created_at)}</div>
-		</div>
+		</Panel>
 
-		<!-- Customer assignment -->
-		<div class="card">
-			<div class="card-header"><h2>Kunde</h2></div>
+		<div class="flex min-w-0 flex-col gap-3.5">
+			<Panel title="Kunde">
+				<div class="flex flex-col gap-3">
+					{#if data.customer_id}
+						<div class="flex items-center gap-2 rounded-sm border border-line-strong bg-sunk px-3 py-2">
+							<a href="/admin/customers/{data.customer_id}" class="min-w-0 flex-1 truncate text-sm font-medium hover:underline">
+								{data.customer_name ?? data.customer_id}
+							</a>
+							<Button variant="ghost" size="icon-sm" aria-label="Kunde entfernen" title="Kunde entfernen" onclick={removeCustomer} disabled={savingCustomer}>
+								<X size={14} />
+							</Button>
+						</div>
+						<Button
+							size="xs"
+							variant="ghost"
+							class="self-start"
+							onclick={() => (customerMode = customerMode === 'search' ? 'view' : 'search')}>Anderen Kunden zuweisen</Button
+						>
+					{:else}
+						<p class="text-[13px] text-faint">Kein Kunde zugewiesen.</p>
+					{/if}
 
-			{#if data.customer_id}
-				<div class="customer-assigned">
-					<a href="/admin/customers/{data.customer_id}" class="customer-link">
-						{data.customer_name ?? data.customer_id}
-					</a>
-					<button class="btn-icon btn-remove" onclick={removeCustomer} disabled={savingCustomer} title="Kunde entfernen">
-						<X size={14} />
-					</button>
-				</div>
-				<button class="btn-text" onclick={() => customerMode = customerMode === 'search' ? 'view' : 'search'}>
-					Anderen Kunden zuweisen
-				</button>
-			{:else}
-				<p class="muted">Kein Kunde zugewiesen.</p>
-			{/if}
-
-			{#if !data.customer_id || customerMode === 'search'}
-				<div class="customer-mode-tabs">
-					<button class="tab-btn" class:active={customerMode !== 'create'} onclick={() => { customerMode = 'search'; }}>Suchen</button>
-					<button class="tab-btn" class:active={customerMode === 'create'} onclick={() => { customerMode = 'create'; }}>Neu anlegen</button>
-				</div>
-
-				{#if customerMode !== 'create'}
-					<div class="customer-search">
-						<input
-							type="text"
-							placeholder="Name oder E-Mail..."
-							bind:value={customerSearch}
-							oninput={(e) => searchCustomers((e.target as HTMLInputElement).value)}
+					{#if !data.customer_id || customerMode === 'search' || customerMode === 'create'}
+						<Segmented
+							label="Kunde"
+							size="sm"
+							class="self-start"
+							options={[
+								{ value: 'search', label: 'Suchen' },
+								{ value: 'create', label: 'Neu anlegen' }
+							]}
+							value={customerMode === 'create' ? 'create' : 'search'}
+							onchange={(v) => (customerMode = v)}
 						/>
-						{#if customerSearching}<span class="muted" style="font-size:0.75rem">Suche...</span>{/if}
-						{#if customerResults.length > 0}
-							<div class="customer-results">
-								{#each customerResults as c}
-									<button class="customer-result-item" onclick={() => assignCustomer(c.id)} disabled={savingCustomer}>
-										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
-										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
-									</button>
-								{/each}
+
+						{#if customerMode !== 'create'}
+							<div class="relative">
+								<Input
+									placeholder="Name oder E-Mail …"
+									bind:value={customerSearch}
+									oninput={(e) => searchCustomers((e.target as HTMLInputElement).value)}
+								/>
+								{#if customerSearching}<span class="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-faint">Suche …</span>{/if}
+								{#if customerResults.length > 0}
+									<div class="mt-1 flex flex-col rounded-md border border-line bg-panel p-1">
+										{#each customerResults as c (c.id)}
+											<button
+												type="button"
+												class="flex flex-col items-start rounded-sm px-2.5 py-2 text-left hover:bg-sunk"
+												onclick={() => assignCustomer(c.id)}
+												disabled={savingCustomer}
+											>
+												<span class="text-sm">{c.name ?? c.email ?? 'Kunde'}</span>
+												{#if c.name && c.email}<span class="text-xs text-muted">{c.email}</span>{/if}
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{:else}
+							<div class="grid grid-cols-2 gap-3">
+								<Field label="Anrede" for="nc-salutation">
+									<Select id="nc-salutation" bind:value={newCustSalutation}>
+										<option value="">—</option>
+										<option value="Herr">Herr</option>
+										<option value="Frau">Frau</option>
+										<option value="D">Divers</option>
+									</Select>
+								</Field>
+								<Field label="Name" for="nc-name"><Input id="nc-name" bind:value={newCustName} placeholder="Max Mustermann" /></Field>
+								<Field label="E-Mail" for="nc-email"><Input id="nc-email" type="email" bind:value={newCustEmail} placeholder="kunde@example.com" /></Field>
+								<Field label="Telefon" for="nc-phone"><Input id="nc-phone" type="tel" bind:value={newCustPhone} placeholder="+49 …" /></Field>
+								<Button variant="solid" class="col-span-2 justify-self-start" onclick={createAndAssignCustomer} disabled={savingCustomer}>
+									{savingCustomer ? 'Wird erstellt …' : 'Kunde anlegen & zuweisen'}
+								</Button>
 							</div>
 						{/if}
-					</div>
-				{:else}
-					<div class="customer-create">
-						<div class="field">
-							<label for="nc-salutation">Anrede</label>
-							<select id="nc-salutation" bind:value={newCustSalutation}>
-								<option value="">—</option>
-								<option value="Herr">Herr</option>
-								<option value="Frau">Frau</option>
-								<option value="D">Divers</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="nc-email">E-Mail</label>
-							<input id="nc-email" type="email" bind:value={newCustEmail} placeholder="kunde@example.com" />
-						</div>
-						<div class="field">
-							<label for="nc-name">Name</label>
-							<input id="nc-name" type="text" bind:value={newCustName} placeholder="Max Mustermann" />
-						</div>
-						<div class="field">
-							<label for="nc-phone">Telefon</label>
-							<input id="nc-phone" type="tel" bind:value={newCustPhone} placeholder="+49 ..." />
-						</div>
-						<button class="btn btn-primary" onclick={createAndAssignCustomer} disabled={savingCustomer}>
-							{savingCustomer ? 'Wird erstellt...' : 'Kunde anlegen & zuweisen'}
-						</button>
-					</div>
-				{/if}
-			{/if}
-		</div>
+					{/if}
+				</div>
+			</Panel>
 
-		<!-- Employee assignment -->
-		<div class="card emp-card">
-			<EmployeeAssignmentPanel
-				entityId={data.id}
-				entityType="calendar_item"
-			/>
-			<div class="emp-notes-field">
-				<label for="emp-notes-ci" class="emp-notes-label">Hinweis für Mitarbeiter</label>
-				<textarea
-					id="emp-notes-ci"
-					rows={3}
-					placeholder="Sichtbar für alle zugewiesenen Mitarbeiter im Mitarbeiterportal…"
-					bind:value={editEmployeeNotes}
-					onblur={handleSave}
-				></textarea>
-			</div>
+			<Panel title="Mitarbeiter">
+				<div class="flex flex-col gap-4">
+					<EmployeeAssignmentPanel entityId={data.id} entityType="calendar_item" />
+					<Field label="Hinweis für Mitarbeiter" for="emp-notes-ci">
+						<Textarea
+							id="emp-notes-ci"
+							rows={3}
+							placeholder="Sichtbar für alle zugewiesenen Mitarbeiter im Mitarbeiterportal…"
+							bind:value={editEmployeeNotes}
+							onblur={handleSave}
+						/>
+					</Field>
+				</div>
+			</Panel>
 		</div>
 	</div>
 {/if}
@@ -421,274 +404,7 @@
 <ConfirmationDialog
 	bind:open={showDeleteDialog}
 	title="Termin löschen"
-	message={data ? `Termin „${data.title}" löschen?` : ''}
+	message={data ? `Termin „${data.title}“ löschen?` : ''}
 	confirmLabel="Löschen"
 	onConfirm={handleDelete}
 />
-
-<style>
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
-	}
-
-	.header-actions { display: flex; gap: 0.5rem; }
-
-	.layout {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1.5rem;
-	}
-	.layout > .card:first-child { grid-column: span 2; }
-
-	/* Customer assignment */
-	.customer-assigned { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-	.customer-link {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		text-decoration: none;
-		transition: color var(--dt-transition);
-	}
-	.customer-link:hover { color: var(--dt-secondary); text-decoration: underline; }
-	.customer-mode-tabs {
-		display: flex;
-		gap: 0.25rem;
-		margin: 0.75rem 0 0.5rem;
-		background: var(--dt-surface-container-high);
-		border-radius: var(--dt-radius-sm);
-		padding: 0.2rem;
-	}
-	.tab-btn {
-		padding: 0.3rem 0.75rem;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		border-radius: var(--dt-radius-sm);
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-	.tab-btn.active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-		font-weight: 600;
-	}
-	.customer-search { display: flex; flex-direction: column; gap: 0.375rem; }
-	.customer-search input {
-		padding: 0.5rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		font-family: inherit;
-		color: var(--dt-on-surface);
-		outline: none;
-		transition: var(--dt-transition);
-	}
-	.customer-search input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-	.customer-results {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-sm);
-		overflow: hidden;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-	.customer-result-item {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		text-align: left;
-		transition: background var(--dt-transition);
-		color: var(--dt-on-surface);
-	}
-	.customer-result-item + .customer-result-item {
-		border-top: 1px solid var(--dt-surface-container);
-	}
-	.customer-result-item:hover { background: var(--dt-surface-container-low); }
-	.cr-name { font-size: 0.875rem; font-weight: 500; color: var(--dt-on-surface); }
-	.cr-email { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
-	.customer-create { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
-	.btn-text {
-		font-size: 0.8125rem;
-		color: var(--dt-secondary);
-		padding: 0;
-		text-decoration: underline;
-		cursor: pointer;
-		background: none;
-		border: none;
-		transition: color var(--dt-transition);
-	}
-	.btn-text:hover { color: var(--dt-on-secondary-container); }
-
-	.btn-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: all var(--dt-transition);
-	}
-	.btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
-	.btn-remove:hover:not(:disabled) { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
-
-	.card {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		overflow: hidden;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	/* Employee card spans full width like the details card */
-	.emp-card { grid-column: span 2; }
-
-	.emp-notes-field {
-		padding: 0.75rem 1.25rem 1rem;
-		border-top: 1px solid var(--dt-outline-variant);
-		margin-top: 0.75rem;
-	}
-
-	.emp-notes-label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-
-	.emp-notes-field textarea {
-		width: 100%;
-		box-sizing: border-box;
-		padding: 0.5rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		resize: vertical;
-		outline: none;
-		transition: border-color var(--dt-transition);
-	}
-
-	.emp-notes-field textarea:focus {
-		border-color: var(--dt-primary);
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		padding: 0.875rem 1.25rem;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border-bottom: var(--dt-glass-border);
-	}
-
-	.card-header h2 {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--dt-on-primary);
-		margin: 0;
-	}
-
-	.form-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.75rem;
-		padding: 1.25rem;
-	}
-
-	.field { display: flex; flex-direction: column; gap: 0.25rem; }
-	.field.span-2 { grid-column: span 2; }
-
-	.field label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.field input,
-	.field select,
-	.field textarea {
-		padding: 0.5rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		font-family: inherit;
-		color: var(--dt-on-surface);
-		resize: vertical;
-		outline: none;
-		transition: var(--dt-transition);
-	}
-
-	.field input:focus,
-	.field select:focus,
-	.field textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.meta {
-		margin: 0 1.25rem 1.25rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-surface-container);
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.muted { color: var(--dt-on-surface-variant); font-size: 0.875rem; margin: 0 1.25rem 1rem; }
-
-	.loading { text-align: center; padding: 3rem; color: var(--dt-on-surface-variant); }
-
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 1rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface);
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn:hover { background: var(--dt-surface-container-low); }
-	.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-	.btn-primary {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		border: none;
-	}
-	.btn-primary:hover:not(:disabled) {
-		background: linear-gradient(135deg, var(--dt-primary-container), var(--dt-primary));
-	}
-	.btn-back { color: var(--dt-on-surface-variant); border: var(--dt-ghost-border); }
-	.btn-back:hover { color: var(--dt-on-surface); background: var(--dt-surface-container-low); }
-	.btn-danger {
-		background: linear-gradient(135deg, var(--dt-secondary), #8a2e00);
-		color: var(--dt-on-primary);
-		border: none;
-	}
-	.btn-danger:hover:not(:disabled) {
-		background: linear-gradient(135deg, #8a2e00, var(--dt-secondary));
-	}
-
-	@media (max-width: 900px) {
-		.layout { grid-template-columns: 1fr; }
-		.layout > .card:first-child { grid-column: span 1; }
-		.emp-card { grid-column: span 1; }
-		.form-grid { grid-template-columns: 1fr; }
-		.field.span-2 { grid-column: span 1; }
-	}
-</style>

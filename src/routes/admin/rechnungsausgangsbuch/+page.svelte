@@ -5,6 +5,12 @@
 	import ReviewRequestModal from '$lib/components/admin/ReviewRequestModal.svelte';
 	import { ArrowDown, ArrowUp, Check, Download, FileText, Search, X } from 'lucide-svelte';
 	import MonatsUebersicht from '$lib/components/admin/MonatsUebersicht.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Kpi from '$lib/components/ui/Kpi.svelte';
+	import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import {
 		isDraft,
 		isOverdue,
@@ -201,7 +207,7 @@
 		{ label: 'MWST', sort: 'mwst', num: true },
 		{ label: 'Brutto', sort: 'brutto', num: true },
 		{ label: 'Rechnungsdatum', sort: 'sent' },
-		{ label: 'F&auml;llig' },
+		{ label: 'Fällig' },
 		{ label: 'Bezahlt', sort: 'paid' },
 		{ label: 'Offen', sort: 'offen', num: true },
 		{ label: 'Zahlungsart' },
@@ -478,241 +484,178 @@
 	}
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<h1>Rechnungsausgangsbuch</h1>
-		<span class="page-count">
-			{loading ? rows.length : filtered.length} Eintr&auml;ge{loading
-				? ''
-				: filtersActive
-					? ` von ${yearRows.length} (${activeYear})`
-					: ` ${activeYear}`}
-		</span>
+<svelte:head><title>Rechnungsbuch</title></svelte:head>
+
+<PageHeader
+	title="Rechnungsbuch"
+	count="{loading ? rows.length : filtered.length} Einträge{loading ? '' : filtersActive ? ` von ${yearRows.length} (${activeYear})` : ` ${activeYear}`}"
+>
+	{#snippet actions()}
 		{#if !loading && !error && yearRows.length > 0}
-			<button type="button" class="export-btn" onclick={exportYear} disabled={exporting}>
-				<Download size={14} />
-				{exporting ? 'Export läuft…' : 'Als Excel exportieren'}
-			</button>
+			<Button onclick={exportYear} disabled={exporting}>
+				<Download size={15} />
+				{exporting ? 'Export läuft …' : `Excel ${activeYear}`}
+			</Button>
 		{/if}
+	{/snippet}
+</PageHeader>
+
+{#if loading}
+	<div class="flex flex-col gap-3.5" aria-busy="true">
+		<div class="h-28 animate-pulse rounded-md bg-sunk"></div>
+		<div class="h-96 animate-pulse rounded-md bg-sunk"></div>
 	</div>
+{:else if error}
+	<p class="rounded-md border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
+{:else if rows.length === 0}
+	<EmptyState title="Keine Rechnungen vorhanden" />
+{:else}
+	<div class="flex flex-col gap-3.5">
+		<FilterTabs label="Jahr" options={years.map((y) => ({ value: y, label: y }))} value={activeYear} onchange={selectYear} />
 
-	{#if loading}
-		<div class="loading">Lade Rechnungsausgangsbuch...</div>
-	{:else if error}
-		<div class="error-box">{error}</div>
-	{:else if rows.length === 0}
-		<div class="empty">Keine Rechnungen vorhanden.</div>
-	{:else}
-		<!-- Year selector -->
-		<div class="year-nav">
-			{#each years as y}
-				<button
-					type="button"
-					class="year-btn"
-					class:active={y === activeYear}
-					onclick={() => selectYear(y)}
-				>
-					{y}
-				</button>
-			{/each}
-		</div>
-
-		<!-- Headline figures. These follow the filter, so they always describe what
-		     is on screen rather than a year the reader isn't looking at. -->
-		<div class="kpis">
-			<div class="kpi">
-				<span class="kpi-label">Umsatz netto</span>
-				<span class="kpi-value">{fmtEur(kpis.umsatzNetto)}</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">Umsatzsteuer</span>
-				<span class="kpi-value">{fmtEur(kpis.umsatzsteuer)}</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">Offen</span>
-				<span class="kpi-value" class:warn={kpis.offen > 0}>{fmtEur(kpis.offen)}</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">
-					&Uuml;berf&auml;llig{kpis.ueberfaelligCount ? ` (${kpis.ueberfaelligCount})` : ''}
-				</span>
-				<span class="kpi-value" class:danger={kpis.ueberfaellig > 0}>
-					{fmtEur(kpis.ueberfaellig)}
-				</span>
-			</div>
-			<div class="kpi">
-				<span class="kpi-label">&empty; Zahlungsdauer</span>
-				<span class="kpi-value">
-					{kpis.zahlungsdauerTage == null ? '\u2014' : `${kpis.zahlungsdauerTage} Tage`}
-				</span>
-			</div>
-		</div>
+		<!-- Headline figures follow the filter: they describe what is on screen. -->
+		<section class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5" aria-label="Kennzahlen">
+			<Kpi label="Umsatz netto" value={fmtEur(kpis.umsatzNetto)} />
+			<Kpi label="Umsatzsteuer" value={fmtEur(kpis.umsatzsteuer)} />
+			<Kpi label="Offen" value={fmtEur(kpis.offen)} valueClass={kpis.offen > 0 ? 'text-warn' : ''} />
+			<Kpi
+				label="Überfällig{kpis.ueberfaelligCount ? ` (${kpis.ueberfaelligCount})` : ''}"
+				value={fmtEur(kpis.ueberfaellig)}
+				valueClass={kpis.ueberfaellig > 0 ? 'text-danger' : ''}
+				class={kpis.ueberfaellig > 0 ? 'border-danger/40' : ''}
+			/>
+			<Kpi label="Ø Zahlungsdauer" value={kpis.zahlungsdauerTage == null ? '—' : `${kpis.zahlungsdauerTage} Tage`} />
+		</section>
 
 		<MonatsUebersicht months={monthSummaries} selected={filters.month} onSelect={selectMonth} />
 
-		<!-- Filters, one row above the table. -->
-		<div class="filter-bar">
-			<div class="chips">
-				{#each STATUS_CHIPS as chip}
-					<button
-						type="button"
-						class="chip"
-						class:active={filters.status === chip.key}
-						onclick={() => (filters = { ...filters, status: chip.key })}
-					>
-						{chip.label}
-					</button>
-				{/each}
-			</div>
-
-			<div class="chips months">
-				<button
-					type="button"
-					class="chip"
-					class:active={filters.month == null}
-					onclick={() => selectMonth(null)}
-				>
-					Jahr
-				</button>
-				{#each MONTH_LABELS as label, i}
-					<button
-						type="button"
-						class="chip"
-						class:active={filters.month === i + 1}
-						disabled={monthSummaries[i].count === 0}
-						onclick={() => selectMonth(i + 1)}
-					>
-						{label}
-					</button>
-				{/each}
-			</div>
-
-			<div class="search">
-				<Search size={14} />
-				<input
-					type="search"
-					placeholder="Kunde oder Rg.-Nr."
-					value={filters.search}
-					oninput={(e) => (filters = { ...filters, search: e.currentTarget.value })}
+		<div class="flex flex-col gap-2.5">
+			<div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+				<FilterTabs
+					label="Status"
+					options={STATUS_CHIPS.map((c) => ({ value: c.key, label: c.label }))}
+					value={filters.status}
+					onchange={(v) => (filters = { ...filters, status: v })}
 				/>
+				<label
+					class="flex h-9 items-center gap-2 rounded-sm border border-line-strong bg-panel px-3 text-faint focus-within:border-fg lg:ml-auto lg:w-64"
+				>
+					<Search size={14} />
+					<input
+						type="search"
+						placeholder="Kunde oder Rg.-Nr."
+						class="min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-faint"
+						value={filters.search}
+						oninput={(e) => (filters = { ...filters, search: e.currentTarget.value })}
+					/>
+				</label>
+				{#if filtersActive}
+					<Button size="sm" variant="ghost" onclick={resetFilters}><X size={14} /> Zurücksetzen</Button>
+				{/if}
 			</div>
-
-			{#if filtersActive}
-				<button type="button" class="chip reset" onclick={resetFilters}>
-					<X size={13} /> Filter zur&uuml;cksetzen
-				</button>
-			{/if}
+			<FilterTabs
+				label="Monat"
+				options={[
+					{ value: '0', label: 'Ganzes Jahr' },
+					...MONTH_LABELS.map((label, i) => ({ value: String(i + 1), label, count: monthSummaries[i].count || undefined }))
+				]}
+				value={String(filters.month ?? 0)}
+				onchange={(v) => selectMonth(v === '0' ? null : Number(v))}
+			/>
 		</div>
 
-		<!-- Full year, one chronological list -->
 		{#if filtered.length === 0}
-			<div class="empty">
-				{filtersActive
-					? 'Keine Rechnungen für diese Auswahl.'
-					: `Keine Rechnungen im Jahr ${activeYear}.`}
-			</div>
+			<EmptyState title={filtersActive ? 'Keine Rechnungen für diese Auswahl.' : `Keine Rechnungen im Jahr ${activeYear}.`} />
 		{:else}
-			<div class="table-wrapper">
-				<table>
+			<div class="overflow-x-auto rounded-md border border-line bg-panel">
+				<table class="w-full min-w-[1180px] border-collapse text-sm">
 					<thead>
-						<tr>
-							{#each COLUMNS as col}
-								{#if col.sort != null}
-									{@const sortKey = col.sort}
-									<th class:num={col.num}>
+						<tr class="border-b border-line">
+							{#each COLUMNS as col (col.label)}
+								<th class="px-2.5 py-2.5 font-normal whitespace-nowrap first:pl-4 last:pr-4 {col.num ? 'text-right' : 'text-left'}">
+									{#if col.sort != null}
+										{@const sortKey = col.sort}
 										<button
 											type="button"
-											class="sort-btn"
-											class:sorted={sort?.key === sortKey}
+											class="label-xs inline-flex items-center gap-1 {sort?.key === sortKey ? 'text-fg' : 'text-faint hover:text-fg'}"
 											onclick={() => toggleSort(sortKey)}
 											title="Sortieren — dritter Klick stellt die Registerreihenfolge wieder her"
 										>
-											<span>{@html col.label}</span>
+											{col.label}
 											{#if sort?.key === sortKey}
-												{#if sort.dir === 'asc'}
-													<ArrowUp size={11} />
-												{:else}
-													<ArrowDown size={11} />
-												{/if}
+												{#if sort.dir === 'asc'}<ArrowUp size={11} />{:else}<ArrowDown size={11} />{/if}
 											{/if}
 										</button>
-									</th>
-								{:else}
-									<th class:num={col.num}>{@html col.label}</th>
-								{/if}
+									{:else}
+										<span class="label-xs text-faint">{col.label}</span>
+									{/if}
+								</th>
 							{/each}
 						</tr>
 					</thead>
 					<tbody>
-						{#each filtered as item}
+						{#each filtered as item (item.kind + item.id)}
+							{@const overdue = isOverdue(item, today)}
 							<tr
-								class:paid={isSettled(item)}
-								class:draft={isDraft(item)}
-								class:overdue={isOverdue(item, today)}
+								class="border-b border-line last:border-b-0 hover:bg-sunk/60 {isDraft(item) ? 'text-muted' : ''} {overdue
+									? 'shadow-[inset_3px_0_0_var(--danger)]'
+									: ''}"
 							>
-								<td class="mono">
+								<td class="num py-1.5 pr-2.5 pl-4 text-[13px] whitespace-nowrap">
 									{#if item.pdf_s3_key && (item.inquiry_id || item.kind === 'lagerung')}
 										<button
 											type="button"
-											class="link-btn"
+											class="inline-flex items-center gap-1 text-accent-text hover:underline"
 											onclick={() => openInvoicePdf(item)}
-											title="Rechnung \u00f6ffnen"
+											title="Rechnung öffnen"
 										>
-											<FileText size={12} />
-											{item.invoice_number}
+											<FileText size={12} />{item.invoice_number}
 										</button>
 									{:else}
 										{item.invoice_number}
 									{/if}
 								</td>
-								<td>
-									<span class="type-label" class:credit={item.is_gutschrift}>{typeLabel(item)}</span>
-									{#if isDraft(item)}
-										<span class="draft-badge" title="Noch nicht versendet \u2014 Nummer ist reserviert">Entwurf</span>
-									{/if}
+								<td class="px-2.5 py-1.5">
+									<span class="flex flex-wrap items-center gap-1">
+										<span class="text-[13px] {item.is_gutschrift ? 'text-danger' : ''}">{typeLabel(item)}</span>
+										{#if isDraft(item)}<Badge title="Noch nicht versendet — Nummer ist reserviert">Entwurf</Badge>{/if}
+									</span>
 								</td>
-								<td>{formatServicePeriod(item.scheduled_date, item.end_date)}</td>
-								<td>
+								<td class="num px-2.5 py-1.5 text-[13px] whitespace-nowrap">{formatServicePeriod(item.scheduled_date, item.end_date)}</td>
+								<td class="max-w-56 truncate px-2.5 py-1.5">
 									{#if item.inquiry_id}
-										<a class="row-link" href="/admin/inquiries/{item.inquiry_id}">
-											{item.customer_name || '\u2014'}
-										</a>
+										<a class="font-medium hover:underline" href="/admin/inquiries/{item.inquiry_id}">{item.customer_name || '—'}</a>
 									{:else}
-										{item.customer_name || '\u2014'}
+										{item.customer_name || '—'}
 									{/if}
 								</td>
-								<td class="num">{fmtEur(item.netto_cents)}</td>
-								<td class="num">{fmtEur(item.mwst_cents)}</td>
-								<td class="num">{fmtEur(item.brutto_cents)}</td>
-								<td>{fmtDate(item.sent_at)}</td>
-								<td>{fmtDate(item.due_date)}</td>
-								<td>
+								<td class="num px-2.5 py-1.5 text-right">{fmtEur(item.netto_cents)}</td>
+								<td class="num px-2.5 py-1.5 text-right text-muted">{fmtEur(item.mwst_cents)}</td>
+								<td class="num px-2.5 py-1.5 text-right font-medium">{fmtEur(item.brutto_cents)}</td>
+								<td class="num px-2.5 py-1.5 text-[13px] whitespace-nowrap text-muted">{fmtDate(item.sent_at)}</td>
+								<td class="num px-2.5 py-1.5 text-[13px] whitespace-nowrap {overdue ? 'text-danger' : 'text-muted'}">{fmtDate(item.due_date)}</td>
+								<td class="px-2.5 py-1.5 whitespace-nowrap">
 									{#if item.paid_at}
-										{fmtDate(item.paid_at)}
+										<span class="num text-[13px] text-ok">{fmtDate(item.paid_at)}</span>
 									{:else}
-										<!-- Alex regularly downloads a draft PDF and sends it himself
-										     instead of using "Senden", so the invoice never picks up a
-										     sent_at in the system even though it genuinely went out.
-										     Booking it as paid here backfills sent_at (see mark_paid). -->
-										<button
-											type="button"
-											class="paid-btn"
+										<!-- Alex often sends a draft PDF himself instead of using "Senden"; booking it
+										     as paid here backfills sent_at (see mark_paid). -->
+										<Button
+											size="xs"
 											onclick={() => markPaid(item)}
 											disabled={payingId === item.id}
-											title={isDraft(item)
-												? 'Als bezahlt buchen (Rechnung gilt damit auch als versendet)'
-												: 'Als bezahlt buchen'}
+											title={isDraft(item) ? 'Als bezahlt buchen (Rechnung gilt damit auch als versendet)' : 'Als bezahlt buchen'}
 										>
-											<Check size={13} />
+											<Check size={12} />
 											{payingId === item.id ? '…' : 'Bezahlt'}
-										</button>
+										</Button>
 									{/if}
 								</td>
-								<td class="num offen">
+								<td class="px-2.5 py-1.5 text-right">
 									{#if editingOffenId === item.id}
 										<!-- svelte-ignore a11y_autofocus -->
 										<input
-											class="offen-input"
+											class="num h-7 w-24 rounded-xs border border-fg bg-panel px-1.5 text-right text-[13px] outline-none"
 											type="text"
 											inputmode="decimal"
 											autofocus
@@ -726,40 +669,38 @@
 											title="Erhaltenen Teilbetrag eintragen — leeren, um ihn zu entfernen"
 										/>
 									{:else if item.is_settled}
-										<!-- Alex's Offene-Zahlungen column says the word he scans for, not 0,00 €. -->
-										<span class="settled">Bezahlt</span>
+										<!-- Alex's column says the word he scans for, not 0,00 €. -->
+										<span class="text-[13px] text-ok">Bezahlt</span>
 									{:else}
 										<button
 											type="button"
-											class="offen-btn"
+											class="num rounded-xs px-1 text-warn hover:bg-sunk hover:underline"
 											onclick={() => startOffenEdit(item)}
-											title="Teilzahlung erfassen"
+											title="Teilzahlung erfassen">{fmtEur(item.offene_zahlungen_cents)}</button
 										>
-											{fmtEur(item.offene_zahlungen_cents)}
-										</button>
 										{#if item.paid_amount_cents != null}
-											<span class="teilzahlung" title="Bereits erhalten">
-												davon {fmtEur(item.paid_amount_cents)} erhalten
-											</span>
+											<span class="num block text-[11px] text-faint" title="Bereits erhalten"
+												>davon {fmtEur(item.paid_amount_cents)} erhalten</span
+											>
 										{/if}
 									{/if}
 								</td>
-								<td>
+								<td class="px-2.5 py-1.5">
 									<select
-										class="payment-method-select"
+										class="h-7 rounded-xs border border-transparent bg-transparent px-1.5 text-[13px] outline-none hover:border-line focus:border-fg bg-panel"
+										aria-label="Zahlungsart"
 										value={item.payment_method ?? ''}
 										onchange={(e) => updatePaymentMethod(item, e.currentTarget.value)}
 									>
-										<option value="">\u2014</option>
-										{#each PAYMENT_METHODS as pm}
-											<option value={pm}>{pm}</option>
-										{/each}
+										<option value="">—</option>
+										{#each PAYMENT_METHODS as pm (pm)}<option value={pm}>{pm}</option>{/each}
 									</select>
 								</td>
-								<td class="notes-cell">
+								<td class="py-1.5 pr-4 pl-2.5">
 									<input
-										class="notes-input"
+										class="h-7 rounded-xs border border-transparent bg-transparent px-1.5 text-[13px] outline-none hover:border-line focus:border-fg w-40"
 										type="text"
+										aria-label="Bemerkung"
 										value={item.notes ?? ''}
 										onblur={(e) => saveNotes(item, e.currentTarget.value)}
 										onkeydown={(e) => {
@@ -776,47 +717,36 @@
 						{/each}
 					</tbody>
 					<tfoot>
-						<tr>
-							<th colspan="4">{filtersActive ? 'Summe Auswahl' : `Summe ${activeYear}`}</th>
-							<th class="num">{fmtEur(totalNetto)}</th>
-							<th class="num">{fmtEur(totalMwst)}</th>
-							<th class="num">{fmtEur(totalBrutto)}</th>
+						<tr class="num border-t border-line-strong font-semibold">
+							<th colspan="4" class="py-2.5 pl-4 text-left font-sans">{filtersActive ? 'Summe Auswahl' : `Summe ${activeYear}`}</th>
+							<th class="px-2.5 py-2.5 text-right">{fmtEur(totalNetto)}</th>
+							<th class="px-2.5 py-2.5 text-right">{fmtEur(totalMwst)}</th>
+							<th class="px-2.5 py-2.5 text-right">{fmtEur(totalBrutto)}</th>
 							<th colspan="3"></th>
-							<th class="num">{fmtEur(totalOffen)}</th>
+							<th class="px-2.5 py-2.5 text-right">{fmtEur(totalOffen)}</th>
 							<th colspan="2"></th>
 						</tr>
-						{#if totalEntwurf !== 0}
-							<tr class="foot-note">
-								<td colspan="13">
-									Nicht gez&auml;hlt: {fmtEur(totalEntwurf)} aus noch nicht versendeten Entw&uuml;rfen.
-								</td>
-							</tr>
-						{/if}
 					</tfoot>
 				</table>
 			</div>
 		{/if}
 
-		<!-- Year grand total -->
-		<div class="grand-total">
-			<span class="grand-total__label">
-				{filtersActive ? 'Summe der Auswahl' : `Gesamtsumme ${activeYear}`}
-			</span>
-			<span class="num" data-label="Netto">{fmtEur(totalNetto)}</span>
-			<span class="num" data-label="MWST">{fmtEur(totalMwst)}</span>
-			<span class="num" data-label="Brutto">{fmtEur(totalBrutto)}</span>
-			<span class="spacer"></span>
-			<span class="num" data-label="Offen">{fmtEur(totalOffen)}</span>
+		<!-- Grand total stays visible below the (horizontally scrolling) table on phones. -->
+		<div class="num grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-line bg-panel px-4 py-3 text-sm sm:flex sm:items-baseline sm:gap-6">
+			<span class="col-span-2 font-sans font-semibold">{filtersActive ? 'Summe der Auswahl' : `Gesamtsumme ${activeYear}`}</span>
+			<span class="sm:ml-auto"><span class="label-xs mr-1.5 text-faint">Netto</span>{fmtEur(totalNetto)}</span>
+			<span><span class="label-xs mr-1.5 text-faint">MwSt</span>{fmtEur(totalMwst)}</span>
+			<span class="font-semibold"><span class="label-xs mr-1.5 font-normal text-faint">Brutto</span>{fmtEur(totalBrutto)}</span>
+			<span class="text-warn"><span class="label-xs mr-1.5 text-faint">Offen</span>{fmtEur(totalOffen)}</span>
 		</div>
 
 		{#if totalEntwurf !== 0}
-			<p class="draft-note">
-				Zus&auml;tzlich {fmtEur(totalEntwurf)} in noch nicht versendeten Entw&uuml;rfen —
-				diese z&auml;hlen nicht zu den Summen.
+			<p class="text-xs text-muted">
+				Zusätzlich {fmtEur(totalEntwurf)} in noch nicht versendeten Entwürfen — diese zählen nicht zu den Summen.
 			</p>
 		{/if}
-	{/if}
-</div>
+	</div>
+{/if}
 
 {#if reviewFor}
 	<ReviewRequestModal
@@ -826,311 +756,3 @@
 		onClose={() => (reviewFor = null)}
 	/>
 {/if}
-
-<style>
-	.page { padding: var(--dt-space-6); }
-
-	.page-header {
-		display: flex; align-items: baseline; gap: 0.75rem;
-		margin-bottom: var(--dt-space-6);
-	}
-	.page-header h1 {
-		font-size: 1.5rem; font-weight: 700; color: var(--dt-on-surface); margin: 0;
-	}
-	.page-count {
-		font-size: 0.8125rem; color: var(--dt-on-surface-variant);
-	}
-
-	.loading, .empty {
-		color: var(--dt-on-surface-variant); padding: var(--dt-space-10); text-align: center;
-	}
-	.error-box {
-		background: var(--dt-error-bg); border: 1px solid var(--dt-error-text);
-		color: var(--dt-error-text); padding: var(--dt-space-4); border-radius: var(--dt-radius-md);
-	}
-
-	/* ── year selector ─────────────────────────────── */
-	.year-nav {
-		display: flex; justify-content: center; flex-wrap: wrap;
-		gap: var(--dt-space-2); margin-bottom: var(--dt-space-3);
-	}
-	.year-btn {
-		padding: 0.35rem 0.9rem; border-radius: var(--dt-radius-md);
-		border: var(--dt-ghost-border); background: var(--dt-surface-container-low);
-		color: var(--dt-on-surface-variant); font-size: 0.875rem; font-weight: 600;
-		cursor: pointer; transition: background var(--dt-transition);
-	}
-	.year-btn:hover { background: var(--dt-surface-container-high); }
-	.year-btn.active {
-		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
-	}
-
-	/* ── KPI row ─────────────────────────────────── */
-	.kpis {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: var(--dt-space-3);
-		margin-bottom: var(--dt-space-4);
-	}
-	.kpi {
-		display: flex; flex-direction: column; gap: 0.15rem;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: var(--dt-space-4) var(--dt-space-5);
-	}
-	.kpi-label {
-		font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;
-		color: var(--dt-on-surface-variant);
-	}
-	.kpi-value {
-		font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums;
-		color: var(--dt-on-surface);
-	}
-	.kpi-value.warn { color: var(--dt-secondary); }
-	.kpi-value.danger { color: var(--dt-error-text, #b3261e); }
-
-	/* ── filter bar ──────────────────────────────── */
-	.filter-bar {
-		display: flex; flex-wrap: wrap; align-items: center;
-		gap: var(--dt-space-3); margin-bottom: var(--dt-space-3);
-	}
-	.chips { display: flex; flex-wrap: wrap; gap: var(--dt-space-1, 0.25rem); }
-	.chips.months { gap: 2px; }
-	.chip {
-		display: inline-flex; align-items: center; gap: 0.25rem;
-		padding: 0.3rem 0.7rem; border-radius: var(--dt-radius-md);
-		border: var(--dt-ghost-border); background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface-variant);
-		font-size: 0.75rem; font-weight: 600; cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-	.chip:hover:not(:disabled) { background: var(--dt-surface-container-high); }
-	.chip.active {
-		background: var(--dt-primary); color: var(--dt-on-primary); border-color: transparent;
-	}
-	.chip:disabled { opacity: 0.35; cursor: default; }
-	.chip.reset { margin-left: auto; }
-
-	.search {
-		display: inline-flex; align-items: center; gap: 0.35rem;
-		padding: 0.3rem 0.6rem; border-radius: var(--dt-radius-md);
-		border: var(--dt-ghost-border); background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface-variant);
-	}
-	.search input {
-		border: none; background: none; outline: none; font: inherit;
-		font-size: 0.8125rem; color: var(--dt-on-surface); width: 15ch;
-	}
-
-	/* ── table ───────────────────────────────────── */
-	/* The register is its own scroll box rather than growing the page: that keeps
-	 * the sticky header row (and its sort buttons) and the horizontal scrollbar on
-	 * its bottom edge both in view while working down a full year of rows.
-	 * The 14rem reserve is what leaves the box fully on screen — clear of the 56px
-	 * sticky topbar — once the page is scrolled down to the register. */
-	.table-wrapper {
-		background: var(--dt-surface-container-lowest); border-radius: var(--dt-radius-lg);
-		max-height: calc(100vh - 14rem);
-		overflow: auto;
-	}
-	table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-	thead { background: var(--dt-surface-container-high); }
-	th {
-		padding: 8px var(--dt-space-4); text-align: left; font-weight: 500;
-		color: var(--dt-on-surface-variant); font-size: 12px;
-		text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
-	}
-	/* A full year is a long scroll — keep the column labels in view. */
-	thead th {
-		position: sticky; top: 0; z-index: 2;
-		background: var(--dt-surface-container-high);
-	}
-	th.num { text-align: right; }
-	td {
-		padding: 8px var(--dt-space-4); color: var(--dt-on-surface); white-space: nowrap;
-	}
-	td.num { text-align: right; font-variant-numeric: tabular-nums; }
-	td.offen { font-weight: 600; color: var(--dt-secondary); }
-	tbody tr:nth-child(even) { background: var(--dt-surface-container-low); }
-	tbody tr:nth-child(odd)  { background: var(--dt-surface-container-lowest); }
-	tbody tr:hover { background: var(--dt-surface-container-high) !important; }
-	tbody tr.paid td { color: var(--dt-on-surface-variant); }
-	tbody tr.paid td.offen { color: var(--admin-success); }
-
-	.mono { font-family: var(--font-mono); font-size: 0.75rem; }
-
-	/* Sortable headers. The affordance stays quiet until hovered — the register is
-	 * read far more often than it is re-sorted. */
-	.sort-btn {
-		display: inline-flex; align-items: center; gap: 0.2rem;
-		padding: 0; border: none; background: none; cursor: pointer;
-		font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit;
-	}
-	.sort-btn:hover { color: var(--dt-on-surface); }
-	.sort-btn.sorted { color: var(--dt-primary); font-weight: 700; }
-	th.num .sort-btn { flex-direction: row-reverse; }
-
-	/* Issued, unpaid, past its Fälligkeit — the rows Alex is chasing. */
-	tbody tr.overdue td.offen { color: var(--dt-error-text, #b3261e); }
-	tbody tr.overdue td.mono { box-shadow: inset 3px 0 0 var(--dt-error-text, #b3261e); }
-
-	/* ── row links ─────────────────────────────────── */
-	.link-btn {
-		display: inline-flex; align-items: center; gap: 0.25rem;
-		padding: 0; border: none; background: none; cursor: pointer;
-		font-family: var(--font-mono); font-size: 0.75rem;
-		color: var(--dt-primary); text-decoration: underline;
-	}
-	.link-btn:hover { opacity: 0.75; }
-	.row-link { color: var(--dt-on-surface); text-decoration: underline; }
-	.row-link:hover { color: var(--dt-primary); }
-
-	.type-label { white-space: nowrap; }
-	.type-label.credit { color: var(--dt-error-text, #b3261e); font-weight: 600; }
-
-	.draft-badge {
-		margin-left: 0.35rem; padding: 1px 6px; border-radius: var(--dt-radius-sm);
-		font-size: 0.6875rem; font-weight: 600; white-space: nowrap;
-		color: var(--dt-on-surface-variant); background: var(--dt-surface-container-high);
-	}
-	/* Not yet issued — de-emphasised so the real entries read as the register. */
-	tbody tr.draft td:not(.offen) { opacity: 0.7; }
-
-	.paid-btn {
-		display: inline-flex; align-items: center; gap: 0.2rem;
-		padding: 2px 8px; font-size: 0.75rem; font-weight: 600;
-		color: var(--admin-success, #2e7d32);
-		background: color-mix(in srgb, var(--admin-success, #2e7d32) 10%, transparent);
-		border: 1px solid color-mix(in srgb, var(--admin-success, #2e7d32) 35%, transparent);
-		border-radius: var(--dt-radius-sm); cursor: pointer; white-space: nowrap;
-		transition: background var(--dt-transition);
-	}
-	.paid-btn:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--admin-success, #2e7d32) 20%, transparent);
-	}
-	.paid-btn:disabled { opacity: 0.5; cursor: default; }
-	.payment-method-select {
-		background: transparent; color: var(--dt-on-surface);
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-sm);
-		padding: 2px 4px; font-size: 0.8125rem; cursor: pointer;
-	}
-	.notes-cell { max-width: 240px; }
-
-	/* Bemerkungen and Teilzahlung are cell editors, not form fields: chromeless
-	 * until focused, so the table still reads as a ledger rather than a form. */
-	.notes-input, .offen-input {
-		width: 100%; padding: 2px 4px;
-		border: 1px solid transparent; border-radius: var(--dt-radius-sm);
-		background: transparent; color: var(--dt-on-surface);
-		font: inherit;
-	}
-	.notes-input:hover, .offen-input:hover { border-color: var(--dt-outline-variant); }
-	.notes-input:focus, .offen-input:focus {
-		outline: none; border-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-	}
-	.notes-input::placeholder, .offen-input::placeholder {
-		color: var(--dt-on-surface-variant); opacity: 0.6;
-	}
-	.offen-input { text-align: right; font-variant-numeric: tabular-nums; }
-
-	/* The open amount doubles as the Teilzahlung trigger — styled as text, not a
-	 * button, so the column still reads as a column of numbers. */
-	.offen-btn {
-		padding: 0; border: none; background: none; cursor: text;
-		font: inherit; color: inherit; text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-	.offen-btn:hover { text-decoration: underline dotted; }
-	.settled { color: var(--admin-success, #2e7d32); font-weight: 600; }
-	.teilzahlung {
-		display: block; font-size: 0.6875rem; font-weight: 400;
-		color: var(--dt-on-surface-variant); white-space: nowrap;
-	}
-
-	.export-btn {
-		display: inline-flex; align-items: center; gap: 0.35rem;
-		margin-left: auto; padding: 0.35rem 0.75rem;
-		border: var(--dt-ghost-border); border-radius: var(--dt-radius-md);
-		background: var(--dt-surface-container-low); color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem; font-weight: 600; cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-	.export-btn:hover:not(:disabled) { background: var(--dt-surface-container-high); }
-	.export-btn:disabled { opacity: 0.5; cursor: default; }
-
-	tfoot { background: var(--dt-surface-container-high); }
-	tfoot th {
-		padding: 10px var(--dt-space-4); font-weight: 600; color: var(--dt-on-surface);
-		border-top: 2px solid var(--dt-outline-variant);
-	}
-	tfoot th.num { text-align: right; }
-
-	tfoot tr.foot-note td {
-		padding: 6px var(--dt-space-4);
-		font-size: 0.75rem;
-		font-weight: 400;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.draft-note {
-		margin: var(--dt-space-2) 0 0;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	/* ── grand total ──────────────────────────────── */
-	.grand-total {
-		display: grid; grid-template-columns: 1fr repeat(4, 120px); gap: var(--dt-space-4);
-		align-items: center; padding: var(--dt-space-4) var(--dt-space-6);
-		background: var(--dt-primary); color: var(--dt-on-primary);
-		border-radius: var(--dt-radius-lg); font-weight: 700; font-size: 1rem; margin-top: var(--dt-space-4);
-	}
-	.grand-total .num { text-align: right; font-variant-numeric: tabular-nums; }
-	.grand-total .spacer { grid-column: span 3; }
-
-	@media (max-width: 768px) {
-		.page {
-			padding: var(--dt-space-4);
-		}
-
-		.paid-btn,
-		.payment-method-select,
-		.export-btn,
-		.notes-input,
-		.offen-input {
-			min-height: 44px;
-		}
-
-		.chip, .search { min-height: 36px; }
-		.search input { width: 100%; }
-		.search { flex: 1; }
-		.chip.reset { margin-left: 0; }
-		.kpis { grid-template-columns: repeat(2, 1fr); }
-	}
-
-	/* The fixed 5-column grid (label + 4×120px) needs ~700px, more than the content
-	 * column has next to the 240px sidebar on a laptop — so it reflows well above
-	 * the mobile breakpoint: a wrapping flex list with inline labels instead. */
-	@media (max-width: 1100px) {
-		.grand-total {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 0.5rem 1rem;
-		}
-
-		.grand-total__label {
-			flex-basis: 100%;
-		}
-
-		.grand-total .spacer {
-			display: none;
-		}
-
-		.grand-total .num::before {
-			content: attr(data-label) ': ';
-			font-weight: 400;
-			opacity: 0.85;
-		}
-	}
-</style>

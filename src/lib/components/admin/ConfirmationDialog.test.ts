@@ -54,7 +54,7 @@ describe('ConfirmationDialog', () => {
 		await user.click(screen.getByText(base.message)); // inside
 		expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-		await user.click(container.querySelector('.modal-backdrop')!);
+		await user.click(container.querySelector('[data-backdrop]')!);
 		expect(onCancel).toHaveBeenCalledTimes(1);
 		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 	});
@@ -77,7 +77,6 @@ describe('ConfirmationDialog', () => {
 		});
 		expect(screen.getByRole('button', { name: 'Senden' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Doch nicht' })).toBeInTheDocument();
-		expect(container.querySelector('.btn-primary')).not.toBeNull();
-		expect(container.querySelector('.btn-danger')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Senden' }).dataset.variant).toBe('primary');
 	});
 });

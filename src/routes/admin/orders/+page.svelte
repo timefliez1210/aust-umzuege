@@ -3,7 +3,10 @@
 	import { apiGet, formatDate, formatEuro } from '$lib/utils/api.svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
-	import { Search } from 'lucide-svelte';
+	import { untrack } from 'svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
+	import SearchInput from '$lib/components/ui/SearchInput.svelte';
 	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
 
 	interface Order {
@@ -40,7 +43,7 @@
 
 	const tabs = [
 		{ value: '', label: 'Alle' },
-		{ value: 'accepted', label: 'Akzeptiert' },
+		{ value: 'accepted', label: 'Angenommen' },
 		{ value: 'scheduled', label: 'Geplant' },
 		{ value: 'completed', label: 'Erledigt' },
 		{ value: 'invoiced', label: 'Fakturiert' },
@@ -48,8 +51,8 @@
 	];
 
 	const columns = [
-		{ key: 'booking_date', label: 'Termin', sortable: true, width: '120px' },
-		{ key: 'customer_name', label: 'Kunde', sortable: true },
+		{ key: 'booking_date', label: 'Termin', width: '120px' },
+		{ key: 'customer_name', label: 'Kunde' },
 		{ key: 'route', label: 'Von / Nach' },
 		{ key: 'volume_m3', label: 'Volumen', width: '90px' },
 		{ key: 'offer_price_brutto', label: 'Preis', width: '100px' },
@@ -57,8 +60,10 @@
 		{ key: 'status', label: 'Status', width: '120px' }
 	];
 
+	// Once on mount; filters/search/paging reload explicitly. `untrack` keeps the bound
+	// search text from re-running this on every keystroke.
 	$effect(() => {
-		loadOrders();
+		untrack(loadOrders);
 	});
 
 	async function loadOrders() {
@@ -101,245 +106,94 @@
 	}
 </script>
 
-<div class="page">
-	<div class="page-header">
-		<h1>Auftraege</h1>
-		<span class="page-count">{total} gesamt</span>
-	</div>
+<svelte:head><title>Aufträge</title></svelte:head>
 
-	<div class="toolbar">
-		<div class="tabs">
-			{#each tabs as tab}
-				<button
-					class="tab"
-					class:active={statusFilter === tab.value}
-					onclick={() => setFilter(tab.value)}
-				>
-					{tab.label}
-				</button>
-			{/each}
-		</div>
+<PageHeader title="Aufträge" count="{total} gesamt" />
 
-		<div class="search-box">
-			<Search size={16} />
-			<input
-				type="text"
-				placeholder="Suche..."
-				bind:value={searchQuery}
-				onkeydown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-			/>
-		</div>
-	</div>
+<div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+	<FilterTabs options={tabs} bind:value={statusFilter} onchange={setFilter} label="Status" />
+	<SearchInput bind:value={searchQuery} onsearch={handleSearch} placeholder="Name, E-Mail …" class="lg:w-72" />
+</div>
 
+{#snippet crew(o: Order)}
+	{#if o.employees_quoted != null}
+		<span
+			class="num text-[13px] {o.employees_assigned >= o.employees_quoted
+				? 'text-ok'
+				: o.employees_assigned > 0
+					? 'text-warn'
+					: 'text-danger'}">{o.employees_assigned}/{o.employees_quoted}</span
+		>
+	{:else if o.employees_assigned > 0}
+		<span class="num text-[13px]">{o.employees_assigned}</span>
+	{:else}
+		<span class="text-faint">—</span>
+	{/if}
+{/snippet}
+
+<div class={loading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
 	<DataTable
 		{columns}
 		rows={orders}
 		bind:sortKey
 		bind:sortDir
+		emptyMessage={loading ? 'Laden …' : 'Keine Aufträge gefunden'}
 		onRowClick={(row) => goto(`/admin/inquiries/${(row as Order).id}`)}
-		rowClass={(row) => `row-status-${(row as Order).status}`}
 	>
+		{#snippet card(item, _i)}
+			{@const o = item as Order}
+			<span class="flex items-start justify-between gap-3">
+				<span class="flex min-w-0 flex-col">
+					<span class="truncate font-semibold">{o.customer_name || o.customer_email}</span>
+					<span class="truncate text-[13px] text-muted">
+						{#if o.origin_city && o.destination_city}{o.origin_city} → {o.destination_city}{:else}—{/if}
+					</span>
+				</span>
+				<StatusBadge status={o.status} />
+			</span>
+			<span class="num mt-2 flex items-center gap-3 text-xs text-faint">
+				<span class="text-fg">{formatBookingDate(o)}</span>
+				{#if o.volume_m3 != null}<span>{o.volume_m3.toFixed(1)} m³</span>{/if}
+				<span>Team {@render crew(o)}</span>
+				{#if o.offer_price_brutto != null}<span class="ml-auto text-muted">{formatEuro(o.offer_price_brutto)}</span>{/if}
+			</span>
+		{/snippet}
 		{#snippet row(item, _i)}
 			{@const o = item as Order}
-			<td>{formatBookingDate(o)}</td>
+			<td class="num text-[13px] whitespace-nowrap">{formatBookingDate(o)}</td>
 			<td>
-				<div class="cell-name">{o.customer_name || o.customer_email}</div>
-				{#if o.customer_name}<div class="cell-email">{o.customer_email}</div>{/if}
+				<div class="font-medium">{o.customer_name || o.customer_email}</div>
+				{#if o.customer_name}<div class="text-xs text-faint">{o.customer_email}</div>{/if}
 			</td>
 			<td>
 				{#if o.origin_city && o.destination_city}
-					{o.origin_city} &rarr; {o.destination_city}
-				{:else}
-					<span class="text-muted">--</span>
-				{/if}
+					{o.origin_city} <span class="text-faint">→</span> {o.destination_city}
+				{:else}<span class="text-faint">—</span>{/if}
 			</td>
-			<td>
-				{#if o.volume_m3 != null}
-					{o.volume_m3.toFixed(1)} m&sup3;
-				{:else}
-					<span class="text-muted">--</span>
-				{/if}
+			<td class="num whitespace-nowrap">
+				{#if o.volume_m3 != null}{o.volume_m3.toFixed(1)} m³{:else}<span class="text-faint">—</span>{/if}
 			</td>
-			<td>
-				{#if o.offer_price_brutto != null}
-					{formatEuro(o.offer_price_brutto)}
-				{:else}
-					<span class="text-muted">--</span>
-				{/if}
+			<td class="num whitespace-nowrap">
+				{#if o.offer_price_brutto != null}{formatEuro(o.offer_price_brutto)}{:else}<span class="text-faint">—</span>{/if}
 			</td>
-			<td>
-				{#if o.employees_quoted != null}
-					<span class="emp-cell" class:emp-ok={o.employees_assigned >= o.employees_quoted} class:emp-partial={o.employees_assigned > 0 && o.employees_assigned < o.employees_quoted} class:emp-none={o.employees_assigned === 0}>
-						{o.employees_assigned}/{o.employees_quoted}
-					</span>
-				{:else if o.employees_assigned > 0}
-					<span class="emp-cell">{o.employees_assigned}</span>
-				{:else}
-					<span class="text-muted">--</span>
-				{/if}
-			</td>
+			<td>{@render crew(o)}</td>
 			<td><StatusBadge status={o.status} /></td>
 		{/snippet}
 	</DataTable>
-
-	{#if totalPages > 1}
-		<PaginationControls
-			page={Math.floor(offset / limit)}
-			total={total}
-			limit={limit}
-			onPrev={() => { offset = Math.max(0, offset - limit); loadOrders(); }}
-			onNext={() => { offset += limit; loadOrders(); }}
-		/>
-	{/if}
 </div>
 
-<style>
-	.page {
-		height: 100%;
-	}
-
-	/* Row tinting by status — feature request "Zeilenmarkierung":
-	   gelb für fakturiert, grün für bezahlt. */
-	:global(tbody tr.row-status-invoiced),
-	:global(tbody tr.row-status-invoiced:nth-child(even)),
-	:global(tbody tr.row-status-invoiced:nth-child(odd)) {
-		background: #fef3c7;
-	}
-	:global(tbody tr.row-status-invoiced:hover) {
-		background: #fde68a;
-	}
-	:global(tbody tr.row-status-paid),
-	:global(tbody tr.row-status-paid:nth-child(even)),
-	:global(tbody tr.row-status-paid:nth-child(odd)) {
-		background: #bbf7d0;
-	}
-	:global(tbody tr.row-status-paid:hover) {
-		background: #86efac;
-	}
-
-	.page-header h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-	}
-
-	.page-count {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		flex: 1;
-	}
-
-	.tabs {
-		display: flex;
-		gap: 0.25rem;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-md);
-		padding: 0.25rem;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.tab {
-		padding: 0.375rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-		white-space: nowrap;
-	}
-
-	.tab:hover {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-low);
-	}
-
-	.tab.active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-	}
-
-	.search-box {
-		padding: 0.375rem 0.75rem;
-		margin-left: auto;
-	}
-
-	.search-box :global(svg) {
-		color: var(--dt-on-surface-variant);
-		flex-shrink: 0;
-	}
-
-	.search-box input {
-		border: none;
-		background: transparent;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		width: 160px;
-	}
-
-	.search-box input::placeholder {
-		color: var(--dt-on-surface-variant);
-	}
-
-	.cell-name {
-		font-weight: 500;
-		color: var(--dt-on-surface);
-	}
-
-	.cell-email {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.text-muted {
-		color: var(--dt-outline-variant);
-	}
-
-	.emp-cell {
-		display: inline-block;
-		font-size: 0.8125rem;
-		font-weight: 700;
-		padding: 0.1rem 0.4rem;
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface-variant);
-	}
-	.emp-ok {
-		background: var(--dt-surface-container);
-		color: var(--dt-primary);
-	}
-	.emp-partial {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-	.emp-none {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-secondary);
-	}
-
-	@media (max-width: 768px) {
-		.page-header {
-			flex-wrap: wrap;
-		}
-
-		.tabs {
-			flex-wrap: wrap;
-		}
-
-		.tab {
-			min-height: 44px;
-		}
-
-		.search-box {
-			margin-left: 0;
-			flex: 1;
-			min-width: 0;
-		}
-
-		.search-box input {
-			width: 100%;
-		}
-	}
-</style>
+{#if totalPages > 1}
+	<PaginationControls
+		page={Math.floor(offset / limit)}
+		{total}
+		{limit}
+		onPrev={() => {
+			offset = Math.max(0, offset - limit);
+			loadOrders();
+		}}
+		onNext={() => {
+			offset += limit;
+			loadOrders();
+		}}
+	/>
+{/if}

@@ -115,226 +115,48 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div class="backdrop" role="presentation" onclick={handleBackdropClick}>
-	<button class="close-btn" onclick={onclose} aria-label="Schliessen">
+<!-- "backdrop" class: test hook for the outside click. -->
+<div class="backdrop fixed inset-0 z-[700] flex items-center justify-center bg-black/90 p-4" role="presentation" onclick={handleBackdropClick}>
+	<button
+		class="absolute top-3 right-3 inline-flex size-11 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+		onclick={onclose}
+		aria-label="Schließen"
+	>
 		<X size={24} />
 	</button>
 
 	{#if isGallery && currentIndex > 0}
-		<button class="nav-btn nav-prev" onclick={prev} aria-label="Vorheriges Bild">
+		<button
+			class="absolute top-1/2 left-2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+			onclick={prev}
+			aria-label="Vorheriges Bild"
+		>
 			<ChevronLeft size={32} />
 		</button>
 	{/if}
-
 	{#if isGallery && currentIndex < images.length - 1}
-		<button class="nav-btn nav-next" onclick={next} aria-label="Naechstes Bild">
+		<button
+			class="absolute top-1/2 right-2 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+			onclick={next}
+			aria-label="Nächstes Bild"
+		>
 			<ChevronRight size={32} />
 		</button>
 	{/if}
 
-	<div class="lightbox-content">
-		<div class="image-container">
+	<div class="flex max-h-full max-w-5xl flex-col items-center gap-3">
+		<div class="relative">
 			{#key currentUrl}
-				<img
-					bind:this={imgEl}
-					src={currentUrl}
-					alt={itemName || `Bild ${currentIndex + 1}`}
-					class="lightbox-image"
-				/>
+				<img bind:this={imgEl} src={currentUrl} alt={itemName || `Bild ${currentIndex + 1}`} class="max-h-[80dvh] max-w-full rounded-sm object-contain" />
 			{/key}
 			{#if bbox && bbox.length >= 4 && bboxStyle}
-				<div class="bbox-overlay" style={bboxStyle}></div>
+				<div class="pointer-events-none absolute border-2 border-accent shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" style={bboxStyle}></div>
 			{/if}
 		</div>
-
-		<div class="caption">
-			{#if itemName}
-				<span class="item-name">{itemName}</span>
-			{/if}
-			{#if volumeM3 > 0}
-				<span class="volume">{volumeM3.toFixed(2)} m&sup3;</span>
-			{/if}
-			{#if isGallery}
-				<span class="counter">{currentIndex + 1} / {images.length}</span>
-			{/if}
+		<div class="num flex items-center gap-4 text-sm text-white/85">
+			{#if itemName}<span class="font-sans font-medium text-white">{itemName}</span>{/if}
+			{#if volumeM3 > 0}<span>{volumeM3.toFixed(2)} m³</span>{/if}
+			{#if isGallery}<span class="text-white/60">{currentIndex + 1} / {images.length}</span>{/if}
 		</div>
 	</div>
 </div>
-
-<style>
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 9999;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		animation: fadeIn 150ms ease;
-	}
-
-	.close-btn {
-		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		z-index: 10000;
-		color: var(--dt-on-primary);
-		padding: 0.5rem;
-		border-radius: var(--dt-radius-sm);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border: var(--dt-glass-border);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.close-btn:hover {
-		background: rgba(30, 58, 95, 0.95);
-	}
-
-	.nav-btn {
-		position: absolute;
-		top: 50%;
-		transform: translateY(-50%);
-		z-index: 10000;
-		color: var(--dt-on-primary);
-		padding: 0.75rem;
-		border-radius: var(--dt-radius-md);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border: var(--dt-glass-border);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.nav-btn:hover {
-		background: rgba(30, 58, 95, 0.95);
-	}
-
-	.nav-prev {
-		left: 1rem;
-	}
-
-	.nav-next {
-		right: 1rem;
-	}
-
-	.lightbox-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.75rem;
-		max-width: 90vw;
-		max-height: 92vh;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-		overflow: hidden;
-	}
-
-	.image-container {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		line-height: 0;
-	}
-
-	.lightbox-image {
-		max-width: 90vw;
-		max-height: 85vh;
-		object-fit: contain;
-		border-radius: var(--dt-radius-md);
-		display: block;
-	}
-
-	.bbox-overlay {
-		position: absolute;
-		border: 2px solid var(--dt-secondary-container);
-		border-radius: 4px;
-		pointer-events: none;
-		box-shadow: 0 0 0 1px rgba(252, 96, 24, 0.3);
-	}
-
-	.caption {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.5rem 1rem;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border-top: var(--dt-glass-border);
-		color: var(--dt-on-primary);
-		font-size: 0.875rem;
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.item-name {
-		font-weight: 600;
-	}
-
-	.volume {
-		color: rgba(255, 255, 255, 0.7);
-	}
-
-	.counter {
-		color: rgba(255, 255, 255, 0.55);
-		font-size: 0.8125rem;
-		font-variant-numeric: tabular-nums;
-	}
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	/* ── Mobile: touch-friendly controls, image fits viewport ── */
-	@media (max-width: 768px) {
-		.close-btn {
-			top: 0.75rem;
-			right: 0.75rem;
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.nav-btn {
-			padding: 0.625rem;
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.nav-prev {
-			left: 0.5rem;
-		}
-
-		.nav-next {
-			right: 0.5rem;
-		}
-
-		.lightbox-content {
-			max-width: 100vw;
-			max-height: 100vh;
-			width: 100vw;
-			height: 100vh;
-			border-radius: 0;
-		}
-
-		.lightbox-image {
-			max-width: 100vw;
-			max-height: calc(100vh - 3rem);
-		}
-
-		.caption {
-			flex-wrap: wrap;
-			gap: 0.375rem 0.75rem;
-		}
-	}
-</style>

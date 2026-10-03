@@ -93,7 +93,7 @@ Root layout `+layout.ts`: `prerender = true`.
 | `INQUIRY_STATUS_LABELS` or `CUSTOMER_TYPE_LABELS` | Backend `InquiryStatus.as_str()` values, admin status badges, calendar status colors |
 | Admin page layout or component | Shared components in `$lib/components/admin/` (used across multiple pages) |
 | Volume calculator form | Backend `submissions.rs` `handle_submission()`, `serviceConfig.ts` in foto-angebot |
-| CSS variables or design tokens | `admin.css` centrally, all admin pages that use the same classes |
+| Console design tokens | `src/styles/console.css` (both themes) and `lib/components/ui/*`; rules in `src/routes/admin/DESIGN.md` |
 | Employee assignment panel | Used in both inquiry detail and calendar side panel — changes affect both. Multi-day mode auto-detects from distinct `job_date` count and switches to a deduplicated summary view. |
 | Cookie consent or analytics | `ConsentManager.svelte` gates all tracking — must work before any GA fires |
 | `/foto-angebot` form fields | Backend `submissions.rs` multipart parser must match form field names exactly |

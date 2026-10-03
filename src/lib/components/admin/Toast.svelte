@@ -61,110 +61,42 @@
 </script>
 
 {#if toasts.length > 0}
-	<div class="toast-container">
+	<!-- Phones: above the tab bar; desktop: top right. Class names are test hooks. -->
+	<div
+		class="toast-container fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[9999] flex flex-col gap-2 lg:inset-x-auto lg:top-4 lg:right-4 lg:bottom-auto lg:w-96"
+		role="status"
+		aria-live="polite"
+	>
 		{#each toasts as toast (toast.id)}
-			<div class="toast toast-{toast.type}">
-				<span class="toast-message">{toast.message}</span>
+			<div
+				class="toast toast-{toast.type} flex items-center gap-3 rounded-md border border-line bg-panel py-2.5 pr-2 pl-3 text-sm text-fg shadow-xl"
+			>
+				<span
+					aria-hidden="true"
+					class="size-2 shrink-0 rounded-full {toast.type === 'success'
+						? 'bg-ok'
+						: toast.type === 'error'
+							? 'bg-danger'
+							: 'bg-info'}"
+				></span>
+				<span class="toast-message flex-1 font-medium">{toast.message}</span>
 				{#if toast.action}
 					<button
-						class="toast-action"
-						onclick={() => { toast.action?.onClick(); dismiss(toast.id); }}
-					>{toast.action.label}</button>
+						class="h-7 shrink-0 rounded-sm border border-line-strong px-2.5 text-[13px] font-semibold hover:bg-sunk"
+						onclick={() => {
+							toast.action?.onClick();
+							dismiss(toast.id);
+						}}>{toast.action.label}</button
+					>
 				{/if}
-				<button class="toast-close" onclick={() => dismiss(toast.id)} aria-label="Schliessen">
-					<X size={16} />
+				<button
+					class="inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-faint hover:bg-sunk hover:text-fg"
+					onclick={() => dismiss(toast.id)}
+					aria-label="Schließen"
+				>
+					<X size={15} />
 				</button>
 			</div>
 		{/each}
 	</div>
 {/if}
-
-<style>
-	.toast-container {
-		position: fixed;
-		top: 1rem;
-		right: 1rem;
-		z-index: 9999;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		max-width: 400px;
-	}
-
-	.toast {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		border-radius: var(--dt-radius-md);
-		font-size: 0.875rem;
-		animation: slideIn 200ms ease;
-		background: var(--dt-surface-container-lowest);
-		box-shadow: var(--dt-shadow-ambient);
-		color: var(--dt-on-surface);
-		border-left: 4px solid transparent;
-	}
-
-	.toast-success {
-		border-left-color: #16a34a;
-		background: rgba(22, 163, 74, 0.08);
-		color: var(--dt-on-surface);
-	}
-
-	.toast-error {
-		border-left-color: var(--dt-secondary);
-		background: rgba(168, 57, 0, 0.06);
-		color: var(--dt-on-surface);
-	}
-
-	.toast-info {
-		border-left-color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary-container);
-	}
-
-	.toast-message {
-		flex: 1;
-		font-weight: 500;
-	}
-
-	.toast-action {
-		background: transparent;
-		border: 1px solid currentColor;
-		border-radius: var(--dt-radius-sm);
-		padding: 0.25rem 0.625rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: currentColor;
-		cursor: pointer;
-		flex-shrink: 0;
-	}
-	.toast-action:hover { opacity: 0.85; }
-
-	.toast-close {
-		color: currentColor;
-		opacity: 0.5;
-		padding: 0.125rem;
-		border-radius: var(--dt-radius-sm);
-		display: flex;
-		align-items: center;
-		flex-shrink: 0;
-		transition: opacity var(--dt-transition);
-	}
-
-	.toast-close:hover {
-		opacity: 1;
-	}
-
-	@keyframes slideIn {
-		from {
-			transform: translateX(100%);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
-	}
-</style>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Check from '$lib/components/ui/Check.svelte';
 	import KnownAddressPicker from '$lib/components/admin/KnownAddressPicker.svelte';
 	import type { KnownAddress } from '$lib/utils/addressBook';
 
@@ -49,105 +52,20 @@
 	}: Props = $props();
 </script>
 
-<div class="address-col">
-	<h4>{title}</h4>
+<div class="flex flex-col gap-2">
+	<h4 class="text-[13px] font-medium text-muted">{title}</h4>
 	<KnownAddressPicker addresses={knownAddresses} onselect={onSelect} />
-	<input type="text" placeholder={streetRequired ? 'Straße *' : 'Straße'} bind:value={street} class="form-input" />
-	<div class="address-row">
-		<input type="text" placeholder="PLZ" bind:value={postal} class="form-input form-input--short" />
-		<input type="text" placeholder={streetRequired ? 'Stadt *' : 'Stadt'} bind:value={city} class="form-input" />
+	<Input placeholder={streetRequired ? 'Straße *' : 'Straße'} bind:value={street} />
+	<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+		<Input placeholder="PLZ" bind:value={postal} />
+		<Input placeholder={streetRequired ? 'Stadt *' : 'Stadt'} bind:value={city} />
 	</div>
-	<div class="address-row">
-		<select bind:value={floor} class="form-select">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+		<Select bind:value={floor} class="w-36" aria-label="Stockwerk">
 			<option value="">Stockwerk</option>
-			{#each floorOptions as f}<option value={f}>{f}</option>{/each}
-		</select>
-		<label class="form-checkbox">
-			<input type="checkbox" bind:checked={elevator} />
-			Aufzug
-		</label>
-		<label class="form-checkbox">
-			<input type="checkbox" bind:checked={halteverbot} />
-			Halteverbot
-		</label>
+			{#each floorOptions as f (f)}<option value={f}>{f}</option>{/each}
+		</Select>
+		<Check bind:checked={elevator}>Aufzug</Check>
+		<Check bind:checked={halteverbot}>Halteverbot</Check>
 	</div>
 </div>
-
-<style>
-	.address-col {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.address-col h4 {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin: 0 0 0.5rem;
-	}
-
-	.address-row {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.form-input {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		border: none;
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		box-sizing: border-box;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-		border-bottom: 2px solid transparent;
-	}
-
-	.form-input::placeholder {
-		color: var(--dt-on-surface-variant);
-	}
-
-	.form-input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.form-input--short {
-		max-width: 100px;
-	}
-
-	.form-select {
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		border: none;
-		background: var(--dt-surface-container-high);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.form-select:focus {
-		background: var(--dt-surface-container-lowest);
-		outline: 2px solid var(--dt-primary);
-	}
-
-	.form-checkbox {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		white-space: nowrap;
-	}
-
-	.form-checkbox input[type='checkbox'] {
-		accent-color: var(--dt-primary);
-	}
-</style>

@@ -1,0 +1,66 @@
+<script lang="ts">
+  import "../../styles/global.css";
+  import InfoBar from "$lib/components/InfoBar.svelte";
+  import Navbar from "$lib/components/Navbar.svelte";
+  import Footer from "$lib/components/Footer.svelte";
+  import CookieBanner from "$lib/components/CookieBanner.svelte";
+  import ConsentManager from "$lib/components/ConsentManager.svelte";
+  import ContactFlow from "$lib/components/contact/ContactFlow.svelte";
+  import ReadyCloser from "$lib/components/contact/ReadyCloser.svelte";
+
+  let { children } = $props();
+</script>
+
+<svelte:head>
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <!-- Google Analytics is loaded by ConsentManager — only after analytics consent (DSGVO). -->
+</svelte:head>
+
+<!-- Skip link for accessibility -->
+<a href="#main-content" class="skip-link">Zum Inhalt springen</a>
+
+<InfoBar />
+<Navbar />
+
+<div id="main-content">
+  {@render children()}
+</div>
+
+<ReadyCloser />
+<Footer />
+<ContactFlow />
+<CookieBanner />
+<ConsentManager />
+
+<style>
+  #main-content {
+    padding-top: 120px; /* Height of fixed InfoBar (~40px) + Navbar (80px) */
+  }
+
+  /* On mobile, InfoBar is hidden */
+  @media (max-width: 767px) {
+    #main-content {
+      padding-top: 80px; /* Only navbar height */
+    }
+  }
+
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-info-bar);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    z-index: 9999;
+    text-decoration: none;
+    font-weight: 600;
+    transition: top 0.2s;
+  }
+
+  .skip-link:focus {
+    top: 0;
+  }
+</style>

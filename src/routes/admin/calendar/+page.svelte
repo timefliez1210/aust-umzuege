@@ -6,7 +6,15 @@
 	import { formatTime, normalizeTimeInput } from '$lib/utils/format';
 	import { DEFAULT_START_TIME, DEFAULT_END_TIME } from '$lib/utils/time';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
-	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, Plus, X, Users, User, MapPin, Clock, ClipboardList, CalendarPlus, Search } from 'lucide-svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
@@ -90,8 +98,8 @@
 			entruempelung: 'entry-orange',
 			montage: 'entry-blue',
 			streichen: 'entry-pink',
-			kartons_auslieferung: 'entry-yellow',
-			kartons_abholung: 'entry-yellow'
+			kartons_auslieferung: 'entry-kartons',
+			kartons_abholung: 'entry-kartons'
 		};
 		return map[category] ?? 'entry-violet';
 	}
@@ -1172,85 +1180,177 @@
 
 </script>
 
-<svelte:window onkeydown={(e) => { if (e.key === 'Escape') { closePanel(); closeContextMenu(); quickCreateMode = null; } }} />
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape') {
+			closePanel();
+			closeContextMenu();
+			quickCreateMode = null;
+		}
+	}}
+/>
 
-<div class="page">
-	<div class="page-header">
-		<h1>Kalender</h1>
+<svelte:head><title>Kalender</title></svelte:head>
+
+{#snippet md(item: { day_number?: number | null; total_days?: number | null })}
+	{#if item.total_days && item.total_days > 1}
+		<span class="label-xs mb-1 flex items-center gap-1 text-[10px] opacity-75">
+			{#if item.day_number && item.day_number > 1}←{/if}
+			Tag {item.day_number ?? 1}/{item.total_days}
+			{#if item.day_number && item.day_number < item.total_days}→{/if}
+		</span>
+	{/if}
+{/snippet}
+
+<!-- Customer picker shared by the quick-create dialogs. -->
+{#snippet customerResults(results: { id: string; name: string | null; email: string | null }[], pick: (c: { id: string; name: string | null; email: string | null }) => void)}
+	{#if results.length > 0}
+		<div class="flex max-h-48 flex-col overflow-y-auto rounded-md border border-line bg-panel p-1">
+			{#each results as c (c.id)}
+				<button type="button" class="flex flex-col items-start rounded-sm px-2.5 py-1.5 text-left hover:bg-sunk" onclick={() => pick(c)}>
+					<span class="text-sm">{c.name ?? c.email ?? 'Kunde'}</span>
+					{#if c.name && c.email}<span class="text-xs text-muted">{c.email}</span>{/if}
+				</button>
+			{/each}
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet pickedBadge(label: string, clear: () => void)}
+	<div class="flex items-center gap-2 rounded-sm border border-line-strong bg-sunk px-3 py-1.5">
+		<span class="min-w-0 flex-1 truncate text-sm font-medium">{label}</span>
+		<Button variant="ghost" size="icon-sm" aria-label="Entfernen" onclick={clear}><X size={14} /></Button>
 	</div>
+{/snippet}
 
-	<!-- Main layout: calendar + side panel -->
-	<div class="main-layout" class:panel-open={panelOpen}>
-		<!-- Calendar column -->
-		<div class="calendar-col">
-			<div class="cal-nav">
-				<div class="view-toggle">
-					<button class="view-btn" class:view-btn-active={viewMode === 'month'} onclick={() => { viewMode = 'month'; }}>Monat</button>
-					<button class="view-btn" class:view-btn-active={viewMode === 'week'} onclick={() => { viewMode = 'week'; }}>Woche</button>
-					<button class="view-btn" class:view-btn-active={viewMode === 'day'} onclick={() => { viewMode = 'day'; }}>Tag</button>
-				</div>
-				<div class="nav-row">
-					<button
-						onclick={viewMode === 'month' ? prevMonth : viewMode === 'week' ? prevWeek : prevDay}
-						ondragover={(e) => onNavDragOver(e, 'prev')}
-						ondragleave={onNavDragLeave}
-						class:nav-drag-active={navDragOver === 'prev'}
-					><ChevronLeft size={20} /></button>
-					<span class="month-label">{viewMode === 'month' ? monthName : viewMode === 'week' ? weekLabel : dayViewLabel()}</span>
-					<button
-						onclick={viewMode === 'month' ? nextMonth : viewMode === 'week' ? nextWeek : nextDay}
-						ondragover={(e) => onNavDragOver(e, 'next')}
-						ondragleave={onNavDragLeave}
-						class:nav-drag-active={navDragOver === 'next'}
-					><ChevronRight size={20} /></button>
-				</div>
+<!-- Desktop dialogs are draggable (use:draggable) and sit over a clear backdrop so the
+     calendar stays readable while you type; phones get a bottom sheet. -->
+{#snippet dialog(title: string, body: import('svelte').Snippet, submit: () => void, submitLabel: string, wide = false)}
+	<div
+		class="fixed inset-0 z-[600] flex items-end justify-center bg-black/30 sm:items-center sm:bg-black/10 sm:p-4"
+		onclick={(e) => {
+			if (e.target === e.currentTarget) quickCreateMode = null;
+		}}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') quickCreateMode = null;
+		}}
+		role="dialog"
+		aria-modal="true"
+		aria-label={title}
+		tabindex="-1"
+	>
+		<div
+			class="flex max-h-[92dvh] w-full flex-col rounded-t-lg border border-line bg-panel text-fg shadow-2xl sm:rounded-md {wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'}"
+			use:draggable
+		>
+			<header class="flex shrink-0 cursor-move items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+				<h3 class="text-base font-semibold">{title}</h3>
+				<Button variant="ghost" size="icon-sm" aria-label="Schließen" onclick={() => (quickCreateMode = null)}><X size={16} /></Button>
+			</header>
+			<div class="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 py-4">
+				{@render body()}
+				{#if quickCreateError}<Notice tone="danger">{quickCreateError}</Notice>{/if}
 			</div>
+			<footer class="flex shrink-0 justify-end gap-2 border-t border-line px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3">
+				<Button onclick={() => (quickCreateMode = null)}>Abbrechen</Button>
+				<Button variant="solid" onclick={submit} disabled={quickCreateLoading}>{quickCreateLoading ? 'Wird erstellt …' : submitLabel}</Button>
+			</footer>
+		</div>
+	</div>
+{/snippet}
 
-			<div class="calendar-scroll" role="region" aria-label="Kalenderbereich" ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
-				{#if viewMode === 'month'}
+<PageHeader title="Kalender">
+	{#snippet actions()}
+		<Segmented
+			label="Ansicht"
+			options={[
+				{ value: 'month', label: 'Monat' },
+				{ value: 'week', label: 'Woche' },
+				{ value: 'day', label: 'Tag' }
+			]}
+			bind:value={viewMode}
+		/>
+	{/snippet}
+</PageHeader>
+
+<div class="flex items-start gap-5 {panelOpen ? '' : ''}">
+	<div class="min-w-0 flex-1">
+		<div class="mb-4 flex items-center justify-between gap-3">
+			<div class="flex items-center gap-1">
+				<button
+					class="inline-flex size-9 items-center justify-center rounded-sm border border-line-strong hover:bg-sunk {navDragOver === 'prev'
+						? 'bg-accent/15 ring-2 ring-accent'
+						: ''}"
+					aria-label="Zurück"
+					onclick={viewMode === 'month' ? prevMonth : viewMode === 'week' ? prevWeek : prevDay}
+					ondragover={(e) => onNavDragOver(e, 'prev')}
+					ondragleave={onNavDragLeave}><ChevronLeft size={18} /></button
+				>
+				<button
+					class="inline-flex size-9 items-center justify-center rounded-sm border border-line-strong hover:bg-sunk {navDragOver === 'next'
+						? 'bg-accent/15 ring-2 ring-accent'
+						: ''}"
+					aria-label="Weiter"
+					onclick={viewMode === 'month' ? nextMonth : viewMode === 'week' ? nextWeek : nextDay}
+					ondragover={(e) => onNavDragOver(e, 'next')}
+					ondragleave={onNavDragLeave}><ChevronRight size={18} /></button
+				>
+				<h2 class="ml-2 text-lg font-semibold tracking-tight sm:text-xl">
+					{viewMode === 'month' ? monthName : viewMode === 'week' ? weekLabel : dayViewLabel()}
+				</h2>
+			</div>
+			{#if publicHolidays.length > 0 || schoolHolidays.length > 0}
+				<span class="hidden items-center gap-3 text-xs text-muted sm:flex">
+					<span class="flex items-center gap-1.5"><span class="size-2.5 rounded-xs bg-danger/40"></span>Feiertag</span>
+					<span class="flex items-center gap-1.5"><span class="size-2.5 rounded-xs bg-warn/40"></span>Schulferien (NI)</span>
+				</span>
+			{/if}
+		</div>
+
+		<div role="region" aria-label="Kalenderbereich" ontouchstart={onTouchStart} ontouchend={onTouchEnd}>
+			{#if viewMode === 'month'}
 				{#if isMobile}
-				<MonthAgenda
-					{calendarDays}
-					{publicHolidayMap}
-					{schoolHolidayMap}
-					{buildDayEntries}
-					{inquiryEntryClass}
-					{termineEntryClass}
-					{truncate}
-					{apptKindLabel}
-					openInquiryPanel={openInquiryPanel}
-					openTerminPanel={openTerminPanel}
-					onAppointmentClick={openAppointmentInquiry}
-				/>
+					<MonthAgenda
+						{calendarDays}
+						{publicHolidayMap}
+						{schoolHolidayMap}
+						{buildDayEntries}
+						{inquiryEntryClass}
+						{termineEntryClass}
+						{truncate}
+						{apptKindLabel}
+						{openInquiryPanel}
+						{openTerminPanel}
+						onAppointmentClick={openAppointmentInquiry}
+					/>
 				{:else}
-				<CalendarGrid
-					{calendarDays}
-					{weekdays}
-					{publicHolidayMap}
-					{schoolHolidayMap}
-					{dayLaneMap}
-					{dragOverDate}
-					{buildDayEntries}
-					{inquiryEntryClass}
-					{termineEntryClass}
-					{truncate}
-					{apptKindLabel}
-					{openDayPanel}
-					{onCellDragOver}
-					{onCellDragLeave}
-					{onCellDrop}
-					{onCellContextMenu}
-					{onEntryDragStart}
-					{openInquiryPanel}
-					{openTerminPanel}
-					onAppointmentClick={openAppointmentInquiry}
-				/>
+					<CalendarGrid
+						{calendarDays}
+						{weekdays}
+						{publicHolidayMap}
+						{schoolHolidayMap}
+						{dayLaneMap}
+						{dragOverDate}
+						{buildDayEntries}
+						{inquiryEntryClass}
+						{termineEntryClass}
+						{truncate}
+						{apptKindLabel}
+						{openDayPanel}
+						{onCellDragOver}
+						{onCellDragLeave}
+						{onCellDrop}
+						{onCellContextMenu}
+						{onEntryDragStart}
+						{openInquiryPanel}
+						{openTerminPanel}
+						onAppointmentClick={openAppointmentInquiry}
+					/>
 				{/if}
-				{:else if viewMode === 'week'}
-				<!-- ─── Week view ─────────────────────────────────────────────── -->
-				<div class="week-grid">
-					{#each weekDays as dateStr}
-						{@const sched = schedule.find(s => s.date === dateStr || s.date.startsWith(dateStr))}
+			{:else if viewMode === 'week'}
+				<div class="grid grid-cols-1 overflow-hidden rounded-md border border-line bg-line gap-px md:grid-cols-7">
+					{#each weekDays as dateStr (dateStr)}
+						{@const sched = schedule.find((s) => s.date === dateStr || s.date.startsWith(dateStr))}
 						{@const allEntries = buildDayEntries(dateStr)}
 						{@const booked = sched?.booked ?? 0}
 						{@const capacity = sched?.capacity ?? 1}
@@ -1261,203 +1361,207 @@
 						{@const wPublicHol = publicHolidayMap.get(dateStr)}
 						{@const wSchoolHol = schoolHolidayMap.get(dateStr)}
 						<button
-							class="week-cell"
-							class:today={isToday}
-							class:overbooked
-							class:school-holiday={!!wSchoolHol}
-							class:public-holiday={!!wPublicHol}
-							class:drag-over={dragOverDate === dateStr}
+							class="flex min-h-40 min-w-0 flex-col gap-1.5 p-2 text-left transition-colors md:min-h-[60dvh]
+								{wPublicHol ? 'bg-danger/8' : wSchoolHol ? 'bg-warn/8' : overbooked ? 'bg-danger/5' : 'bg-panel'}
+								{isToday ? 'shadow-[inset_0_2px_0_var(--accent)]' : ''}
+								{dragOverDate === dateStr ? 'bg-accent/10 outline-2 -outline-offset-2 outline-accent outline-dashed' : ''}"
 							onclick={() => openDayPanel(sched ?? null, null, dateStr)}
 							ondragover={(e) => onCellDragOver(e, dateStr)}
 							ondragleave={onCellDragLeave}
 							ondrop={(e) => onCellDrop(e, dateStr)}
 							oncontextmenu={(e) => onCellContextMenu(e, dateStr)}
 						>
-							<div class="week-cell-header">
-								<span class="week-day-name">{weekDayLabel}</span>
-								<span class="week-day-num" class:week-day-today={isToday}>{wd}.</span>
+							<span class="flex flex-wrap items-center gap-1.5">
+								<span class="label-xs text-[10px] text-faint">{weekDayLabel}</span>
+								<span class="num inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-sm font-semibold {isToday ? 'bg-fg text-bg' : ''}">{wd}</span>
 								{#if booked > 0}
-									<span class="week-cap-badge" class:week-cap-over={overbooked}>{booked}/{capacity}</span>
+									<span class="num ml-auto text-[11px] {overbooked ? 'font-semibold text-danger' : 'text-faint'}">{booked}/{capacity}</span>
 								{/if}
-								{#if overbooked}<span class="cal-overbooked-icon">⚠</span>{/if}
-								{#if wPublicHol}<span class="holiday-badge">🎉 {wPublicHol}</span>{/if}
-								{#if wSchoolHol}<span class="school-holiday-label">{wSchoolHol}</span>{/if}
-							</div>
-															<div class="week-entries">
-									{#each allEntries as entry}
-										{#if entry.type === 'inquiry'}
-											<!-- svelte-ignore a11y_no_static_element_interactions -->
-											<div
-												class="week-card {inquiryEntryClass(entry.item.status)}"
-												draggable="true"
-												ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
-												onclick={(e) => openInquiryPanel(e, entry.item)}
-												role="button"
-												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
-											>
-												{#if entry.item.total_days && entry.item.total_days > 1}
-													<div class="wc-multiday-bar">
-														{#if entry.item.day_number && entry.item.day_number > 1}<span class="wc-md-arrow wc-md-left">←</span>{/if}
-														<span class="wc-md-label">Tag {entry.item.day_number ?? 1}/{entry.item.total_days}</span>
-														{#if entry.item.day_number && entry.item.day_number < entry.item.total_days}<span class="wc-md-arrow wc-md-right">→</span>{/if}
-													</div>
-												{/if}
-												<div class="wc-header">
-													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
-													<StatusBadge status={entry.item.status} />
-												</div>
-												<div class="wc-name">{entry.item.customer_name ?? '—'}</div>
-												{#if entry.item.departure_address || entry.item.arrival_address}
-													<div class="wc-route">{entry.item.departure_address || '?'} → {entry.item.arrival_address || '?'}</div>
-												{/if}
-												{#if entry.item.offer_price_cents || entry.item.volume_m3}
-													<div class="wc-meta">
-														{#if entry.item.offer_price_cents}<span class="wc-price">{(calculateBruttoCents(entry.item.offer_price_cents) / 100).toFixed(0)} €</span>{/if}
-														{#if entry.item.volume_m3}<span class="wc-vol">{entry.item.volume_m3.toFixed(1)} m³</span>{/if}
-													</div>
-												{/if}
-												{#if entry.item.employee_names}
-													<div class="wc-employees">👥 {entry.item.employee_names}</div>
-												{/if}
-												{#if entry.item.notes}
-													<div class="wc-notes">{truncate(entry.item.notes, 70)}</div>
-												{/if}
-											</div>
-										{:else if entry.type === 'termin'}
-											<!-- svelte-ignore a11y_no_static_element_interactions -->
-											<div
-												class="week-card {termineEntryClass(entry.item.category)}"
-												draggable="true"
-												ondragstart={(e) => onEntryDragStart(e, entry.item.id, 'termin', dateStr)}
-												onclick={(e) => openTerminPanel(e, entry.item)}
-												role="button"
-												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, entry.item)}
-											>
-												<div class="wc-header">
-													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
-													<span class="cat-badge">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
-												</div>
-												<div class="wc-name">{entry.item.title}</div>
-												{#if entry.item.location}
-													<div class="wc-route">📍 {entry.item.location}</div>
-												{/if}
-												{#if entry.item.duration_hours > 0}
-													<div class="wc-meta"><span class="wc-vol">⏱ {entry.item.duration_hours} h</span></div>
-												{/if}
-												{#if entry.item.description}
-													<div class="wc-notes">{truncate(entry.item.description, 70)}</div>
-												{/if}
-											</div>
-										{:else if entry.type === 'appointment'}
-											<!-- svelte-ignore a11y_no_static_element_interactions -->
-											<div
-												class="week-card entry-appt"
-												draggable="true"
-												ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
-												onclick={(e) => openAppointmentInquiry(e, entry.item)}
-												role="button"
-												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openAppointmentInquiry(e, entry.item)}
-											>
-												<div class="wc-header">
-													<span class="wc-time">{entry.item.start_time ? formatTime(entry.item.start_time) : ''}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
-													<span class="cat-badge">{apptKindLabel(entry.item.kind)}</span>
-												</div>
-												<div class="wc-name">{entry.item.customer_name ?? '—'}</div>
-												{#if entry.item.assignee_name}
-													<div class="wc-employees">👤 {entry.item.assignee_name}</div>
-												{/if}
-												{#if entry.item.location}
-													<div class="wc-route">📍 {entry.item.location}</div>
-												{/if}
-												{#if entry.item.notes}
-													<div class="wc-notes">{truncate(entry.item.notes, 70)}</div>
-												{/if}
-											</div>
-										{:else}
-											<!-- schedule-termin from schedule API -->
-											<!-- svelte-ignore a11y_no_static_element_interactions -->
-											<div
-												class="week-card {termineEntryClass(entry.item.category)}"
-												draggable="true"
-												ondragstart={(e) => onEntryDragStart(e, entry.item.calendar_item_id, 'termin', dateStr)}
-												onclick={(e) => openTerminPanel(e, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
-												role="button"
-												tabindex="0"
-												onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, { id: entry.item.calendar_item_id, title: entry.item.title, category: entry.item.category, location: entry.item.location, description: entry.item.description ?? null, scheduled_date: dateStr, start_time: entry.item.start_time, end_time: entry.item.end_time ?? null, duration_hours: 0, status: 'scheduled' })}
-											>
-												{#if entry.item.total_days && entry.item.total_days > 1}
-													<div class="wc-multiday-bar">
-														{#if entry.item.day_number && entry.item.day_number > 1}<span class="wc-md-arrow wc-md-left">←</span>{/if}
-														<span class="wc-md-label">Tag {entry.item.day_number ?? 1}/{entry.item.total_days}</span>
-														{#if entry.item.day_number && entry.item.day_number < entry.item.total_days}<span class="wc-md-arrow wc-md-right">→</span>{/if}
-													</div>
-												{/if}
-												<div class="wc-header">
-													<span class="wc-time">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
-													<span class="cat-badge">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
-												</div>
-												<div class="wc-name">{entry.item.title}</div>
-												{#if entry.item.location}
-													<div class="wc-route">📍 {entry.item.location}</div>
-												{/if}
-												{#if entry.item.employee_names}
-													<div class="wc-employees">👥 {entry.item.employee_names}</div>
-												{/if}
-											</div>
-										{/if}
-									{/each}
-									{#if allEntries.length === 0}
-										<span class="week-no-entries">—</span>
+							</span>
+							{#if wPublicHol}<span class="truncate text-[11px] font-medium text-danger">{wPublicHol}</span>{/if}
+							{#if wSchoolHol}<span class="truncate text-[11px] text-warn">{wSchoolHol}</span>{/if}
+							<span class="flex flex-col gap-1.5">
+								{#each allEntries as entry, ei (ei)}
+									{#if entry.type === 'inquiry'}
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<div
+											class="block w-full cursor-grab rounded-sm px-2.5 py-2 text-left hover:brightness-95 active:cursor-grabbing {inquiryEntryClass(entry.item.status)}"
+											draggable="true"
+											ondragstart={(e) => onEntryDragStart(e, entry.item.inquiry_id, 'inquiry', dateStr)}
+											onclick={(e) => openInquiryPanel(e, entry.item)}
+											role="button"
+											tabindex="0"
+											onkeydown={(e) => e.key === 'Enter' && openInquiryPanel(e as unknown as MouseEvent, entry.item)}
+										>
+											{@render md(entry.item)}
+											<span class="flex items-center justify-between gap-1">
+												<span class="num text-[11px] opacity-75"
+													>{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span
+												>
+												<StatusBadge status={entry.item.status} />
+											</span>
+											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.customer_name ?? '—'}</span>
+											{#if entry.item.departure_address || entry.item.arrival_address}
+												<span class="block text-[11px] leading-snug opacity-80">{entry.item.departure_address || '?'} → {entry.item.arrival_address || '?'}</span>
+											{/if}
+											{#if entry.item.offer_price_cents || entry.item.volume_m3}
+												<span class="num mt-1 flex gap-2 text-[11px] opacity-80">
+													{#if entry.item.offer_price_cents}<span>{(calculateBruttoCents(entry.item.offer_price_cents) / 100).toFixed(0)} €</span>{/if}
+													{#if entry.item.volume_m3}<span>{entry.item.volume_m3.toFixed(1)} m³</span>{/if}
+												</span>
+											{/if}
+											{#if entry.item.employee_names}
+												<span class="mt-1 flex items-start gap-1 text-[11px] opacity-80"><Users size={11} class="mt-0.5 shrink-0" />{entry.item.employee_names}</span>
+											{/if}
+											{#if entry.item.notes}<span class="mt-1 block text-[11px] italic opacity-70">{truncate(entry.item.notes, 70)}</span>{/if}
+										</div>
+									{:else if entry.type === 'termin'}
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<div
+											class="block w-full cursor-grab rounded-sm px-2.5 py-2 text-left hover:brightness-95 active:cursor-grabbing {termineEntryClass(entry.item.category)}"
+											draggable="true"
+											ondragstart={(e) => onEntryDragStart(e, entry.item.id, 'termin', dateStr)}
+											onclick={(e) => openTerminPanel(e, entry.item)}
+											role="button"
+											tabindex="0"
+											onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, entry.item)}
+										>
+											<span class="flex items-center justify-between gap-1 text-[11px]">
+												<span class="num opacity-75">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+												<span class="font-medium">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
+											</span>
+											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.title}</span>
+											{#if entry.item.location}<span class="flex items-center gap-1 text-[11px] opacity-80"><MapPin size={11} />{entry.item.location}</span>{/if}
+											{#if entry.item.duration_hours > 0}<span class="num flex items-center gap-1 text-[11px] opacity-80"><Clock size={11} />{entry.item.duration_hours} h</span>{/if}
+											{#if entry.item.description}<span class="mt-1 block text-[11px] italic opacity-70">{truncate(entry.item.description, 70)}</span>{/if}
+										</div>
+									{:else if entry.type === 'appointment'}
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<div
+											class="block w-full cursor-grab rounded-sm px-2.5 py-2 text-left hover:brightness-95 active:cursor-grabbing entry-appt"
+											draggable="true"
+											ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
+											onclick={(e) => openAppointmentInquiry(e, entry.item)}
+											role="button"
+											tabindex="0"
+											onkeydown={(e) => e.key === 'Enter' && openAppointmentInquiry(e, entry.item)}
+										>
+											<span class="flex items-center justify-between gap-1 text-[11px]">
+												<span class="num opacity-75">{entry.item.start_time ? formatTime(entry.item.start_time) : ''}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+												<span class="font-medium">{apptKindLabel(entry.item.kind)}</span>
+											</span>
+											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.customer_name ?? '—'}</span>
+											{#if entry.item.assignee_name}<span class="flex items-center gap-1 text-[11px] opacity-80"><User size={11} />{entry.item.assignee_name}</span>{/if}
+											{#if entry.item.location}<span class="flex items-center gap-1 text-[11px] opacity-80"><MapPin size={11} />{entry.item.location}</span>{/if}
+											{#if entry.item.notes}<span class="mt-1 block text-[11px] italic opacity-70">{truncate(entry.item.notes, 70)}</span>{/if}
+										</div>
+									{:else}
+										{@const terminArg = {
+											id: entry.item.calendar_item_id,
+											title: entry.item.title,
+											category: entry.item.category,
+											location: entry.item.location,
+											description: entry.item.description ?? null,
+											scheduled_date: dateStr,
+											start_time: entry.item.start_time,
+											end_time: entry.item.end_time ?? null,
+											duration_hours: 0,
+											status: 'scheduled'
+										}}
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<div
+											class="block w-full cursor-grab rounded-sm px-2.5 py-2 text-left hover:brightness-95 active:cursor-grabbing {termineEntryClass(entry.item.category)}"
+											draggable="true"
+											ondragstart={(e) => onEntryDragStart(e, entry.item.calendar_item_id, 'termin', dateStr)}
+											onclick={(e) => openTerminPanel(e, terminArg)}
+											role="button"
+											tabindex="0"
+											onkeydown={(e) => e.key === 'Enter' && openTerminPanel(e as unknown as MouseEvent, terminArg)}
+										>
+											{@render md(entry.item)}
+											<span class="flex items-center justify-between gap-1 text-[11px]">
+												<span class="num opacity-75">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
+												<span class="font-medium">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
+											</span>
+											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.title}</span>
+											{#if entry.item.location}<span class="flex items-center gap-1 text-[11px] opacity-80"><MapPin size={11} />{entry.item.location}</span>{/if}
+											{#if entry.item.employee_names}<span class="flex items-start gap-1 text-[11px] opacity-80"><Users size={11} class="mt-0.5 shrink-0" />{entry.item.employee_names}</span>{/if}
+										</div>
 									{/if}
-								</div>
+								{/each}
+								{#if allEntries.length === 0}<span class="text-xs text-faint">—</span>{/if}
+							</span>
 						</button>
 					{/each}
 				</div>
-				{:else}
-				<!-- ─── Day timeline view ──────────────────────────────────────────── -->
-				{@const daySched = schedule.find(s => s.date === dayViewDate || s.date.startsWith(dayViewDate))}
+			{:else}
+				{@const daySched = schedule.find((s) => s.date === dayViewDate || s.date.startsWith(dayViewDate))}
 				{@const dayAllEntries = buildDayEntries(dayViewDate)}
-				{@const dayTermineList = (schedule.find(s => s.date === dayViewDate)?.calendar_items ?? []).filter(ci => ci.category !== 'internal')}
-				<div class="day-timeline">
-					<div class="day-tl-header">
-						<div class="day-tl-meta">
-							{#if daySched}
-								<span class="day-tl-cap">Kapazität: {daySched.booked}/{daySched.capacity}</span>
-							{/if}
-							{#if publicHolidayMap.get(dayViewDate)}
-								<span class="holiday-badge">🎉 {publicHolidayMap.get(dayViewDate)}</span>
-							{/if}
-							{#if schoolHolidayMap.get(dayViewDate)}
-								<span class="school-holiday-label">{schoolHolidayMap.get(dayViewDate)}</span>
-							{/if}
-						</div>
-						<button
-							class="btn btn-sm btn-ghost"
+				<div class="overflow-hidden rounded-md border border-line bg-panel">
+					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+						<span class="flex flex-wrap items-center gap-3 text-[13px] text-muted">
+							{#if daySched}<span class="num">Kapazität {daySched.booked}/{daySched.capacity}</span>{/if}
+							{#if publicHolidayMap.get(dayViewDate)}<span class="font-medium text-danger">{publicHolidayMap.get(dayViewDate)}</span>{/if}
+							{#if schoolHolidayMap.get(dayViewDate)}<span class="text-warn">{schoolHolidayMap.get(dayViewDate)}</span>{/if}
+						</span>
+						<Button
+							size="sm"
+							variant="ghost"
 							onclick={() => onCellContextMenu({ clientX: 0, clientY: 60, preventDefault: () => {} } as MouseEvent, dayViewDate)}
-						>+ Eintrag</button>
+						>
+							<Plus size={14} /> Eintrag
+						</Button>
 					</div>
-
-					<div class="day-tl-grid">
-						{#each Array.from({ length: 14 }, (_, i) => i + 6) as hour}
-							<div class="tl-row">
-								<div class="tl-time">{String(hour).padStart(2, '0')}:00</div>
-								<div class="tl-lane">
-									{#each dayAllEntries as entry}
+					<div class="flex flex-col">
+						{#each Array.from({ length: 14 }, (_, i) => i + 6) as hour (hour)}
+							<div class="grid min-h-12 grid-cols-[56px_minmax(0,1fr)] border-b border-line last:border-b-0">
+								<div class="num border-r border-line px-2 py-1 text-right text-[11px] text-faint">{String(hour).padStart(2, '0')}:00</div>
+								<div class="relative flex gap-1 p-1">
+									{#each dayAllEntries as entry, ei (ei)}
 										{@const startH = parseInt((entry.item.start_time || '06:00').slice(0, 2))}
-										{@const endH = parseInt((entry.item.end_time || (String(startH + 1).padStart(2, '0') + ':00')).slice(0, 2))}
+										{@const endH = parseInt((entry.item.end_time || String(startH + 1).padStart(2, '0') + ':00').slice(0, 2))}
 										{#if startH === hour}
 											<button
-												class="tl-block {entry.type === 'inquiry' ? inquiryEntryClass(entry.item.status) : entry.type === 'appointment' ? 'entry-appt' : termineEntryClass(entry.item.category || 'intern')}"
-												onclick={(e) => { if (entry.type === 'inquiry') { openInquiryPanel(e, entry.item); } else if (entry.type === 'schedule-termin') { const sci = entry.item as ScheduleCalendarItem; openTerminPanel(e, { id: sci.calendar_item_id, title: sci.title, category: sci.category, location: sci.location, description: sci.description ?? null, scheduled_date: dayViewDate, start_time: sci.start_time ?? '', end_time: sci.end_time ?? null, duration_hours: 0, status: 'scheduled' }); } else if (entry.type === 'appointment') { openAppointmentInquiry(e, entry.item); } else { openTerminPanel(e, entry.item as CalendarItem); } }}
-												style="height:{Math.max(1, endH - startH) * 48}px"
+												class="z-[1] flex min-w-32 flex-1 flex-col items-start gap-0.5 rounded-sm px-2.5 py-1.5 text-left hover:brightness-95 {entry.type === 'inquiry'
+													? inquiryEntryClass(entry.item.status)
+													: entry.type === 'appointment'
+														? 'entry-appt'
+														: termineEntryClass(entry.item.category || 'intern')}"
+												style="height:{Math.max(1, endH - startH) * 48 - 8}px"
+												onclick={(e) => {
+													if (entry.type === 'inquiry') {
+														openInquiryPanel(e, entry.item);
+													} else if (entry.type === 'schedule-termin') {
+														const sci = entry.item as ScheduleCalendarItem;
+														openTerminPanel(e, {
+															id: sci.calendar_item_id,
+															title: sci.title,
+															category: sci.category,
+															location: sci.location,
+															description: sci.description ?? null,
+															scheduled_date: dayViewDate,
+															start_time: sci.start_time ?? '',
+															end_time: sci.end_time ?? null,
+															duration_hours: 0,
+															status: 'scheduled'
+														});
+													} else if (entry.type === 'appointment') {
+														openAppointmentInquiry(e, entry.item);
+													} else {
+														openTerminPanel(e, entry.item as CalendarItem);
+													}
+												}}
 											>
-												<span class="tl-block-time">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>
-												<span class="tl-block-name">{entry.type === 'inquiry' ? (entry.item.customer_name ?? '—') : entry.type === 'appointment' ? apptKindLabel(entry.item.kind) : entry.item.title}</span>
+												<span class="num text-[11px] opacity-75">{formatTime(entry.item.start_time)}–{formatTime(entry.item.end_time)}</span>
+												<span class="truncate text-[13px] font-semibold"
+													>{entry.type === 'inquiry'
+														? (entry.item.customer_name ?? '—')
+														: entry.type === 'appointment'
+															? apptKindLabel(entry.item.kind)
+															: entry.item.title}</span
+												>
 												{#if entry.type === 'inquiry' && entry.item.employee_names}
-													<span class="tl-block-emp">👥 {entry.item.employee_names}</span>
+													<span class="flex items-center gap-1 text-[11px] opacity-80"><Users size={11} />{entry.item.employee_names}</span>
 												{/if}
 											</button>
 										{/if}
@@ -1466,1115 +1570,289 @@
 							</div>
 						{/each}
 						{#if dayAllEntries.length === 0}
-							<div class="day-tl-empty">Keine Einträge für diesen Tag</div>
+							<p class="px-4 py-6 text-center text-sm text-muted">Keine Einträge für diesen Tag</p>
 						{/if}
 					</div>
 				</div>
-				{/if}
-
-			<!-- Holiday legend -->
-			{#if publicHolidays.length > 0 || schoolHolidays.length > 0}
-				<div class="holiday-legend">
-					<span class="legend-item"><span class="legend-dot legend-public"></span> Feiertag</span>
-					<span class="legend-item"><span class="legend-dot legend-school"></span> Schulferien (NI)</span>
-				</div>
 			{/if}
-			</div>
 		</div>
-
-		<!-- Mobile panel backdrop -->
-		{#if isMobile && panelOpen}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="sheet-backdrop" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
-		{/if}
-
-		<CalendarSidePanel bind:panelSelection {schedule} onLoadSchedule={loadSchedule} onAddAppointment={openAppointmentForInquiry} onOpenAppointment={openAppointmentPanel} />
 	</div>
+
+	{#if isMobile && panelOpen}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="fixed inset-0 z-[509] bg-black/40" onclick={closePanel} onkeydown={(e) => e.key === 'Escape' && closePanel()}></div>
+	{/if}
+
+	<CalendarSidePanel
+		bind:panelSelection
+		{schedule}
+		onLoadSchedule={loadSchedule}
+		onAddAppointment={openAppointmentForInquiry}
+		onOpenAppointment={openAppointmentPanel}
+	/>
 </div>
 
-<!-- FAB: mobile quick-create -->
+<!-- Phones: quick-create button above the tab bar. -->
 {#if isMobile && !quickCreateMode}
 	{#if fabOpen}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="fab-backdrop" onclick={() => fabOpen = false} onkeydown={(e) => e.key === 'Escape' && (fabOpen = false)}></div>
-		<div class="fab-menu">
-			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('inquiry', currentContextDate); }}>
-				<span class="fab-item-icon">📋</span> Anfrage erstellen
-			</button>
-			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('termin', currentContextDate); }}>
-				<span class="fab-item-icon">📅</span> Termin erstellen
-			</button>
-			<button class="fab-item" onclick={() => { fabOpen = false; openQuickCreate('appointment', currentContextDate); }}>
-				<span class="fab-item-icon">🔍</span> Besichtigung
-			</button>
+		<div class="fixed inset-0 z-[440]" onclick={() => (fabOpen = false)} onkeydown={(e) => e.key === 'Escape' && (fabOpen = false)}></div>
+		<div class="fixed right-4 bottom-[calc(140px+env(safe-area-inset-bottom))] z-[441] flex flex-col gap-1 rounded-md border border-line bg-panel p-1 shadow-2xl">
+			{#each [{ mode: 'inquiry', label: 'Anfrage erstellen', icon: ClipboardList }, { mode: 'termin', label: 'Termin erstellen', icon: CalendarPlus }, { mode: 'appointment', label: 'Besichtigung', icon: Search }] as const as item (item.mode)}
+				<button
+					class="flex h-11 items-center gap-3 rounded-sm px-3 text-sm hover:bg-sunk"
+					onclick={() => {
+						fabOpen = false;
+						openQuickCreate(item.mode, currentContextDate);
+					}}
+				>
+					<item.icon size={16} class="text-muted" />{item.label}
+				</button>
+			{/each}
 		</div>
 	{/if}
-	<button class="fab" class:fab-active={fabOpen} onclick={() => fabOpen = !fabOpen} aria-label="Eintrag erstellen">
-		<Plus size={22} />
+	<button
+		class="fixed right-4 bottom-[calc(76px+env(safe-area-inset-bottom))] z-[441] inline-flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-xl transition-transform {fabOpen
+			? 'rotate-45'
+			: ''}"
+		onclick={() => (fabOpen = !fabOpen)}
+		aria-label="Eintrag erstellen"
+	>
+		<Plus size={24} />
 	</button>
 {/if}
 
-<!-- Context menu -->
 {#if contextMenu}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="ctx-backdrop" onclick={closeContextMenu} onkeydown={(e) => e.key === 'Escape' && closeContextMenu()}></div>
-	<div class="ctx-menu" style="left:{contextMenu.x}px;top:{contextMenu.y}px;">
-		<button class="ctx-item" onclick={() => openQuickCreate('inquiry')}>
-			<span class="ctx-icon">📋</span> Anfrage erstellen
+	<div class="fixed inset-0 z-[620]" onclick={closeContextMenu} onkeydown={(e) => e.key === 'Escape' && closeContextMenu()}></div>
+	<div class="fixed z-[621] flex min-w-56 flex-col rounded-md border border-line bg-panel p-1 shadow-2xl" style="left:{contextMenu.x}px;top:{contextMenu.y}px;">
+		<button class="flex h-9 items-center gap-2.5 rounded-sm px-2.5 text-left text-sm hover:bg-sunk" onclick={() => openQuickCreate('inquiry')}>
+			<ClipboardList size={15} class="text-muted" /> Anfrage erstellen
 		</button>
-		<button class="ctx-item" onclick={() => openQuickCreate('termin')}>
-			<span class="ctx-icon">📅</span> Termin erstellen
+		<button class="flex h-9 items-center gap-2.5 rounded-sm px-2.5 text-left text-sm hover:bg-sunk" onclick={() => openQuickCreate('termin')}>
+			<CalendarPlus size={15} class="text-muted" /> Termin erstellen
 		</button>
-		<button class="ctx-item" onclick={() => openQuickCreate('appointment')}>
-			<span class="ctx-icon">🔍</span> Besichtigung / Zusatztermin
+		<button class="flex h-9 items-center gap-2.5 rounded-sm px-2.5 text-left text-sm hover:bg-sunk" onclick={() => openQuickCreate('appointment')}>
+			<Search size={15} class="text-muted" /> Besichtigung / Zusatztermin
 		</button>
 	</div>
 {/if}
 
-<!-- Quick-create: inquiry -->
+{#snippet inquiryBody()}
+	<div class="flex flex-col gap-2">
+		<span class="label-xs text-faint">Auftragsart *</span>
+		<div class="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+			{#each QI_SERVICE_OPTIONS as [id, label] (id)}
+				<button
+					type="button"
+					aria-pressed={qiServiceType === id}
+					class="h-8 rounded-sm border px-2 text-[13px] {qiServiceType === id ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg'}"
+					onclick={() => (qiServiceType = id)}>{label}</button
+				>
+			{/each}
+		</div>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<span class="label-xs text-faint">Kunde *</span>
+		{#if qiCustomerId}
+			{@render pickedBadge(qiCustomerLabel, () => {
+				qiCustomerId = null;
+				qiCustomerLabel = '';
+				qiCustomerSearch = '';
+			})}
+		{:else}
+			<Segmented
+				size="sm"
+				label="Kunde"
+				class="self-start"
+				options={[
+					{ value: 'existing', label: 'Suchen' },
+					{ value: 'new', label: 'Neu' }
+				]}
+				bind:value={qiCustomerMode}
+			/>
+			{#if qiCustomerMode === 'existing'}
+				<Input
+					bind:value={qiCustomerSearch}
+					oninput={(e) => searchQiCustomers((e.target as HTMLInputElement).value)}
+					placeholder="Name oder E-Mail (mind. 2 Zeichen) …"
+				/>
+				{#if qiCustomerSearching}
+					<span class="text-xs text-faint">Suche …</span>
+				{:else if qiCustomerResults.length === 0 && qiCustomerSearch.trim().length >= 2}
+					<span class="text-xs text-faint">Keine Treffer</span>
+				{/if}
+				{@render customerResults(qiCustomerResults, (c) => {
+					qiCustomerId = c.id;
+					qiCustomerLabel = c.name ?? c.email ?? 'Kunde';
+					qiCustomerResults = [];
+					qiCustomerSearch = '';
+				})}
+			{:else}
+				<div class="grid grid-cols-2 gap-2">
+					<Field label="Anrede" for="qi-salutation">
+						<Select id="qi-salutation" bind:value={qiSalutation}>
+							<option value="">—</option>
+							<option value="Herr">Herr</option>
+							<option value="Frau">Frau</option>
+							<option value="D">Divers</option>
+						</Select>
+					</Field>
+					<Field label="Telefon" for="qi-phone"><Input id="qi-phone" type="tel" bind:value={qiPhone} placeholder="+49 …" /></Field>
+					<Field label="Name" for="qi-name"><Input id="qi-name" bind:value={qiName} placeholder="Max Mustermann" /></Field>
+					<Field label="E-Mail" for="qi-email"><Input id="qi-email" type="email" bind:value={qiEmail} placeholder="kunde@example.com" /></Field>
+				</div>
+			{/if}
+		{/if}
+	</div>
+
+	{#each [qiAddrCfg.showOrigin ? 'origin' : null, qiAddrCfg.showDestination ? 'dest' : null].filter(Boolean) as which (which)}
+		<div class="flex flex-col gap-2">
+			<span class="label-xs text-faint">{which === 'origin' ? qiAddrCfg.originLabel : qiAddrCfg.destinationLabel} *</span>
+			<KnownAddressPicker addresses={qiKnownAddresses} onselect={which === 'origin' ? applyQiOrigin : applyQiDestination} />
+			{#if which === 'origin'}
+				<div class="grid grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)] gap-2">
+					<Input aria-label="Straße" bind:value={qiOriginStreet} placeholder="Musterstraße 1" />
+					<Input aria-label="PLZ" bind:value={qiOriginPostal} placeholder="31134" />
+					<Input aria-label="Stadt" bind:value={qiOriginCity} placeholder="Hildesheim" />
+				</div>
+			{:else}
+				<div class="grid grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)] gap-2">
+					<Input aria-label="Straße" bind:value={qiDestStreet} placeholder="Zielstraße 2" />
+					<Input aria-label="PLZ" bind:value={qiDestPostal} placeholder="31134" />
+					<Input aria-label="Stadt" bind:value={qiDestCity} placeholder="Hannover" />
+				</div>
+			{/if}
+		</div>
+	{/each}
+
+	<Field label="Notizen" for="qi-notes"><Textarea id="qi-notes" bind:value={qiNotes} placeholder="Besonderheiten …" rows={2} /></Field>
+{/snippet}
+
+{#snippet terminBody()}
+	<Field label="Titel *" for="qt-title"><Input id="qt-title" bind:value={qtTitle} placeholder="z. B. Fahrerschulung" /></Field>
+	<div class="grid grid-cols-2 gap-3">
+		<Field label="Kategorie" for="qt-cat">
+			<Input id="qt-cat" list="cal-categories" bind:value={qtCategory} placeholder="Intern, Umzug, eigene …" />
+			<datalist id="cal-categories">
+				{#each Object.entries(CATEGORY_LABELS) as [v, l] (v)}<option value={v}>{l}</option>{/each}
+			</datalist>
+		</Field>
+		<Field label="Dauer (h)" for="qt-dur"><Input id="qt-dur" class="num" type="number" min="0.5" step="0.5" bind:value={qtDuration} /></Field>
+		<Field label="Startzeit *" for="qt-start">
+			<Input id="qt-start" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} pattern="[0-9]{2}:[0-5][0-9]" bind:value={qtStartTime} required />
+		</Field>
+		<Field label="Endzeit" for="qt-end">
+			<Input id="qt-end" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} pattern="[0-9]{2}:[0-5][0-9]" bind:value={qtEndTime} />
+		</Field>
+	</div>
+	<Field label="Ort" for="qt-loc"><Input id="qt-loc" bind:value={qtLocation} placeholder="optional" /></Field>
+
+	<div class="flex flex-col gap-2">
+		<span class="label-xs text-faint">Kunde (optional)</span>
+		{#if qtCustomerId}
+			{@render pickedBadge(qtCustomerLabel, () => {
+				qtCustomerId = null;
+				qtCustomerLabel = '';
+				qtCustomerMode = 'none';
+			})}
+		{:else}
+			<Segmented
+				size="sm"
+				label="Kunde"
+				class="self-start"
+				options={[
+					{ value: 'none', label: 'Kein Kunde' },
+					{ value: 'existing', label: 'Suchen' },
+					{ value: 'new', label: 'Neu' }
+				]}
+				bind:value={qtCustomerMode}
+			/>
+			{#if qtCustomerMode === 'existing'}
+				<Input bind:value={qtCustomerSearch} oninput={(e) => searchQtCustomers((e.target as HTMLInputElement).value)} placeholder="Name oder E-Mail …" />
+				{#if qtCustomerSearching}<span class="text-xs text-faint">Suche …</span>{/if}
+				{@render customerResults(qtCustomerResults, (c) => {
+					qtCustomerId = c.id;
+					qtCustomerLabel = c.name ?? c.email ?? 'Kunde';
+					qtCustomerResults = [];
+				})}
+			{:else if qtCustomerMode === 'new'}
+				<div class="grid grid-cols-2 gap-2">
+					<Field label="Anrede" for="qtc-salutation">
+						<Select id="qtc-salutation" bind:value={qtNewCustSalutation}>
+							<option value="">—</option>
+							<option value="Herr">Herr</option>
+							<option value="Frau">Frau</option>
+							<option value="D">Divers</option>
+						</Select>
+					</Field>
+					<Field label="Telefon" for="qtc-phone"><Input id="qtc-phone" type="tel" bind:value={qtNewCustPhone} placeholder="+49 …" /></Field>
+					<Field label="Name" for="qtc-name"><Input id="qtc-name" bind:value={qtNewCustName} placeholder="Max Mustermann" /></Field>
+					<Field label="E-Mail" for="qtc-email"><Input id="qtc-email" type="email" bind:value={qtNewCustEmail} placeholder="kunde@example.com" /></Field>
+				</div>
+			{/if}
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet appointmentBody()}
+	<p class="text-xs text-muted">
+		Ein eigener Termin zu einer bestehenden Anfrage — z. B. eine Besichtigung vor dem Umzug. Unabhängig vom Umzugstermin.
+	</p>
+	<div class="flex flex-col gap-2">
+		<span class="label-xs text-faint">Anfrage *</span>
+		{#if qaInquiryId}
+			{@render pickedBadge(qaInquiryLabel, () => {
+				qaInquiryId = null;
+				qaInquiryLabel = '';
+			})}
+		{:else}
+			<Input bind:value={qaInquirySearch} oninput={(e) => searchQaInquiries((e.target as HTMLInputElement).value)} placeholder="Kunde oder Ort suchen …" />
+			{#if qaInquirySearching}<span class="text-xs text-faint">Suche …</span>{/if}
+			{#if qaInquiryResults.length > 0}
+				<div class="flex max-h-48 flex-col overflow-y-auto rounded-md border border-line bg-panel p-1">
+					{#each qaInquiryResults as inq (inq.id)}
+						<button
+							type="button"
+							class="flex flex-col items-start rounded-sm px-2.5 py-1.5 text-left hover:bg-sunk"
+							onclick={() => {
+								qaInquiryId = inq.id;
+								qaInquiryLabel = (inq.customer_name ?? 'Anfrage') + (inq.origin_city ? ' · ' + inq.origin_city : '');
+								qaInquiryResults = [];
+							}}
+						>
+							<span class="text-sm">{inq.customer_name ?? 'Anfrage'}</span>
+							{#if inq.origin_city || inq.destination_city}<span class="text-xs text-muted">{inq.origin_city ?? '?'} → {inq.destination_city ?? '?'}</span>{/if}
+						</button>
+					{/each}
+				</div>
+			{/if}
+		{/if}
+	</div>
+	<div class="grid grid-cols-2 gap-3">
+		<Field label="Datum *" for="qa-date"><Input id="qa-date" type="date" bind:value={quickCreateDate} /></Field>
+		<Field label="Art" for="qa-kind">
+			<Input id="qa-kind" list="qa-kinds" bind:value={qaKind} placeholder="besichtigung" />
+			<datalist id="qa-kinds"><option value="besichtigung">Besichtigung</option><option value="nachtermin">Nachtermin</option></datalist>
+		</Field>
+		<Field label="Von" for="qa-start"><Input id="qa-start" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} bind:value={qaStartTime} /></Field>
+		<Field label="Bis" for="qa-end"><Input id="qa-end" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} bind:value={qaEndTime} /></Field>
+		<Field label="Mitarbeiter" for="qa-assignee" class="col-span-2">
+			<Select id="qa-assignee" bind:value={qaAssigneeId}>
+				<option value="">— keiner —</option>
+				{#each qaEmployees as e (e.id)}<option value={e.id}>{e.first_name} {e.last_name}</option>{/each}
+			</Select>
+		</Field>
+	</div>
+	<Field label="Ort" for="qa-loc"><Input id="qa-loc" bind:value={qaLocation} placeholder="optional (sonst Auszugsadresse)" /></Field>
+	<Field label="Notiz" for="qa-notes"><Input id="qa-notes" bind:value={qaNotes} placeholder="optional" /></Field>
+{/snippet}
+
 {#if quickCreateMode === 'inquiry'}
-	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
-		<div class="modal modal-wide" use:draggable>
-			<h3>Neue Anfrage — {quickCreateDate}</h3>
-
-			<div class="qc-section-label">Auftragsart *</div>
-			<div class="qi-svc-grid">
-				{#each QI_SERVICE_OPTIONS as [id, label]}
-					<button type="button" class="qi-svc-btn" class:selected={qiServiceType === id} onclick={() => qiServiceType = id}>{label}</button>
-				{/each}
-			</div>
-
-			<div class="qc-section-label">Kunde *</div>
-			{#if qiCustomerId}
-				<div class="qt-customer-badge">
-					<span>{qiCustomerLabel}</span>
-					<button class="qt-customer-remove" onclick={() => { qiCustomerId = null; qiCustomerLabel = ''; qiCustomerSearch = ''; }}>×</button>
-				</div>
-			{:else}
-				<div class="qc-customer-tabs">
-					<button class="tab-sm" class:tab-sm-active={qiCustomerMode === 'existing'} onclick={() => qiCustomerMode = 'existing'}>Suchen</button>
-					<button class="tab-sm" class:tab-sm-active={qiCustomerMode === 'new'} onclick={() => qiCustomerMode = 'new'}>Neu</button>
-				</div>
-				{#if qiCustomerMode === 'existing'}
-					<div class="qc-row" style="flex-direction:column;gap:0.25rem">
-						<input type="text" bind:value={qiCustomerSearch} oninput={(e) => searchQiCustomers((e.target as HTMLInputElement).value)} placeholder="Name oder E-Mail (mind. 2 Zeichen)..." />
-						{#if qiCustomerSearching}
-							<span style="font-size:0.75rem;color:var(--dt-on-surface-variant)">Suche...</span>
-						{:else if qiCustomerResults.length > 0}
-							<div class="qt-results">
-								{#each qiCustomerResults as c}
-									<button type="button" class="qt-result-item" onclick={() => { qiCustomerId = c.id; qiCustomerLabel = c.name ?? c.email ?? 'Kunde'; qiCustomerResults = []; qiCustomerSearch = ''; }}>
-										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
-										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
-									</button>
-								{/each}
-							</div>
-						{:else if qiCustomerSearch.trim().length >= 2}
-							<span style="font-size:0.75rem;color:var(--dt-on-surface-variant)">Keine Treffer</span>
-						{/if}
-					</div>
-				{:else}
-					<div class="qc-row">
-						<div class="qc-field">
-							<label for="qi-salutation">Anrede</label>
-							<select id="qi-salutation" bind:value={qiSalutation}>
-								<option value="">—</option>
-								<option value="Herr">Herr</option>
-								<option value="Frau">Frau</option>
-								<option value="D">Divers</option>
-							</select>
-						</div>
-						<div class="qc-field qc-field-grow">
-							<label for="qi-email">E-Mail</label>
-							<input id="qi-email" type="email" bind:value={qiEmail} placeholder="kunde@example.com" />
-						</div>
-					</div>
-					<div class="qc-row">
-						<div class="qc-field qc-field-grow">
-							<label for="qi-name">Name</label>
-							<input id="qi-name" type="text" bind:value={qiName} placeholder="Max Mustermann" />
-						</div>
-						<div class="qc-field">
-							<label for="qi-phone">Telefon</label>
-							<input id="qi-phone" type="tel" bind:value={qiPhone} placeholder="+49 ..." />
-						</div>
-					</div>
-				{/if}
-			{/if}
-
-			{#if qiAddrCfg.showOrigin}
-				<div class="qc-section-label">{qiAddrCfg.originLabel} *</div>
-				<KnownAddressPicker addresses={qiKnownAddresses} onselect={applyQiOrigin} />
-				<div class="qc-row">
-					<div class="qc-field qc-field-grow">
-						<label for="qi-os">Straße</label>
-						<input id="qi-os" type="text" bind:value={qiOriginStreet} placeholder="Musterstraße 1" />
-					</div>
-					<div class="qc-field">
-						<label for="qi-op">PLZ</label>
-						<input id="qi-op" type="text" bind:value={qiOriginPostal} placeholder="31134" style="width:90px" />
-					</div>
-					<div class="qc-field qc-field-grow">
-						<label for="qi-oc">Stadt</label>
-						<input id="qi-oc" type="text" bind:value={qiOriginCity} placeholder="Hildesheim" />
-					</div>
-				</div>
-			{/if}
-
-			{#if qiAddrCfg.showDestination}
-				<div class="qc-section-label">{qiAddrCfg.destinationLabel} *</div>
-				<KnownAddressPicker addresses={qiKnownAddresses} onselect={applyQiDestination} />
-				<div class="qc-row">
-					<div class="qc-field qc-field-grow">
-						<label for="qi-ds">Straße</label>
-						<input id="qi-ds" type="text" bind:value={qiDestStreet} placeholder="Zielstraße 2" />
-					</div>
-					<div class="qc-field">
-						<label for="qi-dp">PLZ</label>
-						<input id="qi-dp" type="text" bind:value={qiDestPostal} placeholder="31134" style="width:90px" />
-					</div>
-					<div class="qc-field qc-field-grow">
-						<label for="qi-dc">Stadt</label>
-						<input id="qi-dc" type="text" bind:value={qiDestCity} placeholder="Hannover" />
-					</div>
-				</div>
-			{/if}
-
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qi-notes">Notizen</label>
-					<textarea id="qi-notes" bind:value={qiNotes} placeholder="Besonderheiten..." rows="2"></textarea>
-				</div>
-			</div>
-
-			{#if quickCreateError}<p class="qc-error">{quickCreateError}</p>{/if}
-			<div class="qc-actions">
-				<button class="btn btn-secondary" onclick={() => quickCreateMode = null}>Abbrechen</button>
-				<button class="btn btn-primary" onclick={submitQuickInquiry} disabled={quickCreateLoading}>
-					{quickCreateLoading ? 'Wird erstellt...' : 'Anfrage erstellen'}
-				</button>
-			</div>
-		</div>
-	</div>
+	{@render dialog(`Neue Anfrage — ${quickCreateDate}`, inquiryBody, submitQuickInquiry, 'Anfrage erstellen', true)}
+{:else if quickCreateMode === 'termin'}
+	{@render dialog(`Neuer Termin — ${quickCreateDate}`, terminBody, submitQuickTermin, 'Termin erstellen')}
+{:else if quickCreateMode === 'appointment'}
+	{@render dialog('Besichtigung / Zusatztermin', appointmentBody, submitQuickAppointment, 'Anlegen')}
 {/if}
-
-<!-- Quick-create: termin -->
-{#if quickCreateMode === 'termin'}
-	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
-		<div class="modal" use:draggable>
-			<h3>Neuer Termin — {quickCreateDate}</h3>
-
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qt-title">Titel *</label>
-					<input id="qt-title" type="text" bind:value={qtTitle} placeholder="z.B. Fahrerschulung" />
-				</div>
-			</div>
-			<div class="qc-row">
-				<div class="qc-field">
-					<label for="qt-cat">Kategorie</label>
-					<input id="qt-cat" type="text" list="cal-categories" bind:value={qtCategory} placeholder="z.B. Intern, Umzug, eigene…" />
-					<datalist id="cal-categories">
-						<option value="intern">Intern</option>
-						<option value="umzug">Umzug</option>
-						<option value="entruempelung">Entrümpelung</option>
-						<option value="montage">Montage</option>
-						<option value="streichen">Streichen</option>
-						<option value="kartons_auslieferung">Kartons Auslieferung</option>
-						<option value="kartons_abholung">Kartons Abholung</option>
-					</datalist>
-				</div>
-				<div class="qc-field">
-					<label for="qt-dur">Dauer (h)</label>
-					<input id="qt-dur" type="number" min="0.5" step="0.5" bind:value={qtDuration} style="width:80px" />
-				</div>
-			</div>
-			<div class="qc-row">
-				<div class="qc-field">
-					<label for="qt-start">Startzeit *</label>
-					<input id="qt-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" bind:value={qtStartTime} required />
-				</div>
-				<div class="qc-field">
-					<label for="qt-end">Endzeit</label>
-					<input id="qt-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" bind:value={qtEndTime} />
-				</div>
-			</div>
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qt-loc">Ort</label>
-					<input id="qt-loc" type="text" bind:value={qtLocation} placeholder="optional" />
-				</div>
-			</div>
-
-			<div class="qc-section-label">Kunde (optional)</div>
-			{#if qtCustomerId}
-				<div class="qt-customer-badge">
-					<span>{qtCustomerLabel}</span>
-					<button class="qt-customer-remove" onclick={() => { qtCustomerId = null; qtCustomerLabel = ''; qtCustomerMode = 'none'; }}>×</button>
-				</div>
-			{:else}
-				<div class="qc-customer-tabs">
-					<button class="tab-sm" class:tab-sm-active={qtCustomerMode === 'none'} onclick={() => qtCustomerMode = 'none'}>Kein Kunde</button>
-					<button class="tab-sm" class:tab-sm-active={qtCustomerMode === 'existing'} onclick={() => qtCustomerMode = 'existing'}>Suchen</button>
-					<button class="tab-sm" class:tab-sm-active={qtCustomerMode === 'new'} onclick={() => qtCustomerMode = 'new'}>Neu</button>
-				</div>
-				{#if qtCustomerMode === 'existing'}
-					<div class="qc-row" style="flex-direction:column;gap:0.25rem">
-						<input type="text" bind:value={qtCustomerSearch} oninput={(e) => searchQtCustomers((e.target as HTMLInputElement).value)} placeholder="Name oder E-Mail..." />
-						{#if qtCustomerSearching}<span style="font-size:0.75rem;color:#94a3b8">Suche...</span>{/if}
-						{#if qtCustomerResults.length > 0}
-							<div class="qt-results">
-								{#each qtCustomerResults as c}
-									<button class="qt-result-item" onclick={() => { qtCustomerId = c.id; qtCustomerLabel = c.name ?? c.email ?? 'Kunde'; qtCustomerResults = []; }}>
-										<span class="cr-name">{c.name ?? c.email ?? 'Kunde'}</span>
-										{#if c.name && c.email}<span class="cr-email">{c.email}</span>{/if}
-									</button>
-								{/each}
-							</div>
-						{/if}
-					</div>
-				{:else if qtCustomerMode === 'new'}
-					<div class="qc-row">
-						<div class="qc-field">
-							<label for="qtc-salutation">Anrede</label>
-							<select id="qtc-salutation" bind:value={qtNewCustSalutation}>
-								<option value="">—</option>
-								<option value="Herr">Herr</option>
-								<option value="Frau">Frau</option>
-								<option value="D">Divers</option>
-							</select>
-						</div>
-						<div class="qc-field qc-field-grow">
-							<label for="qtc-email">E-Mail</label>
-							<input id="qtc-email" type="email" bind:value={qtNewCustEmail} placeholder="kunde@example.com" />
-						</div>
-					</div>
-					<div class="qc-row">
-						<div class="qc-field qc-field-grow">
-							<label for="qtc-name">Name</label>
-							<input id="qtc-name" type="text" bind:value={qtNewCustName} placeholder="Max Mustermann" />
-						</div>
-						<div class="qc-field">
-							<label for="qtc-phone">Telefon</label>
-							<input id="qtc-phone" type="tel" bind:value={qtNewCustPhone} placeholder="+49 ..." />
-						</div>
-					</div>
-				{/if}
-			{/if}
-
-			{#if quickCreateError}<p class="qc-error">{quickCreateError}</p>{/if}
-			<div class="qc-actions">
-				<button class="btn btn-secondary" onclick={() => quickCreateMode = null}>Abbrechen</button>
-				<button class="btn btn-primary" onclick={submitQuickTermin} disabled={quickCreateLoading}>
-					{quickCreateLoading ? 'Wird erstellt...' : 'Termin erstellen'}
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<!-- Quick-create: appointment (Besichtigung linked to an inquiry) -->
-{#if quickCreateMode === 'appointment'}
-	<div class="modal-backdrop modal-backdrop-clear" onclick={(e) => { if (e.target === e.currentTarget) quickCreateMode = null; }} onkeydown={(e) => { if (e.key === 'Escape') quickCreateMode = null; }} role="dialog" tabindex="-1">
-		<div class="modal" use:draggable>
-			<h3>Besichtigung / Zusatztermin</h3>
-			<p class="qc-hint">Ein eigener Termin zu einer bestehenden Anfrage — z.&nbsp;B. eine Besichtigung vor dem Umzug. Unabhängig vom Umzugstermin.</p>
-
-			<div class="qc-section-label">Anfrage *</div>
-			{#if qaInquiryId}
-				<div class="qt-customer-badge">
-					<span>{qaInquiryLabel}</span>
-					<button class="qt-customer-remove" onclick={() => { qaInquiryId = null; qaInquiryLabel = ''; }}>×</button>
-				</div>
-			{:else}
-				<div class="qc-row" style="flex-direction:column;gap:0.25rem">
-					<input type="text" bind:value={qaInquirySearch} oninput={(e) => searchQaInquiries((e.target as HTMLInputElement).value)} placeholder="Kunde oder Ort suchen..." />
-					{#if qaInquirySearching}<span style="font-size:0.75rem;color:#94a3b8">Suche...</span>{/if}
-					{#if qaInquiryResults.length > 0}
-						<div class="qt-results">
-							{#each qaInquiryResults as inq}
-								<button class="qt-result-item" onclick={() => { qaInquiryId = inq.id; qaInquiryLabel = (inq.customer_name ?? 'Anfrage') + (inq.origin_city ? ' · ' + inq.origin_city : ''); qaInquiryResults = []; }}>
-									<span class="cr-name">{inq.customer_name ?? 'Anfrage'}</span>
-									{#if inq.origin_city || inq.destination_city}<span class="cr-email">{inq.origin_city ?? '?'} → {inq.destination_city ?? '?'}</span>{/if}
-								</button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/if}
-
-			<div class="qc-row">
-				<div class="qc-field">
-					<label for="qa-date">Datum *</label>
-					<input id="qa-date" type="date" bind:value={quickCreateDate} />
-				</div>
-				<div class="qc-field">
-					<label for="qa-kind">Art</label>
-					<input id="qa-kind" type="text" list="qa-kinds" bind:value={qaKind} placeholder="besichtigung" />
-					<datalist id="qa-kinds"><option value="besichtigung">Besichtigung</option><option value="nachtermin">Nachtermin</option></datalist>
-				</div>
-			</div>
-			<div class="qc-row">
-				<div class="qc-field">
-					<label for="qa-start">Von</label>
-					<input id="qa-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" bind:value={qaStartTime} />
-				</div>
-				<div class="qc-field">
-					<label for="qa-end">Bis</label>
-					<input id="qa-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" bind:value={qaEndTime} />
-				</div>
-				<div class="qc-field qc-field-grow">
-					<label for="qa-assignee">Mitarbeiter</label>
-					<select id="qa-assignee" bind:value={qaAssigneeId}>
-						<option value="">— keiner —</option>
-						{#each qaEmployees as e}<option value={e.id}>{e.first_name} {e.last_name}</option>{/each}
-					</select>
-				</div>
-			</div>
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qa-loc">Ort</label>
-					<input id="qa-loc" type="text" bind:value={qaLocation} placeholder="optional (sonst Auszugsadresse)" />
-				</div>
-			</div>
-			<div class="qc-row">
-				<div class="qc-field qc-field-grow">
-					<label for="qa-notes">Notiz</label>
-					<input id="qa-notes" type="text" bind:value={qaNotes} placeholder="optional" />
-				</div>
-			</div>
-
-			{#if quickCreateError}<p class="qc-error">{quickCreateError}</p>{/if}
-			<div class="qc-actions">
-				<button class="btn btn-secondary" onclick={() => quickCreateMode = null}>Abbrechen</button>
-				<button class="btn btn-primary" onclick={submitQuickAppointment} disabled={quickCreateLoading}>
-					{quickCreateLoading ? 'Wird angelegt...' : 'Anlegen'}
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<style>
-	/* ─── Page wrapper ─────────────────────────────────────────────────────────── */
-	.page { max-width: 1400px; }
-	.page-header { margin-bottom: 1.5rem; }
-	.page-header h1 { font-size: 1.5rem; font-weight: 700; color: var(--dt-on-surface); }
-
-	/* ─── Main layout: calendar + panel ───────────────────────────────────────── */
-	.main-layout {
-		display: flex;
-		align-items: flex-start;
-		gap: 1.25rem;
-	}
-
-	.calendar-col {
-		flex: 1;
-		min-width: 0;
-		transition: flex var(--dt-transition-panel);
-	}
-
-	/* ─── Nav + view toggle ────────────────────────────────────────────────────── */
-	.cal-nav { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
-	.nav-row { display: flex; align-items: center; gap: 1rem; }
-	.nav-row > button {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 40px;
-		height: 40px;
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-high);
-		border-radius: var(--dt-radius-md);
-		flex-shrink: 0;
-		transition: background var(--dt-transition), color var(--dt-transition), transform var(--dt-transition);
-	}
-	.nav-row > button:hover { background: var(--dt-surface-container); color: var(--dt-on-surface); }
-	.nav-row > button.nav-drag-active {
-		color: var(--dt-on-primary);
-		background: var(--dt-primary-container);
-		transform: scale(1.2);
-	}
-	.month-label { font-size: 1.125rem; font-weight: 600; color: var(--dt-on-surface); min-width: 260px; text-align: center; text-transform: capitalize; }
-
-	.view-toggle {
-		display: flex;
-		gap: 0.2rem;
-		background: var(--dt-surface-container-high);
-		border-radius: var(--dt-radius-md);
-		padding: 0.2rem;
-	}
-	.view-btn {
-		padding: 0.3rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-	.view-btn-active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-		font-weight: 600;
-	}
-
-	/* ─── Calendar grid ────────────────────────────────────────────────────────── */
-	/* Grid-specific rules (.calendar-grid, .cal-cell, .cal-entry base, etc.) now
-	   live in _components/CalendarGrid.svelte. The entry colour classes below stay
-	   here too (duplicated) because week/day view entries use them directly. */
-
-	/* Entry colour classes */
-	.entry-yellow { background: rgba(2, 36, 72, 0.12); color: var(--dt-primary); }
-	.entry-green  { background: #dcfce7; color: #14532d; }
-	.entry-violet { background: #e0e7ff; color: #3730a3; }
-	.entry-orange { background: #ffedd5; color: #9a3412; }
-	.entry-blue   { background: #dbeafe; color: #1e40af; }
-	.entry-pink   { background: #fce7f3; color: #9d174d; }
-	/* Besichtigung / Zusatztermin — visually distinct from move days (dashed cyan). */
-	.entry-appt   { background: #cffafe; color: #155e75; border-left: 3px solid #0891b2; }
-
-	.entry-id { font-weight: 400; opacity: 0.7; font-size: 0.55rem; }
-
-	/* ─── Week view grid ───────────────────────────────────────────────────────── */
-	.week-grid {
-		display: grid;
-		grid-template-columns: repeat(7, minmax(0, 1fr));
-		gap: 1px;
-		background: var(--dt-surface-container);
-		border-radius: var(--dt-radius-lg);
-		overflow: hidden;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.week-cell {
-		background: var(--dt-surface-container-lowest);
-		display: flex;
-		flex-direction: column;
-		padding: 0.375rem 0.3rem 0.5rem;
-		min-height: 160px;
-		cursor: pointer;
-		text-align: left;
-		width: 100%;
-		transition: background var(--dt-transition);
-		gap: 0.25rem;
-	}
-	.week-cell:hover { background: var(--dt-surface-container-low); }
-	.week-cell.today { background: rgba(2, 36, 72, 0.06); }
-	.week-cell.today:hover { background: rgba(2, 36, 72, 0.10); }
-	.week-cell.overbooked { background: rgba(168, 57, 0, 0.06); }
-	.week-cell.overbooked:hover { background: rgba(168, 57, 0, 0.10); }
-	.week-cell.drag-over { background: rgba(2, 36, 72, 0.10); outline: 2px dashed var(--dt-primary); outline-offset: -2px; }
-
-	.week-cell-header {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		padding-bottom: 0.25rem;
-		margin-bottom: 0.125rem;
-		background: var(--dt-surface-container);
-		margin: -0.375rem -0.3rem 0.25rem;
-		padding: 0.375rem 0.3rem;
-	}
-	.week-day-name {
-		font-size: 0.6875rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		color: var(--dt-on-surface-variant);
-		letter-spacing: 0.04em;
-	}
-	.week-day-num {
-		font-size: 0.9rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		line-height: 1;
-	}
-	.week-day-today {
-		color: #fff;
-		background: var(--dt-primary);
-		border-radius: 999px;
-		min-width: 1.4rem;
-		height: 1.4rem;
-		padding: 0 0.35rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.week-cap-badge {
-		margin-left: auto;
-		font-size: 0.6rem;
-		font-weight: 700;
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-high);
-		padding: 0.1rem 0.3rem;
-		border-radius: 4px;
-	}
-	.week-cap-over { background: rgba(168, 57, 0, 0.15); color: var(--dt-secondary); }
-
-	.week-entries {
-		display: flex;
-		flex-direction: column;
-		gap: 3px;
-		flex: 1;
-	}
-
-	.week-entry {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		font-size: 0.6875rem;
-		padding: 3px 5px;
-	}
-
-	.entry-time {
-		font-size: 0.6rem;
-		font-weight: 700;
-		opacity: 0.75;
-		margin-right: 3px;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.week-no-entries {
-		font-size: 0.75rem;
-		color: var(--dt-outline-variant);
-		padding: 0.25rem 0;
-	}
-
-	.week-card {
-		border-radius: var(--dt-radius-sm);
-		padding: 7px 9px;
-		cursor: pointer;
-		display: flex;
-		flex-direction: column;
-		gap: 3px;
-		transition: box-shadow var(--dt-transition);
-	}
-	.week-card:hover {
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.wc-header {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		flex-wrap: wrap;
-	}
-
-	.wc-time {
-		font-size: 0.65rem;
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-		opacity: 0.8;
-		white-space: nowrap;
-	}
-
-	.wc-name {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: inherit;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.wc-route {
-		font-size: 0.65rem;
-		opacity: 0.75;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.wc-meta {
-		display: flex;
-		gap: 8px;
-		flex-wrap: wrap;
-		align-items: center;
-	}
-
-	.wc-price {
-		font-size: 0.65rem;
-		font-weight: 700;
-		background: rgba(0,0,0,0.1);
-		border-radius: 4px;
-		padding: 1px 5px;
-		white-space: nowrap;
-	}
-
-	.wc-vol {
-		font-size: 0.65rem;
-		opacity: 0.75;
-		white-space: nowrap;
-	}
-
-	.wc-employees {
-		font-size: 0.65rem;
-		opacity: 0.8;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.wc-notes {
-		font-size: 0.65rem;
-		opacity: 0.7;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		font-style: italic;
-	}
-
-	/* ─── Context menu ─────────────────────────────────────────────────────────── */
-	.ctx-backdrop { position: fixed; inset: 0; z-index: 600; }
-	.ctx-menu {
-		position: fixed;
-		z-index: 601;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-md);
-		box-shadow: var(--dt-shadow-ambient);
-		padding: 0.25rem;
-		min-width: 200px;
-	}
-	.ctx-item {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		text-align: left;
-		transition: background var(--dt-transition);
-	}
-	.ctx-item:hover { background: var(--dt-surface-container-low); }
-	.ctx-icon { font-size: 1rem; }
-
-	/* ─── Quick-create modals ──────────────────────────────────────────────────── */
-	.modal-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(2, 36, 72, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 500;
-	}
-	.modal {
-		background: var(--dt-surface-container-lowest);
-		border: none;
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-		padding: 1.5rem;
-		width: 90%;
-		max-width: 440px;
-		max-height: 88vh;
-		overflow-y: auto;
-	}
-	.modal h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin-bottom: 1rem;
-		cursor: grab;
-	}
-	.modal h3:active {
-		cursor: grabbing;
-	}
-
-	.modal-backdrop-clear {
-		background: transparent;
-		backdrop-filter: none;
-		align-items: flex-start;
-		justify-content: flex-end;
-		padding: 1rem;
-		pointer-events: none;
-	}
-	.modal-backdrop-clear .modal { pointer-events: all; margin-top: 3rem; }
-	.modal-wide { max-width: 560px; }
-
-	.qc-section-label {
-		font-size: 0.7rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		color: var(--dt-primary);
-		margin: 0.75rem 0 0.25rem;
-		letter-spacing: 0.05em;
-	}
-	.qc-section-label:first-of-type { margin-top: 0; }
-	.qc-hint { font-size: 0.78rem; color: var(--dt-on-surface-variant, #64748b); margin: 0 0 0.75rem; }
-	.qi-svc-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
-	.qi-svc-btn {
-		padding: 0.3rem 0.6rem;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: 6px;
-		background: var(--dt-surface-container-lowest);
-		font-size: 0.78rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: all 0.12s;
-	}
-	.qi-svc-btn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }
-	.qi-svc-btn.selected { background: var(--dt-primary); border-color: var(--dt-primary); color: #fff; }
-	.qc-row { display: flex; gap: 0.5rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
-	.qc-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-	.qc-field-grow { flex: 1; }
-	.qc-field label { font-size: 0.7rem; font-weight: 600; color: var(--dt-on-surface-variant); text-transform: uppercase; }
-	.qc-field input, .qc-field select, .qc-field textarea {
-		padding: 0.4rem 0.6rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		font-size: 0.8125rem;
-		outline: none;
-		width: 100%;
-		font-family: inherit;
-		transition: var(--dt-transition);
-	}
-	.qc-field input:focus, .qc-field select:focus, .qc-field textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-	.qc-field textarea { resize: vertical; }
-	.qc-error { font-size: 0.8rem; color: var(--dt-secondary); margin: 0.5rem 0 0; }
-	.qc-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
-
-	.qc-customer-tabs { display: flex; gap: 0.25rem; margin-bottom: 0.375rem; }
-	.tab-sm {
-		padding: 0.25rem 0.6rem;
-		font-size: 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-high);
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-	.tab-sm-active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-		font-weight: 600;
-	}
-	.qt-results {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-sm);
-		overflow: hidden;
-		margin-top: 0.25rem;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-	.qt-result-item {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-		padding: 0.375rem 0.6rem;
-		text-align: left;
-		transition: background var(--dt-transition);
-		color: var(--dt-on-surface);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-	}
-	.qt-result-item + .qt-result-item { border-top: 1px solid var(--dt-surface-container); }
-	.qt-result-item:hover { background: var(--dt-surface-container-low); }
-	.qt-customer-badge {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.375rem 0.6rem;
-		background: var(--dt-primary-container);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-primary);
-		margin-bottom: 0.25rem;
-	}
-	.qt-customer-remove { font-size: 1rem; color: var(--dt-on-primary); padding: 0 0.125rem; line-height: 1; opacity: 0.7; }
-	.cr-name { font-size: 0.8125rem; font-weight: 500; color: var(--dt-on-surface); }
-	.cr-email { font-size: 0.7rem; color: var(--dt-on-surface-variant); }
-	.qc-row input[type="text"]:not(.qc-field input) {
-		width: 100%;
-		padding: 0.4rem 0.6rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		outline: none;
-		color: var(--dt-on-surface);
-		font-family: inherit;
-		transition: var(--dt-transition);
-	}
-	.qc-row input[type="text"]:not(.qc-field input):focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	/* ─── Responsive ───────────────────────────────────────────────────────────── */
-
-	/* Tablet: stack panel below calendar */
-	@media (min-width: 769px) and (max-width: 900px) {
-		.main-layout { flex-direction: column; }
-	}
-
-	/* Mobile: bottom sheet layout */
-	@media (max-width: 768px) {
-		/* Calendar nav */
-		.cal-nav { gap: 0.5rem; }
-		.nav-row > button { min-height: 44px; min-width: 44px; justify-content: center; }
-		.month-label { font-size: 0.9375rem; min-width: 160px; }
-
-		/* Month grid mobile rules (dots-only entries, agenda fallback) now live in
-		   CalendarGrid.svelte / MonthAgenda.svelte. */
-
-		/* Week view: one day per row */
-		.week-grid { grid-template-columns: 1fr; }
-		.week-cell {
-			min-height: auto;
-			flex-direction: row;
-			align-items: flex-start;
-			padding: 0.625rem 0.75rem;
-		}
-		.week-cell-header {
-			flex-direction: column;
-			margin: -0.625rem -0.75rem 0 -0.75rem;
-			padding: 0.375rem 0.75rem;
-			background: var(--dt-surface-container);
-			width: 64px;
-			min-width: 64px;
-			flex-shrink: 0;
-			align-items: flex-start;
-			gap: 0.15rem;
-		}
-		.week-day-name { font-size: 0.6rem; }
-		.week-day-num { font-size: 1.1rem; }
-		.week-cap-badge { margin-left: 0; }
-		.week-entries { flex: 1; }
-		.week-card { border-radius: var(--dt-radius-sm); }
-
-		/* Day timeline */
-		.day-tl-grid { max-height: calc(100vh - 180px); }
-
-
-		/* Page padding at bottom so FAB doesn't obscure content */
-		.page { padding-bottom: 80px; }
-
-		/* Modal full-screen on mobile */
-		.modal, .modal-wide { max-width: 100%; width: 100%; border-radius: 16px 16px 0 0; margin: 0; max-height: 90vh; }
-		.modal-backdrop { align-items: flex-end; padding: 0; }
-		.modal-backdrop-clear { align-items: flex-end; padding: 0; }
-	}
-
-	/* ─── Multi-day badge ─────────────────────────────────────────────────────── */
-	.multiday-badge {
-		font-size: 0.55rem;
-		font-weight: 700;
-		background: rgba(0,0,0,0.15);
-		border-radius: 2px;
-		padding: 0 2px;
-		margin-left: 2px;
-	}
-
-	/* ─── Day timeline view ───────────────────────────────────────────────────── */
-	.day-timeline {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-		overflow: hidden;
-	}
-	.day-tl-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1rem;
-		background: var(--dt-surface-container);
-	}
-	.day-tl-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-	.day-tl-cap { font-size: 0.75rem; font-weight: 600; color: var(--dt-on-surface-variant); }
-	.day-tl-empty { padding: 2rem; text-align: center; color: var(--dt-on-surface-variant); font-size: 0.875rem; grid-column: 1 / -1; }
-
-	.day-tl-grid {
-		display: flex;
-		flex-direction: column;
-		overflow-y: auto;
-		max-height: calc(100vh - 280px);
-	}
-	.tl-row {
-		display: flex;
-		min-height: 48px;
-	}
-	.tl-row + .tl-row { border-top: 1px solid var(--dt-surface-container); }
-	.tl-time {
-		width: 52px;
-		flex-shrink: 0;
-		font-size: 0.65rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		padding: 0.25rem 0.5rem 0;
-		font-variant-numeric: tabular-nums;
-		background: var(--dt-surface-container-low);
-	}
-	.tl-lane {
-		flex: 1;
-		position: relative;
-		padding: 2px 4px;
-		display: flex;
-		flex-direction: row;
-		align-items: flex-start;
-		gap: 3px;
-	}
-	.tl-block {
-		flex: 1;
-		min-width: 0;
-		border-radius: var(--dt-radius-sm);
-		padding: 4px 7px;
-		cursor: pointer;
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		text-align: left;
-		overflow: hidden;
-		transition: box-shadow var(--dt-transition);
-		border: none;
-	}
-	.tl-block:hover { box-shadow: var(--dt-shadow-ambient); }
-	.tl-block-time { font-size: 0.6rem; font-weight: 700; opacity: 0.8; font-variant-numeric: tabular-nums; }
-	.tl-block-name { font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.tl-block-emp { font-size: 0.6rem; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-	/* ─── Multi-day spanning band (week view) ─────────────────────────────────── */
-	.wc-multiday-bar {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.6rem;
-		font-weight: 700;
-		background: rgba(0,0,0,0.12);
-		border-radius: 3px;
-		padding: 1px 5px;
-		margin-bottom: 3px;
-	}
-	.wc-md-label { flex: 1; text-align: center; opacity: 0.9; }
-	.wc-md-arrow { opacity: 0.7; font-size: 0.65rem; }
-	.wc-md-left { margin-right: auto; }
-	.wc-md-right { margin-left: auto; }
-
-	/* ─── Mobile panel backdrop ────────────────────────────────────────────────── */
-	.sheet-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(2, 36, 72, 0.4);
-		z-index: 509;
-		backdrop-filter: blur(4px);
-	}
-
-	/* ─── FAB ──────────────────────────────────────────────────────────────────── */
-	.fab {
-		position: fixed;
-		bottom: 20px;
-		right: 20px;
-		width: 56px;
-		height: 56px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 4px 16px rgba(2, 36, 72, 0.4);
-		z-index: 520;
-		border: none;
-		cursor: pointer;
-		transition: transform 200ms, box-shadow var(--dt-transition);
-	}
-	.fab:hover { box-shadow: 0 6px 24px rgba(2, 36, 72, 0.5); }
-	.fab.fab-active {
-		transform: rotate(45deg);
-		background: linear-gradient(135deg, var(--dt-secondary), #8a2e00);
-		box-shadow: 0 4px 16px rgba(168, 57, 0, 0.4);
-	}
-
-	.fab-backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 518;
-	}
-	.fab-menu {
-		position: fixed;
-		bottom: 86px;
-		right: 16px;
-		z-index: 519;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		align-items: flex-end;
-	}
-	.fab-item {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		background: var(--dt-surface-container-lowest);
-		border: var(--dt-ghost-border);
-		border-radius: 24px;
-		padding: 0.6rem 1rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		box-shadow: var(--dt-shadow-ambient);
-		cursor: pointer;
-		white-space: nowrap;
-		transition: background var(--dt-transition);
-	}
-	.fab-item:hover { background: var(--dt-surface-container-low); }
-	.fab-item-icon { font-size: 1.1rem; }
-
-	/* ─── Holidays & school breaks ─────────────────────────────────────────────── */
-	/* .cal-cell.* holiday backgrounds live in CalendarGrid.svelte; week-cell ones stay here. */
-	.week-cell.school-holiday { background: linear-gradient(135deg, #fffbeb, #fef9c3); }
-	.week-cell.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
-	/* Public holiday takes precedence when both apply */
-	.week-cell.school-holiday.public-holiday { background: linear-gradient(135deg, #fee2e2, #fecaca); }
-
-	/* Today ring — after the holiday backgrounds on purpose, same reasoning as the
-	   month grid: an equal-specificity background declared later would otherwise
-	   erase the today marker for a whole Ferien week. */
-	.week-cell.today {
-		box-shadow: inset 0 0 0 2px var(--dt-primary);
-		position: relative;
-		z-index: 1;
-	}
-	.holiday-badge {
-		display: inline-block;
-		font-size: 0.6rem;
-		font-weight: 600;
-		color: #991b1b;
-		background: #fecaca;
-		border-radius: 3px;
-		padding: 0 4px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		max-width: 100%;
-	}
-	.school-holiday-label {
-		font-size: 0.6rem;
-		color: #92400e;
-		opacity: 0.85;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		padding: 0 2px 2px;
-	}
-	.holiday-legend {
-		display: flex;
-		gap: 16px;
-		padding: 6px 4px 2px;
-		font-size: 0.7rem;
-		color: var(--dt-on-surface-variant);
-	}
-	.legend-item { display: flex; align-items: center; gap: 5px; }
-	.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
-	.legend-public { background: #fecaca; }
-	.legend-school { background: #fffbeb; }
-</style>

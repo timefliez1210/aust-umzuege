@@ -60,7 +60,7 @@ src/
 │
 └── styles/
     ├── global.css              # Public design tokens (dark theme)
-    └── admin.css               # Admin design tokens (neumorphic, light)
+    └── console.css             # Admin console: Tailwind v4 tokens, light/dark, tenant accent
 
 static/
 ├── sitemap.xml                 # Manually managed
@@ -186,7 +186,7 @@ Client-side only SPA (`ssr: false`, `prerender: false`).
 
 ### Design
 
-Neumorphic — soft inset/outset shadows on a light grey (`#e8ecf1`) base, indigo primary, German UI throughout. Mobile breakpoint at 768px with 44px minimum touch targets.
+Tailwind v4 + `lib/components/ui/` primitives, light/dark toggle, tenant-themeable accent, mobile first (bottom tab bar on phones). German UI throughout. See [`src/routes/admin/DESIGN.md`](src/routes/admin/DESIGN.md).
 
 > **Full admin docs**: [`src/routes/admin/CLAUDE.md`](src/routes/admin/CLAUDE.md)
 > **API reference**: [`src/routes/admin/API.md`](src/routes/admin/API.md)

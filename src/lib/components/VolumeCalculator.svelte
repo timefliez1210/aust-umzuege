@@ -1123,9 +1123,9 @@
     }
 
     .volume-calculator__info {
-        background-color: #f0f4ff;
+        background-color: var(--sunk, #f0f4ff);
         padding: var(--space-4) var(--space-6);
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--line, #e2e8f0);
     }
 
     .volume-calculator__info p {
@@ -1148,8 +1148,8 @@
 
     /* Sidebar */
     .volume-calculator__sidebar {
-        background-color: #f8fafc;
-        border-right: 1px solid #e2e8f0;
+        background-color: var(--sunk, #f8fafc);
+        border-right: 1px solid var(--line, #e2e8f0);
         padding: var(--space-2);
         display: flex;
         flex-direction: column;
@@ -1168,13 +1168,13 @@
         cursor: pointer;
         transition: all var(--transition-fast);
         text-align: left;
-        color: #4a5568;
+        color: var(--muted, #4a5568);
         font-size: var(--text-sm);
         font-weight: var(--font-medium);
     }
 
     .volume-calculator__category:hover {
-        background-color: #edf2f7;
+        background-color: var(--sunk-2, #edf2f7);
     }
 
     .volume-calculator__category.active {
@@ -1218,23 +1218,23 @@
     }
 
     .volume-calculator__items-list::-webkit-scrollbar-track {
-        background: #e2e8f0;
+        background: var(--line, #e2e8f0);
         border-radius: 4px;
     }
 
     .volume-calculator__items-list::-webkit-scrollbar-thumb {
-        background: #94a3b8;
+        background: var(--faint, #94a3b8);
         border-radius: 4px;
     }
 
     .volume-calculator__items-list::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
+        background: var(--muted, #64748b);
     }
 
     /* Firefox */
     .volume-calculator__items-list {
         scrollbar-width: thin;
-        scrollbar-color: #94a3b8 #e2e8f0;
+        scrollbar-color: var(--faint, #94a3b8) var(--line, #e2e8f0);
     }
 
     .volume-calculator__item {
@@ -1242,12 +1242,12 @@
         align-items: center;
         justify-content: space-between;
         padding: var(--space-3) var(--space-2);
-        border-bottom: 1px solid #f0f4f8;
+        border-bottom: 1px solid var(--sunk, #f0f4f8);
         transition: background-color var(--transition-fast);
     }
 
     .volume-calculator__item:hover {
-        background-color: #fafafa;
+        background-color: var(--sunk, #fafafa);
     }
 
     .volume-calculator__item:last-child {
@@ -1255,7 +1255,7 @@
     }
 
     .volume-calculator__item-name {
-        color: #4a5568;
+        color: var(--muted, #4a5568);
         font-size: var(--text-sm);
         flex: 1;
         min-width: 0;
@@ -1291,12 +1291,12 @@
     }
 
     .volume-calculator__counter-btn--minus {
-        background-color: #e2e8f0;
-        color: #4a5568;
+        background-color: var(--line, #e2e8f0);
+        color: var(--muted, #4a5568);
     }
 
     .volume-calculator__counter-btn--minus:hover {
-        background-color: #cbd5e0;
+        background-color: var(--line-strong, #cbd5e0);
     }
 
     .volume-calculator__counter-value {
@@ -1327,7 +1327,7 @@
     }
 
     .volume-calculator__no-results {
-        color: #718096;
+        color: var(--muted, #718096);
         text-align: center;
         padding: var(--space-8);
         font-size: var(--text-sm);
@@ -1339,14 +1339,14 @@
         align-items: center;
         gap: var(--space-3);
         padding: var(--space-3) var(--space-4);
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background-color: var(--sunk, #f8fafc);
+        border: 1px solid var(--line, #e2e8f0);
         border-radius: var(--radius-md);
         margin-top: var(--space-4);
     }
 
     .volume-calculator__search :global(.volume-calculator__search-icon) {
-        color: #a0aec0;
+        color: var(--faint, #a0aec0);
         flex-shrink: 0;
     }
 
@@ -1355,14 +1355,14 @@
         border: none;
         background: transparent;
         font-size: var(--text-sm);
-        color: #4a5568;
+        color: var(--muted, #4a5568);
         outline: none;
         min-width: 0; /* Override browser's default input min-width */
         width: 0; /* Force flex to calculate width from flex-grow, not content */
     }
 
     .volume-calculator__search-input::placeholder {
-        color: #a0aec0;
+        color: var(--faint, #a0aec0);
     }
 
     /* Total Volume */
@@ -1416,7 +1416,7 @@
             gap: var(--space-2);
             padding: var(--space-3);
             border-right: none;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--line, #e2e8f0);
             overflow-x: hidden;
             max-width: 100%;
         }

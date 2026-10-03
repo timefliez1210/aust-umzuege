@@ -1,4 +1,10 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import { Loader } from 'lucide-svelte';
 	import { apiGet, apiPost, apiPatch, apiDelete } from '$lib/utils/api.svelte';
 	import { normalizeTimeInput } from '$lib/utils/format';
 	import { breakHoursToMinutes, breakMinutesToHours } from '$lib/utils/time';
@@ -500,335 +506,344 @@
 
 </script>
 
-<div class="emp-panel">
-	<!-- Header row -->
-	<div class="card-header">
-		<h3>Mitarbeiter ({assignments.length})</h3>
+{#snippet hours(h: number, derived = false)}
+	<span
+		class="num inline-flex h-5 items-center rounded-xs px-1.5 text-[11px] whitespace-nowrap {derived
+			? 'border border-dashed border-line-strong text-muted'
+			: 'bg-ok/12 text-ok'}"
+		title={derived ? 'aus Von–Bis berechnet' : 'erfasst'}>{fmtHours(h)}</span
+	>
+{/snippet}
+
+<!-- Small inline time/number cell; the class names inq-* are test hooks. -->
+{#snippet cell(cls: string, value: string, onblur: (el: HTMLInputElement) => void, label: string, width = 'w-16')}
+	<input
+		class="{cls} num h-8 rounded-sm border border-line bg-transparent px-2 text-center text-[13px] outline-none hover:border-line-strong focus:border-fg {width}"
+		type="text"
+		inputmode="decimal"
+		placeholder={cls.includes('break') ? '0' : '--:--'}
+		maxlength="5"
+		aria-label={label}
+		{value}
+		onblur={(e) => onblur(e.target as HTMLInputElement)}
+	/>
+{/snippet}
+
+<div class="flex flex-col gap-3">
+	<div class="flex items-center justify-between gap-3">
+		<h4 class="text-sm font-medium">Zugewiesen <span class="num text-faint">({assignments.length})</span></h4>
 		{#if !showAddForm}
-			<button class="btn btn-sm" onclick={openAddForm} disabled={unassigned().length === 0}>
-				<Plus size={14} />
-				Zuweisen
-			</button>
+			<Button size="sm" onclick={openAddForm} disabled={unassigned().length === 0}><Plus size={14} /> Zuweisen</Button>
 		{/if}
 	</div>
 
 	{#if loadingPanel}
-		<p class="empty-hint">Laden...</p>
+		<p class="text-sm text-muted">Laden …</p>
 	{:else if assignments.length === 0}
-		<p class="empty-hint">Noch keine Mitarbeiter zugewiesen.</p>
+		<p class="rounded-sm border border-dashed border-line-strong px-3 py-4 text-center text-[13px] text-muted">
+			Noch keine Mitarbeiter zugewiesen.
+		</p>
 	{:else if entityType !== 'calendar_item'}
 		{#if isMultiDay}
-			<!-- ── Inquiry multi-day mode: one summary row per employee ── -->
-			<div class="inq-emp-list">
-				<div class="inq-summary-header">
-					<span>Name</span>
-					<span>Tage</span>
-					<span>Stunden Ist</span>
+			<div class="rounded-sm border border-line">
+				<div class="label-xs hidden grid-cols-[minmax(0,1fr)_60px_100px] gap-3 border-b border-line px-3 py-2 text-faint sm:grid">
+					<span>Name</span><span class="text-right">Tage</span><span class="text-right">Stunden Ist</span>
 				</div>
-				{#each employeeSummaries() as emp}
-					<div class="inq-summary-row">
-						<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
-						<span class="inq-days"><span class="mobile-only-label">Tage</span>{emp.day_count}</span>
-						<span class="inq-hours">
-							<span class="mobile-only-label">Stunden Ist</span>
-							{#if emp.total_hours != null}
-								<span class="hours-badge">{fmtHours(emp.total_hours)}</span>
-							{:else}
-								<span class="inq-muted">—</span>
-							{/if}
+				{#each employeeSummaries() as emp (emp.employee_id)}
+					<div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-line px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(0,1fr)_60px_100px]">
+						<span class="font-medium">{emp.first_name} {emp.last_name[0]}.</span>
+						<span class="num text-right text-muted"><span class="sm:hidden">Tage </span>{emp.day_count}</span>
+						<span class="text-right">
+							{#if emp.total_hours != null}{@render hours(emp.total_hours)}{:else}<span class="text-faint">—</span>{/if}
 						</span>
 					</div>
 				{/each}
-				<div class="inq-total">
-					{#if employeeSummaries().some(e => e.total_hours != null)}
-						<span class="hours-badge">{fmtHours(employeeSummaries().reduce((s, e) => s + (e.total_hours ?? 0), 0))} Ist gesamt</span>
+			</div>
+			<div class="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+				<span>
+					{#if employeeSummaries().some((e) => e.total_hours != null)}
+						{@render hours(employeeSummaries().reduce((s, e) => s + (e.total_hours ?? 0), 0))} Ist gesamt
 					{:else}
 						{employeeSummaries().length} Mitarbeiter · {assignments.length} Einträge
 					{/if}
-				</div>
-				<p class="inq-multiday-hint">Mehrtägig — Zuweisung über den Kalender bearbeiten</p>
+				</span>
+				<span>Mehrtägig — Zuweisung über den Kalender bearbeiten</span>
 			</div>
 		{:else}
-		<!-- ── Inquiry mode: compact rows with planned + actual times ── -->
-		<div class="inq-emp-list">
-			<div class="inq-emp-header">
-				<span>Name</span>
-				<span>Von–Bis</span>
-				<span>Pause (h)</span>
-				<span></span>
-			</div>
-			{#each assignments as emp}
-				{@const derived = deriveActualHours(emp.clock_in, emp.clock_out, emp.break_minutes ?? 0)}
-				<div class="inq-emp-row" class:saving-row={inquerySaving === emp.employee_id}>
-					<span class="inq-name">{emp.first_name} {emp.last_name[0]}.</span>
-					<!-- Von–Bis (clock_in/clock_out) -->
-					<div class="inq-times">
-						<span class="mobile-only-label">Von</span>
-						<input
-							class="inq-input inq-time"
-							type="text"
-							inputmode="decimal"
-							placeholder="--:--"
-							maxlength="5"
-							value={fmtTime(emp.clock_in)}
-							onblur={async (e) => {
-								const el = e.target as HTMLInputElement;
-								if (!(await updateTimeField(emp.employee_id, 'clock_in', el.value)))
-									el.value = fmtTime(emp.clock_in);
-							}}
-						/>
-						<span class="inq-sep">–</span>
-						<span class="mobile-only-label">Bis</span>
-						<input
-							class="inq-input inq-time"
-							type="text"
-							inputmode="decimal"
-							placeholder="--:--"
-							maxlength="5"
-							value={fmtTime(emp.clock_out)}
-							onblur={async (e) => {
-								const el = e.target as HTMLInputElement;
-								if (!(await updateTimeField(emp.employee_id, 'clock_out', el.value)))
-									el.value = fmtTime(emp.clock_out);
-							}}
-						/>
-						{#if emp.actual_hours != null}
-							<span class="hours-badge">{fmtHours(emp.actual_hours)}</span>
-						{:else if derived != null}
-							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
-						{/if}
-					</div>
-					<!-- Break: typed as decimal hours (0.25 = 15 min), stored as minutes -->
-					<div class="inq-break-wrap">
-						<span class="mobile-only-label">Pause (h)</span>
-						<input
-							class="inq-input inq-break"
-							type="text"
-							inputmode="decimal"
-							placeholder="0"
-							maxlength="5"
-							value={breakMinutesToHours(emp.break_minutes ?? 0)}
-							onblur={(e) => updateNumericField(emp.employee_id, 'break_minutes', (e.target as HTMLInputElement).value)}
-						/>
-					</div>
-					<button
-						class="btn-icon danger"
-						title="Entfernen"
-						onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
-					>
-						<Trash2 size={13} />
-					</button>
+			<div class="rounded-sm border border-line">
+				<div class="label-xs hidden grid-cols-[minmax(0,1fr)_auto_80px_36px] gap-3 border-b border-line px-3 py-2 text-faint sm:grid">
+					<span>Name</span><span>Von–Bis</span><span>Pause (h)</span><span></span>
 				</div>
-			{/each}
-			<div class="inq-total">
+				{#each assignments as emp (emp.employee_id)}
+					{@const derived = deriveActualHours(emp.clock_in, emp.clock_out, emp.break_minutes ?? 0)}
+					<div
+						class="grid grid-cols-[minmax(0,1fr)_36px] items-center gap-x-3 gap-y-2 border-b border-line px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_80px_36px] {inquerySaving ===
+						emp.employee_id
+							? 'opacity-60'
+							: ''}"
+					>
+						<span class="text-sm font-medium">{emp.first_name} {emp.last_name[0]}.</span>
+						<span class="flex items-center gap-1.5 max-sm:order-3 max-sm:col-span-2">
+							{@render cell(
+								'inq-time',
+								fmtTime(emp.clock_in),
+								async (el) => {
+									if (!(await updateTimeField(emp.employee_id, 'clock_in', el.value))) el.value = fmtTime(emp.clock_in);
+								},
+								'Von'
+							)}
+							<span class="text-faint">–</span>
+							{@render cell(
+								'inq-time',
+								fmtTime(emp.clock_out),
+								async (el) => {
+									if (!(await updateTimeField(emp.employee_id, 'clock_out', el.value))) el.value = fmtTime(emp.clock_out);
+								},
+								'Bis'
+							)}
+							{#if emp.actual_hours != null}{@render hours(emp.actual_hours)}{:else if derived != null}{@render hours(
+									derived,
+									true
+								)}{/if}
+							<span class="ml-auto flex items-center gap-1.5 text-xs text-faint sm:hidden">
+								Pause
+								{@render cell(
+									'inq-break',
+									breakMinutesToHours(emp.break_minutes ?? 0),
+									(el) => updateNumericField(emp.employee_id, 'break_minutes', el.value),
+									'Pause (h)',
+									'w-14'
+								)}
+							</span>
+						</span>
+						<span class="hidden sm:block">
+							{@render cell(
+								'inq-break',
+								breakMinutesToHours(emp.break_minutes ?? 0),
+								(el) => updateNumericField(emp.employee_id, 'break_minutes', el.value),
+								'Pause (h)'
+							)}
+						</span>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							class="hover:text-danger max-sm:order-2"
+							aria-label="Entfernen"
+							onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
+						>
+							<Trash2 size={13} />
+						</Button>
+					</div>
+				{/each}
+			</div>
+			<div class="text-xs text-muted">
 				{#if assignments.some((e) => e.actual_hours != null || (e.clock_in && e.clock_out))}
 					{@const totalH = assignments.reduce((s, e) => {
 						if (e.actual_hours != null) return s + e.actual_hours;
 						const d = deriveActualHours(e.clock_in, e.clock_out, e.break_minutes ?? 0);
 						return s + (d ?? 0);
 					}, 0)}
-					<span class="hours-badge">{fmtHours(totalH)} Ist</span>
+					{@render hours(totalH)} Ist
 				{:else}
 					{assignments.length} Mitarbeiter zugewiesen
 				{/if}
 			</div>
-		</div>
 		{/if}
 	{:else}
-		<!-- ── Calendar-item mode: card list with explicit save ── -->
-		<div class="emp-list">
-			{#each assignments as emp}
-				{@const s = editingEmp[emp.employee_id] ?? { actual: '', notes: '', clockIn: '', clockOut: '', breakMin: '0', transportMode: '', travelCosts: '', accommodation: '', miscCosts: '', mealDeduction: '' }}
+		<!-- Calendar-item mode: every field editable, explicit save per row -->
+		<div class="flex flex-col gap-2">
+			{#each assignments as emp (emp.employee_id)}
+				{@const s = editingEmp[emp.employee_id] ?? {
+					actual: '',
+					notes: '',
+					clockIn: '',
+					clockOut: '',
+					breakMin: '0',
+					transportMode: '',
+					travelCosts: '',
+					accommodation: '',
+					miscCosts: '',
+					mealDeduction: ''
+				}}
 				{@const derived = deriveActualHours(s.clockIn || null, s.clockOut || null, breakHoursToMinutes(s.breakMin))}
-				<div class="emp-row">
-					<div class="emp-name">{emp.first_name} {emp.last_name}</div>
-					<div class="emp-fields">
-						<label class="tiny-label" for="ci-{emp.employee_id}">Von</label>
-						<input id="ci-{emp.employee_id}" class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
-							value={s.clockIn}
-							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockIn: (e.target as HTMLInputElement).value } }; }}
-						/>
-						<span class="sep">–</span>
-						<label class="tiny-label" for="co-{emp.employee_id}">Bis</label>
-						<input id="co-{emp.employee_id}" class="time-input" type="text" inputmode="decimal" placeholder="--:--" maxlength="5"
-							value={s.clockOut}
-							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, clockOut: (e.target as HTMLInputElement).value } }; }}
-						/>
-						{#if s.actual !== ''}
-							<span class="hours-badge">{fmtHours(parseFloat(s.actual))}</span>
-						{:else if derived != null}
-							<span class="hours-badge hours-badge--derived">{fmtHours(derived)}</span>
-						{/if}
-						<label class="tiny-label" style="margin-left:0.5rem" for="brk-{emp.employee_id}">Pause (h)</label>
-						<input id="brk-{emp.employee_id}" class="break-input" type="text" inputmode="decimal" placeholder="0" maxlength="5"
-							value={s.breakMin}
-							oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, breakMin: (e.target as HTMLInputElement).value } }; }}
-						/>
-						<label class="tiny-label" style="margin-left:0.5rem" for="note-{emp.employee_id}">Notiz</label>
-						<input
-							id="note-{emp.employee_id}"
-							class="notes-input"
-							type="text"
-							value={s.notes}
-							oninput={(e) => {
-								editingEmp = {
-									...editingEmp,
-									[emp.employee_id]: {
-										...s,
-										notes: (e.target as HTMLInputElement).value
-									}
-								};
-							}}
-						/>
-						{#if hasPauschale}
-							<label class="tiny-label" style="margin-left:0.5rem" for="trns-{emp.employee_id}">Transport</label>
-							<select
-								id="trns-{emp.employee_id}"
-								class="break-input"
-								style="width:80px"
-								value={s.transportMode}
-								onchange={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, transportMode: (e.target as HTMLSelectElement).value } }; }}
+				{@const set = (patch: Partial<typeof s>) => {
+					editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, ...patch } };
+				}}
+				{@const small =
+					'num h-8 rounded-sm border border-line bg-transparent px-2 text-[13px] outline-none hover:border-line-strong focus:border-fg'}
+				<div class="flex flex-col gap-2 rounded-sm border border-line p-3">
+					<div class="flex items-center justify-between gap-2">
+						<span class="text-sm font-medium">{emp.first_name} {emp.last_name}</span>
+						<span class="flex gap-1">
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onclick={() => handleSaveEmp(emp.employee_id)}
+								disabled={savingEmp[emp.employee_id]}
+								aria-label="Speichern"
+								title="Speichern"
 							>
-								<option value="">—</option>
-								<option value="PKW">PKW</option>
-								<option value="Bahn">Bahn</option>
-								<option value="Flugzeug">Flugzeug</option>
-								<option value="Taxi">Taxi</option>
-								<option value="Sonstiges">Sonstiges</option>
-							</select>
-							<label class="tiny-label" style="margin-left:0.5rem" for="trvl-{emp.employee_id}">Fahrtk. (€)</label>
-							<input id="trvl-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
-								value={s.travelCosts}
-								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, travelCosts: (e.target as HTMLInputElement).value } }; }}
-							/>
-							<label class="tiny-label" style="margin-left:0.5rem" for="acmd-{emp.employee_id}">Übern. (€)</label>
-							<input id="acmd-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
-								value={s.accommodation}
-								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, accommodation: (e.target as HTMLInputElement).value } }; }}
-							/>
-							<label class="tiny-label" style="margin-left:0.5rem" for="misc-{emp.employee_id}">Sonst. (€)</label>
-							<input id="misc-{emp.employee_id}" class="break-input" type="text" inputmode="numeric" placeholder="0" maxlength="5"
-								value={s.miscCosts}
-								oninput={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, miscCosts: (e.target as HTMLInputElement).value } }; }}
-							/>
-							<label class="tiny-label" style="margin-left:0.5rem" for="meal-{emp.employee_id}">Abzug</label>
-							<select
-								id="meal-{emp.employee_id}"
-								class="break-input"
-								style="width:90px"
-								value={s.mealDeduction}
-								onchange={(e) => { editingEmp = { ...editingEmp, [emp.employee_id]: { ...s, mealDeduction: (e.target as HTMLSelectElement).value } }; }}
+								<Check size={14} />
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								class="hover:text-danger"
+								onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
+								disabled={savingEmp[emp.employee_id]}
+								aria-label="Entfernen"
+								title="Entfernen"
 							>
-								<option value="">—</option>
-								<option value="breakfast">Frühstück</option>
-								<option value="lunch">Mittag</option>
-								<option value="dinner">Abend</option>
-								<option value="breakfast_lunch">Frühstück + Mittag</option>
-								<option value="breakfast_dinner">Frühstück + Abend</option>
-								<option value="lunch_dinner">Mittag + Abend</option>
-								<option value="all">Alle</option>
-							</select>
-						{/if}
+								<X size={14} />
+							</Button>
+						</span>
 					</div>
-					<div class="emp-actions">
-						<button
-							class="btn-icon btn-save"
-							onclick={() => handleSaveEmp(emp.employee_id)}
-							disabled={savingEmp[emp.employee_id]}
-							title="Speichern"
-						>
-							<Check size={14} />
-						</button>
-						<button
-							class="btn-icon btn-remove"
-							onclick={() =>
-								openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
-							disabled={savingEmp[emp.employee_id]}
-							title="Entfernen"
-						>
-							<X size={14} />
-						</button>
+					<div class="flex flex-wrap items-end gap-x-3 gap-y-2 text-xs text-faint">
+						<label class="flex flex-col gap-1" for="ci-{emp.employee_id}">
+							Von
+							<input
+								id="ci-{emp.employee_id}"
+								class="{small} w-16 text-center text-fg"
+								type="text"
+								inputmode="decimal"
+								placeholder="--:--"
+								maxlength="5"
+								value={s.clockIn}
+								oninput={(e) => set({ clockIn: (e.target as HTMLInputElement).value })}
+							/>
+						</label>
+						<label class="flex flex-col gap-1" for="co-{emp.employee_id}">
+							Bis
+							<input
+								id="co-{emp.employee_id}"
+								class="{small} w-16 text-center text-fg"
+								type="text"
+								inputmode="decimal"
+								placeholder="--:--"
+								maxlength="5"
+								value={s.clockOut}
+								oninput={(e) => set({ clockOut: (e.target as HTMLInputElement).value })}
+							/>
+						</label>
+						<span class="pb-1.5">
+							{#if s.actual !== ''}{@render hours(parseFloat(s.actual))}{:else if derived != null}{@render hours(derived, true)}{/if}
+						</span>
+						<label class="flex flex-col gap-1" for="brk-{emp.employee_id}">
+							Pause (h)
+							<input
+								id="brk-{emp.employee_id}"
+								class="{small} w-14 text-center text-fg"
+								type="text"
+								inputmode="decimal"
+								placeholder="0"
+								maxlength="5"
+								value={s.breakMin}
+								oninput={(e) => set({ breakMin: (e.target as HTMLInputElement).value })}
+							/>
+						</label>
+						<label class="flex min-w-40 flex-1 flex-col gap-1" for="note-{emp.employee_id}">
+							Notiz
+							<input
+								id="note-{emp.employee_id}"
+								class="{small} w-full font-sans text-fg"
+								type="text"
+								value={s.notes}
+								oninput={(e) => set({ notes: (e.target as HTMLInputElement).value })}
+							/>
+						</label>
 					</div>
+					{#if hasPauschale}
+						<div class="flex flex-wrap items-end gap-x-3 gap-y-2 border-t border-line pt-2 text-xs text-faint">
+							<label class="flex flex-col gap-1" for="trns-{emp.employee_id}">
+								Transport
+								<select
+									id="trns-{emp.employee_id}"
+									class="{small} w-24 bg-panel font-sans text-fg"
+									value={s.transportMode}
+									onchange={(e) => set({ transportMode: (e.target as HTMLSelectElement).value })}
+								>
+									<option value="">—</option>
+									<option value="PKW">PKW</option>
+									<option value="Bahn">Bahn</option>
+									<option value="Flugzeug">Flugzeug</option>
+									<option value="Taxi">Taxi</option>
+									<option value="Sonstiges">Sonstiges</option>
+								</select>
+							</label>
+							{#each [['trvl', 'Fahrtk. (€)', 'travelCosts'], ['acmd', 'Übern. (€)', 'accommodation'], ['misc', 'Sonst. (€)', 'miscCosts']] as const as [id, label, key] (id)}
+								<label class="flex flex-col gap-1" for="{id}-{emp.employee_id}">
+									{label}
+									<input
+										id="{id}-{emp.employee_id}"
+										class="{small} w-20 text-right text-fg"
+										type="text"
+										inputmode="numeric"
+										placeholder="0"
+										maxlength="5"
+										value={s[key]}
+										oninput={(e) => set({ [key]: (e.target as HTMLInputElement).value })}
+									/>
+								</label>
+							{/each}
+							<label class="flex flex-col gap-1" for="meal-{emp.employee_id}">
+								Abzug
+								<select
+									id="meal-{emp.employee_id}"
+									class="{small} w-40 bg-panel font-sans text-fg"
+									value={s.mealDeduction}
+									onchange={(e) => set({ mealDeduction: (e.target as HTMLSelectElement).value })}
+								>
+									<option value="">—</option>
+									<option value="breakfast">Frühstück</option>
+									<option value="lunch">Mittag</option>
+									<option value="dinner">Abend</option>
+									<option value="breakfast_lunch">Frühstück + Mittag</option>
+									<option value="breakfast_dinner">Frühstück + Abend</option>
+									<option value="lunch_dinner">Mittag + Abend</option>
+									<option value="all">Alle</option>
+								</select>
+							</label>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
 		{#if assignments.length > 1}
-			<div class="save-all-row">
-				<button class="btn btn-sm btn-primary" onclick={handleSaveAll} disabled={savingAll}>
-					{savingAll ? '...' : 'Alle speichern'}
-				</button>
-			</div>
+			<Button size="sm" variant="solid" class="self-end" onclick={handleSaveAll} disabled={savingAll}>
+				{savingAll ? '…' : 'Alle speichern'}
+			</Button>
 		{/if}
 	{/if}
-
-	<!-- Add employee form (modal overlay) -->
-	{#if showAddForm}
-		<div
-			class="modal-backdrop"
-			role="presentation"
-			onclick={() => (showAddForm = false)}
-			onkeydown={(e) => e.key === 'Escape' && (showAddForm = false)}
-			tabindex="-1"
-		>
-			<div
-				class="modal"
-				role="dialog"
-				aria-modal="true"
-				tabindex="-1"
-				onclick={(e) => e.stopPropagation()}
-				onkeydown={(e) => e.stopPropagation()}
-			>
-				<h2>Mitarbeiter zuweisen</h2>
-				<form
-					onsubmit={(e) => {
-						e.preventDefault();
-						handleAdd();
-					}}
-				>
-					<div class="field" style="margin-bottom:0.75rem">
-						<label for="emp-select">Mitarbeiter</label>
-						<select id="emp-select" bind:value={addEmployeeId}>
-							{#each unassigned() as emp}
-								<option value={emp.id}>{emp.first_name} {emp.last_name} ({emp.email})</option>
-							{/each}
-						</select>
-					</div>
-					<div class="field" style="margin-bottom:0.75rem">
-						<label for="emp-notes">Notizen</label>
-						<input id="emp-notes" type="text" bind:value={addNotes} placeholder="Optional" />
-					</div>
-					<div class="modal-actions">
-						<button type="button" class="btn-cancel" onclick={() => (showAddForm = false)}>
-							Abbrechen
-						</button>
-						<button type="submit" class="btn-primary" disabled={adding || !addEmployeeId}>
-							{#if adding}
-								<svg
-									class="spinner"
-									viewBox="0 0 24 24"
-									fill="none"
-									xmlns="http://www.w3.org/2000/svg"
-									aria-hidden="true"
-								>
-									<circle
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="3"
-										stroke-linecap="round"
-										stroke-dasharray="31.4 31.4"
-									/>
-								</svg>
-							{/if}
-							Zuweisen
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	{/if}
 </div>
+
+{#if showAddForm}
+	<Modal title="Mitarbeiter zuweisen" size="sm" onclose={() => (showAddForm = false)}>
+		<form
+			id="emp-add-form"
+			class="flex flex-col gap-3"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleAdd();
+			}}
+		>
+			<Field label="Mitarbeiter" for="emp-select">
+				<Select id="emp-select" bind:value={addEmployeeId}>
+					{#each unassigned() as emp (emp.id)}
+						<option value={emp.id}>{emp.first_name} {emp.last_name} ({emp.email})</option>
+					{/each}
+				</Select>
+			</Field>
+			<Field label="Notizen" for="emp-notes"><Input id="emp-notes" bind:value={addNotes} placeholder="Optional" /></Field>
+		</form>
+		{#snippet footer()}
+			<Button onclick={() => (showAddForm = false)}>Abbrechen</Button>
+			<Button type="submit" form="emp-add-form" variant="solid" disabled={adding || !addEmployeeId}>
+				{#if adding}<Loader size={15} class="animate-spin" />{/if}
+				Zuweisen
+			</Button>
+		{/snippet}
+	</Modal>
+{/if}
 
 <ConfirmationDialog
 	bind:open={showRemoveDialog}
@@ -837,461 +852,7 @@
 	confirmLabel="Entfernen"
 	loading={removingEmp}
 	onConfirm={handleRemoveEmp}
-	onCancel={() => { pendingRemove = null; }}
+	onCancel={() => {
+		pendingRemove = null;
+	}}
 />
-
-<style>
-	.emp-panel {
-		/* Wrapper — the parent page provides the .card container */
-		display: block;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-	}
-
-	.card-header h3 {
-		margin: 0;
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.empty-hint {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		text-align: center;
-		padding: 1rem 0;
-		margin: 0;
-	}
-
-	.hours-badge {
-		display: inline-block;
-		font-size: 0.6875rem;
-		background: #e0e7ff;
-		color: #4338ca;
-		border-radius: 999px;
-		padding: 0.1rem 0.4rem;
-		margin-left: 0.25rem;
-		font-weight: 600;
-	}
-
-	.btn-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.25rem;
-		border: none;
-		background: transparent;
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		color: var(--dt-on-surface-variant);
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-
-	.btn-icon.danger:hover,
-	.btn-remove:hover {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container);
-	}
-
-	.btn-icon.btn-save:hover {
-		color: #15803d;
-		background: var(--dt-surface-container);
-	}
-
-	.saving-row {
-		opacity: 0.6;
-		pointer-events: none;
-	}
-
-	/* ── Card list (both modes) ── */
-
-	.emp-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.emp-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.625rem 0.75rem;
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		flex-wrap: wrap;
-	}
-
-	.emp-name {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		min-width: 120px;
-	}
-
-	.emp-fields {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		flex-wrap: wrap;
-		flex: 1;
-	}
-
-	.tiny-label {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.notes-input {
-		flex: 1;
-		min-width: 80px;
-		padding: 0.25rem 0.375rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		outline: none;
-		transition: border-color var(--dt-transition);
-	}
-
-	.notes-input:focus {
-		border-bottom-color: var(--dt-primary);
-	}
-
-	.emp-actions {
-		display: flex;
-		gap: 0.25rem;
-	}
-
-	.save-all-row {
-		display: flex;
-		justify-content: flex-end;
-		padding: 0.5rem 0.75rem 0.75rem;
-	}
-
-	/* ── Spinner ── */
-
-	.spinner {
-		width: 16px;
-		height: 16px;
-		animation: spin 0.8s linear infinite;
-		flex-shrink: 0;
-	}
-
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to   { transform: rotate(360deg); }
-	}
-
-	/* ── Inquiry mode: compact rows ── */
-
-	.inq-emp-list {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.inq-emp-header {
-		display: grid;
-		grid-template-columns: minmax(60px, 1fr) 1fr 36px 24px;
-		gap: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		font-size: 0.7rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		border-bottom: 1px solid var(--dt-outline-variant);
-		margin-bottom: 0.25rem;
-	}
-
-	.inq-emp-row {
-		display: grid;
-		grid-template-columns: minmax(60px, 1fr) 1fr 36px 24px;
-		gap: 0.25rem;
-		align-items: center;
-		padding: 0.3rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-		transition: background var(--dt-transition);
-	}
-
-	.inq-emp-row:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.inq-name {
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-surface);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.inq-input {
-		padding: 0.2rem 0.3rem;
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: 4px;
-		background: var(--dt-surface-container-high);
-		font-size: 0.8125rem;
-		outline: none;
-		transition: border-color var(--dt-transition);
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.inq-input:focus {
-		border-color: var(--dt-primary);
-	}
-
-
-	.inq-times {
-		display: flex;
-		align-items: center;
-		gap: 0.2rem;
-	}
-
-	.inq-time {
-		width: 56px;
-		text-align: center;
-		flex-shrink: 0;
-	}
-
-	.inq-sep {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		flex-shrink: 0;
-	}
-
-	.inq-break {
-		width: 36px;
-		text-align: center;
-	}
-
-	/* ── Inquiry multi-day summary ── */
-	.inq-summary-header {
-		display: grid;
-		grid-template-columns: 1fr 2.5rem 5rem;
-		gap: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		font-size: 0.7rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		border-bottom: 1px solid var(--dt-outline-variant);
-		margin-bottom: 0.25rem;
-	}
-
-	.inq-summary-row {
-		display: grid;
-		grid-template-columns: 1fr 2.5rem 5rem;
-		gap: 0.25rem;
-		align-items: center;
-		padding: 0.3rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.inq-multiday-hint {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		padding: 0.375rem 0.5rem 0;
-		margin: 0;
-	}
-
-	.inq-summary-row:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.inq-days {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		text-align: center;
-	}
-
-	.inq-hours {
-		display: flex;
-		align-items: center;
-	}
-
-	.inq-muted {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.inq-total {
-		padding: 0.375rem 0.5rem;
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		border-top: 1px solid var(--dt-outline-variant);
-		margin-top: 0.25rem;
-	}
-
-	/* Calendar-item mode: additional time inputs */
-	.time-input {
-		width: 52px;
-		padding: 0.2rem 0.25rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		outline: none;
-		text-align: center;
-		transition: border-color var(--dt-transition);
-	}
-
-	.time-input:focus {
-		border-bottom-color: var(--dt-primary);
-	}
-
-	.break-input {
-		width: 40px;
-		padding: 0.2rem 0.25rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8125rem;
-		outline: none;
-		text-align: center;
-		transition: border-color var(--dt-transition);
-	}
-
-	.break-input:focus {
-		border-bottom-color: var(--dt-primary);
-	}
-
-	.sep {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		flex-shrink: 0;
-	}
-
-	.hours-badge--derived {
-		background: #f0fdf4;
-		color: #15803d;
-	}
-
-	.mobile-only-label {
-		display: none;
-	}
-
-	.inq-break-wrap {
-		display: contents;
-	}
-
-	/* ── Mobile: stack single-day + multi-day rows into per-employee cards ── */
-	@media (max-width: 768px) {
-		.mobile-only-label {
-			display: block;
-			font-size: 0.6875rem;
-			font-weight: 600;
-			color: var(--dt-on-surface-variant);
-			margin-bottom: 0.125rem;
-		}
-
-		.inq-emp-header,
-		.inq-summary-header {
-			display: none;
-		}
-
-		.inq-emp-row {
-			display: flex;
-			flex-direction: column;
-			align-items: stretch;
-			gap: 0.5rem;
-			padding: 0.75rem;
-			background: var(--dt-surface-container-low);
-			border-radius: var(--dt-radius-md);
-			margin-bottom: 0.5rem;
-		}
-
-		.inq-emp-row .inq-name {
-			font-size: 0.9375rem;
-			white-space: normal;
-		}
-
-		.inq-times {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: flex-end;
-			gap: 0.5rem;
-		}
-
-		.inq-times .inq-time {
-			width: auto;
-			flex: 1;
-			min-width: 90px;
-		}
-
-		.inq-sep {
-			display: none;
-		}
-
-		.inq-break-wrap {
-			display: block;
-			width: 40%;
-		}
-
-		.inq-break-wrap .inq-break {
-			width: 100%;
-		}
-
-		.inq-emp-row .btn-icon.danger {
-			align-self: flex-end;
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.inq-summary-row {
-			display: flex;
-			flex-direction: column;
-			align-items: stretch;
-			gap: 0.25rem;
-			padding: 0.75rem;
-			background: var(--dt-surface-container-low);
-			border-radius: var(--dt-radius-md);
-			margin-bottom: 0.5rem;
-		}
-
-		.inq-summary-row .inq-name {
-			font-size: 0.9375rem;
-			white-space: normal;
-		}
-
-		.inq-days,
-		.inq-hours {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			text-align: left;
-		}
-
-		/* ── Calendar-item mode: card per employee ── */
-		.emp-row {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.emp-name {
-			min-width: 0;
-			font-size: 1rem;
-		}
-
-		.emp-fields {
-			gap: 0.5rem 0.75rem;
-		}
-
-		.emp-actions {
-			justify-content: flex-end;
-			margin-top: 0.25rem;
-		}
-
-		.emp-actions .btn-icon {
-			min-width: 44px;
-			min-height: 44px;
-		}
-	}
-</style>

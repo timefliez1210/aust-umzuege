@@ -1,6 +1,6 @@
 # admin — SvelteKit Admin Dashboard SPA
 
-Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
+Client-side only SPA at `/admin/*`. JWT auth, REST API. Design system: [DESIGN.md](DESIGN.md) (Tailwind v4, light/dark, tenant accent).
 
 > **Parent context**: [../AGENTS.md](../../../AGENTS.md)
 
@@ -25,6 +25,7 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 | `/admin/calendar-items/[id]` | Calendar item detail |
 | `/admin/rechnungsausgangsbuch` | Invoice register — one year per tab in invoice-number order; KPI row, Monatsübersicht (chart + per-month figures), month/status/search filters, sortable columns, editable Bemerkungen/Teilzahlung/Zahlungsart, "Bezahlt" button opening a `ReviewRequestModal`, XLSX export (register + Monatsübersicht sheets), links to invoice PDF |
 | `/admin/kva-buch` | KVA register — same shape as the invoice register, over `offers` |
+| `/admin/gewinn` | Gewinn (admin only) — tabs Übersicht (months, break-even, cost per vehicle), Aufträge (per-job margin), Ausgaben (bookings, receipts, Storno), Daueraufträge (rent, insurance, loan rate), Löhne & Stunden (monthly "Stunden übernehmen" + real €/h per employee). Shared styles in `gewinn/gewinn.css` |
 | `/admin/vehicles` | Fleet list — vehicles + maintenance reminders (due dates, ack/reset) |
 | `/admin/storage` | Storage-rental contracts (Lagerung) — create/edit, billing address, PDF |
 | `/admin/flash-contacts` | Quick callback requests (name/phone/time preference) with reminder state |
@@ -52,7 +53,7 @@ Client-side only SPA at `/admin/*`. JWT auth, REST API, neumorphic design.
 | `PhotoVideoUpload.svelte` | `$lib/components/admin/` | Estimation media upload |
 | `MonatsUebersicht.svelte` / `KvaMonatsUebersicht.svelte` | `$lib/components/admin/` | Per-month chart + figures for the invoice/KVA registers |
 
-`DataTable.svelte` reflows into a stacked card list below the shared 768px admin mobile breakpoint (see its `mobile-sort`/card-mode CSS); the shared `.modal`/`.modal-backdrop` classes anchor as a bottom sheet at the same breakpoint (`admin-components.css`), and `.modal-sheet` is a full-screen variant for content with its own header/body/footer.
+`DataTable.svelte` switches to its `card` snippet on phones. `ui/Modal` and `ConfirmationDialog` open as bottom sheets on phones; `ui/Sheet` is the side/bottom drawer.
 
 ## Auth Flow
 

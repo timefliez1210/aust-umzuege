@@ -124,41 +124,12 @@
 	});
 </script>
 
-<div class="route-map">
-	<div class="map-wrapper" bind:this={mapContainer}></div>
+<div class="relative">
+	<!-- isolate: Leaflet's panes use z-index up to 1000; keep them under the console's sheets. -->
+	<div class="isolate h-72 w-full overflow-hidden" bind:this={mapContainer}></div>
 	{#if distanceKm}
-		<span class="distance-badge">{distanceKm.toFixed(1).replace('.', ',')} km</span>
+		<span class="num pointer-events-none absolute top-2.5 right-2.5 z-[400] rounded-xs bg-fg px-2 py-1 text-[11px] font-medium text-bg shadow">
+			{distanceKm.toFixed(1).replace('.', ',')} km
+		</span>
 	{/if}
 </div>
-
-<style>
-	.route-map {
-		position: relative;
-		grid-column: 1 / -1;
-	}
-
-	.distance-badge {
-		position: absolute;
-		top: 0.625rem;
-		right: 0.625rem;
-		z-index: 400; /* above Leaflet panes (400 = overlayPane) */
-		font-size: 11px;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--dt-on-primary);
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		padding: 4px 8px;
-		border-radius: var(--dt-radius-sm);
-		box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
-		pointer-events: none;
-	}
-
-	.map-wrapper {
-		width: 100%;
-		height: 300px;
-		border-radius: var(--dt-radius-md);
-		overflow: hidden;
-		isolation: isolate;
-	}
-</style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
+	import { Loader } from 'lucide-svelte';
 	import { apiFetch, apiDelete, API_BASE } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
@@ -498,230 +500,185 @@
 	}
 </script>
 
-<!-- Estimation Status (processing / failed) -->
-{#if processingEstimations.length > 0 || failedEstimations.length > 0}
-	<div class="card full-width">
-		{#each processingEstimations as est}
-			<div class="estimation-status-row">
-				<div class="upload-spinner"></div>
-				<span
-					>{est.method === 'video'
-						? 'Video'
-						: 'Foto'}-Analyse wird verarbeitet...</span
-				>
-			</div>
-		{/each}
-		{#each failedEstimations as est}
-			<div class="estimation-status-row estimation-failed">
-				<span
-					>{est.method === 'video'
-						? 'Video'
-						: 'Foto'}-Analyse fehlgeschlagen</span
-				>
-				<div class="estimation-actions">
-					<button
-						class="btn btn-sm btn-secondary"
-						disabled={retryingId === est.id}
-						onclick={() => retryEstimation(est.id)}
-					>
-						{#if retryingId === est.id}
-							<div class="upload-spinner inline-spinner"></div>
-							Wird wiederholt…
-						{:else}
-							<RefreshCw size={14} /> Wiederholen
-						{/if}
-					</button>
-					<button
-						class="btn btn-sm btn-danger"
-						onclick={() => confirmDeleteEstimation(est.id)}
-					>
-						<Trash2 size={14} /> Entfernen
-					</button>
+<div class="flex flex-col gap-5">
+	{#if processingEstimations.length > 0 || failedEstimations.length > 0}
+		<div class="flex flex-col divide-y divide-line rounded-sm border border-line">
+			{#each processingEstimations as est (est.id)}
+				<div class="flex items-center gap-2.5 px-3 py-2.5 text-sm text-muted">
+					<Loader size={15} class="animate-spin" />
+					{est.method === 'video' ? 'Video' : 'Foto'}-Analyse wird verarbeitet …
 				</div>
-			</div>
-		{/each}
-	</div>
-{/if}
+			{/each}
+			{#each failedEstimations as est (est.id)}
+				<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm">
+					<span class="text-danger">{est.method === 'video' ? 'Video' : 'Foto'}-Analyse fehlgeschlagen</span>
+					<span class="flex gap-1.5">
+						<Button size="xs" disabled={retryingId === est.id} onclick={() => retryEstimation(est.id)}>
+							{#if retryingId === est.id}<Loader size={13} class="animate-spin" /> Wird wiederholt …{:else}<RefreshCw
+									size={13}
+								/> Wiederholen{/if}
+						</Button>
+						<Button size="xs" variant="danger" onclick={() => confirmDeleteEstimation(est.id)}><Trash2 size={13} /> Entfernen</Button>
+					</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
 
-<!-- Source Photos Gallery -->
-{#if galleryImages.length > 0}
-	<div class="card full-width">
-		<div class="card-header">
-			<h3>Fotos ({galleryImages.length})</h3>
-			{#if galleryEntries.length > 0 || videoEntries.length > 0}
-				<button
-					class="download-all-btn"
-					onclick={downloadAllMedia}
-					disabled={downloadingMedia}
-				>
-					{#if downloadingMedia}
-						ZIP wird erstellt…
-					{:else}
-						<Download size={16} /> Alle Medien herunterladen
+	{#if galleryImages.length > 0}
+		<div class="flex flex-col gap-2.5">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h4 class="label-xs text-faint">Fotos <span class="num">({galleryImages.length})</span></h4>
+				<span class="flex flex-wrap gap-1.5">
+					{#if filterPhotoIndex !== null}
+						<Button size="xs" onclick={onFilterClear}><X size={13} /> Filter aufheben</Button>
 					{/if}
-				</button>
-			{/if}
-			{#if filterPhotoIndex !== null}
-				<button class="btn btn-sm" onclick={onFilterClear}>
-					<X size={14} />
-					Filter aufheben
-				</button>
-			{/if}
+					{#if galleryEntries.length > 0 || videoEntries.length > 0}
+						<Button size="xs" variant="ghost" onclick={downloadAllMedia} disabled={downloadingMedia}>
+							{#if downloadingMedia}ZIP wird erstellt …{:else}<Download size={13} /> Alle Medien{/if}
+						</Button>
+					{/if}
+				</span>
+			</div>
+			<div class="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+				{#each galleryImages as url, idx (idx)}
+					<div class="group relative aspect-square">
+						<button
+							class="block size-full overflow-hidden rounded-sm border-2 {filterPhotoIndex === idx
+								? 'border-accent'
+								: 'border-transparent hover:border-line-strong'}"
+							onclick={() => onTogglePhotoFilter(idx)}
+							oncontextmenu={(e) => {
+								e.preventDefault();
+								openPhotoDetail?.(idx);
+							}}
+							title="Linksklick: Filter | Rechtsklick: Details"
+						>
+							<img src={url} alt="Foto {idx + 1}" class="size-full object-cover" loading="lazy" />
+						</button>
+						<button
+							class="absolute top-1 right-1 hidden size-6 items-center justify-center rounded-full bg-black/70 text-white group-hover:flex focus:flex"
+							onclick={() => confirmDeleteEstimation(galleryEntries[idx].estimationId)}
+							title="Analyse löschen"
+							aria-label="Analyse löschen"
+						>
+							<X size={12} />
+						</button>
+					</div>
+				{/each}
+			</div>
 		</div>
-		<div class="photo-grid">
-			{#each galleryImages as url, idx}
-				<div class="photo-thumb-wrapper">
-					<button
-						class="photo-thumb-btn"
-						class:photo-active={filterPhotoIndex === idx}
-						onclick={() => onTogglePhotoFilter(idx)}
-						oncontextmenu={(e) => {
-							e.preventDefault();
-							openPhotoDetail?.(idx);
+	{/if}
+
+	<div class="grid gap-5 lg:grid-cols-2">
+		<div class="flex flex-col gap-2.5">
+			<h4 class="label-xs text-faint">Foto-Analyse</h4>
+			{#if photoUploading}
+				<div class="flex items-center gap-2.5 rounded-sm border border-line px-3 py-3 text-sm text-muted">
+					<Loader size={15} class="animate-spin" />{photoProgress}
+				</div>
+			{:else}
+				<MediaDropzone
+					variant="admin"
+					accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp,.tiff,.tif,.avif"
+					mimeFilter="image/"
+					maxSizeMb={50}
+					label="Fotos hierher ziehen oder klicken"
+					hint="JPG, PNG, WebP, HEIC, GIF, BMP, TIFF, AVIF (max. 50 MB pro Bild)"
+					hasFiles={photoQueue.length > 0}
+					id="admin-detail-photos"
+					onfiles={(files) => {
+						photoQueue = [...photoQueue, ...files];
+					}}
+					onrejected={(_, reason) => showToast(reason, 'error')}
+				>
+					<MediaPreviewGrid
+						files={photoQueue}
+						mode="queue"
+						variant="admin"
+						dropzoneId="admin-detail-photos"
+						addMoreLabel="Weiteres Foto"
+						onremove={(i) => {
+							photoQueue = photoQueue.filter((_, idx) => idx !== i);
 						}}
-						title="Linksklick: Filter | Rechtsklick: Details"
-					>
-						<img
-							src={url}
-							alt="Foto {idx + 1}"
-							class="photo-thumb"
-						/>
-					</button>
-					<button
-						class="photo-delete-btn"
-						onclick={() => confirmDeleteEstimation(galleryEntries[idx].estimationId)}
-						title="Analyse löschen"
-					>
-						<X size={12} />
-					</button>
-				</div>
-			{/each}
+					/>
+					<div class="mt-3 flex flex-wrap justify-end gap-2">
+						<label
+							for="admin-detail-photos"
+							class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-sm border border-line-strong px-3 text-[13px] hover:bg-sunk"
+						>
+							<Plus size={14} /> Weiteres Foto
+						</label>
+						<Button size="sm" variant="solid" onclick={uploadPhotos} disabled={photoQueue.length === 0}>
+							<Upload size={15} />
+							{photoQueue.length} Foto{photoQueue.length > 1 ? 's' : ''} hochladen
+						</Button>
+					</div>
+				</MediaDropzone>
+			{/if}
 		</div>
-	</div>
-{/if}
 
-<!-- Photo Upload -->
-<div class="card full-width">
-	<div class="card-header">
-		<h3>Foto-Analyse</h3>
-	</div>
-	{#if photoUploading}
-		<div class="upload-status">
-			<div class="upload-spinner"></div>
-			<span>{photoProgress}</span>
-		</div>
-	{:else}
-		<MediaDropzone
-			variant="admin"
-			accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp,.tiff,.tif,.avif"
-			mimeFilter="image/"
-			maxSizeMb={50}
-			label="Fotos hierher ziehen oder klicken"
-			hint="JPG, PNG, WebP, HEIC, GIF, BMP, TIFF, AVIF (max. 50 MB pro Bild)"
-			hasFiles={photoQueue.length > 0}
-			id="admin-detail-photos"
-			onfiles={(files) => {
-				photoQueue = [...photoQueue, ...files];
-			}}
-			onrejected={(_, reason) => showToast(reason, 'error')}
-		>
-			<MediaPreviewGrid
-				files={photoQueue}
-				mode="queue"
-				variant="admin"
-				dropzoneId="admin-detail-photos"
-				addMoreLabel="Weiteres Foto"
-				onremove={(i) => {
-					photoQueue = photoQueue.filter((_, idx) => idx !== i);
-				}}
-			/>
-			<div class="upload-queue-actions">
-				<label for="admin-detail-photos" class="btn btn-sm upload-add-more">
-					<Plus size={14} />
-					Weiteres Foto
-				</label>
-				<button
-					class="btn btn-primary"
-					onclick={uploadPhotos}
-					disabled={photoQueue.length === 0}
-				>
-					<Upload size={16} />
-					{photoQueue.length} Foto{photoQueue.length > 1 ? 's' : ''} hochladen
-				</button>
-			</div>
-		</MediaDropzone>
-	{/if}
-</div>
-
-<!-- Video Upload -->
-<div class="card full-width">
-	<div class="card-header">
-		<h3>Video-Analyse</h3>
-	</div>
-	{#if videoEntries.length > 0}
-		<div class="video-gallery">
-			{#each videoEntries as entry}
-				<div class="video-item">
-					<video controls preload="metadata" class="video-player">
-						<source src={entry.url} />
-					</video>
-					<button
-						class="video-delete-btn"
-						onclick={() => confirmDeleteEstimation(entry.estimationId)}
-						title="Video-Analyse löschen"
-					>
-						<Trash2 size={14} /> Löschen
-					</button>
+		<div class="flex flex-col gap-2.5">
+			<h4 class="label-xs text-faint">Video-Analyse</h4>
+			{#if videoEntries.length > 0}
+				<div class="grid gap-2 sm:grid-cols-2">
+					{#each videoEntries as entry (entry.url)}
+						<div class="flex flex-col gap-1.5">
+							<video controls preload="metadata" class="aspect-video w-full rounded-sm bg-black">
+								<source src={entry.url} />
+							</video>
+							<Button size="xs" variant="danger" class="self-start" onclick={() => confirmDeleteEstimation(entry.estimationId)}>
+								<Trash2 size={13} /> Löschen
+							</Button>
+						</div>
+					{/each}
 				</div>
-			{/each}
-		</div>
-	{/if}
-	{#if videoUploading}
-		<div class="upload-status">
-			<div class="upload-spinner"></div>
-			<span>{videoProgress}</span>
-		</div>
-	{:else}
-		<MediaDropzone
-			variant="admin"
-			accept="video/*,.mp4,.mov,.mpeg,.mpg,.avi,.webm,.mkv,.3gp,.m4v"
-			mimeFilter="video/"
-			maxSizeMb={500}
-			label="Videos hierher ziehen oder klicken"
-			hint="MP4, MOV, MPEG, AVI, WebM, MKV, 3GP, M4V (max. 500 MB pro Video)"
-			hasFiles={videoQueue.length > 0}
-			id="admin-detail-videos"
-			onfiles={(files) => {
-				videoQueue = [...videoQueue, ...files];
-			}}
-			onrejected={(_, reason) => showToast(reason, 'error')}
-		>
-			<MediaPreviewGrid
-				files={videoQueue}
-				mode="queue"
-				variant="admin"
-				dropzoneId="admin-detail-videos"
-				addMoreLabel="Weiteres Video"
-				onremove={(i) => {
-					videoQueue = videoQueue.filter((_, idx) => idx !== i);
-				}}
-			/>
-			<div class="upload-queue-actions">
-				<label for="admin-detail-videos" class="btn btn-sm upload-add-more">
-					<Plus size={14} />
-					Weiteres Video
-				</label>
-				<button
-					class="btn btn-primary"
-					onclick={uploadVideos}
-					disabled={videoQueue.length === 0}
+			{/if}
+			{#if videoUploading}
+				<div class="flex items-center gap-2.5 rounded-sm border border-line px-3 py-3 text-sm text-muted">
+					<Loader size={15} class="animate-spin" />{videoProgress}
+				</div>
+			{:else}
+				<MediaDropzone
+					variant="admin"
+					accept="video/*,.mp4,.mov,.mpeg,.mpg,.avi,.webm,.mkv,.3gp,.m4v"
+					mimeFilter="video/"
+					maxSizeMb={500}
+					label="Videos hierher ziehen oder klicken"
+					hint="MP4, MOV, MPEG, AVI, WebM, MKV, 3GP, M4V (max. 500 MB pro Video)"
+					hasFiles={videoQueue.length > 0}
+					id="admin-detail-videos"
+					onfiles={(files) => {
+						videoQueue = [...videoQueue, ...files];
+					}}
+					onrejected={(_, reason) => showToast(reason, 'error')}
 				>
-					<Upload size={16} />
-					{videoQueue.length} Video{videoQueue.length > 1 ? 's' : ''} hochladen
-				</button>
-			</div>
-		</MediaDropzone>
-	{/if}
+					<MediaPreviewGrid
+						files={videoQueue}
+						mode="queue"
+						variant="admin"
+						dropzoneId="admin-detail-videos"
+						addMoreLabel="Weiteres Video"
+						onremove={(i) => {
+							videoQueue = videoQueue.filter((_, idx) => idx !== i);
+						}}
+					/>
+					<div class="mt-3 flex flex-wrap justify-end gap-2">
+						<label
+							for="admin-detail-videos"
+							class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-sm border border-line-strong px-3 text-[13px] hover:bg-sunk"
+						>
+							<Plus size={14} /> Weiteres Video
+						</label>
+						<Button size="sm" variant="solid" onclick={uploadVideos} disabled={videoQueue.length === 0}>
+							<Upload size={15} />
+							{videoQueue.length} Video{videoQueue.length > 1 ? 's' : ''} hochladen
+						</Button>
+					</div>
+				</MediaDropzone>
+			{/if}
+		</div>
+	</div>
 </div>
 
 <ConfirmationDialog
@@ -734,253 +691,3 @@
 		pendingDeleteId = null;
 	}}
 />
-
-<style>
-	/* Card header — ensures headings are visible in this component's card slots */
-	.card-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 0.75rem;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.card-header h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		letter-spacing: -0.01em;
-		margin: 0;
-	}
-
-	.photo-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-		gap: 0.5rem;
-	}
-
-	.photo-thumb-btn {
-		aspect-ratio: 1;
-		overflow: hidden;
-		border-radius: var(--dt-radius-md);
-		border: none;
-		background: var(--dt-surface-container-high);
-		cursor: pointer;
-		padding: 0;
-		box-shadow: var(--dt-shadow-ambient);
-		transition: transform var(--dt-transition), box-shadow var(--dt-transition);
-	}
-
-	.photo-thumb-btn:hover {
-		transform: scale(1.03);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.photo-thumb {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		display: block;
-	}
-
-	.photo-active {
-		box-shadow: 0 0 0 3px var(--dt-primary), var(--dt-shadow-ambient);
-		transform: scale(1.03);
-	}
-
-	.photo-thumb-wrapper {
-		position: relative;
-	}
-
-	.photo-delete-btn {
-		position: absolute;
-		top: 4px;
-		right: 4px;
-		width: 22px;
-		height: 22px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.6);
-		color: #fff;
-		border: none;
-		cursor: pointer;
-		opacity: 0;
-		transition: opacity var(--dt-transition);
-	}
-
-	.photo-thumb-wrapper:hover .photo-delete-btn {
-		opacity: 1;
-	}
-
-	.video-gallery {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-	}
-
-	.video-player {
-		width: 100%;
-		border-radius: var(--dt-radius-md);
-		background: var(--dt-tertiary);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.video-item {
-		position: relative;
-	}
-
-	.video-delete-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		margin-top: 0.375rem;
-		padding: 0.25rem 0.5rem;
-		font-size: 0.75rem;
-		color: var(--dt-secondary);
-		background: none;
-		border: none;
-		cursor: pointer;
-		opacity: 0.7;
-		transition: opacity var(--dt-transition);
-	}
-
-	.video-delete-btn:hover {
-		opacity: 1;
-	}
-
-	.upload-queue-actions {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		padding-top: 0.25rem;
-	}
-
-	.upload-add-more {
-		cursor: pointer;
-	}
-
-	.upload-status {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 1rem 0;
-		color: var(--dt-primary);
-		font-size: 0.875rem;
-		font-weight: 500;
-	}
-
-	.upload-spinner {
-		width: 20px;
-		height: 20px;
-		border: 2px solid var(--dt-outline-variant);
-		border-top-color: var(--dt-primary);
-		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
-	}
-
-	.inline-spinner {
-		width: 14px;
-		height: 14px;
-		display: inline-block;
-		vertical-align: middle;
-		margin-right: 0.25rem;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	.estimation-status-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		font-size: 0.8125rem;
-		color: var(--dt-primary);
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container);
-		margin-bottom: 0.5rem;
-	}
-
-	.estimation-status-row.estimation-failed {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container-high);
-		justify-content: space-between;
-	}
-
-	.estimation-actions {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.download-all-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.8125rem;
-		color: var(--dt-primary);
-		background: var(--dt-surface-container-lowest);
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-sm);
-		box-shadow: var(--dt-shadow-ambient);
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.download-all-btn:hover:not(:disabled) {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-	}
-
-	.download-all-btn:disabled {
-		opacity: 0.6;
-		cursor: wait;
-	}
-
-	/* ── Mobile: 2-col thumbnail grid, ≥44px touch targets, no overflow ── */
-	@media (max-width: 768px) {
-		.photo-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.photo-delete-btn {
-			/* Hover-to-reveal doesn't work on touch — always show, and grow to a
-			 * proper touch target (min-height:44px is applied globally to all
-			 * <button> elements here, so width/min-width must match explicitly
-			 * or the circle ends up 22px wide × 44px tall). */
-			opacity: 1;
-			top: 0;
-			right: 0;
-			width: 44px;
-			height: 44px;
-			min-width: 44px;
-			min-height: 44px;
-		}
-
-		.video-gallery {
-			grid-template-columns: 1fr;
-		}
-
-		.upload-queue-actions {
-			flex-wrap: wrap;
-		}
-
-		.card-header {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.download-all-btn {
-			justify-content: center;
-		}
-	}
-</style>

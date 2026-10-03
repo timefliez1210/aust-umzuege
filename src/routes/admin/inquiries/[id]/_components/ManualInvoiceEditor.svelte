@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/ui/Button.svelte';
 	import { apiPatch } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { formatEuro } from '$lib/utils/format';
@@ -134,143 +135,51 @@
 	}
 </script>
 
-<div class="manual-editor">
-	<div class="manual-editor__head">
-		<span class="col-desc">Beschreibung</span>
-		<span class="col-qty">Menge</span>
-		<span class="col-price">Einzelpreis (Netto)</span>
-		<span class="col-total">Betrag</span>
-		<span class="col-del"></span>
+<div class="flex flex-col gap-2">
+	<div class="label-xs hidden grid-cols-[minmax(0,1fr)_80px_120px_100px_32px] gap-2 text-faint sm:grid">
+		<span>Beschreibung</span><span class="text-right">Menge</span><span class="text-right">Einzelpreis (netto)</span><span
+			class="text-right">Betrag</span
+		><span></span>
 	</div>
 
-	{#each rows as row, idx}
-		<div class="manual-editor__row">
+	{#each rows as row, idx (idx)}
+		<div class="grid grid-cols-[minmax(0,1fr)_32px] gap-2 sm:grid-cols-[minmax(0,1fr)_80px_120px_100px_32px] sm:items-center">
 			<input
 				type="text"
-				class="me-input col-desc"
-				placeholder="z.B. Umzugsarbeiten (Stunden)"
+				class="h-8 rounded-sm border border-line-strong bg-panel px-2 text-[13px] outline-none focus:border-fg min-w-0"
+				placeholder="z. B. Umzugsarbeiten (Stunden)"
+				aria-label="Beschreibung"
 				bind:value={rows[idx].description}
 			/>
-			<input
-				type="text"
-				inputmode="decimal"
-				class="me-input col-qty"
-				placeholder="12,5"
-				bind:value={rows[idx].quantity}
-			/>
-			<input
-				type="text"
-				inputmode="decimal"
-				class="me-input col-price"
-				placeholder="45,00"
-				bind:value={rows[idx].unitPriceEur}
-			/>
-			<span class="col-total me-total">{formatEuro(rowNettoCents(row))}</span>
-			<button class="btn-icon danger col-del" title="Position entfernen" onclick={() => removeRow(idx)}>
-				<X size={13} />
-			</button>
+			<Button variant="ghost" size="icon-sm" class="sm:order-last" aria-label="Position entfernen" onclick={() => removeRow(idx)}><X size={13} /></Button>
+			<div class="col-span-2 grid grid-cols-3 gap-2 sm:contents">
+				<input type="text" inputmode="decimal" class="h-8 rounded-sm border border-line-strong bg-panel px-2 text-[13px] outline-none focus:border-fg num text-right" placeholder="12,5" aria-label="Menge" bind:value={rows[idx].quantity} />
+				<input
+					type="text"
+					inputmode="decimal"
+					class="h-8 rounded-sm border border-line-strong bg-panel px-2 text-[13px] outline-none focus:border-fg num text-right"
+					placeholder="45,00"
+					aria-label="Einzelpreis (netto)"
+					bind:value={rows[idx].unitPriceEur}
+				/>
+				<span class="num self-center text-right text-[13px] font-medium">{formatEuro(rowNettoCents(row))}</span>
+			</div>
 		</div>
 	{/each}
 
-	<button class="btn-link me-add" onclick={addRow}>
-		<Plus size={12} /> Position hinzufügen
-	</button>
+	<Button size="xs" variant="ghost" class="self-start" onclick={addRow}><Plus size={12} /> Position hinzufügen</Button>
 
-	<div class="manual-editor__totals">
-		<span>Netto <strong>{formatEuro(totalNettoCents)}</strong></span>
-		<span>MwSt 19% <strong>{formatEuro(totalMwstCents)}</strong></span>
-		<span>Brutto <strong>{formatEuro(totalBruttoCents)}</strong></span>
+	<div class="num flex flex-wrap justify-end gap-x-5 gap-y-1 border-t border-line pt-2 text-[13px] text-muted">
+		<span>Netto <strong class="text-fg">{formatEuro(totalNettoCents)}</strong></span>
+		<span>MwSt 19 % <strong class="text-fg">{formatEuro(totalMwstCents)}</strong></span>
+		<span>Brutto <strong class="text-fg">{formatEuro(totalBruttoCents)}</strong></span>
 	</div>
 
-	<div class="manual-editor__actions">
-		<button class="btn btn-sm" onclick={onCancel} disabled={saving}>Abbrechen</button>
-		<button class="btn btn-sm btn-primary" onclick={save} disabled={saving}>
+	<div class="flex justify-end gap-2">
+		<Button size="sm" onclick={onCancel} disabled={saving}>Abbrechen</Button>
+		<Button size="sm" variant="solid" onclick={save} disabled={saving}>
 			<Save size={13} />
-			{saving ? 'Speichere...' : 'Speichern & PDF erzeugen'}
-		</button>
+			{saving ? 'Speichere …' : 'Speichern & PDF erzeugen'}
+		</Button>
 	</div>
 </div>
-
-<style>
-	.manual-editor {
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-		margin-top: 0.5rem;
-	}
-	.manual-editor__head,
-	.manual-editor__row {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 4.5rem 7rem 5.5rem 1.6rem;
-		gap: 0.4rem;
-		align-items: center;
-	}
-	.manual-editor__head {
-		font-size: 0.72rem;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		opacity: 0.7;
-	}
-	.me-input {
-		width: 100%;
-		min-width: 0;
-		padding: 0.3rem 0.45rem;
-		border: 1px solid var(--dt-outline, #c4c7c5);
-		border-radius: 6px;
-		background: var(--dt-surface, #fff);
-		color: var(--dt-on-surface, #191c1e);
-		font-size: 0.85rem;
-	}
-	.col-qty,
-	.col-price {
-		text-align: right;
-	}
-	.me-total {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-		font-size: 0.85rem;
-	}
-	.me-add {
-		align-self: flex-start;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
-	.manual-editor__totals {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-		justify-content: flex-end;
-		padding-top: 0.35rem;
-		border-top: 1px solid var(--dt-outline-variant, #e1e3e1);
-		font-size: 0.85rem;
-	}
-	.manual-editor__actions {
-		display: flex;
-		gap: 0.5rem;
-		justify-content: flex-end;
-	}
-
-	/* Phone: stack columns so the table doesn't overflow the card. */
-	@media (max-width: 768px) {
-		.manual-editor__head {
-			display: none;
-		}
-		.manual-editor__row {
-			grid-template-columns: 1fr 1fr;
-			gap: 0.35rem 0.5rem;
-			padding: 0.5rem;
-			border: 1px solid var(--dt-outline-variant, #e1e3e1);
-			border-radius: 8px;
-		}
-		.col-desc {
-			grid-column: 1 / -1;
-		}
-		.col-total {
-			text-align: left;
-		}
-		.col-del {
-			justify-self: end;
-		}
-	}
-</style>

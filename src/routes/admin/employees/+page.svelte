@@ -2,10 +2,19 @@
 	import { goto } from '$app/navigation';
 	import { apiGet, apiPost, formatDate } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { Search, Plus } from 'lucide-svelte';
+	import { Plus } from 'lucide-svelte';
+	import { untrack } from 'svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import SearchInput from '$lib/components/ui/SearchInput.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Stepper from '$lib/components/ui/Stepper.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
 	import PaginationControls from '$lib/components/admin/PaginationControls.svelte';
-	import DataTable from '$lib/components/admin/DataTable.svelte';
-	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 
 	interface Employee {
 		id: string;
@@ -46,19 +55,24 @@
 	let createError = $state('');
 	let createLoading = $state(false);
 
-	const columns = [
-		{ key: 'name', label: 'Name', sortable: true },
-		{ key: 'email', label: 'E-Mail', sortable: true },
-		{ key: 'phone', label: 'Telefon', width: '120px' },
-		{ key: 'target', label: 'Ziel (h)', width: '80px' },
-		{ key: 'actual', label: 'Ist (h)', width: '80px' },
-		{ key: 'utilization', label: 'Auslastung', width: '100px' },
-		{ key: 'status', label: 'Status', width: '80px' }
-	];
-
+	// Once on mount; search/month/paging reload explicitly (untrack: not on every keystroke).
 	$effect(() => {
-		loadEmployees();
+		untrack(loadEmployees);
 	});
+
+	/** "2026-10" ± n months. */
+	function shiftMonth(key: string, n: number): string {
+		const [y, m] = key.split('-').map(Number);
+		const d = new Date(y, m - 1 + n, 1);
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+	}
+	const monthLabel = $derived(
+		new Date(`${selectedMonth}-01T12:00:00`).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+	);
+	function stepMonth(n: number) {
+		selectedMonth = shiftMonth(selectedMonth, n);
+		onMonthChange();
+	}
 
 	/**
 	 * Fetches a paginated, optionally filtered list of employees from the API.
@@ -160,350 +174,99 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Mitarbeiter | AUST Admin</title>
-</svelte:head>
+<svelte:head><title>Mitarbeiter</title></svelte:head>
 
-<div class="page-header">
-	<div class="page-header-left">
-		<h1>Mitarbeiter</h1>
-		{#if total > 0}
-			<span class="count-badge">{total}</span>
-		{/if}
-	</div>
-	<button class="btn btn-primary" onclick={() => (showCreateForm = true)}>
-		<Plus size={16} />
-		Neuer Mitarbeiter
-	</button>
+<PageHeader title="Mitarbeiter" count={total ? `${total} aktiv` : undefined}>
+	{#snippet actions()}
+		<Button variant="accent" onclick={() => (showCreateForm = true)}><Plus size={16} /> Neuer Mitarbeiter</Button>
+	{/snippet}
+</PageHeader>
+
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+	<Stepper label={monthLabel} onprev={() => stepMonth(-1)} onnext={() => stepMonth(1)} prevLabel="Vorheriger Monat" nextLabel="Nächster Monat" />
+	<SearchInput bind:value={searchQuery} onsearch={handleSearch} placeholder="Name, E-Mail …" class="sm:ml-auto sm:w-72" />
 </div>
 
-<!-- Toolbar -->
-<div class="toolbar">
-	<div class="search-box">
-		<Search size={16} />
-		<input
-			type="text"
-			placeholder="Suchen..."
-			bind:value={searchQuery}
-			onkeydown={(e) => e.key === 'Enter' && handleSearch()}
-		/>
-	</div>
-	<div class="month-picker">
-		<label for="month-select">Monat:</label>
-		<input
-			id="month-select"
-			type="month"
-			bind:value={selectedMonth}
-			onchange={onMonthChange}
-		/>
-	</div>
-</div>
-
-<!-- Create Modal -->
-{#if showCreateForm}
-	<div
-		class="modal-overlay"
-		role="presentation"
-		onclick={() => (showCreateForm = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showCreateForm = false)}
-		tabindex="-1"
-	>
-		<div
-			class="modal"
-			role="dialog"
-			aria-modal="true"
-			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
-			<h2>Neuer Mitarbeiter</h2>
-			{#if createError}
-				<div class="alert alert-error">{createError}</div>
-			{/if}
-			<form onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
-				<div class="form-grid">
-					<div class="field">
-						<label for="create-sal">Anrede</label>
-						<select id="create-sal" bind:value={createSalutation}>
-							<option value="">—</option>
-							<option value="Herr">Herr</option>
-							<option value="Frau">Frau</option>
-							<option value="D">Divers</option>
-						</select>
-					</div>
-					<div class="field">
-						<label for="create-target">Monatsstunden</label>
-						<input id="create-target" type="number" step="0.5" bind:value={createTarget} />
-					</div>
-					<div class="field">
-						<label for="create-fn">Vorname *</label>
-						<input id="create-fn" type="text" bind:value={createFirstName} required />
-					</div>
-					<div class="field">
-						<label for="create-ln">Nachname *</label>
-						<input id="create-ln" type="text" bind:value={createLastName} required />
-					</div>
-					<div class="field">
-						<label for="create-email">E-Mail *</label>
-						<input id="create-email" type="email" bind:value={createEmail} required />
-					</div>
-					<div class="field">
-						<label for="create-phone">Telefon</label>
-						<input id="create-phone" type="text" bind:value={createPhone} />
-					</div>
-				</div>
-				<div class="modal-actions">
-					<button type="button" class="btn" onclick={() => (showCreateForm = false)}>Abbrechen</button>
-					<button type="submit" class="btn btn-primary" disabled={createLoading}>
-						{createLoading ? 'Erstelle...' : 'Erstellen'}
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
-
-<!-- Table -->
 {#if loading}
-	<div class="loading">Laden...</div>
+	<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+		{#each Array(6) as _, i (i)}<div class="h-32 animate-pulse rounded-md bg-sunk"></div>{/each}
+	</div>
 {:else if employees.length === 0}
-	<div class="empty-state">Keine Mitarbeiter gefunden.</div>
+	<EmptyState title="Keine Mitarbeiter gefunden" />
 {:else}
-	<div class="table-wrapper">
-		<table class="data-table">
-			<thead>
-				<tr>
-					{#each columns as col}
-						<th style={col.width ? `width:${col.width}` : ''}>{col.label}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each employees as emp}
-					{@const util = utilization(emp)}
-					<tr class="clickable-row" onclick={() => goto(`/admin/employees/${emp.id}`)}>
-						<td>
-							{emp.salutation ? emp.salutation + ' ' : ''}{emp.first_name} {emp.last_name}
-						</td>
-						<td>{emp.email}</td>
-						<td>{emp.phone ?? '—'}</td>
-						<td class="num">{emp.monthly_hours_target}</td>
-						<td class="num">{emp.actual_hours_month?.toFixed(1) ?? '—'}</td>
-						<td>
-							{#if util != null}
-								<span
-									class="utilization-badge"
-									class:low={util < 50}
-									class:medium={util >= 50 && util < 90}
-									class:high={util >= 90 && util <= 110}
-									class:over={util > 110}
-								>
-									{util}%
-								</span>
-							{:else}
-								—
-							{/if}
-						</td>
-						<td>
-							{#if emp.active}
-								<span class="status-badge active">Aktiv</span>
-							{:else}
-								<span class="status-badge inactive">Inaktiv</span>
-							{/if}
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+	<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+		{#each employees as emp (emp.id)}
+			{@const util = utilization(emp)}
+			{@const tone = util == null ? 'bg-bar-strong' : util > 110 ? 'bg-danger' : util >= 90 ? 'bg-ok' : util >= 50 ? 'bg-accent' : 'bg-warn'}
+			<a href="/admin/employees/{emp.id}" class="flex flex-col gap-3 rounded-md border border-line bg-panel p-4 transition-colors hover:border-line-strong">
+				<span class="flex items-center gap-3">
+					<span class="num inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-line-strong bg-sunk text-sm" aria-hidden="true">
+						{emp.first_name[0]}{emp.last_name[0]}
+					</span>
+					<span class="flex min-w-0 flex-col">
+						<span class="truncate font-semibold">{emp.first_name} {emp.last_name}</span>
+						<span class="truncate text-xs text-muted">{emp.email}</span>
+					</span>
+				</span>
+				<span class="flex flex-col gap-1.5">
+					<span class="num flex items-baseline justify-between text-xs text-muted">
+						<span><span class="text-base font-medium text-fg">{emp.actual_hours_month?.toFixed(1) ?? '—'}</span> / {emp.monthly_hours_target} h</span>
+						<span>{util != null ? `${util} %` : ''}</span>
+					</span>
+					<span class="h-1.5 overflow-hidden rounded-full bg-sunk">
+						<span class="block h-full {tone}" style="width: {Math.min(100, util ?? 0)}%"></span>
+					</span>
+				</span>
+				{#if emp.phone}<span class="num text-xs text-faint">{emp.phone}</span>{/if}
+			</a>
+		{/each}
 	</div>
 
 	{#if total > limit}
 		<PaginationControls
 			page={Math.floor(offset / limit)}
-			total={total}
-			limit={limit}
-			onPrev={() => { offset = Math.max(0, offset - limit); loadEmployees(); }}
-			onNext={() => { offset += limit; loadEmployees(); }}
+			{total}
+			{limit}
+			onPrev={() => {
+				offset = Math.max(0, offset - limit);
+				loadEmployees();
+			}}
+			onNext={() => {
+				offset += limit;
+				loadEmployees();
+			}}
 		/>
 	{/if}
 {/if}
 
-<style>
-	.page-header {
-		justify-content: space-between;
-	}
-
-	.page-header-left {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	h1 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		letter-spacing: -0.01em;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.count-badge {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		padding: 0.125rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.search-box {
-		flex: 1;
-		min-width: 200px;
-		max-width: 400px;
-	}
-
-	.month-picker {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-	}
-
-	.month-picker label {
-		color: var(--dt-on-surface-variant);
-		font-weight: 500;
-	}
-
-	.month-picker input {
-		padding: 0.375rem 0.5rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-	}
-
-	.table-wrapper {
-		overflow-x: auto;
-	}
-
-	.data-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-
-	.data-table th {
-		text-align: left;
-		padding: 0.75rem;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.data-table td {
-		padding: 0.75rem;
-		color: var(--dt-on-surface);
-	}
-
-	.data-table tbody tr:nth-child(even) td {
-		background: var(--dt-surface-container-low);
-	}
-
-	.data-table .num {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.clickable-row {
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.clickable-row:hover td {
-		background: var(--dt-surface-container) !important;
-	}
-
-	.utilization-badge {
-		display: inline-flex;
-		align-items: center;
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		padding: 0.125rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.utilization-badge.low {
-		background: rgba(146, 64, 14, 0.10);
-		color: #92400e;
-	}
-
-	.utilization-badge.medium {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-	.utilization-badge.high {
-		background: rgba(22, 101, 52, 0.10);
-		color: #166534;
-	}
-
-	.utilization-badge.over {
-		background: rgba(168, 57, 0, 0.10);
-		color: var(--dt-secondary);
-	}
-
-	.status-badge {
-		display: inline-flex;
-		align-items: center;
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		padding: 0.125rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.status-badge.active {
-		background: rgba(22, 101, 52, 0.10);
-		color: #166534;
-	}
-
-	.status-badge.inactive {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-	}
-
-
-	/* Modal */
-	.alert-error {
-		background: rgba(168, 57, 0, 0.08);
-		color: var(--dt-secondary);
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		margin-bottom: 0.75rem;
-	}
-
-	@media (max-width: 768px) {
-		.page-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.toolbar {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.search-box {
-			max-width: none;
-		}
-	}
-</style>
+{#if showCreateForm}
+	<Modal title="Neuer Mitarbeiter" onclose={() => (showCreateForm = false)}>
+		<form
+			id="emp-create"
+			class="grid grid-cols-2 gap-3"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleCreate();
+			}}
+		>
+			{#if createError}<Notice tone="danger" class="col-span-2">{createError}</Notice>{/if}
+			<Field label="Anrede" for="create-sal">
+				<Select id="create-sal" bind:value={createSalutation}>
+					<option value="">—</option>
+					<option value="Herr">Herr</option>
+					<option value="Frau">Frau</option>
+					<option value="D">Divers</option>
+				</Select>
+			</Field>
+			<Field label="Monatsstunden" for="create-target"><Input id="create-target" class="num" type="number" step="0.5" bind:value={createTarget} /></Field>
+			<Field label="Vorname *" for="create-fn"><Input id="create-fn" bind:value={createFirstName} required /></Field>
+			<Field label="Nachname *" for="create-ln"><Input id="create-ln" bind:value={createLastName} required /></Field>
+			<Field label="E-Mail *" for="create-email"><Input id="create-email" type="email" bind:value={createEmail} required /></Field>
+			<Field label="Telefon" for="create-phone"><Input id="create-phone" bind:value={createPhone} /></Field>
+		</form>
+		{#snippet footer()}
+			<Button onclick={() => (showCreateForm = false)}>Abbrechen</Button>
+			<Button type="submit" form="emp-create" variant="solid" disabled={createLoading}>{createLoading ? 'Erstelle …' : 'Erstellen'}</Button>
+		{/snippet}
+	</Modal>
+{/if}

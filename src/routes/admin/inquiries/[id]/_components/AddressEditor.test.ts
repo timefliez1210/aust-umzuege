@@ -77,7 +77,7 @@ describe('AddressEditor — editing', () => {
 		const editButtons = screen.getAllByRole('button', { name: /Bearbeiten/ });
 		await user.click(editButtons[1]);
 
-		expect(screen.getByLabelText('Strasse', { selector: '#dest-street' })).toHaveValue('Bahnhofstr.');
+		expect(screen.getByLabelText('Straße', { selector: '#dest-street' })).toHaveValue('Bahnhofstr.');
 		expect(document.querySelector<HTMLInputElement>('#dest-house-number, #dest-hn')?.value ?? '7a').toBe('7a');
 	});
 

@@ -130,7 +130,7 @@ describe('EmployeeAssignmentPanel — inquiry single-day mode', () => {
 		expect(screen.getByRole('dialog')).toBeInTheDocument();
 		expect(screen.getByLabelText('Mitarbeiter')).toHaveValue('emp-2');
 		await user.type(screen.getByLabelText('Notizen'), 'Springer');
-		await user.click(document.querySelector('.modal-actions button[type="submit"]')!);
+		await user.click(document.querySelector('button[type="submit"][form="emp-add-form"]')!);
 
 		await waitFor(() => {
 			const post = fetchMock.mock.calls.find(([, o]) => o?.method === 'POST');

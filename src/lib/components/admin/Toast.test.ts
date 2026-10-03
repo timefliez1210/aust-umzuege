@@ -61,7 +61,7 @@ describe('Toast', () => {
 		render(Toast);
 		await act(() => showToast('Weg damit', 'info'));
 
-		await user.click(screen.getByRole('button', { name: 'Schliessen' }));
+		await user.click(screen.getByRole('button', { name: 'Schließen' }));
 		expect(screen.queryByText('Weg damit')).not.toBeInTheDocument();
 	});
 

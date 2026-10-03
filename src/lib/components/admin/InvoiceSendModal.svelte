@@ -1,4 +1,9 @@
 <script lang="ts">
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import { apiGet, apiPost, apiPatch, apiDownload } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { X, Plus, Trash2, Download } from 'lucide-svelte';
@@ -305,777 +310,158 @@
 	});
 </script>
 
-<div
-	class="overlay"
-	role="presentation"
-	onclick={onClose}
-	onkeydown={(e) => e.key === 'Escape' && onClose()}
-	tabindex="-1"
->
-	<div
-		class="modal"
-		role="dialog"
-		aria-modal="true"
-		tabindex="-1"
-		onclick={(e) => e.stopPropagation()}
-		onkeydown={(e) => e.stopPropagation()}
-	>
+<Modal title={stepTitle} onclose={onClose}>
+	{#if step === 'type'}
+		<div class="flex flex-col gap-4">
+			{#if offerPriceCents == null}
+				<Field label="Rechnungsbetrag (Brutto) *" for="manual-brutto">
+					<span class="flex items-center gap-2">
+						<input id="manual-brutto" class="num h-9 w-32 rounded-sm border border-line-strong bg-panel px-2.5 text-right text-sm outline-none focus:border-fg" type="text" inputmode="decimal" placeholder="0,00" bind:value={manualBruttoEur} />
+						<span class="text-xs text-faint">€ brutto</span>
+					</span>
+				</Field>
+			{/if}
 
-		<div class="modal-header">
-			<h2>{stepTitle}</h2>
-			<button class="close-btn" onclick={onClose} title="Abbrechen"><X size={18} /></button>
-		</div>
+			<p class="text-[13px] text-muted">Vollrechnung oder Teilrechnung (Anzahlung + Schlussrechnung)?</p>
 
-		{#if step === 'type'}
-			<!-- ── Step 1: Rechnungstyp ── -->
-			<div class="modal-body">
-				{#if offerPriceCents == null}
-					<div class="manual-amount-row">
-						<label class="field-label" for="manual-brutto">Rechnungsbetrag (Brutto) <span class="required">*</span></label>
-						<div class="extra-price-wrap">
+			<div class="grid gap-2 sm:grid-cols-2">
+				{#each [{ v: 'full', label: 'Vollrechnung', desc: 'Einmalige Rechnung über den Gesamtbetrag' }, { v: 'partial', label: 'Teilrechnung', desc: 'Anzahlung + Schlussrechnung' }] as o (o.v)}
+					<label
+						class="flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors {invoiceType === o.v
+							? 'border-fg bg-sunk'
+							: 'border-line hover:border-line-strong'}"
+					>
+						<input type="radio" name="invoice-type" value={o.v} class="mt-0.5 accent-[var(--accent)]" bind:group={invoiceType} />
+						<span class="flex flex-col gap-0.5">
+							<span class="text-sm font-semibold">{o.label}</span>
+							<span class="text-xs text-muted">{o.desc}</span>
+						</span>
+					</label>
+				{/each}
+			</div>
+
+			{#if invoiceType === 'partial'}
+				<div class="flex flex-col gap-3 rounded-md border border-line bg-sunk/50 p-3">
+					<label class="flex items-center justify-between gap-3 text-sm" for="partial-percent">
+						Anzahlungsprozentsatz
+						<span class="flex items-center gap-1.5">
 							<input
-								id="manual-brutto"
-								class="extra-price manual-price"
-								type="text"
-								inputmode="decimal"
-								placeholder="0,00"
-								bind:value={manualBruttoEur}
+								id="partial-percent"
+								class="num h-9 w-20 rounded-sm border border-line-strong bg-panel px-2 text-right outline-none focus:border-fg"
+								type="number"
+								min="1"
+								max="99"
+								bind:value={partialPercent}
 							/>
-							<span class="extra-currency">€ brutto</span>
-						</div>
-					</div>
-				{/if}
-
-				<p class="hint">Wählen Sie, ob eine Vollrechnung oder eine Teilrechnung (Anzahlung + Schlussrechnung) erstellt werden soll.</p>
-
-				<div class="type-selector">
-					<label class="type-option" class:selected={invoiceType === 'full'}>
-						<input type="radio" name="invoice-type" value="full" bind:group={invoiceType} />
-						<div class="type-content">
-							<span class="type-label">Vollrechnung</span>
-							<span class="type-desc">Einmalige Rechnung über den Gesamtbetrag</span>
-						</div>
+							<span class="text-xs text-faint">%</span>
+						</span>
 					</label>
-					<label class="type-option" class:selected={invoiceType === 'partial'}>
-						<input type="radio" name="invoice-type" value="partial" bind:group={invoiceType} />
-						<div class="type-content">
-							<span class="type-label">Teilrechnung</span>
-							<span class="type-desc">Anzahlung + Schlussrechnung</span>
-						</div>
-					</label>
-				</div>
-
-				{#if invoiceType === 'partial'}
-					<div class="partial-config">
-						<div class="partial-row">
-							<label class="field-label" for="partial-percent">Anzahlungsprozentsatz</label>
-							<div class="partial-input-wrap">
-								<input
-									id="partial-percent"
-									class="percent-input"
-									type="number"
-									min="1"
-									max="99"
-									bind:value={partialPercent}
-								/>
-								<span class="extra-currency">%</span>
+					{#if baseBruttoEur > 0}
+						<dl class="num flex flex-col gap-1 text-[13px]">
+							<div class="flex justify-between">
+								<dt class="text-muted">Anzahlung ({partialPercent} %)</dt>
+								<dd>{anzahlungEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € brutto</dd>
 							</div>
-						</div>
-						{#if baseBruttoEur > 0}
-							<div class="partial-preview">
-								<div class="preview-row">
-									<span class="preview-label">Anzahlung ({partialPercent}%):</span>
-									<span class="preview-value">{anzahlungEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € brutto</span>
-								</div>
-								<div class="preview-row">
-									<span class="preview-label">Schlussrechnung ({100 - partialPercent}%):</span>
-									<span class="preview-value">{schlussEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € brutto</span>
-								</div>
+							<div class="flex justify-between">
+								<dt class="text-muted">Schlussrechnung ({100 - partialPercent} %)</dt>
+								<dd>{schlussEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € brutto</dd>
 							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
-
-			<div class="modal-footer">
-				<button class="btn" onclick={onClose} disabled={busy}>Abbrechen</button>
-				<button class="btn btn-primary" onclick={goToLineitems}>
-					Weiter →
-				</button>
-			</div>
-
-		{:else if step === 'lineitems'}
-			<!-- ── Step 2: Positionen ── -->
-			<div class="modal-body">
-				<p class="hint">
-					{#if invoiceType === 'partial'}
-						Zusatzleistungen und Gutschriften erscheinen auf der <strong>Schlussrechnung</strong>.
-					{:else}
-						Zusatzleistungen oder Gutschriften hinzufügen, die auf der Rechnung erscheinen sollen.
+						</dl>
 					{/if}
-					Preise als Brutto eingeben.
-				</p>
+				</div>
+			{/if}
+		</div>
+	{:else if step === 'lineitems'}
+		<div class="flex flex-col gap-4">
+			<p class="text-[13px] text-muted">
+				{#if invoiceType === 'partial'}
+					Zusatzleistungen und Gutschriften erscheinen auf der <strong class="text-fg">Schlussrechnung</strong>.
+				{:else}
+					Zusatzleistungen oder Gutschriften hinzufügen, die auf der Rechnung erscheinen sollen.
+				{/if}
+				Preise als Brutto eingeben.
+			</p>
 
-				<div class="presets">
-					{#each PRESETS as p}
-						<button class="preset-chip" onclick={() => addPreset(p)}>{p.description}</button>
+			<div class="flex flex-wrap gap-1.5">
+				{#each PRESETS as p (p.description)}
+					<button
+						class="h-7 rounded-full border border-line-strong px-3 text-xs hover:border-fg hover:bg-sunk"
+						onclick={() => addPreset(p)}>{p.description}</button
+					>
+				{/each}
+			</div>
+
+			{#if lineItems.length > 0}
+				<div class="flex flex-col gap-2">
+					{#each lineItems as item, i (i)}
+						<div class="grid grid-cols-[minmax(0,1fr)_auto_32px] items-center gap-2 {item.brutto_eur.startsWith('-') ? 'text-danger' : ''}">
+							<Input placeholder="Beschreibung" aria-label="Beschreibung" bind:value={item.description} />
+							<span class="flex items-center gap-1.5">
+								<input
+									class="num h-9 w-32 rounded-sm border border-line-strong bg-panel px-2.5 text-right text-sm outline-none focus:border-fg w-28"
+									type="text"
+									inputmode="decimal"
+									aria-label="Preis brutto"
+									placeholder={item.brutto_eur.startsWith('-') ? '-0,00' : '0,00'}
+									bind:value={item.brutto_eur}
+								/>
+								<span class="hidden text-xs text-faint sm:inline">€</span>
+							</span>
+							<Button variant="ghost" size="icon-sm" aria-label="Entfernen" title="Entfernen" onclick={() => removeItem(i)}><Trash2 size={14} /></Button>
+						</div>
 					{/each}
 				</div>
+			{/if}
 
-				{#if lineItems.length > 0}
-					<div class="extras-list">
-						{#each lineItems as item, i}
-							<div class="extra-row" class:negative={item.brutto_eur.startsWith('-')}>
-								<input
-									class="extra-desc"
-									type="text"
-									placeholder="Beschreibung"
-									bind:value={item.description}
-								/>
-								<div class="extra-price-wrap">
-									<input
-										class="extra-price"
-										type="text"
-										inputmode="decimal"
-										placeholder={item.brutto_eur.startsWith('-') ? '-0,00' : '0,00'}
-										bind:value={item.brutto_eur}
-									/>
-									<span class="extra-currency">€ brutto</span>
-								</div>
-								<button class="del-btn" onclick={() => removeItem(i)} title="Entfernen">
-									<Trash2 size={14} />
-								</button>
-							</div>
-						{/each}
+			<div class="flex gap-2">
+				<Button size="sm" variant="ghost" onclick={addZusatz}><Plus size={14} /> Zusatzleistung</Button>
+				<Button size="sm" variant="ghost" class="text-danger" onclick={addGutschrift}><Plus size={14} /> Gutschrift</Button>
+			</div>
+
+			<div class="num flex flex-col gap-1 rounded-md border border-line bg-sunk/50 p-3 text-sm">
+				{#if invoiceType === 'partial'}
+					<div class="flex justify-between text-muted">
+						<span>Anzahlung ({partialPercent} %)</span>
+						<span>{formatEuro(Math.round(((baseBruttoEur * partialPercent) / 100) * 100))}</span>
 					</div>
+					<p class="label-xs mt-2 border-t border-line pt-2 text-faint">Schlussrechnung</p>
 				{/if}
-
-				<div class="add-row">
-					<button class="btn-link add-btn" onclick={addZusatz}>
-						<Plus size={14} /> Zusatzleistung
-					</button>
-					<button class="btn-link add-btn gutschrift-btn" onclick={addGutschrift}>
-						<Plus size={14} /> Gutschrift
-					</button>
-				</div>
-
-				<!-- Live totals -->
-				<div class="totals-box">
-					{#if invoiceType === 'partial'}
-						<div class="totals-row totals-muted">
-							<span>Anzahlung ({partialPercent}%)</span>
-							<span>{formatEuro(Math.round(baseBruttoEur * partialPercent / 100 * 100))}</span>
-						</div>
-						<div class="totals-divider"></div>
-						<p class="totals-section-label">Schlussrechnung</p>
-					{/if}
-					<div class="totals-row">
-						<span>Netto</span>
-						<span>{formatEuro(totalNettoCents)}</span>
-					</div>
-					<div class="totals-row">
-						<span>MwSt. (19%)</span>
-						<span>{formatEuro(totalMwstCents)}</span>
-					</div>
-					<div class="totals-row totals-total">
-						<span>Gesamt (Brutto)</span>
-						<span>{formatEuro(totalBruttoCents)}</span>
-					</div>
+				<div class="flex justify-between text-muted"><span>Netto</span><span>{formatEuro(totalNettoCents)}</span></div>
+				<div class="flex justify-between text-muted"><span>MwSt. (19 %)</span><span>{formatEuro(totalMwstCents)}</span></div>
+				<div class="flex justify-between border-t border-line pt-1.5 text-base font-semibold">
+					<span>Gesamt (brutto)</span><span>{formatEuro(totalBruttoCents)}</span>
 				</div>
 			</div>
+		</div>
+	{:else}
+		<div class="flex flex-col gap-3">
+			{#if invoice}
+				<div class="flex items-center justify-between gap-3 rounded-md border border-line bg-sunk/50 px-3 py-2.5">
+					<span class="num text-sm font-semibold">Rechnung {invoice.invoice_number}</span>
+					<span class="flex items-center gap-2">
+						<span class="num text-sm">{formatEuro(invoice.total_brutto_cents)}</span>
+						<Button size="xs" onclick={downloadPdf} disabled={downloadingPdf} title="PDF herunterladen">
+							<Download size={13} />
+							{downloadingPdf ? '…' : 'PDF'}
+						</Button>
+					</span>
+				</div>
+			{/if}
+			<Field label="Betreff" for="email-subject"><Input id="email-subject" bind:value={emailSubject} /></Field>
+			<Field label="Nachricht" for="email-body"><Textarea id="email-body" rows={10} bind:value={emailBody} /></Field>
+		</div>
+	{/if}
 
-			<div class="modal-footer">
-				<button class="btn" onclick={() => step = 'type'} disabled={busy}>← Zurück</button>
-				<button class="btn btn-primary" onclick={goToEmail} disabled={busy}>
-					{busy ? 'Erstelle Rechnung…' : 'Rechnung erstellen →'}
-				</button>
-			</div>
-
+	{#snippet footer()}
+		{#if step === 'type'}
+			<Button onclick={onClose} disabled={busy}>Abbrechen</Button>
+			<Button variant="solid" onclick={goToLineitems}>Weiter →</Button>
+		{:else if step === 'lineitems'}
+			<Button onclick={() => (step = 'type')} disabled={busy}>← Zurück</Button>
+			<Button variant="solid" onclick={goToEmail} disabled={busy}>{busy ? 'Erstelle Rechnung …' : 'Rechnung erstellen →'}</Button>
 		{:else}
-			<!-- ── Step 3: Email review ── -->
-			<div class="modal-body">
-				{#if invoice}
-					<div class="invoice-summary">
-						<span class="inv-num">Rechnung {invoice.invoice_number}</span>
-						<div class="inv-right">
-							<span class="inv-total">{formatEuro(invoice.total_brutto_cents)}</span>
-							<button
-								class="btn-download"
-								onclick={downloadPdf}
-								disabled={downloadingPdf}
-								title="PDF herunterladen"
-							>
-								<Download size={15} />
-								{downloadingPdf ? '…' : 'PDF'}
-							</button>
-						</div>
-					</div>
-				{/if}
-
-				<label class="field-label" for="email-subject">Betreff</label>
-				<input
-					id="email-subject"
-					class="text-input"
-					type="text"
-					bind:value={emailSubject}
-				/>
-
-				<label class="field-label" for="email-body">Nachricht</label>
-				<textarea
-					id="email-body"
-					class="text-input body-input"
-					rows={10}
-					bind:value={emailBody}
-				></textarea>
-			</div>
-
-			<div class="modal-footer">
-				<button class="btn" onclick={onClose} disabled={busy}>Abbrechen</button>
-				<button class="btn btn-primary" onclick={send} disabled={busy}>
-					{busy ? 'Sende…' : 'Rechnung senden'}
-				</button>
-			</div>
+			<Button onclick={onClose} disabled={busy}>Abbrechen</Button>
+			<Button variant="accent" onclick={send} disabled={busy}>{busy ? 'Sende …' : 'Rechnung senden'}</Button>
 		{/if}
-
-	</div>
-</div>
-
-<style>
-	.overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.6);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1100;
-	}
-
-	.modal {
-		background: var(--dt-surface);
-		border-radius: var(--dt-radius-lg);
-		width: min(600px, calc(100vw - 2rem));
-		max-height: calc(100dvh - 4rem);
-		display: flex;
-		flex-direction: column;
-		box-shadow: var(--dt-shadow-lg, 0 8px 32px rgba(0,0,0,.25));
-	}
-
-	.modal-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 1.25rem 1.5rem 1rem;
-		border-bottom: 1px solid var(--dt-outline-variant);
-		flex-shrink: 0;
-	}
-
-	.modal-header h2 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.close-btn {
-		background: var(--dt-surface-container-high);
-		border: 1px solid var(--dt-outline-variant);
-		cursor: pointer;
-		color: var(--dt-on-surface);
-		padding: 0.3rem;
-		border-radius: var(--dt-radius-sm);
-		display: flex;
-		align-items: center;
-	}
-
-	.close-btn:hover {
-		background: var(--dt-surface-container-highest, #ddd);
-	}
-
-	.modal-body {
-		padding: 1.25rem 1.5rem;
-		overflow-y: auto;
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.875rem;
-	}
-
-	.modal-footer {
-		padding: 1rem 1.5rem;
-		border-top: 1px solid var(--dt-outline-variant);
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.625rem;
-		flex-shrink: 0;
-	}
-
-	.hint {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-	}
-
-	/* Type selector */
-
-	.type-selector {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.type-option {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-	}
-
-	.type-option:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.type-option.selected {
-		border-color: var(--dt-primary);
-		background: color-mix(in srgb, var(--dt-primary) 8%, transparent);
-	}
-
-	.type-option input[type="radio"] {
-		margin-top: 0.15rem;
-		accent-color: var(--dt-primary);
-		flex-shrink: 0;
-	}
-
-	.type-content {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-	}
-
-	.type-label {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.type-desc {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	/* Partial config */
-
-	.partial-config {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		padding: 0.875rem 1rem;
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		border: 1px solid var(--dt-outline-variant);
-	}
-
-	.partial-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.partial-row .field-label {
-		margin: 0;
-		flex-shrink: 0;
-	}
-
-	.partial-input-wrap {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-	}
-
-	.percent-input {
-		width: 4rem;
-		padding: 0.375rem 0.5rem;
-		background: var(--dt-surface-container-low);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		text-align: right;
-		outline: none;
-	}
-
-	.percent-input:focus {
-		border-color: var(--dt-primary);
-	}
-
-	.partial-preview {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.preview-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		font-size: 0.8125rem;
-	}
-
-	.preview-label {
-		color: var(--dt-on-surface-variant);
-	}
-
-	.preview-value {
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	/* Presets */
-
-	.presets {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.375rem;
-	}
-
-	.preset-chip {
-		font-size: 0.75rem;
-		padding: 0.2rem 0.6rem;
-		border-radius: 999px;
-		border: 1px solid var(--dt-outline-variant);
-		background: var(--dt-surface-container-low);
-		color: var(--dt-on-surface);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.preset-chip:hover {
-		background: var(--dt-surface-container-high);
-	}
-
-	/* Extras list */
-
-	.extras-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.extra-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.extra-row.negative .extra-desc {
-		border-color: color-mix(in srgb, var(--dt-secondary, #e65) 40%, var(--dt-outline-variant));
-	}
-
-	.extra-row.negative .extra-price {
-		color: var(--dt-secondary, #c0392b);
-	}
-
-	.extra-desc {
-		flex: 1;
-		padding: 0.375rem 0.625rem;
-		background: var(--dt-surface-container-low);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-	}
-
-	.extra-desc:focus {
-		border-color: var(--dt-primary);
-	}
-
-	.extra-price-wrap {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		flex-shrink: 0;
-	}
-
-	.extra-price {
-		width: 5.5rem;
-		padding: 0.375rem 0.5rem;
-		background: var(--dt-surface-container-low);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		text-align: right;
-		outline: none;
-	}
-
-	.extra-price:focus {
-		border-color: var(--dt-primary);
-	}
-
-	.extra-currency {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.del-btn {
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: var(--dt-on-surface-variant);
-		padding: 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		display: flex;
-		align-items: center;
-		flex-shrink: 0;
-	}
-
-	.del-btn:hover {
-		color: var(--dt-secondary);
-		background: var(--dt-surface-container-high);
-	}
-
-	.add-row {
-		display: flex;
-		gap: 1rem;
-		align-items: center;
-	}
-
-	.add-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.8125rem;
-	}
-
-	.gutschrift-btn {
-		color: var(--dt-secondary, #c0392b);
-	}
-
-	/* Totals box */
-
-	.totals-box {
-		margin-top: 0.25rem;
-		padding: 0.75rem 1rem;
-		background: var(--dt-surface-container-low);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-	}
-
-	.totals-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.totals-row.totals-total {
-		font-size: 0.9375rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		padding-top: 0.375rem;
-		border-top: 1px solid var(--dt-outline-variant);
-		margin-top: 0.125rem;
-	}
-
-	.totals-row.totals-muted {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		opacity: 0.75;
-	}
-
-	.totals-divider {
-		height: 1px;
-		background: var(--dt-outline-variant);
-		margin: 0.25rem 0;
-	}
-
-	.totals-section-label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin: 0;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.manual-amount-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		border: 1px solid var(--dt-outline-variant);
-	}
-
-	.manual-amount-row .field-label {
-		margin: 0;
-		flex-shrink: 0;
-	}
-
-	.manual-price {
-		width: 7rem;
-	}
-
-	.required {
-		color: var(--dt-error, #b3261e);
-	}
-
-	/* Email step */
-
-	.invoice-summary {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.625rem 0.875rem;
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-	}
-
-	.inv-right {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-	}
-
-	.btn-download {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		padding: 0.2rem 0.6rem;
-		border-radius: var(--dt-radius-sm);
-		border: 1px solid var(--dt-outline-variant);
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface);
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.btn-download:hover:not(:disabled) {
-		background: var(--dt-surface-container-high);
-	}
-
-	.btn-download:disabled {
-		opacity: 0.5;
-		cursor: default;
-	}
-
-	.inv-num {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.inv-total {
-		font-size: 0.875rem;
-		font-weight: 700;
-		color: var(--dt-primary);
-	}
-
-	.field-label {
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: -0.5rem;
-	}
-
-	.text-input {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		background: var(--dt-surface-container-low);
-		border: 1px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		font-family: inherit;
-		outline: none;
-		box-sizing: border-box;
-	}
-
-	.text-input:focus {
-		border-color: var(--dt-primary);
-	}
-
-	.body-input {
-		resize: vertical;
-		line-height: 1.5;
-	}
-
-	/* Buttons */
-
-	.btn-link {
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: var(--dt-primary);
-		font-size: 0.875rem;
-		padding: 0;
-	}
-
-	.btn-link:hover {
-		text-decoration: underline;
-	}
-
-	/* ── Mobile: full-screen sheet, sticky footer, stacked rows ── */
-	@media (max-width: 768px) {
-		.overlay {
-			align-items: flex-end;
-			padding: 0;
-		}
-
-		.modal {
-			width: 100%;
-			max-width: 100%;
-			height: 100%;
-			max-height: 100%;
-			border-radius: 0;
-		}
-
-		.modal-footer {
-			position: sticky;
-			bottom: 0;
-			background: var(--dt-surface);
-			flex-wrap: wrap;
-		}
-
-		.modal-footer .btn {
-			flex: 1;
-			justify-content: center;
-		}
-
-		.close-btn,
-		.del-btn {
-			min-width: 44px;
-			justify-content: center;
-		}
-
-		.manual-amount-row,
-		.partial-row {
-			flex-wrap: wrap;
-		}
-
-		.extra-row {
-			flex-wrap: wrap;
-		}
-
-		.extra-desc {
-			flex-basis: 100%;
-		}
-
-		.invoice-summary {
-			flex-wrap: wrap;
-			gap: 0.5rem;
-		}
-	}
-</style>
+	{/snippet}
+</Modal>

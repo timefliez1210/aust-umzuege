@@ -6,7 +6,7 @@ import {
 	CUSTOMER_TYPE_COLORS,
 	SERVICE_ADDRESS_CONFIG,
 } from './constants';
-import { SERVICES } from '../../routes/foto-angebot/serviceConfig';
+import { SERVICES } from '../../routes/(site)/foto-angebot/serviceConfig';
 
 describe('service type constants', () => {
 	it('every service type has both a label and a badge color', () => {

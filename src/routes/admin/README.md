@@ -172,7 +172,7 @@ src/
 │       └── floor.ts                # Floor label/parse helpers (German floor names)
 │
 └── styles/
-    └── admin.css                   # CSS custom properties (design tokens)
+    └── console.css                 # Tailwind v4 tokens, light/dark, tenant accent
 ```
 
 ---
@@ -341,65 +341,7 @@ The formatting helpers `formatEuro`, `formatDate`, and `formatDateTime` are re-e
 
 ## Design System
 
-The admin dashboard uses a neumorphic design language: soft-extruded cards on a light grey background using paired drop shadows. All design tokens are defined as CSS custom properties in `src/styles/admin.css` and imported in `+layout.svelte`.
-
-### Color palette
-
-| Token | Value | Usage |
-|---|---|---|
-| `--admin-bg` | `#e8ecf1` | Page background, input backgrounds |
-| `--admin-card-bg` | `#ffffff` | Card and panel surfaces |
-| `--admin-primary` | `#6366f1` | Primary buttons, active states, focus rings |
-| `--admin-primary-hover` | `#4f46e5` | Button hover |
-| `--admin-text` | `#1a1a2e` | Primary text, headings |
-| `--admin-text-muted` | `#64748b` | Secondary text, labels |
-| `--admin-text-dim` | `#94a3b8` | Placeholder text, timestamps, disabled |
-| `--admin-border` | `#e2e8f0` | Card borders, dividers |
-| `--admin-border-light` | `#f1f5f9` | Subtle row separators |
-| `--admin-danger` | `#ef4444` | Destructive actions, error states |
-| `--admin-danger-hover` | `#dc2626` | Destructive hover |
-| `--admin-success` | `#22c55e` | Confirmed status, success toasts |
-| `--admin-warning` | `#f59e0b` | Pending status, calendar conflicts |
-
-The sidebar uses its own hardcoded dark palette (`#1a1a2e` background) with `rgba(99, 102, 241, 0.2)` for the active link highlight and `#a5b4fc` for the active link text.
-
-### Shadows (neumorphic)
-
-| Token | Value | Usage |
-|---|---|---|
-| `--admin-shadow-outset` | `5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff` | Standard card elevation |
-| `--admin-shadow-outset-sm` | `3px 3px 8px #d1d9e6, -3px -3px 8px #ffffff` | Small elevated elements |
-| `--admin-shadow-outset-primary` | `3px 3px 10px rgba(99, 102, 241, 0.3)` | Primary button elevation |
-| `--admin-shadow-inset` | `inset 2px 2px 5px #d1d9e6, inset -2px -2px 5px #ffffff` | Input fields, inset wells |
-| `--admin-shadow-focus` | inset shadows + `0 0 0 2px rgba(99, 102, 241, 0.2)` | Focused input state |
-
-### Spacing and shape
-
-| Token | Value | Usage |
-|---|---|---|
-| `--admin-radius` | `12px` | Cards, modals |
-| `--admin-radius-sm` | `8px` | Buttons, badges |
-| `--admin-radius-xs` | `6px` | Small elements |
-
-### Typography
-
-- **Font**: System font stack (inherits from public site — Inter self-hosted)
-- **Heading (h1)**: `1.5rem`, `font-weight: 700`, color `#1a1a2e`
-- **Section heading (h2)**: `0.9375rem`, `font-weight: 600`, color `#334155`
-- **Body**: `0.875rem`, color `#334155`
-- **Secondary**: `0.8125rem`, color `#64748b`
-- **Timestamps/dim**: `0.75rem`, color `#94a3b8`
-
-### Responsive layout
-
-- **Breakpoint**: `768px`
-- **Sidebar**: Fixed 240px (desktop) / off-canvas drawer (mobile)
-- **Collapsed sidebar**: 64px icon-only strip
-- **Touch targets**: Minimum 44px height on all interactive elements on mobile
-- **Tables**: Horizontally scrollable on narrow viewports
-- **Content padding**: `1.5rem` (desktop), `0.75rem` (mobile)
-
----
+See [DESIGN.md](DESIGN.md): tokens in `src/styles/console.css`, primitives in `src/lib/components/ui/`, shell in `src/lib/components/console/`.
 
 ## API Integration
 

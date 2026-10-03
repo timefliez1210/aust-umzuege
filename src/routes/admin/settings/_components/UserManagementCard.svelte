@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { apiGet, apiPost, formatDateTime } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
-	import { UserPlus, Shield, Trash2, TriangleAlert, X } from 'lucide-svelte';
+	import { UserPlus, Shield, Trash2 } from 'lucide-svelte';
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
+	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 
 	interface UserItem {
 		id: string;
@@ -170,19 +177,19 @@
 	}
 
 	/**
-	 * Returns the background colour, text colour, and display label for a user role badge.
+	 * Returns the badge tone and display label for a user role.
 	 *
 	 * Called by: Template ($derived via {@const badge = roleBadge(user.role)} inside the user list)
 	 * Purpose: Centralises the role-to-colour mapping so the user-list card renders consistent
 	 *          visual badges without repeating inline style logic for each row.
 	 *
 	 * @param role - The user's role string (e.g. "admin" or "operator")
-	 * @returns An object with bg (background hex), color (text hex), and text (display label)
+	 * @returns An object with the badge tone and display label
 	 */
 	function roleBadge(role: string) {
 		return role === 'admin'
-			? { bg: '#ede9fe', color: '#7c3aed', text: 'Admin' }
-			: { bg: '#dbeafe', color: '#2563eb', text: 'Operator' };
+			? { tone: 'accent' as const, text: 'Admin' }
+			: { tone: 'info' as const, text: 'Operator' };
 	}
 
 	/**
@@ -200,419 +207,66 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-<!-- Create User Card -->
-<div class="card">
-	<div class="card-header">
-		<UserPlus size={20} />
-		<h2>Neuen Benutzer anlegen</h2>
-	</div>
-
-	<form class="create-form" onsubmit={handleCreate}>
-		<div class="form-row">
-			<div class="field">
-				<label for="new-name">Name</label>
-				<input
-					id="new-name"
-					type="text"
-					bind:value={newName}
-					placeholder="Max Mustermann"
-					required
-				/>
-			</div>
-			<div class="field">
-				<label for="new-email">E-Mail</label>
-				<input
-					id="new-email"
-					type="email"
-					bind:value={newEmail}
-					placeholder="max@aust-umzuege.de"
-					required
-				/>
-			</div>
-		</div>
-
-		<div class="form-row">
-			<div class="field">
-				<label for="new-password">Passwort</label>
-				<input
-					id="new-password"
-					type="password"
-					bind:value={newPassword}
-					placeholder="Mindestens 8 Zeichen"
-					minlength={8}
-					required
-				/>
-			</div>
-			<div class="field">
-				<label for="new-role">Rolle</label>
-				<div class="role-toggle">
-					<button
-						type="button"
-						class:active={newRole === 'admin'}
-						onclick={() => (newRole = 'admin')}
-					>
-						<Shield size={14} />
-						Admin
-					</button>
-					<button
-						type="button"
-						class:active={newRole === 'operator'}
-						onclick={() => (newRole = 'operator')}
-					>
-						Operator
-					</button>
-				</div>
-			</div>
-		</div>
-
-		<button type="submit" class="btn-create" disabled={creating}>
-			{#if creating}
-				Wird erstellt...
-			{:else}
-				<UserPlus size={16} />
-				Benutzer erstellen
-			{/if}
-		</button>
-	</form>
-</div>
-
-<!-- Users List Card -->
-<div class="card">
-	<div class="card-header">
-		<Shield size={20} />
-		<h2>Benutzer</h2>
-	</div>
-
+<Panel title="Benutzer">
 	{#if loading}
-		<div class="loading">Lade Benutzer...</div>
+		<div class="h-24 animate-pulse rounded-sm bg-sunk"></div>
 	{:else if users.length === 0}
-		<div class="empty">Keine Benutzer vorhanden.</div>
+		<p class="text-[13px] text-faint">Keine Benutzer vorhanden.</p>
 	{:else}
-		<div class="users-list">
+		<ul class="-mx-4 -my-4 divide-y divide-line">
 			{#each users as user (user.id)}
 				{@const badge = roleBadge(user.role)}
-				<div class="user-row">
-					<div class="user-info">
-						<div class="user-avatar">
-							{(user.name || user.email).charAt(0).toUpperCase()}
-						</div>
-						<div class="user-details">
-							<span class="user-name">{user.name || '—'}</span>
-							<span class="user-email">{user.email}</span>
-						</div>
-					</div>
-					<div class="user-meta">
-						<span class="role-badge" style="background: {badge.bg}; color: {badge.color};">
-							{badge.text}
-						</span>
-						<span class="user-date">{formatDateTime(user.created_at)}</span>
-						<button
-							class="btn-delete"
-							onclick={() => requestDeleteUser(user)}
-							aria-label="Benutzer loeschen"
-							title="Loeschen"
-						>
-							<Trash2 size={14} />
-						</button>
-					</div>
-				</div>
+				<li class="flex items-center gap-3 px-4 py-2.5">
+					<span
+						class="num inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-line-strong bg-sunk text-xs"
+						aria-hidden="true">{(user.name || user.email).charAt(0).toUpperCase()}</span
+					>
+					<span class="flex min-w-0 flex-1 flex-col">
+						<span class="truncate text-sm font-medium">{user.name || '—'}</span>
+						<span class="truncate text-xs text-muted">{user.email}</span>
+					</span>
+					<Badge tone={badge.tone}>{badge.text}</Badge>
+					<span class="num hidden text-xs text-faint sm:block">{formatDateTime(user.created_at)}</span>
+					<Button variant="ghost" size="icon-sm" class="hover:text-danger" onclick={() => requestDeleteUser(user)} aria-label="Benutzer löschen" title="Löschen">
+						<Trash2 size={14} />
+					</Button>
+				</li>
 			{/each}
-		</div>
+		</ul>
 	{/if}
-</div>
+</Panel>
 
-<!-- Confirm Modal -->
-{#if confirmOpen}
-	<div class="modal-backdrop" role="dialog" tabindex="-1" onclick={(e) => { if (e.target === e.currentTarget) closeConfirm(); }} onkeydown={(e) => { if (e.key === 'Escape') closeConfirm(); }}>
-		<div class="modal">
-			<button class="modal-close" onclick={closeConfirm} aria-label="Schliessen">
-				<X size={18} />
-			</button>
-			<div class="modal-icon">
-				<TriangleAlert size={28} />
-			</div>
-			<h3 class="modal-title">{confirmTitle}</h3>
-			<p class="modal-message">{confirmMessage}</p>
-			<div class="modal-actions">
-				<button class="btn-cancel" onclick={closeConfirm}>Abbrechen</button>
-				<button class="btn-confirm-danger" onclick={executeConfirm} disabled={confirmLoading}>
-					{confirmLoading ? 'Wird geloescht...' : 'Unwiderruflich loeschen'}
-				</button>
-			</div>
+<Panel title="Neuen Benutzer anlegen">
+	<form class="grid gap-3 sm:grid-cols-2" onsubmit={handleCreate}>
+		<Field label="Name" for="new-name"><Input id="new-name" bind:value={newName} placeholder="Max Mustermann" required /></Field>
+		<Field label="E-Mail" for="new-email"><Input id="new-email" type="email" bind:value={newEmail} placeholder="max@firma.de" required /></Field>
+		<Field label="Passwort" for="new-password">
+			<Input id="new-password" type="password" bind:value={newPassword} placeholder="Mindestens 8 Zeichen" minlength={8} required />
+		</Field>
+		<div class="flex flex-col gap-1.5">
+			<span class="text-xs font-medium text-muted">Rolle</span>
+			<Segmented
+				label="Rolle"
+				options={[
+					{ value: 'admin', label: 'Admin', icon: Shield },
+					{ value: 'operator', label: 'Operator' }
+				]}
+				bind:value={newRole}
+				class="self-start"
+			/>
 		</div>
-	</div>
-{/if}
+		<Button type="submit" variant="solid" class="self-start" disabled={creating}>
+			{#if creating}Wird erstellt …{:else}<UserPlus size={15} /> Benutzer erstellen{/if}
+		</Button>
+	</form>
+</Panel>
 
-<style>
-	.card {
-		box-shadow: none;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 1.25rem;
-		color: var(--dt-on-surface);
-	}
-
-	.card-header h2 {
-		font-size: 1.0625rem;
-		font-weight: 600;
-	}
-
-	.create-form {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.form-row {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-	}
-
-	.field input {
-		padding: 0.625rem 0.75rem;
-		font-size: 0.9375rem;
-	}
-
-	.role-toggle {
-		display: flex;
-		border-radius: var(--dt-radius-md);
-		overflow: hidden;
-		background: var(--dt-surface-container-high);
-	}
-
-	.role-toggle button {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.375rem;
-		padding: 0.625rem 0.75rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		transition: all var(--dt-transition);
-	}
-
-	.role-toggle button.active {
-		background: var(--dt-primary-container);
-		color: var(--dt-on-primary);
-	}
-
-	.btn-create {
-		padding: 0.75rem var(--dt-space-6);
-		font-size: 0.9375rem;
-		align-self: flex-start;
-		justify-content: center;
-	}
-
-	/* Users list */
-	.loading,
-	.empty {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		padding: 1rem 0;
-	}
-
-	.users-list {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.user-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.875rem 0;
-	}
-
-	.user-row:nth-child(even) {
-		background: var(--dt-surface-container-low);
-		margin: 0 -1.5rem;
-		padding-left: 1.5rem;
-		padding-right: 1.5rem;
-	}
-
-	.user-info {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.user-avatar {
-		width: 36px;
-		height: 36px;
-		border-radius: var(--dt-radius-sm);
-		background: var(--dt-surface-container);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-weight: 700;
-		font-size: 0.875rem;
-		color: var(--dt-primary);
-	}
-
-	.user-details {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.user-name {
-		font-weight: 600;
-		font-size: 0.9375rem;
-		color: var(--dt-on-surface);
-	}
-
-	.user-email {
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.user-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.role-badge {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.125rem 0.5rem;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		white-space: nowrap;
-	}
-
-	.user-date {
-		font-size: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.btn-delete {
-		display: flex;
-		align-items: center;
-		padding: 0.375rem;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface-variant);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		transition: all var(--dt-transition);
-	}
-
-	.btn-delete:hover {
-		color: var(--dt-secondary);
-		background: rgba(168, 57, 0, 0.08);
-	}
-
-	/* Confirm Modal */
-	.modal-backdrop {
-		z-index: 9999;
-	}
-
-	.modal {
-		padding: 2rem;
-		max-width: 420px;
-		text-align: center;
-	}
-
-	.modal-close {
-		position: absolute;
-		top: 0.75rem;
-		right: 0.75rem;
-		color: var(--dt-on-surface-variant);
-		padding: 0.25rem;
-		border-radius: var(--dt-radius-sm);
-		display: flex;
-		background: transparent;
-		border: var(--dt-ghost-border);
-		cursor: pointer;
-		transition: all var(--dt-transition);
-	}
-
-	.modal-close:hover {
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container);
-	}
-
-	.modal-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 48px;
-		height: 48px;
-		border-radius: var(--dt-radius-md);
-		background: rgba(168, 57, 0, 0.08);
-		color: var(--dt-secondary);
-		margin-bottom: 1rem;
-	}
-
-	.modal-title {
-		font-size: 1.125rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-		margin-bottom: 0.5rem;
-	}
-
-	.modal-message {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-		line-height: 1.5;
-		margin-bottom: 1.5rem;
-	}
-
-	.modal-actions {
-		justify-content: center;
-	}
-
-	.btn-cancel {
-		padding: 0.625rem 1.25rem;
-	}
-
-	.btn-confirm-danger {
-		padding: 0.625rem 1.25rem;
-	}
-
-	@media (max-width: 768px) {
-		.form-row {
-			grid-template-columns: 1fr;
-		}
-
-		.user-row {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 0.5rem;
-		}
-
-		.user-meta {
-			padding-left: 2.75rem;
-		}
-
-		/* Defer to the shared bottom-sheet modal instead of the fixed centered dialog
-		 * (see src/styles/admin-components.css .modal mobile rule) — the desktop-only
-		 * max-width/padding/text-align above would otherwise out-specificity it. */
-		.modal {
-			max-width: 100%;
-			padding: 1.5rem 1.25rem 1rem;
-			text-align: left;
-		}
-
-		.modal-icon,
-		.modal-actions {
-			justify-content: flex-start;
-		}
-	}
-</style>
+<ConfirmationDialog
+	open={confirmOpen}
+	title={confirmTitle}
+	message={confirmMessage}
+	confirmLabel={confirmLoading ? 'Wird gelöscht …' : 'Unwiderruflich löschen'}
+	loading={confirmLoading}
+	onConfirm={executeConfirm}
+	onCancel={closeConfirm}
+/>

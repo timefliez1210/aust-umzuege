@@ -33,32 +33,14 @@
 </script>
 
 {#if addresses.length > 0}
-	<select class="known-addr-picker" onchange={handleChange} aria-label={placeholder}>
+	<select
+		class="h-9 w-full cursor-pointer rounded-sm border border-dashed border-line-strong bg-sunk px-3 text-[13px] text-muted outline-none hover:border-fg hover:text-fg focus:border-fg"
+		onchange={handleChange}
+		aria-label={placeholder}
+	>
 		<option value="">{placeholder}</option>
-		{#each addresses as a, i}
+		{#each addresses as a, i (i)}
 			<option value={i}>{a.label ? `${a.label} — ` : ''}{formatKnownAddress(a)}</option>
 		{/each}
 	</select>
 {/if}
-
-<style>
-	.known-addr-picker {
-		width: 100%;
-		padding: 0.4rem 0.65rem;
-		margin-bottom: 0.5rem;
-		border-radius: var(--dt-radius-sm);
-		border: 1.5px dashed var(--dt-outline-variant);
-		background: var(--dt-surface-container);
-		font-size: 0.8125rem;
-		color: var(--dt-on-surface-variant);
-		outline: none;
-		cursor: pointer;
-		box-sizing: border-box;
-		transition: border-color var(--dt-transition), color var(--dt-transition);
-	}
-	.known-addr-picker:hover,
-	.known-addr-picker:focus {
-		border-color: var(--dt-primary);
-		color: var(--dt-on-surface);
-	}
-</style>

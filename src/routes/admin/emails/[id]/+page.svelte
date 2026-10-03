@@ -5,6 +5,13 @@
 	import CreateInquiryFromEmailModal from './_components/CreateInquiryFromEmailModal.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
+	import { tenant } from '$lib/tenant';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
 
 	interface EmailMessage {
 		id: string;
@@ -526,264 +533,187 @@
 	}
 </script>
 
-<div class="page">
-	<div class="page-nav">
-		<a href="/admin/emails" class="back-link"><ArrowLeft size={16} /> E-Mails</a>
-	</div>
+<svelte:head><title>{data ? data.thread.customer_name || data.thread.customer_email : 'E-Mail'}</title></svelte:head>
 
-	{#if loading}
-		<div class="loading">Laden...</div>
-	{:else if error}
-		<div class="error-msg">{error}</div>
-	{:else if data}
-		<div class="page-header">
-			<div class="header-info">
-				<h1>{data.thread.customer_name || data.thread.customer_email || '(unbekannter Absender)'}</h1>
-				{#if data.thread.subject}
-					<span class="thread-subject">{data.thread.subject}</span>
-				{/if}
+<a href="/admin/emails" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg"><ArrowLeft size={15} /> E-Mails</a>
+
+{#if loading}
+	<div class="flex flex-col gap-3" aria-busy="true">
+		<div class="h-16 animate-pulse rounded-md bg-sunk"></div>
+		<div class="h-48 animate-pulse rounded-md bg-sunk"></div>
+	</div>
+{:else if error}
+	<Notice tone="danger">{error}</Notice>
+{:else if data}
+	<div class="mx-auto flex max-w-4xl flex-col gap-3.5">
+		<header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+			<div class="flex min-w-0 flex-col gap-1.5">
+				<h1 class="truncate text-[24px] leading-tight font-semibold tracking-[-0.03em] sm:text-[28px]">
+					{data.thread.customer_name || data.thread.customer_email || '(unbekannter Absender)'}
+				</h1>
+				{#if data.thread.subject}<p class="text-sm text-muted">{data.thread.subject}</p>{/if}
 			</div>
-			<div class="header-actions">
-				<button
-					type="button"
-					class="link-quote"
-					class:is-muted={data.thread.muted}
+			<div class="flex flex-wrap items-center gap-2">
+				<Button
+					size="sm"
+					variant={data.thread.muted ? 'outline' : 'ghost'}
 					onclick={toggleMuted}
-					title={data.thread.muted
-						? 'Erinnerungen für diesen Thread sind aus'
-						: 'Keine Telegram-Erinnerungen mehr für diesen Thread'}
+					title={data.thread.muted ? 'Erinnerungen für diesen Thread sind aus' : 'Keine Telegram-Erinnerungen mehr für diesen Thread'}
 				>
-					{#if data.thread.muted}
-						<BellOff size={14} /> Stumm
-					{:else}
-						<Bell size={14} /> Stummschalten
-					{/if}
-				</button>
+					{#if data.thread.muted}<BellOff size={14} /> Stumm{:else}<Bell size={14} /> Stummschalten{/if}
+				</Button>
 				{#if data.thread.inquiry_id}
-					<a href="/admin/inquiries/{data.thread.inquiry_id}" class="link-quote">
-						<ExternalLink size={14} /> Zur Anfrage
-					</a>
+					<Button size="sm" href="/admin/inquiries/{data.thread.inquiry_id}"><ExternalLink size={14} /> Zur Anfrage</Button>
 				{:else if data.thread.customer_id}
-					<button type="button" class="link-quote" onclick={() => (showCreateInquiry = true)}>
-						<FilePlus size={14} /> Anfrage erstellen
-					</button>
+					<Button size="sm" onclick={() => (showCreateInquiry = true)}><FilePlus size={14} /> Anfrage erstellen</Button>
 				{:else}
-					<span class="no-customer-hint" title="Diese E-Mail konnte keinem Kunden zugeordnet werden">
-						Kein Kunde zugeordnet
-					</span>
+					<Badge tone="warn" title="Diese E-Mail konnte keinem Kunden zugeordnet werden">Kein Kunde zugeordnet</Badge>
+				{/if}
+				{#if !showReply}
+					<Button size="sm" variant="accent" onclick={() => (showReply = true)}><Send size={14} /> Antworten</Button>
 				{/if}
 			</div>
-		</div>
+		</header>
 
 		{#if data.thread.offer_pdf_filename}
 			<button
 				type="button"
-				class="offer-pdf-banner"
+				class="flex items-center gap-2 self-start rounded-sm border border-info/40 bg-info/10 px-3 py-2 text-[13px] text-info hover:bg-info/15"
 				onclick={() => previewOfferPdf()}
 			>
-				<Paperclip size={14} />
-				Angebot wird als Anhang mitgesendet: {data.thread.offer_pdf_filename}
+				<Paperclip size={14} /> Angebot wird als Anhang mitgesendet: {data.thread.offer_pdf_filename}
 			</button>
 		{/if}
 
-		<!-- Reply composer -->
-		<div class="reply-section">
-			{#if showReply}
-				<div class="reply-form">
-					<h3>Antwort verfassen</h3>
-					<div class="form-field">
-						<label for="reply-subject">Betreff (optional)</label>
-						<input
-							id="reply-subject"
-							type="text"
-							placeholder={data.thread.subject || 'Betreff...'}
-							bind:value={replySubject}
-						/>
-					</div>
-					<div class="form-field">
-						<label for="reply-cc">CC <span class="optional">(optional, mit Komma trennen)</span></label>
-						<input id="reply-cc" type="text" placeholder="kollege@beispiel.de" bind:value={replyCc} />
-					</div>
-					<div class="form-field">
-						<label for="reply-bcc">BCC <span class="optional">(optional)</span></label>
-						<input id="reply-bcc" type="text" placeholder="archiv@beispiel.de" bind:value={replyBcc} />
-					</div>
-					<div class="form-field">
-						<label for="reply-body">Nachricht</label>
-						<textarea
-							id="reply-body"
-							rows="6"
-							placeholder="Antwort schreiben..."
-							bind:value={replyBody}
-						></textarea>
-					</div>
-					<div class="reply-actions">
-						<button
-							class="btn btn-save"
-							onclick={saveReply}
-							disabled={replying || !replyBody.trim()}
-						>
-							<Save size={14} />
-							{replying ? 'Speichere...' : 'Als Entwurf speichern'}
-						</button>
-						<button
-							class="btn btn-cancel"
-							onclick={() => { showReply = false; replySubject = ''; replyBody = ''; replyCc = ''; replyBcc = ''; }}
-							disabled={replying}
-						>
-							Abbrechen
-						</button>
-					</div>
+		{#if showReply}
+			<section class="flex flex-col gap-3 rounded-md border border-line bg-panel p-4">
+				<h3 class="text-[15px] font-semibold">Antwort verfassen</h3>
+				<Field label="Betreff (optional)" for="reply-subject">
+					<Input id="reply-subject" placeholder={data.thread.subject || 'Betreff …'} bind:value={replySubject} />
+				</Field>
+				<div class="grid gap-3 sm:grid-cols-2">
+					<Field label="CC (optional, mit Komma trennen)" for="reply-cc"><Input id="reply-cc" placeholder="kollege@beispiel.de" bind:value={replyCc} /></Field>
+					<Field label="BCC (optional)" for="reply-bcc"><Input id="reply-bcc" placeholder="archiv@beispiel.de" bind:value={replyBcc} /></Field>
 				</div>
-			{:else}
-				<button class="btn btn-reply" onclick={() => { showReply = true; }}>
-					<Send size={14} /> Antworten
-				</button>
-			{/if}
-		</div>
+				<Field label="Nachricht" for="reply-body"><Textarea id="reply-body" rows={7} placeholder="Antwort schreiben …" bind:value={replyBody} /></Field>
+				<div class="flex flex-wrap gap-2">
+					<Button variant="solid" onclick={saveReply} disabled={replying || !replyBody.trim()}>
+						<Save size={14} />
+						{replying ? 'Speichere …' : 'Als Entwurf speichern'}
+					</Button>
+					<Button
+						variant="ghost"
+						disabled={replying}
+						onclick={() => {
+							showReply = false;
+							replySubject = '';
+							replyBody = '';
+							replyCc = '';
+							replyBcc = '';
+						}}>Abbrechen</Button
+					>
+				</div>
+			</section>
+		{/if}
 
-		<div class="conversation">
-			{#each orderedMessages as msg}
-				<div
-					class="message"
-					class:inbound={msg.direction === 'inbound'}
-					class:outbound={msg.direction === 'outbound' && msg.status !== 'draft'}
-					class:draft={msg.status === 'draft'}
+		<div class="flex flex-col gap-3">
+			{#each orderedMessages as msg (msg.id)}
+				{@const draft = msg.status === 'draft'}
+				{@const inbound = msg.direction === 'inbound'}
+				<article
+					class="flex flex-col gap-2.5 rounded-md border p-4 {draft
+						? 'border-dashed border-warn/60 bg-warn/5'
+						: inbound
+							? 'border-line bg-panel'
+							: 'border-line bg-sunk sm:ml-10'}"
 				>
-					<div class="message-header">
-						<span class="message-from">
-							{#if msg.status === 'draft'}
-								Entwurf an {msg.to_address}
-							{:else if msg.direction === 'inbound'}
-								{msg.from_address}
-							{:else}
-								AUST Umzuege
-							{/if}
+					<header class="flex flex-wrap items-center justify-between gap-2">
+						<span class="flex min-w-0 items-center gap-2 text-sm font-medium">
+							<span class="size-2 shrink-0 rounded-full {draft ? 'bg-warn' : inbound ? 'bg-info' : 'bg-bar-strong'}" aria-hidden="true"></span>
+							<span class="truncate">{#if draft}Entwurf an {msg.to_address}{:else if inbound}{msg.from_address}{:else}{tenant.name}{/if}</span>
 						</span>
-						<div class="message-meta">
-							{#if msg.status === 'draft'}
-								<span class="badge-draft">Entwurf</span>
-							{/if}
-							{#if msg.llm_generated}
-								<span class="badge-ai">KI-generiert</span>
-							{/if}
-							<span class="message-date">{formatDateTime(msg.created_at)}</span>
-						</div>
-					</div>
+						<span class="flex items-center gap-1.5">
+							{#if draft}<Badge tone="warn">Entwurf</Badge>{/if}
+							{#if msg.llm_generated}<Badge tone="info">KI</Badge>{/if}
+							{#if inbound && msg.handled_at !== null}<Badge tone="ok">erledigt</Badge>{/if}
+							<span class="num text-xs text-faint">{formatDateTime(msg.created_at)}</span>
+						</span>
+					</header>
 
 					{#if editingId === msg.id}
-						<div class="edit-fields">
-							<input
-								class="edit-subject"
-								type="text"
-								placeholder="Betreff"
-								bind:value={editSubject}
-							/>
-							<textarea
-								class="edit-body"
-								rows="8"
-								placeholder="Nachrichtentext..."
-								bind:value={editBody}
-							></textarea>
-						</div>
-						<div class="draft-actions">
-							<button
-								class="btn btn-send"
-								onclick={() => saveAndSend(msg.id)}
-								disabled={saving}
-							>
+						<Input placeholder="Betreff" aria-label="Betreff" bind:value={editSubject} />
+						<Textarea rows={9} placeholder="Nachrichtentext …" aria-label="Nachrichtentext" bind:value={editBody} />
+						<div class="flex flex-wrap gap-2">
+							<Button size="sm" variant="accent" onclick={() => saveAndSend(msg.id)} disabled={saving}>
 								<Send size={14} />
-								{saving ? 'Sende...' : 'Speichern & Senden'}
-							</button>
-							<button
-								class="btn btn-save"
-								onclick={() => saveEdit(msg.id)}
-								disabled={saving}
-							>
-								<Save size={14} />
-								{saving ? 'Speichere...' : 'Speichern'}
-							</button>
-							<button
-								class="btn btn-cancel"
-								onclick={cancelEdit}
-								disabled={saving}
-							>
-								Abbrechen
-							</button>
+								{saving ? 'Sende …' : 'Speichern & senden'}
+							</Button>
+							<Button size="sm" onclick={() => saveEdit(msg.id)} disabled={saving}><Save size={14} /> {saving ? 'Speichere …' : 'Speichern'}</Button>
+							<Button size="sm" variant="ghost" onclick={cancelEdit} disabled={saving}>Abbrechen</Button>
 						</div>
 					{:else}
-						{#if msg.subject}
-							<div class="message-subject">{msg.subject}</div>
-						{/if}
-						{#if msg.cc_addresses.length > 0}
-							<div class="message-cc">CC: {msg.cc_addresses.join(', ')}</div>
-						{/if}
+						{#if msg.subject}<div class="text-sm font-semibold">{msg.subject}</div>{/if}
+						{#if msg.cc_addresses.length > 0}<div class="text-xs text-faint">CC: {msg.cc_addresses.join(', ')}</div>{/if}
 
 						{#if msg.body_html && !plainTextOverride[msg.id]}
-							<!-- Sanitised on the server (scripts, handlers, remote images and
-							     tracking pixels removed) before it ever reaches the client. -->
-							<div class="message-body message-html">{@html msg.body_html}</div>
-							<button
-								type="button"
-								class="body-toggle"
-								onclick={() => (plainTextOverride[msg.id] = true)}
+							<!-- Sanitised server-side (scripts, handlers, remote images, tracking pixels removed).
+							     Rendered on a white "paper" in both themes: mail HTML carries its own inline
+							     colours and would turn unreadable on a dark surface. -->
+							<div
+								class="overflow-x-auto rounded-sm bg-white p-4 text-sm leading-relaxed text-[#111] [&_a]:text-[#1a56db] [&_a]:underline [&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#ccc] [&_blockquote]:pl-3 [&_blockquote]:text-[#555] [&_img]:h-auto [&_img]:max-w-full [&_p]:my-2 [&_table]:max-w-full"
 							>
+								{@html msg.body_html}
+							</div>
+							<button type="button" class="inline-flex items-center gap-1.5 self-start text-xs text-faint hover:text-fg" onclick={() => (plainTextOverride[msg.id] = true)}>
 								<Code size={12} /> Als Text anzeigen
 							</button>
 						{:else}
-							<div class="message-body">{msg.body_text || ''}</div>
+							<div class="text-sm leading-relaxed whitespace-pre-wrap">{msg.body_text || ''}</div>
 							{#if msg.body_html}
-								<button
-									type="button"
-									class="body-toggle"
-									onclick={() => (plainTextOverride[msg.id] = false)}
-								>
+								<button type="button" class="inline-flex items-center gap-1.5 self-start text-xs text-faint hover:text-fg" onclick={() => (plainTextOverride[msg.id] = false)}>
 									<Code size={12} /> Formatiert anzeigen
 								</button>
 							{/if}
 						{/if}
 
 						{#if msg.attachment_keys.length > 0}
-							<div class="attachment-list">
-								{#each msg.attachment_keys as _key, i}
+							<div class="flex flex-wrap gap-1.5">
+								{#each msg.attachment_keys as key, i (key)}
 									<button
 										type="button"
-										class="attachment-link"
+										class="inline-flex h-7 items-center gap-1.5 rounded-sm border border-line bg-panel px-2 text-xs hover:bg-sunk"
 										onclick={() => previewAttachment(msg.id, i)}
 									>
-										<Paperclip size={12} />
-										{attachmentLabel(msg, i)}
+										<Paperclip size={12} />{attachmentLabel(msg, i)}
 									</button>
 								{/each}
 							</div>
 						{/if}
 
-						{#if msg.direction === 'inbound'}
-							<div class="draft-actions">
-								<button
-									class="btn btn-handled"
-									class:is-handled={msg.handled_at !== null}
-									onclick={() => toggleHandled(msg)}
-								>
-									<Check size={14} />
-									{msg.handled_at !== null ? 'Erledigt' : 'Als erledigt markieren'}
-								</button>
-							</div>
+						{#if inbound}
+							<Button size="xs" variant={msg.handled_at !== null ? 'outline' : 'ghost'} class="self-start" onclick={() => toggleHandled(msg)}>
+								<Check size={13} />
+								{msg.handled_at !== null ? 'Erledigt' : 'Als erledigt markieren'}
+							</Button>
 						{/if}
 
-						{#if msg.status === 'draft'}
-							<div class="draft-actions">
-								<button
-									class="btn btn-attach-doc"
-									class:is-open={docPickerFor === msg.id}
-									onclick={() => toggleDocPicker(msg.id)}
+						{#if draft}
+							<div class="flex flex-wrap gap-1.5 border-t border-line pt-2.5">
+								<Button size="sm" variant="accent" onclick={() => confirmSendDraft(msg.id)} disabled={actionLoading === msg.id}>
+									<Send size={14} />
+									{actionLoading === msg.id ? 'Sende …' : 'Senden'}
+								</Button>
+								<Button size="sm" onclick={() => startEdit(msg)} disabled={actionLoading === msg.id}><Pencil size={14} /> Bearbeiten</Button>
+								<Button size="sm" variant={docPickerFor === msg.id ? 'solid' : 'outline'} onclick={() => toggleDocPicker(msg.id)}>
+									<FileText size={14} /> KVA / Rechnung
+								</Button>
+								<label
+									class="inline-flex h-8 cursor-pointer items-center gap-2 rounded-sm border border-line-strong px-3 text-[13px] hover:bg-sunk {uploadingFor === msg.id
+										? 'pointer-events-none opacity-60'
+										: ''}"
 								>
-									<FileText size={14} />
-									KVA / Rechnung anhängen
-								</button>
-								<label class="btn btn-attach" class:is-busy={uploadingFor === msg.id}>
 									<Paperclip size={14} />
-									{uploadingFor === msg.id ? 'Lade hoch...' : 'Datei anhängen'}
+									{uploadingFor === msg.id ? 'Lade hoch …' : 'Datei'}
 									<input
 										type="file"
 										multiple
@@ -796,56 +726,34 @@
 										}}
 									/>
 								</label>
-								<button
-									class="btn btn-send"
-									onclick={() => confirmSendDraft(msg.id)}
-									disabled={actionLoading === msg.id}
-								>
-									<Send size={14} />
-									{actionLoading === msg.id ? 'Sende...' : 'Senden'}
-								</button>
-								<button
-									class="btn btn-edit"
-									onclick={() => startEdit(msg)}
-									disabled={actionLoading === msg.id}
-								>
-									<Pencil size={14} />
-									Bearbeiten
-								</button>
-								<button
-									class="btn btn-discard"
-									onclick={() => confirmDiscardDraft(msg.id)}
-									disabled={actionLoading === msg.id}
-								>
-									<X size={14} />
-									Verwerfen
-								</button>
+								<Button size="sm" variant="danger" class="ml-auto" onclick={() => confirmDiscardDraft(msg.id)} disabled={actionLoading === msg.id}>
+									<X size={14} /> Verwerfen
+								</Button>
 							</div>
 
 							{#if docPickerFor === msg.id}
-								<div class="doc-picker">
+								<div class="flex flex-col divide-y divide-line rounded-sm border border-line bg-panel">
 									{#if documentsLoading}
-										<div class="doc-empty">Dokumente werden geladen...</div>
+										<p class="px-3 py-3 text-[13px] text-muted">Dokumente werden geladen …</p>
 									{:else if documents.length === 0}
-										<div class="doc-empty">
-											Keine fertigen Dokumente für diesen Kunden — KVA oder Rechnung
-											muss erst erzeugt werden.
-										</div>
+										<p class="px-3 py-3 text-[13px] text-muted">
+											Keine fertigen Dokumente für diesen Kunden — KVA oder Rechnung muss erst erzeugt werden.
+										</p>
 									{:else}
-										{#each documents as doc}
+										{#each documents as doc (doc.kind + doc.id)}
 											<button
 												type="button"
-												class="doc-entry"
+												class="flex items-center gap-2.5 px-3 py-2 text-left text-[13px] hover:bg-sunk disabled:opacity-60"
 												disabled={doc.attached || attachingDoc !== null}
 												onclick={() => attachDocument(msg.id, doc)}
 											>
-												<FileText size={14} />
-												<span class="doc-label">{doc.label}</span>
-												<span class="doc-file">{doc.filename}</span>
+												<FileText size={14} class="shrink-0 text-muted" />
+												<span class="font-medium">{doc.label}</span>
+												<span class="min-w-0 flex-1 truncate text-xs text-faint">{doc.filename}</span>
 												{#if doc.attached}
-													<span class="doc-state">angehängt</span>
+													<Badge tone="ok">angehängt</Badge>
 												{:else if attachingDoc === `${doc.kind}:${doc.id}`}
-													<span class="doc-state">wird angehängt...</span>
+													<span class="text-xs text-faint">wird angehängt …</span>
 												{/if}
 											</button>
 										{/each}
@@ -854,15 +762,15 @@
 							{/if}
 						{/if}
 					{/if}
-				</div>
+				</article>
 			{/each}
 
 			{#if data.messages.length === 0}
-				<div class="empty">Keine Nachrichten in diesem Thread</div>
+				<p class="py-8 text-center text-sm text-muted">Keine Nachrichten in diesem Thread</p>
 			{/if}
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
 
 <ConfirmationDialog
 	bind:open={showSendConfirm}
@@ -872,7 +780,9 @@
 	variant="primary"
 	loading={actionLoading !== null}
 	onConfirm={sendDraft}
-	onCancel={() => { pendingActionMsgId = null; }}
+	onCancel={() => {
+		pendingActionMsgId = null;
+	}}
 />
 
 <ConfirmationDialog
@@ -882,12 +792,12 @@
 	confirmLabel="Verwerfen"
 	loading={actionLoading !== null}
 	onConfirm={discardDraft}
-	onCancel={() => { pendingActionMsgId = null; }}
+	onCancel={() => {
+		pendingActionMsgId = null;
+	}}
 />
 
-<!-- Gated on customer_id: a thread opened by unattributable mail has no customer
-     to hang an Anfrage on. The button below is hidden in that case, and the
-     "Kunde zuordnen" hint takes its place. -->
+<!-- Gated on customer_id: a thread opened by unattributable mail has no customer to hang an Anfrage on. -->
 {#if showCreateInquiry && data?.thread.customer_id}
 	<CreateInquiryFromEmailModal
 		threadId={data.thread.id}
@@ -895,586 +805,10 @@
 		customerName={data.thread.customer_name}
 		customerEmail={data.thread.customer_email}
 		initialNotes={latestInboundBody}
-		onCreated={() => { showCreateInquiry = false; loadThread(); }}
+		onCreated={() => {
+			showCreateInquiry = false;
+			loadThread();
+		}}
 		onClose={() => (showCreateInquiry = false)}
 	/>
 {/if}
-
-<style>
-	.header-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.no-customer-hint {
-		font-size: 0.8rem;
-		color: var(--text-muted, #888);
-		padding: 0.35rem 0.5rem;
-	}
-
-	.link-quote.is-muted {
-		color: var(--text-muted, #888);
-	}
-
-	.message-cc {
-		font-size: 0.8rem;
-		color: var(--text-muted, #888);
-		margin-bottom: 0.25rem;
-	}
-
-	/* The HTML body is sanitised server-side; these rules only stop a wide mail
-	   from blowing out the column. */
-	.message-html {
-		overflow-x: auto;
-	}
-
-	.message-html :global(table) {
-		max-width: 100%;
-	}
-
-	.message-html :global(a) {
-		color: var(--dt-primary, #1b6ca8);
-	}
-
-	.body-toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		margin-top: 0.4rem;
-		padding: 0;
-		border: none;
-		background: none;
-		color: var(--text-muted, #888);
-		font-size: 0.75rem;
-		cursor: pointer;
-	}
-
-	.body-toggle:hover {
-		color: var(--dt-primary, #1b6ca8);
-	}
-
-	.btn-attach {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		cursor: pointer;
-	}
-
-	.btn-attach.is-busy {
-		opacity: 0.6;
-		cursor: progress;
-	}
-
-	.btn-handled.is-handled {
-		color: var(--dt-primary, #1b6ca8);
-	}
-
-	.optional {
-		font-weight: 400;
-		color: var(--text-muted, #888);
-		font-size: 0.8em;
-	}
-
-	.page { max-width: 900px; }
-	.page-nav { margin-bottom: 1rem; }
-	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		text-decoration: none;
-		transition: color var(--dt-transition);
-	}
-	.back-link:hover { color: var(--dt-on-surface); }
-
-	.page-header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-		gap: 1rem;
-	}
-
-	.header-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.page-header h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--dt-on-surface);
-	}
-
-	.thread-subject {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface-variant);
-	}
-
-	.link-quote {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.875rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary);
-		font-weight: 600;
-		font-size: 0.8125rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		text-decoration: none;
-		transition: background var(--dt-transition);
-		white-space: nowrap;
-		/* Shared by the <a> "Zur Anfrage" and the <button> "Anfrage erstellen". */
-		cursor: pointer;
-		font-family: inherit;
-	}
-
-	.link-quote:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.loading { text-align: center; color: var(--dt-on-surface-variant); padding: 3rem; }
-	.error-msg {
-		background: var(--dt-surface-container);
-		color: var(--dt-secondary);
-		border-radius: var(--dt-radius-md);
-		padding: 0.75rem 1rem;
-		font-size: 0.875rem;
-	}
-	.empty { text-align: center; color: var(--dt-on-surface-variant); padding: 3rem; font-size: 0.875rem; }
-
-	.offer-pdf-banner {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-		margin-bottom: 1rem;
-		padding: 0.625rem 1rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		text-align: left;
-		transition: background var(--dt-transition);
-	}
-
-	.offer-pdf-banner:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.conversation {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.message {
-		border-radius: var(--dt-radius-md);
-		padding: 1rem 1.25rem;
-		max-width: 85%;
-	}
-
-	.message.inbound {
-		align-self: flex-start;
-		background: var(--dt-surface-container-lowest);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.message.outbound {
-		align-self: flex-end;
-		background: var(--dt-surface-container);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.message.draft {
-		align-self: flex-end;
-		background: var(--dt-surface-container-low);
-		border: 2px dashed var(--dt-outline-variant);
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.message-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.message-from {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-
-	.message-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.message-date {
-		font-size: 0.6875rem;
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.badge-ai {
-		display: inline-block;
-		padding: 0.0625rem 0.375rem;
-		border-radius: 9999px;
-		font-size: 0.625rem;
-		font-weight: 600;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.badge-draft {
-		display: inline-block;
-		padding: 0.0625rem 0.375rem;
-		border-radius: 9999px;
-		font-size: 0.625rem;
-		font-weight: 600;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		white-space: nowrap;
-	}
-
-	.message-subject {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-
-	.message-body {
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		line-height: 1.6;
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-
-	.btn-attach-doc {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		cursor: pointer;
-	}
-	.btn-attach-doc.is-open {
-		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.15);
-	}
-
-	.doc-picker {
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-		margin-top: 0.5rem;
-		padding: 0.5rem;
-		border-radius: 0.5rem;
-		background: var(--bg-subtle, rgba(0, 0, 0, 0.03));
-	}
-	.doc-empty {
-		font-size: 0.8rem;
-		color: var(--text-muted, #888);
-		padding: 0.25rem;
-	}
-	.doc-entry {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-		text-align: left;
-		padding: 0.4rem 0.5rem;
-		border: none;
-		border-radius: 0.4rem;
-		background: transparent;
-		cursor: pointer;
-		font-size: 0.85rem;
-		color: inherit;
-	}
-	.doc-entry:hover:not(:disabled) {
-		background: rgba(0, 0, 0, 0.05);
-	}
-	.doc-entry:disabled {
-		opacity: 0.55;
-		cursor: default;
-	}
-	.doc-label {
-		font-weight: 600;
-	}
-	.doc-file {
-		color: var(--text-muted, #888);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.doc-state {
-		margin-left: auto;
-		font-size: 0.75rem;
-		color: var(--text-muted, #888);
-	}
-
-	.attachment-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.375rem;
-		margin-top: 0.625rem;
-	}
-
-	.attachment-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3125rem;
-		padding: 0.25rem 0.625rem;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-primary);
-		font-size: 0.75rem;
-		font-weight: 500;
-		border: var(--dt-ghost-border);
-		border-radius: 9999px;
-		cursor: pointer;
-		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		transition: background var(--dt-transition);
-	}
-
-	.attachment-link:hover {
-		background: var(--dt-surface-container);
-	}
-
-	.edit-fields {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.edit-subject {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		outline: none;
-		box-sizing: border-box;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-subject:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.edit-body {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		outline: none;
-		resize: vertical;
-		font-family: inherit;
-		line-height: 1.5;
-		box-sizing: border-box;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-	}
-
-	.edit-body:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.draft-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--dt-outline-variant);
-	}
-
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		transition: opacity var(--dt-transition), background var(--dt-transition);
-	}
-
-	.btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.btn-send {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-	}
-
-	.btn-send:hover:not(:disabled) {
-		opacity: 0.88;
-	}
-
-	.btn-edit {
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary);
-		border: var(--dt-ghost-border);
-	}
-
-	.btn-edit:hover:not(:disabled) {
-		background: var(--dt-surface-container-low);
-	}
-
-	.btn-save {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-	}
-
-	.btn-save:hover:not(:disabled) {
-		opacity: 0.88;
-	}
-
-	.btn-cancel {
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface-variant);
-		border: var(--dt-ghost-border);
-	}
-
-	.btn-cancel:hover:not(:disabled) {
-		background: var(--dt-surface-container-low);
-		color: var(--dt-on-surface);
-	}
-
-	.btn-discard {
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-secondary);
-		border: var(--dt-ghost-border);
-	}
-
-	.btn-discard:hover:not(:disabled) {
-		background: var(--dt-surface-container-low);
-	}
-
-	/* Reply section — sits above the conversation, which reads newest-first. */
-	.reply-section {
-		margin-bottom: 1.5rem;
-		padding-bottom: 1.5rem;
-		border-bottom: 1px solid var(--dt-outline-variant);
-	}
-
-	.btn-reply {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 1rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-primary);
-		font-weight: 600;
-		font-size: 0.875rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		box-shadow: var(--dt-shadow-ambient);
-		transition: background var(--dt-transition);
-	}
-
-	.btn-reply:hover {
-		background: var(--dt-surface-container-low);
-	}
-
-	.reply-form {
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		padding: 1.25rem;
-		box-shadow: var(--dt-shadow-ambient);
-	}
-
-	.reply-form h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin-bottom: 1rem;
-	}
-
-	.form-field {
-		margin-bottom: 0.75rem;
-	}
-
-	.form-field label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.25rem;
-	}
-
-	.form-field input,
-	.form-field textarea {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		background: var(--dt-surface-container-high);
-		outline: none;
-		transition: background var(--dt-transition), border-bottom var(--dt-transition);
-		box-sizing: border-box;
-	}
-
-	.form-field input:focus,
-	.form-field textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-
-	.form-field textarea {
-		resize: vertical;
-		font-family: inherit;
-		line-height: 1.5;
-	}
-
-	.reply-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-	}
-
-	@media (max-width: 768px) {
-		.page-header { flex-wrap: wrap; }
-
-		.message { max-width: 100%; }
-		.message-body { max-width: 100%; overflow-wrap: break-word; }
-		.message-header { flex-wrap: wrap; gap: 0.375rem; }
-
-		.draft-actions { flex-wrap: wrap; }
-		.reply-actions { flex-wrap: wrap; }
-
-		.btn { min-height: 44px; }
-		.btn-reply { min-height: 44px; }
-		.link-quote { min-height: 44px; }
-	}
-</style>

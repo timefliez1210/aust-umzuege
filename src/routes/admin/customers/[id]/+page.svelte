@@ -10,6 +10,15 @@
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import LoadingButton from '$lib/components/admin/LoadingButton.svelte';
 	import { formatKnownAddress, type KnownAddress } from '$lib/utils/addressBook';
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Notice from '$lib/components/ui/Notice.svelte';
 
 	interface CustomerDetail {
 		id: string;
@@ -264,539 +273,225 @@
 	}
 </script>
 
-<div class="page">
-	<div class="page-nav">
-		<a href="/admin/customers" class="back-link"><ArrowLeft size={16} /> Kunden</a>
+<svelte:head><title>{data ? data.company_name || data.name || data.email || 'Kunde' : 'Kunde'}</title></svelte:head>
+
+<a href="/admin/customers" class="mb-3 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-fg"><ArrowLeft size={15} /> Kunden</a>
+
+{#snippet linkList(items: { href: string; title: string; meta: string; status: string }[], empty: string)}
+	{#if items.length === 0}
+		<p class="text-[13px] text-faint">{empty}</p>
+	{:else}
+		<ul class="-mx-4 -my-4 divide-y divide-line">
+			{#each items as it (it.href)}
+				<li>
+					<a href={it.href} class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-sunk/60">
+						<span class="flex min-w-0 flex-col">
+							<span class="truncate text-sm font-medium">{it.title}</span>
+							<span class="num truncate text-xs text-faint">{it.meta}</span>
+						</span>
+						<StatusBadge status={it.status} />
+					</a>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+{/snippet}
+
+{#if loading}
+	<div class="grid gap-3.5 lg:grid-cols-2" aria-busy="true">
+		{#each Array(4) as _, i (i)}<div class="h-48 animate-pulse rounded-md bg-sunk"></div>{/each}
 	</div>
-
-	{#if loading}
-		<div class="loading">Laden...</div>
-	{:else if data}
-		<div class="page-header">
-			<h1>
-				{#if data.customer_type === 'business'}
-					<span class="cust-type-badge" data-type="business">Gewerbe</span>
-				{:else}
-					<span class="cust-type-badge" data-type="private">Privat</span>
-				{/if}
-				{data.name || data.email || 'Kunde'}
-				{#if data.company_name}<span style="color: var(--dt-on-surface-variant); font-weight: 400; font-size: 0.9em;"> ({data.company_name})</span>{/if}
+{:else if data}
+	<header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 pb-4">
+		<div class="flex min-w-0 flex-col gap-2">
+			<span class="label-xs text-faint">Kunde</span>
+			<h1 class="truncate text-[26px] leading-none font-semibold tracking-[-0.03em] sm:text-[30px]">
+				{data.company_name || data.name || data.email || 'Kunde'}
 			</h1>
-			{#if auth.user?.role === 'admin'}
-			<button class="btn-delete-entity" onclick={() => { showDeleteDialog = true; }} title="Kunde loeschen">
-				<Trash2 size={16} />
-				Loeschen
-			</button>
-		{/if}
-		</div>
-
-		{#if message}
-			<div class="msg" class:msg-success={message.type === 'success'} class:msg-error={message.type === 'error'}>
-				{message.text}
+			<div class="flex flex-wrap items-center gap-1.5 text-[13px] text-muted">
+				<Badge>{data.customer_type === 'business' ? 'Gewerbe' : 'Privat'}</Badge>
+				{#if data.company_name && data.name}<span>{data.name}</span>{/if}
+				<span class="num text-faint">seit {formatDate(data.created_at)}</span>
 			</div>
+		</div>
+		{#if auth.user?.role === 'admin'}
+			<Button variant="danger" onclick={() => (showDeleteDialog = true)}><Trash2 size={15} /> Löschen</Button>
 		{/if}
+	</header>
 
-		<div class="grid">
-			<div class="card">
-				<div class="card-header"><h2>Kundendaten</h2></div>
-				<div class="card-body">
-					<div class="form-group">
-						<label for="salutation">Anrede</label>
-						<select id="salutation" bind:value={editSalutation}>
+	{#if message}
+		<Notice tone={message.type === 'error' ? 'danger' : 'info'} class="mb-3">{message.text}</Notice>
+	{/if}
+
+	<div class="grid items-start gap-3.5 lg:grid-cols-2">
+		<div class="flex min-w-0 flex-col gap-3.5">
+			<Panel title="Kundendaten">
+				<div class="grid grid-cols-2 gap-3">
+					<Segmented
+						label="Kundentyp"
+						options={[
+							{ value: 'private', label: 'Privat' },
+							{ value: 'business', label: 'Gewerbe' }
+						]}
+						bind:value={editCustomerType}
+						class="col-span-2 self-start justify-self-start"
+					/>
+					{#if editCustomerType === 'business'}
+						<Field label="Firmenname" for="company_name" class="col-span-2">
+							<Input id="company_name" bind:value={editCompanyName} placeholder="Firmenname" />
+						</Field>
+					{/if}
+					<Field label="Anrede" for="salutation" class="col-span-2 sm:col-span-1">
+						<Select id="salutation" bind:value={editSalutation}>
 							<option value="">—</option>
 							<option value="Herr">Herr</option>
 							<option value="Frau">Frau</option>
 							<option value="D">Divers</option>
-						</select>
+						</Select>
+					</Field>
+					<span class="hidden sm:block"></span>
+					<Field label="Vorname" for="first_name"><Input id="first_name" bind:value={editFirstName} placeholder="Vorname" /></Field>
+					<Field label="Nachname" for="last_name"><Input id="last_name" bind:value={editLastName} placeholder="Nachname" /></Field>
+					<Field label="E-Mail" for="email" class="col-span-2"><Input id="email" type="email" bind:value={editEmail} /></Field>
+					<Field label="Telefon" for="phone" class="col-span-2"><Input id="phone" type="tel" bind:value={editPhone} placeholder="+49 …" /></Field>
+					<Field label="Notizen" for="notes" class="col-span-2">
+						<Textarea id="notes" rows={4} bind:value={editNotes} placeholder="Absprachen, letzte Anpassungen, Anrufbelästigungen …" />
+					</Field>
+					<div class="col-span-2">
+						<LoadingButton loading={saving} variant="primary" onclick={saveCustomer}><Save size={15} /> Speichern</LoadingButton>
 					</div>
-					<div class="form-row">
-						<div class="form-group">
-							<label for="first_name">Vorname</label>
-							<input id="first_name" type="text" bind:value={editFirstName} placeholder="Vorname" />
-						</div>
-						<div class="form-group">
-							<label for="last_name">Nachname</label>
-							<input id="last_name" type="text" bind:value={editLastName} placeholder="Nachname" />
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="email">E-Mail</label>
-						<input id="email" type="email" bind:value={editEmail} />
-					</div>
-					<div class="form-group">
-						<label for="phone">Telefon</label>
-						<input id="phone" type="tel" bind:value={editPhone} placeholder="+49 ..." />
-					</div>
-					<div class="form-group">
-						<span class="form-label">Kundentyp</span>
-						<div class="type-toggle">
-							<button type="button" class="type-btn" class:active={editCustomerType === 'private'} onclick={() => editCustomerType = 'private'}>Privat</button>
-							<button type="button" class="type-btn" class:active={editCustomerType === 'business'} onclick={() => editCustomerType = 'business'}>Gewerbe</button>
-						</div>
-					</div>
-					{#if editCustomerType === 'business'}
-					<div class="form-group">
-						<label for="company_name">Firmenname</label>
-						<input id="company_name" type="text" bind:value={editCompanyName} placeholder="Firmenname" />
-					</div>
-					{/if}
-					<div class="form-group">
-						<label for="notes">Notizen</label>
-						<textarea id="notes" rows={4} bind:value={editNotes}
-							placeholder="Absprachen, letzte Anpassungen, Anrufbelästigungen …"></textarea>
-					</div>
-					<div class="form-group">
-						<span class="form-label">Erstellt</span>
-						<span class="form-value">{formatDate(data.created_at)}</span>
-					</div>
-					<LoadingButton loading={saving} variant="primary" onclick={saveCustomer}>
-						<Save size={16} /> Speichern
-					</LoadingButton>
 				</div>
-			</div>
+			</Panel>
 
-			<!-- Billing Address (customer-level default) -->
-			<div class="card">
-				<div class="card-header card-header--action">
-					<h2>Rechnungsadresse (Standard)</h2>
-					<button class="btn-edit" onclick={() => showBillingEdit = !showBillingEdit}>
-						{showBillingEdit ? 'Schließen' : 'Bearbeiten'}
-					</button>
-				</div>
-				<div class="card-body">
-					{#if data.billing_address_id && data.billing_address}
-						<div class="billing-display">
-							<div>{data.billing_address.street ?? ''} {data.billing_address.house_number ?? ''}</div>
-							<div>{data.billing_address.postal_code ?? ''} {data.billing_address.city ?? ''}</div>
+			<Panel title="Rechnungsadresse (Standard)">
+				{#snippet actions()}
+					<Button size="sm" variant="ghost" onclick={() => (showBillingEdit = !showBillingEdit)}>{showBillingEdit ? 'Schließen' : 'Bearbeiten'}</Button>
+				{/snippet}
+				{#if data.billing_address_id && data.billing_address}
+					<div class="text-sm leading-relaxed">
+						<div>{data.billing_address.street ?? ''} {data.billing_address.house_number ?? ''}</div>
+						<div>{data.billing_address.postal_code ?? ''} {data.billing_address.city ?? ''}</div>
+					</div>
+				{:else}
+					<p class="text-[13px] text-muted">
+						Keine hinterlegt. Für B2B-Kunden kann hier eine abweichende Rechnungsadresse (z. B. Hauptsitz) gespeichert werden.
+					</p>
+				{/if}
+				{#if showBillingEdit}
+					<div class="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+						<div class="grid grid-cols-[minmax(0,1fr)_80px] gap-2">
+							<Input placeholder="Straße" bind:value={billingStreet} />
+							<Input placeholder="Nr." bind:value={billingNumber} />
 						</div>
-					{:else}
-						<p class="form-hint">
-							Keine hinterlegt. Für B2B-Kunden kann hier eine abweichende Rechnungsadresse (z.B. Hauptsitz) gespeichert werden.
-						</p>
-					{/if}
-					{#if showBillingEdit}
-						<div class="billing-form">
-							<div class="billing-form__row billing-form__row--street">
-								<input type="text" placeholder="Straße" bind:value={billingStreet} class="billing-form__input" />
-								<input type="text" placeholder="Nr." bind:value={billingNumber} class="billing-form__input billing-form__input--short" />
-							</div>
-							<div class="billing-form__row">
-								<input type="text" placeholder="PLZ" bind:value={billingPostal} class="billing-form__input billing-form__input--short" />
-								<input type="text" placeholder="Ort" bind:value={billingCity} class="billing-form__input" />
-							</div>
-							<div class="billing-form__actions">
-								<button class="btn-save" onclick={saveBillingAddress} disabled={billingSaving}>
-									{billingSaving ? 'Speichert…' : 'Speichern'}
-								</button>
-								{#if data.billing_address_id}
-									<button class="btn-danger" onclick={clearBillingAddress} disabled={billingSaving}>Zurücksetzen</button>
-								{/if}
-								<button class="btn-cancel" onclick={() => showBillingEdit = false}>Abbrechen</button>
-							</div>
+						<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+							<Input placeholder="PLZ" bind:value={billingPostal} />
+							<Input placeholder="Ort" bind:value={billingCity} />
 						</div>
-					{/if}
-				</div>
-			</div>
+						<div class="flex flex-wrap gap-2">
+							<Button size="sm" variant="solid" onclick={saveBillingAddress} disabled={billingSaving}>{billingSaving ? 'Speichert …' : 'Speichern'}</Button>
+							{#if data.billing_address_id}
+								<Button size="sm" variant="danger" onclick={clearBillingAddress} disabled={billingSaving}>Zurücksetzen</Button>
+							{/if}
+							<Button size="sm" variant="ghost" onclick={() => (showBillingEdit = false)}>Abbrechen</Button>
+						</div>
+					</div>
+				{/if}
+			</Panel>
 
-			<!-- Known addresses (address book) -->
-			<div class="card">
-				<div class="card-header card-header--action">
-					<h2>Bekannte Adressen ({data.addresses.length})</h2>
-					<button class="btn-edit" onclick={() => showAddAddress = !showAddAddress}>
-						{showAddAddress ? 'Schließen' : 'Hinzufügen'}
-					</button>
-				</div>
-				<div class="card-body">
-					{#if data.addresses.length === 0}
-						<p class="form-hint">
-							Noch keine hinterlegt. Adressen aus Anfragen werden automatisch gesammelt; hier kannst du auch manuell welche ergänzen.
-						</p>
-					{:else}
-						<div class="addr-list">
-							{#each data.addresses as a}
-								<div class="addr-item">
-									<div class="addr-item__text">
-										{#if a.label}<span class="addr-item__label">{a.label}</span>{/if}
-										<span class="addr-item__line">{formatKnownAddress(a)}</span>
-									</div>
-									<button
-										class="addr-item__delete"
-										title="Adresse entfernen"
-										disabled={deletingAddressId === a.id}
-										onclick={() => deleteAddress(a.id)}
-									>
-										<Trash2 size={15} />
-									</button>
-								</div>
-							{/each}
-						</div>
-					{/if}
-
-					{#if showAddAddress}
-						<div class="billing-form">
-							<input type="text" placeholder="Bezeichnung (optional, z.B. Alte Wohnung)" bind:value={addrLabel} class="billing-form__input" />
-							<div class="billing-form__row billing-form__row--street">
-								<input type="text" placeholder="Straße" bind:value={addrStreet} class="billing-form__input" />
-								<input type="text" placeholder="Nr." bind:value={addrNumber} class="billing-form__input billing-form__input--short" />
-							</div>
-							<div class="billing-form__row">
-								<input type="text" placeholder="PLZ" bind:value={addrPostal} class="billing-form__input billing-form__input--short" />
-								<input type="text" placeholder="Ort" bind:value={addrCity} class="billing-form__input" />
-							</div>
-							<div class="billing-form__actions">
-								<button class="btn-save" onclick={addAddress} disabled={addrSaving}>
-									{addrSaving ? 'Speichert…' : 'Speichern'}
-								</button>
-								<button class="btn-cancel" onclick={() => showAddAddress = false}>Abbrechen</button>
-							</div>
-						</div>
-					{/if}
-				</div>
-			</div>
-
-			<div class="card">
-				<div class="card-header"><h2>Anfragen ({data.quotes.length})</h2></div>
-				<div class="card-body list">
-					{#if data.quotes.length === 0}
-						<div class="empty">Keine Anfragen</div>
-					{:else}
-						{#each data.quotes as q}
-							<a href="/admin/inquiries/{q.id}" class="list-item">
-								<div class="list-info">
-									<span>{formatDate(q.created_at)}</span>
-									{#if q.estimated_volume_m3}
-										<span class="text-muted">{q.estimated_volume_m3.toFixed(1)} m³</span>
-									{/if}
-								</div>
-								<StatusBadge status={q.status} />
-							</a>
+			<Panel title="Bekannte Adressen ({data.addresses.length})">
+				{#snippet actions()}
+					<Button size="sm" variant="ghost" onclick={() => (showAddAddress = !showAddAddress)}>{showAddAddress ? 'Schließen' : 'Hinzufügen'}</Button>
+				{/snippet}
+				{#if data.addresses.length === 0}
+					<p class="text-[13px] text-muted">
+						Noch keine hinterlegt. Adressen aus Anfragen werden automatisch gesammelt; hier kannst du auch manuell welche ergänzen.
+					</p>
+				{:else}
+					<ul class="-my-1 divide-y divide-line">
+						{#each data.addresses as a (a.id)}
+							<li class="flex items-center justify-between gap-3 py-2">
+								<span class="flex min-w-0 flex-col">
+									{#if a.label}<span class="label-xs text-faint">{a.label}</span>{/if}
+									<span class="text-sm">{formatKnownAddress(a)}</span>
+								</span>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									class="hover:text-danger"
+									aria-label="Adresse entfernen"
+									title="Adresse entfernen"
+									disabled={deletingAddressId === a.id}
+									onclick={() => deleteAddress(a.id)}
+								>
+									<Trash2 size={15} />
+								</Button>
+							</li>
 						{/each}
-					{/if}
-				</div>
-			</div>
-
-			<div class="card">
-				<div class="card-header"><h2>Angebote ({data.offers.length})</h2></div>
-				<div class="card-body list">
-					{#if data.offers.length === 0}
-						<div class="empty">Keine Angebote</div>
-					{:else}
-						{#each data.offers as o}
-							<a href="/admin/inquiries/{o.quote_id}" class="list-item">
-								<div class="list-info">
-									<span>{formatEuro(o.price_cents)}</span>
-									<span class="text-muted">{formatDate(o.created_at)}</span>
-								</div>
-								<StatusBadge status={o.status} />
-							</a>
-						{/each}
-					{/if}
-				</div>
-			</div>
-
-			<div class="card">
-				<div class="card-header"><h2>Termine ({data.termine.length})</h2></div>
-				<div class="card-body list">
-					{#if data.termine.length === 0}
-						<div class="empty">Keine Termine</div>
-					{:else}
-						{#each data.termine as t}
-							<a href="/admin/calendar-items/{t.id}" class="list-item">
-								<div class="list-info">
-									<span>{t.title}</span>
-									<span class="text-muted">{t.scheduled_date ? formatDate(t.scheduled_date) : '–'} · {t.category}</span>
-								</div>
-								<StatusBadge status={t.status} />
-							</a>
-						{/each}
-					{/if}
-				</div>
-			</div>
+					</ul>
+				{/if}
+				{#if showAddAddress}
+					<div class="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+						<Input placeholder="Bezeichnung (optional, z. B. Alte Wohnung)" bind:value={addrLabel} />
+						<div class="grid grid-cols-[minmax(0,1fr)_80px] gap-2">
+							<Input placeholder="Straße" bind:value={addrStreet} />
+							<Input placeholder="Nr." bind:value={addrNumber} />
+						</div>
+						<div class="grid grid-cols-[100px_minmax(0,1fr)] gap-2">
+							<Input placeholder="PLZ" bind:value={addrPostal} />
+							<Input placeholder="Ort" bind:value={addrCity} />
+						</div>
+						<div class="flex gap-2">
+							<Button size="sm" variant="solid" onclick={addAddress} disabled={addrSaving}>{addrSaving ? 'Speichert …' : 'Speichern'}</Button>
+							<Button size="sm" variant="ghost" onclick={() => (showAddAddress = false)}>Abbrechen</Button>
+						</div>
+					</div>
+				{/if}
+			</Panel>
 		</div>
-	{/if}
-</div>
+
+		<div class="flex min-w-0 flex-col gap-3.5">
+			<Panel title="Anfragen ({data.quotes.length})">
+				{@render linkList(
+					data.quotes.map((q) => ({
+						href: `/admin/inquiries/${q.id}`,
+						title: formatDate(q.created_at),
+						meta: q.estimated_volume_m3 ? `${q.estimated_volume_m3.toFixed(1)} m³` : '',
+						status: q.status
+					})),
+					'Keine Anfragen'
+				)}
+			</Panel>
+			<Panel title="Angebote ({data.offers.length})">
+				{@render linkList(
+					data.offers.map((o) => ({
+						href: `/admin/inquiries/${o.quote_id}#${o.id}`,
+						title: formatEuro(o.price_cents),
+						meta: formatDate(o.created_at),
+						status: o.status
+					})),
+					'Keine Angebote'
+				)}
+			</Panel>
+			<Panel title="Termine ({data.termine.length})">
+				{@render linkList(
+					data.termine.map((t) => ({
+						href: `/admin/calendar-items/${t.id}`,
+						title: t.title,
+						meta: `${t.scheduled_date ? formatDate(t.scheduled_date) : '–'} · ${t.category}`,
+						status: t.status
+					})),
+					'Keine Termine'
+				)}
+			</Panel>
+		</div>
+	</div>
+{/if}
 
 <ConfirmationDialog
 	bind:open={showDeleteDialog}
 	title="Kunde löschen"
-	message={data ? `Kunde „${data.name || data.email || 'Kunde'}" und alle zugehörigen Daten unwiderruflich löschen?` : ''}
+	message={data ? `Kunde „${data.name || data.email || 'Kunde'}“ und alle zugehörigen Daten unwiderruflich löschen?` : ''}
 	confirmLabel="Löschen"
 	loading={deleting}
 	onConfirm={deleteCustomer}
 />
-
-<style>
-	.page { max-width: 1000px; }
-	.page-nav { margin-bottom: 1rem; }
-
-	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		color: var(--dt-on-surface-variant);
-		font-size: 0.875rem;
-		text-decoration: none;
-		transition: color var(--dt-transition);
-	}
-	.back-link:hover { color: var(--dt-on-surface); }
-
-	.page-header {
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-	}
-
-	.btn-delete-entity {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.875rem;
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-secondary);
-		font-weight: 600;
-		font-size: 0.8125rem;
-		border: var(--dt-ghost-border);
-		border-radius: var(--dt-radius-md);
-		cursor: pointer;
-		transition: all var(--dt-transition);
-		white-space: nowrap;
-	}
-	.btn-delete-entity:hover {
-		background: rgba(168, 57, 0, 0.06);
-	}
-
-	.loading {
-		text-align: center;
-		color: var(--dt-on-surface-variant);
-		padding: 3rem;
-	}
-
-	.msg { padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; border-radius: var(--dt-radius-sm); }
-	.msg-success { background: rgba(22, 101, 52, 0.08); color: #166534; }
-	.msg-error { background: rgba(168, 57, 0, 0.08); color: var(--dt-secondary); }
-
-	.grid { display: flex; flex-direction: column; gap: 1rem; }
-
-	.card {
-		overflow: hidden;
-		padding: 0;
-	}
-
-	.card-header {
-		padding: 0.75rem 1.25rem;
-		background: var(--dt-surface-container);
-	}
-	.card-header h2 {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-	}
-	.card-header--action {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.btn-edit {
-		padding: 0.25rem 0.75rem;
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--dt-primary);
-		background: transparent;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		transition: all 0.12s;
-		white-space: nowrap;
-	}
-	.btn-edit:hover { border-color: var(--dt-primary); background: rgba(var(--dt-primary-rgb, 2,36,72), 0.05); }
-
-	.billing-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
-	.billing-form__row { display: grid; gap: 0.5rem; }
-	.billing-form__row--street { grid-template-columns: 2fr 1fr; }
-	.billing-form__row:not(.billing-form__row--street) { grid-template-columns: 1fr 2fr; }
-	.billing-form__input {
-		width: 100%;
-		padding: 0.45rem 0.65rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		font-size: 0.875rem;
-		outline: none;
-		box-sizing: border-box;
-		transition: border-color 0.12s;
-	}
-	.billing-form__input:focus { border-bottom-color: var(--dt-primary); }
-	.billing-form__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-
-	.btn-save {
-		padding: 0.4rem 1rem;
-		background: var(--dt-primary);
-		color: #fff;
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
-	.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-	.btn-danger {
-		padding: 0.4rem 0.85rem;
-		background: transparent;
-		color: #dc2626;
-		border: 1.5px solid #dc2626;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8rem;
-		font-weight: 500;
-		cursor: pointer;
-	}
-	.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
-	.btn-cancel {
-		padding: 0.4rem 0.85rem;
-		background: transparent;
-		color: var(--dt-on-surface-variant);
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.8rem;
-		cursor: pointer;
-	}
-
-	.card-body { padding: 1.25rem; }
-	.card-body.list { padding: 0; }
-
-	.form-group { margin-bottom: 1rem; }
-	.form-group label, .form-label {
-		display: block;
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		margin-bottom: 0.375rem;
-	}
-	.form-row {
-		display: flex;
-		gap: 0.75rem;
-	}
-	.form-row .form-group { flex: 1; }
-	.form-group input,
-	.form-group select,
-	.form-group textarea {
-		width: 100%;
-		padding: 0.5rem 0.75rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		font-size: 0.875rem;
-		outline: none;
-		transition: background var(--dt-transition), border-color var(--dt-transition);
-		box-sizing: border-box;
-	}
-	.form-group textarea {
-		resize: vertical;
-		font-family: inherit;
-		line-height: 1.4;
-	}
-	.form-group input:focus,
-	.form-group select:focus,
-	.form-group textarea:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom-color: var(--dt-primary);
-	}
-	.type-toggle {
-		display: inline-flex;
-		border: 1.5px solid var(--dt-outline-variant);
-		border-radius: 6px;
-		overflow: hidden;
-		margin-bottom: 0.5rem;
-	}
-	.type-btn {
-		padding: 0.35rem 0.85rem;
-		border: none;
-		background: var(--dt-surface-container-lowest);
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: all 0.12s;
-	}
-	.type-btn:not(:first-child) { border-left: 1.5px solid var(--dt-outline-variant); }
-	.type-btn.active { background: var(--dt-primary); color: #fff; }
-	.form-value { font-size: 0.875rem; color: var(--dt-on-surface-variant); }
-
-	.list-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1.25rem;
-		text-decoration: none;
-		transition: background var(--dt-transition);
-	}
-	.list-item:nth-child(even) { background: var(--dt-surface-container-low); }
-	.list-item:hover { background: var(--dt-surface-container); }
-	.list-info { display: flex; flex-direction: column; gap: 0.125rem; }
-	.list-info span { font-size: 0.875rem; color: var(--dt-on-surface); }
-	.text-muted { color: var(--dt-on-surface-variant) !important; font-size: 0.75rem !important; }
-	.empty { padding: 1.5rem; text-align: center; color: var(--dt-on-surface-variant); font-size: 0.875rem; }
-
-	@media (max-width: 768px) {
-		.grid { gap: 0.75rem; }
-		.card-body { padding: 1rem; }
-		.list-item { padding: 0.75rem 1rem; }
-		.form-row { flex-direction: column; gap: 0; }
-		.billing-form__row,
-		.billing-form__row--street {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	.cust-type-badge {
-		display: inline-block;
-		padding: 0.1rem 0.4rem;
-		border-radius: 4px;
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		margin-right: 0.35rem;
-		vertical-align: middle;
-	}
-	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
-	.cust-type-badge[data-type="private"] { background: #dbeafe; color: #1e40af; }
-
-	/* Known addresses (address book) */
-	.addr-list { display: flex; flex-direction: column; gap: 0.5rem; }
-	.addr-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		background: var(--dt-surface-container);
-		border-radius: var(--dt-radius-sm);
-	}
-	.addr-item__text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-	.addr-item__label {
-		font-size: 0.7rem;
-		font-weight: 700;
-		color: var(--dt-primary);
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-	}
-	.addr-item__line { font-size: 0.875rem; color: var(--dt-on-surface); }
-	.addr-item__delete {
-		flex-shrink: 0;
-		display: flex;
-		align-items: center;
-		padding: 0.35rem;
-		background: transparent;
-		color: var(--dt-on-surface-variant);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		cursor: pointer;
-		transition: color var(--dt-transition), background var(--dt-transition);
-	}
-	.addr-item__delete:hover:not(:disabled) { color: #dc2626; background: rgba(220, 38, 38, 0.08); }
-	.addr-item__delete:disabled { opacity: 0.4; cursor: not-allowed; }
-</style>

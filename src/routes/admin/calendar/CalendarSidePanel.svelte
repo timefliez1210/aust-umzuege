@@ -10,6 +10,14 @@
 	import CapacityEditor from './_components/CapacityEditor.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import EmployeeAssignmentPanel from '$lib/components/admin/EmployeeAssignmentPanel.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Textarea from '$lib/components/ui/Textarea.svelte';
+	import KeyValue from '$lib/components/ui/KeyValue.svelte';
+	import { Users, User, MapPin, Search, ArrowLeft } from 'lucide-svelte';
 	import type {
 		InquiryItem,
 		CalendarItem,
@@ -1182,46 +1190,182 @@
 			deletingAppt = false;
 		}
 	}
+
+	// Same colour logic as the calendar grid, for the day plan list.
+	const PRE_ACCEPTED_PANEL = new Set(['pending', 'info_requested', 'estimating', 'estimated', 'offer_ready', 'offer_sent']);
+	function inquiryClass(status: string): string {
+		return PRE_ACCEPTED_PANEL.has(status) ? 'entry-yellow' : 'entry-green';
+	}
+	function terminClass(category: string): string {
+		const map: Record<string, string> = {
+			intern: 'entry-violet',
+			umzug: 'entry-green',
+			entruempelung: 'entry-orange',
+			montage: 'entry-blue',
+			streichen: 'entry-pink',
+			kartons_auslieferung: 'entry-kartons',
+			kartons_abholung: 'entry-kartons'
+		};
+		return map[category] ?? 'entry-violet';
+	}
 </script>
 
-<!-- ─── Side panel (desktop) / bottom sheet (mobile) ──────────────────────── -->
-<aside class="side-panel" class:panel-visible={panelSelection !== null} aria-label="Details">
-	<!-- Drag handle (mobile only) -->
-	<div class="sheet-handle-bar" onclick={closePanel} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && closePanel()}>
-		<span class="sheet-handle"></span>
-	</div>
+<!-- Section inside the panel: optional micro title, content. -->
+{#snippet section(title: string | null, body: import('svelte').Snippet)}
+	<section class="flex flex-col gap-3 border-b border-line px-4 py-4 last:border-b-0">
+		{#if title}<h3 class="label-xs text-faint">{title}</h3>{/if}
+		{@render body()}
+	</section>
+{/snippet}
 
-	{#if !panelSelection}
-		<div class="panel-placeholder">
-			<span class="placeholder-icon">📋</span>
-			<p>Klicke auf einen Eintrag</p>
-		</div>
-	{:else}
-		<div class="panel-header">
-			{#if panelSelection.kind === 'day'}
-				<h2 class="panel-title">{formatDateDE(panelSelection.date)}</h2>
-			{:else if panelSelection.kind === 'inquiry'}
-				<div class="panel-title-block">
-					<h2 class="panel-title">{panelSelection.item.customer_name ?? 'Anfrage'}</h2>
-					{#if panelSelection.item.scheduled_date }
-						<span class="panel-subtitle">{(panelSelection.item.scheduled_date?.slice(0,10) ?? '').split('-').reverse().join('.')}</span>
-					{/if}
+<!-- Multi-day editor rows (Anfragen and Termine share the layout). -->
+{#snippet dayRows(
+	kind: 'inquiry' | 'calendar_item',
+	days: typeof inqDays,
+	targetPrefix: string,
+	entityId: string,
+	onRemove: (i: number, employeeId: string) => void,
+	onConfirmAdd: (i: number) => void
+)}
+	<div class="flex flex-col gap-2.5">
+		{#each days as day, i (day.day_date)}
+			<div class="flex flex-col gap-2 rounded-sm border border-line p-2.5">
+				<span class="text-[13px] font-medium">Tag {day.day_number} — {formatDayDate(day.day_date)}</span>
+				<div class="grid grid-cols-2 gap-2">
+					<Field label="Start" for="{targetPrefix}-start-{i}">
+						<Input
+							id="{targetPrefix}-start-{i}"
+							class="num"
+							inputmode="decimal"
+							placeholder="HH:MM"
+							maxlength={5}
+							bind:value={days[i].start_time}
+							onfocus={(e) => (dayBulkBefore = (e.target as HTMLInputElement).value)}
+							onblur={(e) => maybeApplyDayTime(kind, i, 'clock_in', (e.target as HTMLInputElement).value)}
+						/>
+					</Field>
+					<Field label="Ende" for="{targetPrefix}-end-{i}">
+						<Input
+							id="{targetPrefix}-end-{i}"
+							class="num"
+							inputmode="decimal"
+							placeholder="HH:MM"
+							maxlength={5}
+							bind:value={days[i].end_time}
+							onfocus={(e) => (dayBulkBefore = (e.target as HTMLInputElement).value)}
+							onblur={(e) => maybeApplyDayTime(kind, i, 'clock_out', (e.target as HTMLInputElement).value)}
+						/>
+					</Field>
 				</div>
-			{:else if panelSelection.kind === 'appointment'}
-				<h2 class="panel-title">{apptKindLabel(panelSelection.item.kind)}</h2>
-			{:else}
-				<h2 class="panel-title">{panelSelection.item.title}</h2>
-			{/if}
-			<button class="panel-close" onclick={closePanel} title="Schließen"><X size={16} /></button>
-		</div>
+				{#each day.employees as emp, ei (emp.employee_id)}
+					<div class="flex flex-wrap items-center gap-1.5 text-xs">
+						<span class="min-w-16 font-medium">{emp.first_name} {emp.last_name[0]}.</span>
+						<span class="text-faint">Ist</span>
+						<input
+							type="text"
+							inputmode="decimal"
+							placeholder="--:--"
+							maxlength="5"
+							aria-label="Ist von"
+							class="num h-7 w-14 rounded-xs border border-line bg-transparent px-1 text-center text-[12px] outline-none hover:border-line-strong focus:border-fg"
+							bind:value={days[i].employees[ei].clock_in}
+							onblur={(e) => {
+								const norm = normalizeTimeInput((e.target as HTMLInputElement).value || null);
+								days[i].employees[ei].clock_in = norm ? norm.slice(0, 5) : null;
+								saveMultiDayField(kind, entityId, emp.employee_id, days[i].day_date, 'clock_in', norm);
+							}}
+						/>
+						<span class="text-faint">–</span>
+						<input
+							type="text"
+							inputmode="decimal"
+							placeholder="--:--"
+							maxlength="5"
+							aria-label="Ist bis"
+							class="num h-7 w-14 rounded-xs border border-line bg-transparent px-1 text-center text-[12px] outline-none hover:border-line-strong focus:border-fg"
+							bind:value={days[i].employees[ei].clock_out}
+							onblur={(e) => {
+								const norm = normalizeTimeInput((e.target as HTMLInputElement).value || null);
+								days[i].employees[ei].clock_out = norm ? norm.slice(0, 5) : null;
+								saveMultiDayField(kind, entityId, emp.employee_id, days[i].day_date, 'clock_out', norm);
+							}}
+						/>
+						<span class="text-faint">P (h)</span>
+						<input
+							type="text"
+							inputmode="decimal"
+							placeholder="0"
+							maxlength="5"
+							aria-label="Pause (h)"
+							class="num h-7 w-14 rounded-xs border border-line bg-transparent px-1 text-center text-[12px] outline-none hover:border-line-strong focus:border-fg w-12"
+							value={breakMinutesToHours(days[i].employees[ei].break_minutes)}
+							onblur={(e) => {
+								const v = breakHoursToMinutes((e.target as HTMLInputElement).value);
+								days[i].employees[ei].break_minutes = v;
+								saveMultiDayField(kind, entityId, emp.employee_id, days[i].day_date, 'break_minutes', v);
+							}}
+						/>
+						<Button variant="ghost" size="icon-sm" class="ml-auto hover:text-danger" aria-label="Mitarbeiter entfernen" onclick={() => onRemove(i, emp.employee_id)}><X size={13} /></Button>
+					</div>
+				{/each}
+				{#if addEmpDayTarget === `${targetPrefix}-${i}`}
+					<div class="flex flex-wrap items-center gap-1.5">
+						<Select class="h-8 min-w-36 flex-1 text-[13px]" aria-label="Mitarbeiter" bind:value={addEmpId}>
+							<option value="">— wählen —</option>
+							{#each allEmployees.filter((e) => !day.employees.some((de) => de.employee_id === e.id)) as e (e.id)}
+								<option value={e.id}>{e.first_name} {e.last_name}</option>
+							{/each}
+						</Select>
+						<input type="text" inputmode="decimal" placeholder="Start" maxlength="5" aria-label="Start" class="num h-7 w-14 rounded-xs border border-line bg-transparent px-1 text-center text-[12px] outline-none hover:border-line-strong focus:border-fg h-8" bind:value={addEmpStart} />
+						<span class="text-faint">–</span>
+						<input type="text" inputmode="decimal" placeholder="Ende" maxlength="5" aria-label="Ende" class="num h-7 w-14 rounded-xs border border-line bg-transparent px-1 text-center text-[12px] outline-none hover:border-line-strong focus:border-fg h-8" bind:value={addEmpEnd} />
+						<Button size="icon-sm" variant="solid" aria-label="Hinzufügen" onclick={() => onConfirmAdd(i)} disabled={!addEmpId}><Check size={13} /></Button>
+						<Button size="icon-sm" variant="ghost" aria-label="Abbrechen" onclick={() => (addEmpDayTarget = null)}><X size={13} /></Button>
+					</div>
+				{:else}
+					<Button size="xs" variant="ghost" class="self-start" onclick={() => openAddEmp(`${targetPrefix}-${i}`, day.start_time ?? '', day.end_time ?? '')}>
+						<Plus size={12} /> Mitarbeiter
+					</Button>
+				{/if}
+			</div>
+		{/each}
+	</div>
+{/snippet}
 
-		<div class="panel-body">
+<!-- Desktop (md+): sticky side panel that slides open. Phones: bottom sheet above the tab bar. -->
+<aside
+	class="fixed inset-x-0 bottom-0 z-[510] flex max-h-[85dvh] flex-col overflow-hidden rounded-t-lg border-t border-line bg-panel shadow-2xl transition-[transform,width,opacity] duration-300 ease-out
+		md:sticky md:top-4 md:z-auto md:max-h-[calc(100dvh-120px)] md:shrink-0 md:translate-y-0 md:rounded-md md:shadow-none
+		{panelSelection !== null ? 'translate-y-0 md:w-[360px] md:border md:opacity-100' : 'translate-y-[105%] md:w-0 md:border-0 md:opacity-0'}"
+	aria-label="Details"
+>
+	<button class="flex shrink-0 justify-center py-2 md:hidden" onclick={closePanel} aria-label="Schließen">
+		<span class="h-1 w-10 rounded-full bg-line-strong"></span>
+	</button>
 
-			<!-- ─── DAY PANEL ──────────────────────────────────────────── -->
+	{#if panelSelection}
+		<header class="flex shrink-0 items-start justify-between gap-3 border-b border-line px-4 pt-1 pb-3 md:pt-3.5">
+			<div class="flex min-w-0 flex-col gap-0.5">
+				{#if panelSelection.kind === 'day'}
+					<h2 class="truncate text-base font-semibold">{formatDateDE(panelSelection.date)}</h2>
+				{:else if panelSelection.kind === 'inquiry'}
+					<h2 class="truncate text-base font-semibold">{panelSelection.item.customer_name ?? 'Anfrage'}</h2>
+					{#if panelSelection.item.scheduled_date}
+						<span class="num text-xs text-faint">{(panelSelection.item.scheduled_date?.slice(0, 10) ?? '').split('-').reverse().join('.')}</span>
+					{/if}
+				{:else if panelSelection.kind === 'appointment'}
+					<h2 class="truncate text-base font-semibold">{apptKindLabel(panelSelection.item.kind)}</h2>
+				{:else}
+					<h2 class="truncate text-base font-semibold">{panelSelection.item.title}</h2>
+				{/if}
+			</div>
+			<Button variant="ghost" size="icon-sm" aria-label="Schließen" title="Schließen" onclick={closePanel}><X size={16} /></Button>
+		</header>
+
+		<div class="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
 			{#if panelSelection.kind === 'day'}
 				{@const ds = panelSelection.schedule}
-				{@const dayPanelDate = panelSelection.date}
-				{@const dayTermine = (ds.calendar_items ?? []).map(ci => ({
+				{@const dayTermine = (ds.calendar_items ?? []).map((ci) => ({
 					id: ci.calendar_item_id,
 					title: ci.title,
 					category: ci.category,
@@ -1233,581 +1377,338 @@
 					duration_hours: 0,
 					status: 'scheduled' as const,
 					customer_id: null as string | null,
-					customer_name: null as string | null,
+					customer_name: null as string | null
 				}))}
-
-				<div class="panel-section">
-					<div class="panel-kv">
-						<span class="kv-label">Gebucht</span>
-						<span class="kv-value">{ds.booked} / {ds.capacity}</span>
-					</div>
-					<div class="panel-kv">
-						<span class="kv-label">Verbleibend</span>
-						<span class="kv-value">{ds.remaining}</span>
-					</div>
-				</div>
-
-				<CapacityEditor
-					date={ds.date.split('T')[0]}
-					currentCapacity={ds.capacity}
-					onSaved={async () => {
-						await onLoadSchedule();
-						const dateStr = ds.date.split('T')[0];
-						const updated = schedule.find(s => s.date.split('T')[0] === dateStr);
-						if (updated) {
-							panelSelection = { kind: 'day', date: dateStr, schedule: updated };
-						}
-					}}
-				/>
-
 				{@const dayAppts = ds.appointments ?? []}
-					{#if ds.inquiries.length > 0 || dayTermine.length > 0 || dayAppts.length > 0}
-					<div class="panel-section">
-						<div class="section-title">Tagesplan ({ds.inquiries.length + dayTermine.length + dayAppts.length})</div>
-						{#each ds.inquiries as inq}
-							<div class="day-entry">
-								<div class="day-entry-top">
-									<button class="entry-link-btn" onclick={(e) => { e.stopPropagation(); panelSelection = { kind: 'inquiry', item: inq }; }}>
-										{inq.customer_name || 'Unbekannt'}
-									</button>
-									<StatusBadge status={inq.status} />
-									<span class="time-badge">{formatTime(inq.start_time)} – {formatTime(inq.end_time)}</span>
-								</div>
-								{#if inq.departure_address || inq.arrival_address}
-									<span class="entry-route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
-								{/if}
-								<a href="/admin/inquiries/{inq.inquiry_id}" class="entry-detail-link">
-									<ExternalLink size={11} /> Detail öffnen
-								</a>
-							</div>
-						{/each}
-						{#each dayTermine as ci}
-							<div class="day-entry day-entry-termin">
-								<div class="day-entry-top">
-									<button class="entry-link-btn" onclick={(e) => { e.stopPropagation(); panelSelection = { kind: 'termin', item: ci }; }}>
-										{ci.title}
-									</button>
-									<span class="cat-badge">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
-									<span class="time-badge">{formatTime(ci.start_time)}{ci.end_time ? ' – ' + formatTime(ci.end_time) : ''}</span>
-								</div>
-								{#if ci.location}
-									<span class="entry-route">{ci.location}</span>
-								{/if}
-								<a href="/admin/calendar-items/{ci.id}" class="entry-detail-link">
-									<ExternalLink size={11} /> Detail öffnen
-								</a>
-							</div>
-						{/each}
-						{#each dayAppts as ap}
-							<div class="day-entry day-entry-appt">
-								<div class="day-entry-top">
-									<button class="entry-link-btn" onclick={(e) => { e.stopPropagation(); onOpenAppointment?.(ap); }}>
-										{apptKindLabel(ap.kind)}{ap.customer_name ? ' · ' + ap.customer_name : ''}
-									</button>
-									<span class="cat-badge appt-badge">{apptKindLabel(ap.kind)}</span>
-									{#if ap.start_time}
-										<span class="time-badge">{formatTime(ap.start_time)}{ap.end_time ? ' – ' + formatTime(ap.end_time) : ''}</span>
-									{/if}
-								</div>
-								{#if ap.assignee_name || ap.location}
-									<span class="entry-route">{#if ap.assignee_name}👤 {ap.assignee_name}{/if}{#if ap.assignee_name && ap.location} · {/if}{#if ap.location}📍 {ap.location}{/if}</span>
-								{/if}
-								<a href="/admin/inquiries/{ap.inquiry_id}" class="entry-detail-link">
-									<ExternalLink size={11} /> Zur Anfrage
-								</a>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="panel-empty">Keine Einträge</p>
-				{/if}
 
-			<!-- ─── INQUIRY PANEL ───────────────────────────────────────── -->
+				{#snippet capacity()}
+					<div class="grid grid-cols-2 gap-3">
+						<div class="flex flex-col gap-0.5">
+							<span class="label-xs text-faint">Gebucht</span>
+							<span class="num text-xl font-medium {ds.booked > ds.capacity ? 'text-danger' : ''}">{ds.booked} / {ds.capacity}</span>
+						</div>
+						<div class="flex flex-col gap-0.5">
+							<span class="label-xs text-faint">Frei</span>
+							<span class="num text-xl font-medium">{ds.remaining}</span>
+						</div>
+					</div>
+					<CapacityEditor
+						date={ds.date.split('T')[0]}
+						currentCapacity={ds.capacity}
+						onSaved={async () => {
+							await onLoadSchedule();
+							const dateStr = ds.date.split('T')[0];
+							const updated = schedule.find((s) => s.date.split('T')[0] === dateStr);
+							if (updated) panelSelection = { kind: 'day', date: dateStr, schedule: updated };
+						}}
+					/>
+				{/snippet}
+				{@render section(null, capacity)}
+
+				{#snippet plan()}
+					{#if ds.inquiries.length + dayTermine.length + dayAppts.length === 0}
+						<p class="text-[13px] text-faint">Keine Einträge</p>
+					{/if}
+					{#each ds.inquiries as inq (inq.inquiry_id)}
+						<div class="flex flex-col gap-1 rounded-sm px-3 py-2 {inquiryClass(inq.status)}">
+							<span class="flex items-center justify-between gap-2">
+								<button class="truncate text-left text-sm font-semibold hover:underline" onclick={(e) => { e.stopPropagation(); panelSelection = { kind: 'inquiry', item: inq }; }}>
+									{inq.customer_name || 'Unbekannt'}
+								</button>
+								<StatusBadge status={inq.status} />
+							</span>
+							<span class="num text-xs opacity-75">{formatTime(inq.start_time)} – {formatTime(inq.end_time)}</span>
+							{#if inq.departure_address || inq.arrival_address}
+								<span class="text-xs opacity-80">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
+							{/if}
+							<a href="/admin/inquiries/{inq.inquiry_id}" class="flex items-center gap-1 self-start text-xs opacity-75 hover:underline"><ExternalLink size={11} /> Detail öffnen</a>
+						</div>
+					{/each}
+					{#each dayTermine as ci (ci.id)}
+						<div class="flex flex-col gap-1 rounded-sm px-3 py-2 {terminClass(ci.category)}">
+							<span class="flex items-center justify-between gap-2">
+								<button class="truncate text-left text-sm font-semibold hover:underline" onclick={(e) => { e.stopPropagation(); panelSelection = { kind: 'termin', item: ci }; }}>
+									{ci.title}
+								</button>
+								<span class="text-xs font-medium">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
+							</span>
+							<span class="num text-xs opacity-75">{formatTime(ci.start_time)}{ci.end_time ? ' – ' + formatTime(ci.end_time) : ''}</span>
+							{#if ci.location}<span class="flex items-center gap-1 text-xs opacity-80"><MapPin size={11} />{ci.location}</span>{/if}
+							<a href="/admin/calendar-items/{ci.id}" class="flex items-center gap-1 self-start text-xs opacity-75 hover:underline"><ExternalLink size={11} /> Detail öffnen</a>
+						</div>
+					{/each}
+					{#each dayAppts as ap (ap.appointment_id)}
+						<div class="entry-appt flex flex-col gap-1 rounded-sm px-3 py-2">
+							<span class="flex items-center justify-between gap-2">
+								<button class="truncate text-left text-sm font-semibold hover:underline" onclick={(e) => { e.stopPropagation(); onOpenAppointment?.(ap); }}>
+									{apptKindLabel(ap.kind)}{ap.customer_name ? ' · ' + ap.customer_name : ''}
+								</button>
+							</span>
+							{#if ap.start_time}<span class="num text-xs opacity-75">{formatTime(ap.start_time)}{ap.end_time ? ' – ' + formatTime(ap.end_time) : ''}</span>{/if}
+							{#if ap.assignee_name || ap.location}
+								<span class="flex flex-wrap items-center gap-2 text-xs opacity-80">
+									{#if ap.assignee_name}<span class="flex items-center gap-1"><User size={11} />{ap.assignee_name}</span>{/if}
+									{#if ap.location}<span class="flex items-center gap-1"><MapPin size={11} />{ap.location}</span>{/if}
+								</span>
+							{/if}
+							<a href="/admin/inquiries/{ap.inquiry_id}" class="flex items-center gap-1 self-start text-xs opacity-75 hover:underline"><ExternalLink size={11} /> Zur Anfrage</a>
+						</div>
+					{/each}
+				{/snippet}
+				{@render section(`Tagesplan (${ds.inquiries.length + dayTermine.length + dayAppts.length})`, plan)}
 			{:else if panelSelection.kind === 'inquiry'}
 				{@const inq = panelSelection.item}
 
-				<div class="panel-section">
-					<div class="panel-kv">
-						<span class="kv-label">E-Mail</span>
-						<span class="kv-value kv-muted">
-							{#if inq.customer_email}<a href="mailto:{inq.customer_email}" class="kv-link">{inq.customer_email}</a>{:else}—{/if}
-						</span>
-					</div>
-					<div class="panel-kv">
-						<span class="kv-label">Telefon</span>
-						<span class="kv-value kv-muted">
-							{#if inq.customer_phone}<a href="tel:{inq.customer_phone}" class="kv-link">{inq.customer_phone}</a>{:else}—{/if}
-						</span>
-					</div>
-					{#if inq.departure_address || inq.arrival_address}
-						<div class="panel-kv panel-kv-route">
-							<span class="kv-label">Route</span>
-							<span class="kv-value kv-route-value">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
-						</div>
-					{/if}
-					{#if inq.volume_m3}
-						<div class="panel-kv">
-							<span class="kv-label">Volumen</span>
-							<span class="kv-value">{inq.volume_m3.toFixed(1)} m³</span>
-						</div>
-					{/if}
-					{#if inq.offer_price_cents}
-						<div class="panel-kv">
-							<span class="kv-label">Angebotspreis</span>
-							<span class="kv-value">{(calculateBruttoCents(inq.offer_price_cents) / 100).toFixed(0)} € brutto</span>
-						</div>
-					{/if}
-				</div>
+				{#snippet contact()}
+					<dl class="-my-1.5">
+						<KeyValue label="E-Mail">{#if inq.customer_email}<a href="mailto:{inq.customer_email}" class="hover:underline">{inq.customer_email}</a>{:else}—{/if}</KeyValue>
+						<KeyValue label="Telefon">{#if inq.customer_phone}<a href="tel:{inq.customer_phone}" class="num hover:underline">{inq.customer_phone}</a>{:else}—{/if}</KeyValue>
+						{#if inq.departure_address || inq.arrival_address}
+							<KeyValue label="Route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</KeyValue>
+						{/if}
+						{#if inq.volume_m3}<KeyValue label="Volumen"><span class="num">{inq.volume_m3.toFixed(1)} m³</span></KeyValue>{/if}
+						{#if inq.offer_price_cents}
+							<KeyValue label="Angebot"><span class="num">{(calculateBruttoCents(inq.offer_price_cents) / 100).toFixed(0)} € brutto</span></KeyValue>
+						{/if}
+					</dl>
+				{/snippet}
+				{@render section(null, contact)}
 
-				<div class="panel-section">
-					<div class="section-title">Bearbeiten</div>
-					<div class="field">
-						<label for="inq-status">Status</label>
-						<select id="inq-status" class="neu-input" bind:value={inqEditStatus}>
-							{#each INQUIRY_STATUSES as s}
-								<option value={s}>{INQUIRY_STATUS_LABELS[s] ?? s}</option>
-							{/each}
-						</select>
+				{#snippet editInquiry()}
+					<Field label="Status" for="inq-status">
+						<Select id="inq-status" bind:value={inqEditStatus}>
+							{#each INQUIRY_STATUSES as st (st)}<option value={st}>{INQUIRY_STATUS_LABELS[st] ?? st}</option>{/each}
+						</Select>
+					</Field>
+					<Field label="Datum" for="inq-pref-date"><Input id="inq-pref-date" type="date" bind:value={inqEditPreferredDate} /></Field>
+					<div class="grid grid-cols-2 gap-2">
+						<Field label="Startzeit" for="inq-start">
+							<Input id="inq-start" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} pattern="[0-9]{2}:[0-5][0-9]" bind:value={inqEditStartTime} />
+						</Field>
+						<Field label="Endzeit" for="inq-end">
+							<Input id="inq-end" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} pattern="[0-9]{2}:[0-5][0-9]" bind:value={inqEditEndTime} />
+						</Field>
 					</div>
-					<div class="field">
-						<label for="inq-pref-date">Datum</label>
-						<input id="inq-pref-date" type="date" class="neu-input" bind:value={inqEditPreferredDate} />
+					<Field label="Notizen (intern)" for="inq-notes"><Textarea id="inq-notes" rows={2} bind:value={inqEditNotes} /></Field>
+					<Field label="Hinweise für Mitarbeiter" for="inq-employee-notes"><Textarea id="inq-employee-notes" rows={2} bind:value={inqEditEmployeeNotes} /></Field>
+					<div class="flex flex-wrap gap-1.5">
+						<Button size="sm" variant="solid" onclick={saveInquiry} disabled={savingInquiry}><Save size={13} /> {savingInquiry ? 'Speichern …' : 'Speichern'}</Button>
+						<Button size="sm" href="/admin/inquiries/{inq.inquiry_id}"><ExternalLink size={13} /> Detail</Button>
+						<Button size="sm" variant="danger" class="ml-auto" onclick={deleteInquiry} disabled={deletingInquiry}>{deletingInquiry ? '…' : 'Löschen'}</Button>
 					</div>
-					<div class="field-row">
-						<div class="field">
-							<label for="inq-start">Startzeit</label>
-							<input id="inq-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={inqEditStartTime} />
-						</div>
-						<div class="field">
-							<label for="inq-end">Endzeit</label>
-							<input id="inq-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={inqEditEndTime} />
-						</div>
-					</div>
-					<div class="field">
-						<label for="inq-notes">Notizen (intern)</label>
-						<textarea id="inq-notes" rows={2} class="neu-input" bind:value={inqEditNotes}></textarea>
-					</div>
-					<div class="field">
-						<label for="inq-employee-notes">Hinweise für Mitarbeiter</label>
-						<textarea id="inq-employee-notes" rows={2} class="neu-input" bind:value={inqEditEmployeeNotes}></textarea>
-					</div>
-					<div class="panel-actions">
-						<button class="btn btn-primary btn-sm" onclick={saveInquiry} disabled={savingInquiry}>
-							<Save size={13} />
-							{savingInquiry ? 'Speichern...' : 'Speichern'}
-						</button>
-						<a href="/admin/inquiries/{inq.inquiry_id}" class="btn btn-ghost btn-sm">
-							<ExternalLink size={13} /> Detail
-						</a>
-						<button class="btn btn-danger btn-sm" onclick={deleteInquiry} disabled={deletingInquiry}>
-							{deletingInquiry ? '...' : 'Löschen'}
-						</button>
-					</div>
-				</div>
+				{/snippet}
+				{@render section('Bearbeiten', editInquiry)}
 
-				<!-- Employee assignments (single-day only; multi-day uses per-day editors below) -->
 				{#if inqDays.length <= 1}
-				<div class="panel-section">
-					<EmployeeAssignmentPanel
-						entityId={panelSelection.item.inquiry_id}
-						entityType="inquiry"
-						preferredDate={panelSelection.item.scheduled_date}
-						onUpdated={async () => {
-							await onLoadSchedule();
-							if (panelSelection?.kind === 'inquiry') loadInquiryDays(panelSelection.item.inquiry_id);
-						}}
-					/>
-				</div>
+					{#snippet crew()}
+						<EmployeeAssignmentPanel
+							entityId={inq.inquiry_id}
+							entityType="inquiry"
+							preferredDate={inq.scheduled_date}
+							onUpdated={async () => {
+								await onLoadSchedule();
+								if (panelSelection?.kind === 'inquiry') loadInquiryDays(panelSelection.item.inquiry_id);
+							}}
+						/>
+					{/snippet}
+					{@render section(null, crew)}
 				{/if}
 
-				<!-- Multi-day scheduling section -->
-				<div class="panel-section">
-					<div class="section-title">Mehrtägiger Termin</div>
+				{#snippet multiDay()}
 					{#if inqDaysLoading}
-						<p class="panel-loading">Laden...</p>
+						<p class="text-[13px] text-faint">Laden …</p>
 					{:else}
 						{@const inqSel = panelSelection as PanelInquiry}
-						{@const originStr = inqSel.item.scheduled_date?.slice(0,10) ?? ''}
-						<div class="field-row">
-							<div class="field">
-								<span class="field-label">Von</span>
-								<span class="day-origin-label">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
+						{@const originStr = inqSel.item.scheduled_date?.slice(0, 10) ?? ''}
+						<div class="grid grid-cols-2 gap-2">
+							<div class="flex flex-col gap-1.5">
+								<span class="text-xs font-medium text-muted">Von</span>
+								<span class="num flex h-9 items-center text-sm">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
 							</div>
-							<div class="field">
-								<label for="inq-until">Bis</label>
-								<input id="inq-until" type="date" class="neu-input" min={originStr} bind:value={inqUntilDate} oninput={applyInquiryDateRange} onfocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
-							</div>
+							<Field label="Bis" for="inq-until">
+								<Input
+									id="inq-until"
+									type="date"
+									min={originStr}
+									bind:value={inqUntilDate}
+									oninput={applyInquiryDateRange}
+									onfocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+								/>
+							</Field>
 						</div>
 						{#if inqDays.length > 1}
-							<div class="day-list">
-								{#each inqDays as day, i}
-									<div class="day-row">
-										<div class="day-row-header">
-											<span class="day-label">Tag {day.day_number} — {formatDayDate(day.day_date)}</span>
-										</div>
-										<div class="field-row">
-											<div class="field">
-												<label for="inq-start-{i}">Start</label>
-												<input id="inq-start-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_in', (e.target as HTMLInputElement).value)} />
-											</div>
-											<div class="field">
-												<label for="inq-end-{i}">Ende</label>
-												<input id="inq-end-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={inqDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('inquiry', i, 'clock_out', (e.target as HTMLInputElement).value)} />
-											</div>
-										</div>
-										{#if day.employees.length > 0}
-											<div class="day-emp-list">
-												{#each day.employees as emp, ei}
-													<div class="day-emp-row">
-														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
-														<span class="day-time-group">
-															<span class="day-time-label">Ist</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_in} oninput={(e) => inqDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_in', norm); }} />
-															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={inqDays[i].employees[ei].clock_out} oninput={(e) => inqDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); inqDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'clock_out', norm); }} />
-															<span class="day-time-label">P (h):</span>
-															<input type="text" inputmode="decimal" placeholder="0" maxlength="5" class="neu-input time-mini break-mini" value={breakMinutesToHours(inqDays[i].employees[ei].break_minutes)} onblur={(e) => { const v = breakHoursToMinutes((e.target as HTMLInputElement).value); inqDays[i].employees[ei].break_minutes = v; saveMultiDayField('inquiry', inqSel.item.inquiry_id, emp.employee_id, inqDays[i].day_date, 'break_minutes', v); }} />
-														</span>
-														<button class="day-emp-remove" onclick={() => removeInqDayEmployee(i, emp.employee_id)}>×</button>
-													</div>
-												{/each}
-											</div>
-										{/if}
-										{#if addEmpDayTarget === `inq-${i}`}
-											<div class="day-emp-add-row">
-												<select class="neu-input" bind:value={addEmpId}>
-													<option value="">— wählen —</option>
-													{#each allEmployees.filter(e => !day.employees.some(de => de.employee_id === e.id)) as e}
-														<option value={e.id}>{e.first_name} {e.last_name}</option>
-													{/each}
-												</select>
-												<input type="text" inputmode="decimal" placeholder="Start" maxlength="5" class="neu-input time-mini" bind:value={addEmpStart} />
-												<span class="time-sep">–</span>
-												<input type="text" inputmode="decimal" placeholder="Ende" maxlength="5" class="neu-input time-mini" bind:value={addEmpEnd} />
-												<button class="btn btn-primary btn-sm" onclick={() => confirmAddInqDayEmployee(i)} disabled={!addEmpId}><Check size={12} /></button>
-												<button class="btn btn-ghost btn-sm" onclick={() => addEmpDayTarget = null}>×</button>
-											</div>
-										{:else}
-											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`inq-${i}`, day.start_time ?? '', day.end_time ?? '')}>
-												<Plus size={11} /> Mitarbeiter
-											</button>
-										{/if}
-									</div>
-								{/each}
-							</div>
+							{@render dayRows('inquiry', inqDays, 'inq', inqSel.item.inquiry_id, removeInqDayEmployee, confirmAddInqDayEmployee)}
 						{/if}
-						<div class="days-actions">
-							<button class="btn btn-primary btn-sm" onclick={saveInquiryDays} disabled={inqDaysSaving || !inqUntilDate}>
-								{inqDaysSaving ? '...' : 'Zeitraum speichern'}
-							</button>
-						</div>
+						<Button size="sm" variant="solid" class="self-start" onclick={saveInquiryDays} disabled={inqDaysSaving || !inqUntilDate}>
+							{inqDaysSaving ? '…' : 'Zeitraum speichern'}
+						</Button>
 					{/if}
-				</div>
+				{/snippet}
+				{@render section('Mehrtägiger Termin', multiDay)}
 
-				<!-- Besichtigungen / Zusatztermine — eigene, nicht zusammenhängende Daten -->
-				<div class="panel-section">
-					<div class="section-title">Besichtigungen &amp; Zusatztermine</div>
+				{#snippet appts()}
 					{#if inqApptLoading}
-						<p class="panel-loading">Laden...</p>
+						<p class="text-[13px] text-faint">Laden …</p>
 					{:else if inqAppointments.length > 0}
-						<div class="appt-list">
-							{#each inqAppointments as ap (ap.id)}
-								<div class="appt-item">
-									<button class="appt-item-info appt-item-edit" title="Termin bearbeiten" onclick={() => openInqAppointmentEdit(ap)}>
-										<div class="appt-item-head">
-											<span class="appt-kind">{apptKindLabel(ap.kind)}</span>
-											<span class="appt-date">{apptDateLabel(ap.scheduled_date)}</span>
-											{#if ap.start_time}<span class="appt-time">{ap.start_time.slice(0, 5)}{ap.end_time ? '–' + ap.end_time.slice(0, 5) : ''}</span>{/if}
-										</div>
-										{#if (ap.employees?.length ?? 0) > 0 || ap.assignee_name || ap.location || ap.notes}
-											<div class="appt-meta">
-												{#if (ap.employees?.length ?? 0) > 0}
-													<span>👥 {ap.employees?.map((e) => `${e.first_name} ${e.last_name}`).join(', ')}</span>
-												{:else if ap.assignee_name}
-													<span>👤 {ap.assignee_name}</span>
-												{/if}
-												{#if ap.location}<span>📍 {ap.location}</span>{/if}
-												{#if ap.notes}<span class="appt-note">{ap.notes}</span>{/if}
-											</div>
-										{/if}
-									</button>
-									<button class="appt-del" title="Löschen" aria-label="Termin löschen" onclick={() => deleteInqAppointment(inq.inquiry_id, ap.id)}>×</button>
-								</div>
-							{/each}
-						</div>
+						{#each inqAppointments as ap (ap.id)}
+							<div class="entry-appt flex items-start gap-2 rounded-sm px-3 py-2">
+								<button class="flex min-w-0 flex-1 flex-col gap-0.5 text-left" title="Termin bearbeiten" onclick={() => openInqAppointmentEdit(ap)}>
+									<span class="flex flex-wrap items-center gap-2 text-[13px]">
+										<span class="font-semibold">{apptKindLabel(ap.kind)}</span>
+										<span class="num opacity-75">{apptDateLabel(ap.scheduled_date)}</span>
+										{#if ap.start_time}<span class="num opacity-75">{ap.start_time.slice(0, 5)}{ap.end_time ? '–' + ap.end_time.slice(0, 5) : ''}</span>{/if}
+									</span>
+									{#if (ap.employees?.length ?? 0) > 0}
+										<span class="flex items-center gap-1 text-xs opacity-80"><Users size={11} />{ap.employees?.map((e) => `${e.first_name} ${e.last_name}`).join(', ')}</span>
+									{:else if ap.assignee_name}
+										<span class="flex items-center gap-1 text-xs opacity-80"><User size={11} />{ap.assignee_name}</span>
+									{/if}
+									{#if ap.location}<span class="flex items-center gap-1 text-xs opacity-80"><MapPin size={11} />{ap.location}</span>{/if}
+									{#if ap.notes}<span class="text-xs italic opacity-70">{ap.notes}</span>{/if}
+								</button>
+								<Button variant="ghost" size="icon-sm" aria-label="Termin löschen" title="Löschen" onclick={() => deleteInqAppointment(inq.inquiry_id, ap.id)}><X size={13} /></Button>
+							</div>
+						{/each}
 					{:else}
-						<p class="panel-empty">Keine weiteren Termine.</p>
+						<p class="text-[13px] text-faint">Keine weiteren Termine.</p>
 					{/if}
 					{#if onAddAppointment}
-						<button class="btn btn-ghost btn-sm appt-add-btn" onclick={() => onAddAppointment?.(inq.inquiry_id, inq.customer_name ?? 'Anfrage')}>
-							🔍 Besichtigung hinzufügen
-						</button>
+						<Button size="sm" variant="ghost" class="self-start" onclick={() => onAddAppointment?.(inq.inquiry_id, inq.customer_name ?? 'Anfrage')}>
+							<Search size={13} /> Besichtigung hinzufügen
+						</Button>
 					{/if}
-				</div>
-
-			<!-- ─── TERMIN PANEL ────────────────────────────────────────── -->
+				{/snippet}
+				{@render section('Besichtigungen & Zusatztermine', appts)}
 			{:else if panelSelection.kind === 'termin'}
 				{@const ci = panelSelection.item}
 
-				<div class="panel-section">
-					<div class="section-title">Bearbeiten</div>
-					<div class="field">
-						<label for="term-title">Titel</label>
-						<input id="term-title" type="text" class="neu-input" bind:value={termEditTitle} />
-					</div>
-					<div class="field-row">
-						<div class="field">
-							<label for="term-cat">Kategorie</label>
-							<input id="term-cat" type="text" class="neu-input" list="cal-categories" bind:value={termEditCategory} placeholder="z.B. Intern, Umzug, eigene…" />
+				{#snippet editTermin()}
+					<Field label="Titel" for="term-title"><Input id="term-title" bind:value={termEditTitle} /></Field>
+					<div class="grid grid-cols-2 gap-2">
+						<Field label="Kategorie" for="term-cat">
+							<Input id="term-cat" list="cal-categories" bind:value={termEditCategory} placeholder="Intern, Umzug, eigene …" />
 							<datalist id="cal-categories">
-								<option value="intern">Intern</option>
-								<option value="umzug">Umzug</option>
-								<option value="entruempelung">Entrümpelung</option>
-								<option value="montage">Montage</option>
-								<option value="streichen">Streichen</option>
-								<option value="kartons_auslieferung">Kartons Auslieferung</option>
-								<option value="kartons_abholung">Kartons Abholung</option>
+								{#each Object.entries(CATEGORY_LABELS) as [v, l] (v)}<option value={v}>{l}</option>{/each}
 							</datalist>
-						</div>
-						<div class="field">
-							<label for="term-status">Status</label>
-							<select id="term-status" class="neu-input" bind:value={termEditStatus}>
+						</Field>
+						<Field label="Status" for="term-status">
+							<Select id="term-status" bind:value={termEditStatus}>
 								<option value="scheduled">Geplant</option>
 								<option value="completed">Erledigt</option>
 								<option value="cancelled">Abgesagt</option>
-							</select>
-						</div>
+							</Select>
+						</Field>
+						<Field label="Datum" for="term-date"><Input id="term-date" type="date" bind:value={termEditDate} /></Field>
+						<Field label="Dauer (h)" for="term-dur"><Input id="term-dur" class="num" type="number" step="0.5" min="0" bind:value={termEditDuration} /></Field>
+						<Field label="Startzeit" for="term-start">
+							<Input id="term-start" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} pattern="[0-9]{2}:[0-5][0-9]" bind:value={termEditStartTime} />
+						</Field>
+						<Field label="Endzeit" for="term-end">
+							<Input id="term-end" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} pattern="[0-9]{2}:[0-5][0-9]" bind:value={termEditEndTime} />
+						</Field>
 					</div>
-					<div class="field">
-						<label for="term-date">Datum</label>
-						<input id="term-date" type="date" class="neu-input" bind:value={termEditDate} />
-					</div>
-					<div class="field-row">
-						<div class="field">
-							<label for="term-start">Startzeit</label>
-							<input id="term-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={termEditStartTime} />
-						</div>
-						<div class="field">
-							<label for="term-end">Endzeit</label>
-							<input id="term-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" pattern="[0-9]{2}:[0-5][0-9]" class="neu-input" bind:value={termEditEndTime} />
-						</div>
-					</div>
-					<div class="field">
-						<label for="term-dur">Dauer (h)</label>
-						<input id="term-dur" type="number" step="0.5" min="0" class="neu-input" bind:value={termEditDuration} />
-					</div>
-					<div class="field">
-						<label for="term-loc">Ort</label>
-						<input id="term-loc" type="text" class="neu-input" bind:value={termEditLocation} />
-					</div>
-					<div class="field">
-						<label for="term-desc">Beschreibung</label>
-						<textarea id="term-desc" rows={3} class="neu-input" bind:value={termEditDescription}></textarea>
-					</div>
+					<Field label="Ort" for="term-loc"><Input id="term-loc" bind:value={termEditLocation} /></Field>
+					<Field label="Beschreibung" for="term-desc"><Textarea id="term-desc" rows={3} bind:value={termEditDescription} /></Field>
 					{#if ci.customer_name}
-						<div class="panel-kv">
-							<span class="kv-label">Kunde</span>
-							<span class="kv-value">
-								{#if ci.customer_type === 'business'}
-									<span class="cust-type-badge" data-type="business">Gewerbe</span>
-								{/if}
-								{ci.customer_name}
-								{#if ci.company_name}<span style="color:var(--dt-on-surface-variant);font-size:0.8em;"> ({ci.company_name})</span>{/if}
-							</span>
+						<div class="flex flex-wrap items-center gap-1.5 text-sm">
+							<span class="label-xs text-faint">Kunde</span>
+							{#if ci.customer_type === 'business'}<Badge>Gewerbe</Badge>{/if}
+							<span class="font-medium">{ci.customer_name}</span>
+							{#if ci.company_name}<span class="text-xs text-muted">({ci.company_name})</span>{/if}
 						</div>
 					{/if}
-					<div class="panel-actions">
-						<button class="btn btn-primary btn-sm" onclick={saveTermin} disabled={savingTermin}>
-							<Save size={13} />
-							{savingTermin ? 'Speichern...' : 'Speichern'}
-						</button>
-						<a href="/admin/calendar-items/{ci.id}" class="btn btn-ghost btn-sm">
-							<ExternalLink size={13} /> Detail
-						</a>
-						<button class="btn btn-danger btn-sm" onclick={deleteTermin} disabled={deletingTermin}>
-							<Trash2 size={13} />
-							{deletingTermin ? '...' : 'Löschen'}
-						</button>
+					<div class="flex flex-wrap gap-1.5">
+						<Button size="sm" variant="solid" onclick={saveTermin} disabled={savingTermin}><Save size={13} /> {savingTermin ? 'Speichern …' : 'Speichern'}</Button>
+						<Button size="sm" href="/admin/calendar-items/{ci.id}"><ExternalLink size={13} /> Detail</Button>
+						<Button size="sm" variant="danger" class="ml-auto" onclick={deleteTermin} disabled={deletingTermin}><Trash2 size={13} /> {deletingTermin ? '…' : 'Löschen'}</Button>
 					</div>
-				</div>
+				{/snippet}
+				{@render section('Bearbeiten', editTermin)}
 
-				<!-- Employee assignments (single-day; hidden when multi-day is active) -->
 				{#if termDays.length <= 1}
-				<div class="panel-section">
-					<EmployeeAssignmentPanel
-						entityId={panelSelection.item.id}
-						entityType="calendar_item"
-						onUpdated={() => onLoadSchedule()}
-					/>
-				</div>
+					{#snippet termCrew()}
+						<EmployeeAssignmentPanel entityId={ci.id} entityType="calendar_item" onUpdated={() => onLoadSchedule()} />
+					{/snippet}
+					{@render section(null, termCrew)}
 				{/if}
 
-				<!-- Multi-day scheduling section -->
-				<div class="panel-section">
-					<div class="section-title">Mehrtägiger Termin</div>
+				{#snippet termMultiDay()}
 					{#if termDaysLoading}
-						<p class="panel-loading">Laden...</p>
+						<p class="text-[13px] text-faint">Laden …</p>
 					{:else}
 						{@const termSel = panelSelection as PanelTermin}
 						{@const originStr = termSel.item.scheduled_date ?? ''}
-						<div class="field-row">
-							<div class="field">
-								<span class="field-label">Von</span>
-								<span class="day-origin-label">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
+						<div class="grid grid-cols-2 gap-2">
+							<div class="flex flex-col gap-1.5">
+								<span class="text-xs font-medium text-muted">Von</span>
+								<span class="num flex h-9 items-center text-sm">{originStr ? originStr.split('-').reverse().join('.') : '—'}</span>
 							</div>
-							<div class="field">
-								<label for="term-until">Bis</label>
-								<input id="term-until" type="date" class="neu-input" min={originStr} bind:value={termUntilDate} oninput={applyTerminDateRange} onfocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
-							</div>
+							<Field label="Bis" for="term-until">
+								<Input
+									id="term-until"
+									type="date"
+									min={originStr}
+									bind:value={termUntilDate}
+									oninput={applyTerminDateRange}
+									onfocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+								/>
+							</Field>
 						</div>
 						{#if termDays.length > 1}
-							<div class="day-list">
-								{#each termDays as day, i}
-									<div class="day-row">
-										<div class="day-row-header">
-											<span class="day-label">Tag {day.day_number} — {formatDayDate(day.day_date)}</span>
-										</div>
-										<div class="field-row">
-											<div class="field">
-												<label for="term-start-{i}">Start</label>
-												<input id="term-start-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].start_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_in', (e.target as HTMLInputElement).value)} />
-											</div>
-											<div class="field">
-												<label for="term-end-{i}">Ende</label>
-												<input id="term-end-{i}" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={termDays[i].end_time} onfocus={(e) => dayBulkBefore = (e.target as HTMLInputElement).value} onblur={(e) => maybeApplyDayTime('calendar_item', i, 'clock_out', (e.target as HTMLInputElement).value)} />
-											</div>
-										</div>
-										{#if day.employees.length > 0}
-											<div class="day-emp-list">
-												{#each day.employees as emp, ei}
-													<div class="day-emp-row">
-														<span class="day-emp-name">{emp.first_name} {emp.last_name[0]}.</span>
-														<span class="day-time-group">
-															<span class="day-time-label">Ist</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_in} oninput={(e) => termDays[i].employees[ei].clock_in = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_in = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'clock_in', norm); }} />
-															<span class="time-sep">–</span>
-															<input type="text" inputmode="decimal" placeholder="--:--" maxlength="5" class="neu-input time-mini" bind:value={termDays[i].employees[ei].clock_out} oninput={(e) => termDays[i].employees[ei].clock_out = (e.target as HTMLInputElement).value} onblur={(e) => { const raw = (e.target as HTMLInputElement).value; const norm = normalizeTimeInput(raw || null); termDays[i].employees[ei].clock_out = norm ? norm.slice(0,5) : null; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'clock_out', norm); }} />
-															<span class="day-time-label">P (h):</span>
-															<input type="text" inputmode="decimal" placeholder="0" maxlength="5" class="neu-input time-mini break-mini" value={breakMinutesToHours(termDays[i].employees[ei].break_minutes)} onblur={(e) => { const v = breakHoursToMinutes((e.target as HTMLInputElement).value); termDays[i].employees[ei].break_minutes = v; saveMultiDayField('calendar_item', termSel.item.id, emp.employee_id, termDays[i].day_date, 'break_minutes', v); }} />
-														</span>
-														<button class="day-emp-remove" onclick={() => removeTermDayEmployee(i, emp.employee_id)}>×</button>
-													</div>
-												{/each}
-											</div>
-										{/if}
-										{#if addEmpDayTarget === `term-${i}`}
-											<div class="day-emp-add-row">
-												<select class="neu-input" bind:value={addEmpId}>
-													<option value="">— wählen —</option>
-													{#each allEmployees.filter(e => !day.employees.some(de => de.employee_id === e.id)) as e}
-														<option value={e.id}>{e.first_name} {e.last_name}</option>
-													{/each}
-												</select>
-												<input type="text" inputmode="decimal" placeholder="Start" maxlength="5" class="neu-input time-mini" bind:value={addEmpStart} />
-												<span class="time-sep">–</span>
-												<input type="text" inputmode="decimal" placeholder="Ende" maxlength="5" class="neu-input time-mini" bind:value={addEmpEnd} />
-												<button class="btn btn-primary btn-sm" onclick={() => confirmAddTermDayEmployee(i)} disabled={!addEmpId}><Check size={12} /></button>
-												<button class="btn btn-ghost btn-sm" onclick={() => addEmpDayTarget = null}>×</button>
-											</div>
-										{:else}
-											<button class="btn btn-ghost btn-sm day-add-emp-btn" onclick={() => openAddEmp(`term-${i}`, day.start_time ?? '', day.end_time ?? '')}>
-												<Plus size={11} /> Mitarbeiter
-											</button>
-										{/if}
-									</div>
-								{/each}
-							</div>
+							{@render dayRows('calendar_item', termDays, 'term', termSel.item.id, removeTermDayEmployee, confirmAddTermDayEmployee)}
 						{/if}
-						<div class="days-actions">
-							<button class="btn btn-primary btn-sm" onclick={saveTerminDays} disabled={termDaysSaving || !termUntilDate}>
-								{termDaysSaving ? '...' : 'Zeitraum speichern'}
-							</button>
-						</div>
+						<Button size="sm" variant="solid" class="self-start" onclick={saveTerminDays} disabled={termDaysSaving || !termUntilDate}>
+							{termDaysSaving ? '…' : 'Zeitraum speichern'}
+						</Button>
 					{/if}
-				</div>
-
-			<!-- ─── APPOINTMENT (ZUSATZTERMIN) PANEL ─────────────────────── -->
+				{/snippet}
+				{@render section('Mehrtägiger Termin', termMultiDay)}
 			{:else if panelSelection.kind === 'appointment'}
 				{@const appt = panelSelection.item}
 
-				<div class="panel-section">
+				{#snippet editAppt()}
 					{#if apptReturnInquiry && apptReturnInquiry.item.inquiry_id === appt.inquiry_id}
-						<button class="back-to-inquiry-btn" onclick={() => panelSelection = apptReturnInquiry}>
-							← Zurück zur Anfrage
-						</button>
+						<Button size="xs" variant="ghost" class="self-start" onclick={() => (panelSelection = apptReturnInquiry)}><ArrowLeft size={13} /> Zurück zur Anfrage</Button>
 					{/if}
-					<div class="section-title">Zusatztermin bearbeiten</div>
-					<p class="appt-hint">Eigener Termin zum Auftrag (z.&nbsp;B. Halteverbotszone) — mit eigenem Datum, Adresse und bezahltem Team.</p>
-					<div class="field-row">
-						<div class="field">
-							<label for="appt-kind">Art</label>
-							<input id="appt-kind" type="text" class="neu-input" list="appt-kinds" bind:value={apptEditKind} placeholder="z.B. Halteverbot" />
+					<p class="text-xs text-muted">Eigener Termin zum Auftrag (z. B. Halteverbotszone) — mit eigenem Datum, Adresse und bezahltem Team.</p>
+					<div class="grid grid-cols-2 gap-2">
+						<Field label="Art" for="appt-kind">
+							<Input id="appt-kind" list="appt-kinds" bind:value={apptEditKind} placeholder="z. B. Halteverbot" />
 							<datalist id="appt-kinds">
 								<option value="besichtigung">Besichtigung</option>
 								<option value="halteverbot">Halteverbot</option>
 								<option value="nachtermin">Nachtermin</option>
 							</datalist>
-						</div>
-						<div class="field">
-							<label for="appt-status">Status</label>
-							<select id="appt-status" class="neu-input" bind:value={apptEditStatus}>
+						</Field>
+						<Field label="Status" for="appt-status">
+							<Select id="appt-status" bind:value={apptEditStatus}>
 								<option value="scheduled">Geplant</option>
 								<option value="done">Erledigt</option>
 								<option value="cancelled">Storniert</option>
-							</select>
-						</div>
+							</Select>
+						</Field>
+						<Field label="Datum" for="appt-date" class="col-span-2"><Input id="appt-date" type="date" bind:value={apptEditDate} /></Field>
+						<Field label="Von" for="appt-start"><Input id="appt-start" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} bind:value={apptEditStartTime} /></Field>
+						<Field label="Bis" for="appt-end"><Input id="appt-end" class="num" inputmode="decimal" placeholder="HH:MM" maxlength={5} bind:value={apptEditEndTime} /></Field>
 					</div>
-					<div class="field">
-						<label for="appt-date">Datum</label>
-						<input id="appt-date" type="date" class="neu-input" bind:value={apptEditDate} />
-					</div>
-					<div class="field-row">
-						<div class="field">
-							<label for="appt-start">Von</label>
-							<input id="appt-start" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={apptEditStartTime} />
-						</div>
-						<div class="field">
-							<label for="appt-end">Bis</label>
-							<input id="appt-end" type="text" inputmode="decimal" placeholder="HH:MM" maxlength="5" class="neu-input" bind:value={apptEditEndTime} />
-						</div>
-					</div>
-					<div class="field">
-						<label for="appt-loc">Ort</label>
-						<input id="appt-loc" type="text" class="neu-input" bind:value={apptEditLocation} placeholder="Adresse (optional, sonst Auszugsadresse)" />
-					</div>
-					<div class="field">
-						<label for="appt-desc">Beschreibung</label>
-						<textarea id="appt-desc" rows={2} class="neu-input" bind:value={apptEditDescription} placeholder="Was ist zu tun?"></textarea>
-					</div>
-					<div class="field">
-						<label for="appt-emp-notes">Notiz für Mitarbeiter</label>
-						<textarea id="appt-emp-notes" rows={2} class="neu-input" bind:value={apptEditEmployeeNotes} placeholder="Hinweis, den alle Zugewiesenen sehen"></textarea>
-					</div>
-					<!-- Fallback only: when the outline below loaded, it already names the
-					     Auftrag (and more), so don't repeat it here. -->
+					<Field label="Ort" for="appt-loc"><Input id="appt-loc" bind:value={apptEditLocation} placeholder="Adresse (optional, sonst Auszugsadresse)" /></Field>
+					<Field label="Beschreibung" for="appt-desc"><Textarea id="appt-desc" rows={2} bind:value={apptEditDescription} placeholder="Was ist zu tun?" /></Field>
+					<Field label="Notiz für Mitarbeiter" for="appt-emp-notes">
+						<Textarea id="appt-emp-notes" rows={2} bind:value={apptEditEmployeeNotes} placeholder="Hinweis, den alle Zugewiesenen sehen" />
+					</Field>
+					<!-- Fallback only: once the outline below has loaded it names the Auftrag. -->
 					{#if appt.customer_name && !apptInquiry}
-						<div class="panel-kv">
-							<span class="kv-label">Auftrag</span>
-							<span class="kv-value">{appt.customer_name}</span>
-						</div>
+						<span class="text-sm"><span class="label-xs mr-2 text-faint">Auftrag</span>{appt.customer_name}</span>
 					{/if}
-					<div class="panel-actions">
-						<button class="btn btn-primary btn-sm" onclick={saveAppt} disabled={savingAppt || apptDetailLoading}>
-							<Save size={13} />
-							{savingAppt ? 'Speichern...' : 'Speichern'}
-						</button>
-						<a href="/admin/inquiries/{appt.inquiry_id}" class="btn btn-ghost btn-sm">
-							<ExternalLink size={13} /> Auftrag
-						</a>
-						<button class="btn btn-danger btn-sm" onclick={deleteAppt} disabled={deletingAppt}>
-							<Trash2 size={13} />
-							{deletingAppt ? '...' : 'Löschen'}
-						</button>
+					<div class="flex flex-wrap gap-1.5">
+						<Button size="sm" variant="solid" onclick={saveAppt} disabled={savingAppt || apptDetailLoading}><Save size={13} /> {savingAppt ? 'Speichern …' : 'Speichern'}</Button>
+						<Button size="sm" href="/admin/inquiries/{appt.inquiry_id}"><ExternalLink size={13} /> Auftrag</Button>
+						<Button size="sm" variant="danger" class="ml-auto" onclick={deleteAppt} disabled={deletingAppt}><Trash2 size={13} /> {deletingAppt ? '…' : 'Löschen'}</Button>
 					</div>
-				</div>
+				{/snippet}
+				{@render section('Zusatztermin bearbeiten', editAppt)}
 
-				<!-- Bezahltes Team (crew + hours) -->
-				<div class="panel-section">
+				{#snippet apptCrew()}
 					<EmployeeAssignmentPanel
 						entityType="appointment"
 						entityId={appt.appointment_id}
@@ -1815,85 +1716,55 @@
 						preferredDate={apptEditDate}
 						onUpdated={() => onLoadSchedule()}
 					/>
-				</div>
+				{/snippet}
+				{@render section('Bezahltes Team', apptCrew)}
 
-				<!-- Outline of the parent Auftrag, so the Zusatztermin has context
-				     without navigating away from the editor. -->
+				<!-- Outline of the parent Auftrag: context without leaving the editor. -->
 				{#if apptInquiry}
-					<div class="panel-section appt-inquiry-outline">
-						<div class="section-title">Zugehöriger Auftrag</div>
-						<div class="panel-kv">
-							<span class="kv-label">Kunde</span>
-							<span class="kv-value">{apptInquiry.customer?.name || appt.customer_name || '—'}</span>
-						</div>
-						<div class="panel-kv">
-							<span class="kv-label">Status</span>
-							<span class="kv-value">{INQUIRY_STATUS_LABELS[apptInquiry.status] ?? apptInquiry.status}</span>
-						</div>
-						{#if apptInquiry.scheduled_date}
-							<div class="panel-kv">
-								<span class="kv-label">Umzugstermin</span>
-								<span class="kv-value">
-									{new Date(apptInquiry.scheduled_date).toLocaleDateString('de-DE')}
-									{#if apptInquiry.start_time}· {formatTime(apptInquiry.start_time)}{/if}
-								</span>
-							</div>
-						{/if}
-						<div class="panel-kv panel-kv-route">
-							<span class="kv-label">Von</span>
-							<span class="kv-value kv-route-value">{formatApptAddress(apptInquiry.origin_address)}</span>
-						</div>
-						<div class="panel-kv panel-kv-route">
-							<span class="kv-label">Nach</span>
-							<span class="kv-value kv-route-value">{formatApptAddress(apptInquiry.destination_address)}</span>
-						</div>
-						{#if apptInquiry.volume_m3}
-							<div class="panel-kv">
-								<span class="kv-label">Volumen</span>
-								<span class="kv-value">{apptInquiry.volume_m3.toFixed(1)} m³</span>
-							</div>
-						{/if}
-						{#if apptInquiry.offer?.total_brutto_cents}
-							<div class="panel-kv">
-								<span class="kv-label">Angebotspreis</span>
-								<span class="kv-value">{(apptInquiry.offer.total_brutto_cents / 100).toFixed(0)} € brutto</span>
-							</div>
-						{/if}
-						{#if apptInquiry.employees && apptInquiry.employees.length > 0}
-							<div class="panel-kv panel-kv-route">
-								<span class="kv-label">Team</span>
-								<span class="kv-value kv-route-value">
-									{apptInquiry.employees
-										.map((e) => [e.first_name, e.last_name].filter(Boolean).join(' '))
-										.filter(Boolean)
-										.join(', ')}
-								</span>
-							</div>
-						{/if}
-						{#if apptInquiry.customer?.phone || apptInquiry.customer?.email}
-							<div class="panel-kv">
-								<span class="kv-label">Kontakt</span>
-								<span class="kv-value kv-muted">
+					{#snippet outline()}
+						<dl class="-my-1.5">
+							<KeyValue label="Kunde">{apptInquiry?.customer?.name || appt.customer_name || '—'}</KeyValue>
+							<KeyValue label="Status">{INQUIRY_STATUS_LABELS[apptInquiry!.status] ?? apptInquiry!.status}</KeyValue>
+							{#if apptInquiry?.scheduled_date}
+								<KeyValue label="Umzug">
+									<span class="num">{new Date(apptInquiry.scheduled_date).toLocaleDateString('de-DE')}{#if apptInquiry.start_time} · {formatTime(apptInquiry.start_time)}{/if}</span>
+								</KeyValue>
+							{/if}
+							<KeyValue label="Von">{formatApptAddress(apptInquiry!.origin_address)}</KeyValue>
+							<KeyValue label="Nach">{formatApptAddress(apptInquiry!.destination_address)}</KeyValue>
+							{#if apptInquiry?.volume_m3}<KeyValue label="Volumen"><span class="num">{apptInquiry.volume_m3.toFixed(1)} m³</span></KeyValue>{/if}
+							{#if apptInquiry?.offer?.total_brutto_cents}
+								<KeyValue label="Angebot"><span class="num">{(apptInquiry.offer.total_brutto_cents / 100).toFixed(0)} € brutto</span></KeyValue>
+							{/if}
+							{#if apptInquiry?.employees && apptInquiry.employees.length > 0}
+								<KeyValue label="Team">
+									{apptInquiry.employees.map((e) => [e.first_name, e.last_name].filter(Boolean).join(' ')).filter(Boolean).join(', ')}
+								</KeyValue>
+							{/if}
+							{#if apptInquiry?.customer?.phone || apptInquiry?.customer?.email}
+								<KeyValue label="Kontakt">
 									{#if apptInquiry.customer.phone}
-										<a href="tel:{apptInquiry.customer.phone}" class="kv-link">{apptInquiry.customer.phone}</a>
+										<a href="tel:{apptInquiry.customer.phone}" class="num hover:underline">{apptInquiry.customer.phone}</a>
 									{:else}
-										<a href="mailto:{apptInquiry.customer.email}" class="kv-link">{apptInquiry.customer.email}</a>
+										<a href="mailto:{apptInquiry.customer.email}" class="hover:underline">{apptInquiry.customer.email}</a>
 									{/if}
-								</span>
-							</div>
-						{/if}
-					</div>
+								</KeyValue>
+							{/if}
+						</dl>
+					{/snippet}
+					{@render section('Zugehöriger Auftrag', outline)}
 				{/if}
 			{/if}
-
 		</div>
+	{:else}
+		<p class="hidden px-4 py-10 text-center text-sm text-faint md:block">Klicke auf einen Eintrag</p>
 	{/if}
 </aside>
 
 <ConfirmationDialog
 	bind:open={showDeleteInquiryDialog}
 	title="Anfrage löschen"
-	message={`Anfrage von „${pendingDeleteInquiryName}" löschen?`}
+	message={`Anfrage von „${pendingDeleteInquiryName}“ löschen?`}
 	confirmLabel="Löschen"
 	loading={deletingInquiry}
 	onConfirm={confirmDeleteInquiry}
@@ -1902,7 +1773,7 @@
 <ConfirmationDialog
 	bind:open={showDeleteTerminDialog}
 	title="Termin löschen"
-	message={`Termin „${pendingDeleteTerminTitle}" löschen?`}
+	message={`Termin „${pendingDeleteTerminTitle}“ löschen?`}
 	confirmLabel="Löschen"
 	loading={deletingTermin}
 	onConfirm={confirmDeleteTermin}
@@ -1911,384 +1782,8 @@
 <ConfirmationDialog
 	bind:open={showDeleteApptDialog}
 	title="Zusatztermin löschen"
-	message={`„${pendingDeleteApptTitle}" löschen?`}
+	message={`„${pendingDeleteApptTitle}“ löschen?`}
 	confirmLabel="Löschen"
 	loading={deletingAppt}
 	onConfirm={confirmDeleteAppt}
 />
-
-<style>
-	/* ─── Side panel container ─────────────────────────────────────────────────── */
-	.side-panel {
-		width: 0;
-		overflow: hidden;
-		flex-shrink: 0;
-		background: var(--dt-surface-container-lowest);
-		border-radius: var(--dt-radius-lg);
-		box-shadow: var(--dt-shadow-ambient);
-		transition: width 280ms ease, opacity 280ms ease;
-		opacity: 0;
-		display: flex;
-		flex-direction: column;
-		max-height: calc(100vh - 140px);
-		position: sticky;
-		top: 1rem;
-	}
-
-	.side-panel.panel-visible {
-		width: 380px;
-		opacity: 1;
-	}
-
-	/* ─── Panel placeholder ────────────────────────────────────────────────────── */
-	.panel-placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		height: 200px;
-		color: var(--dt-on-surface-variant);
-		gap: 0.5rem;
-	}
-	.placeholder-icon { font-size: 2rem; }
-	.panel-placeholder p { font-size: 0.875rem; }
-
-	/* ─── Panel header ─────────────────────────────────────────────────────────── */
-	.panel-header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.5rem;
-		padding: 1rem 1rem 0.75rem;
-		flex-shrink: 0;
-		background: var(--dt-glass-bg);
-		backdrop-filter: var(--dt-glass-blur);
-		border-bottom: var(--dt-glass-border);
-		border-radius: var(--dt-radius-lg) var(--dt-radius-lg) 0 0;
-	}
-	.panel-title-block {
-		display: flex;
-		flex-direction: column;
-		gap: 0.1rem;
-		min-width: 0;
-	}
-	.panel-subtitle {
-		font-size: 0.75rem;
-		font-weight: 400;
-		color: rgba(255,255,255,0.7);
-		margin: 0;
-	}
-	.panel-title {
-		font-size: 0.9375rem;
-		font-weight: 700;
-		color: var(--dt-on-primary);
-		margin: 0;
-		line-height: 1.3;
-		word-break: break-word;
-	}
-	.panel-close {
-		flex-shrink: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border-radius: var(--dt-radius-sm);
-		color: rgba(255,255,255,0.7);
-		background: rgba(255,255,255,0.12);
-		border: var(--dt-glass-border);
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-	.panel-close:hover { background: rgba(255,255,255,0.22); color: var(--dt-on-primary); }
-
-	/* ─── Panel body ───────────────────────────────────────────────────────────── */
-	.panel-body {
-		flex: 1;
-		overflow-y: auto;
-		padding: 0.75rem 1rem 18rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0;
-	}
-
-	/* ─── Panel sections ───────────────────────────────────────────────────────── */
-	.panel-section {
-		padding: 0.75rem 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-	.panel-section + .panel-section {
-		border-top: 1px solid var(--dt-surface-container);
-	}
-
-	.section-title {
-		font-size: 0.6875rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--dt-primary);
-		margin-bottom: 0.125rem;
-	}
-
-	.panel-kv { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-	.kv-label { font-size: 0.75rem; font-weight: 600; color: var(--dt-on-surface-variant); flex-shrink: 0; }
-	.kv-value { font-size: 0.8125rem; color: var(--dt-on-surface); font-weight: 500; text-align: right; }
-	.kv-muted { color: var(--dt-on-surface-variant); font-weight: 400; }
-	.panel-kv-route { align-items: flex-start; }
-	.kv-route-value { font-weight: 600; white-space: normal; }
-	.kv-link { color: inherit; text-decoration: none; }
-	.kv-link:hover { text-decoration: underline; }
-
-	/* Read-only outline of the parent Auftrag at the bottom of the appointment
-	   editor — tinted so it reads as reference, not as more editable fields. */
-	.appt-inquiry-outline {
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-md);
-		padding: 0.75rem;
-		margin-top: 0.25rem;
-	}
-	.appt-inquiry-outline .kv-route-value { min-width: 0; }
-
-	.panel-empty { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }
-	.panel-loading { font-size: 0.8125rem; color: var(--dt-on-surface-variant); margin: 0; }
-	.appt-hint { font-size: 0.78rem; color: var(--dt-on-surface-variant); margin: 0 0 0.75rem; line-height: 1.4; }
-	.back-to-inquiry-btn {
-		display: inline-flex; align-items: center; background: transparent; border: none;
-		color: var(--dt-primary); font-size: 0.8rem; font-weight: 500; cursor: pointer;
-		padding: 0 0 0.6rem; margin: 0;
-	}
-	.back-to-inquiry-btn:hover { text-decoration: underline; }
-
-	/* ─── Day panel entries ────────────────────────────────────────────────────── */
-	.day-entry {
-		background: var(--dt-surface-container-low);
-		border-radius: var(--dt-radius-sm);
-		padding: 0.5rem 0.625rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-	}
-	.day-entry-termin { background: rgba(168, 57, 0, 0.06); }
-	.day-entry-appt { background: rgba(8, 145, 178, 0.07); border-left: 3px solid #0891b2; }
-	.appt-badge { background: #cffafe; color: #155e75; }
-	.day-entry-top { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-	.entry-link-btn {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--dt-primary);
-		text-align: left;
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 0;
-		transition: color var(--dt-transition);
-	}
-	.entry-link-btn:hover { color: var(--dt-secondary); text-decoration: underline; }
-	.entry-route { font-size: 0.7rem; color: var(--dt-on-surface-variant); }
-	.entry-detail-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.2rem;
-		font-size: 0.7rem;
-		color: var(--dt-secondary);
-		text-decoration: none;
-		align-self: flex-start;
-		transition: color var(--dt-transition);
-	}
-	.entry-detail-link:hover { text-decoration: underline; }
-	.cat-badge {
-		font-size: 0.6rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		background: var(--dt-secondary-container);
-		color: var(--dt-on-secondary-container);
-		padding: 0.1rem 0.3rem;
-		border-radius: 3px;
-	}
-	.time-badge {
-		font-size: 0.7rem;
-		font-weight: 600;
-		color: var(--dt-on-surface-variant);
-		margin-left: auto;
-		white-space: nowrap;
-	}
-
-	/* ─── Form inputs ──────────────────────────────────────────────────────────── */
-	.neu-input {
-		padding: 0.4rem 0.6rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		font-size: 0.8125rem;
-		outline: none;
-		width: 100%;
-		font-family: inherit;
-		resize: vertical;
-		transition: var(--dt-transition);
-	}
-	.neu-input:focus {
-		background: var(--dt-surface-container-lowest);
-		border-bottom: 2px solid var(--dt-primary);
-	}
-	select.neu-input { appearance: auto; }
-
-	/* ─── Form field layout ────────────────────────────────────────────────────── */
-	.field { display: flex; flex-direction: column; gap: 0.2rem; }
-	.field label, .field .field-label { font-size: 0.6875rem; font-weight: 600; color: var(--dt-on-surface-variant); text-transform: uppercase; }
-	.field-row { display: flex; gap: 0.5rem; }
-	.field-row .field { flex: 1; }
-
-	/* ─── Panel action buttons ─────────────────────────────────────────────────── */
-	.panel-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
-
-	/* ─── Buttons ──────────────────────────────────────────────────────────────── */
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		padding: 0.5rem 1rem;
-		border-radius: var(--dt-radius-md);
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background var(--dt-transition);
-		white-space: nowrap;
-		border: var(--dt-ghost-border);
-		background: var(--dt-surface-container-lowest);
-		color: var(--dt-on-surface);
-		text-decoration: none;
-	}
-	.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; border-radius: var(--dt-radius-sm); }
-	.btn-primary {
-		background: linear-gradient(135deg, var(--dt-primary), var(--dt-primary-container));
-		color: var(--dt-on-primary);
-		border: none;
-	}
-	.btn-primary:hover:not(:disabled) {
-		background: linear-gradient(135deg, var(--dt-primary-container), var(--dt-primary));
-	}
-	.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-	.btn-ghost {
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		border: none;
-		text-decoration: none;
-	}
-	.btn-ghost:hover { background: var(--dt-surface-container); color: var(--dt-on-surface); }
-	.btn-danger {
-		background: linear-gradient(135deg, var(--dt-secondary), #8a2e00);
-		color: var(--dt-on-primary);
-		border: none;
-	}
-	.btn-danger:hover:not(:disabled) {
-		background: linear-gradient(135deg, #8a2e00, var(--dt-secondary));
-	}
-	.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
-
-	/* ─── Multi-day editor ─────────────────────────────────────────────────────── */
-	.days-actions { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.25rem; }
-	.day-origin-label { font-size: 0.875rem; font-weight: 600; color: var(--dt-on-surface); display: block; padding: 0.25rem 0; }
-	.day-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
-	.day-row { background: var(--dt-surface-variant); border-radius: 8px; padding: 0.5rem 0.625rem; }
-	.day-row-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.375rem; }
-	.day-label { font-size: 0.8125rem; font-weight: 600; color: var(--dt-on-surface); }
-	.day-emp-list { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.375rem; }
-	.day-emp-row { display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
-	.day-emp-name { font-size: 0.75rem; color: var(--dt-on-surface); min-width: 4rem; flex-shrink: 0; }
-	.day-emp-remove { background: none; border: none; cursor: pointer; color: var(--dt-on-surface-variant); padding: 0 0.125rem; line-height: 1; display: flex; align-items: center; margin-left: auto; }
-	.day-emp-remove:hover { color: var(--dt-error, #b91c1c); }
-	.day-emp-add-row { margin-top: 0.375rem; display: flex; align-items: center; gap: 0.375rem; flex-wrap: wrap; }
-	.day-add-emp-btn { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--dt-surface); border: 1px dashed var(--dt-outline-variant); border-radius: 8px; cursor: pointer; color: var(--dt-on-surface-variant); }
-	.day-add-emp-btn:hover { border-color: var(--dt-primary); color: var(--dt-primary); }
-	.time-mini { width: 3.75rem !important; padding: 0.2rem 0.25rem; font-size: 0.75rem; text-align: center; }
-	.break-mini { width: 3.25rem !important; }
-	.time-sep { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
-	.day-time-group { display: flex; align-items: center; gap: 0.2rem; }
-	.day-time-label { font-size: 0.6875rem; color: var(--dt-on-surface-variant); font-weight: 600; flex-shrink: 0; }
-
-	/* ─── Mobile: bottom sheet handle ─────────────────────────────────────────── */
-	.sheet-handle-bar {
-		display: none;
-		justify-content: center;
-		padding: 10px 0 6px;
-		cursor: pointer;
-		flex-shrink: 0;
-	}
-	.sheet-handle {
-		width: 40px;
-		height: 4px;
-		border-radius: 2px;
-		background: var(--dt-outline-variant);
-	}
-
-	/* ─── Tablet: stack below calendar ────────────────────────────────────────── */
-	@media (min-width: 769px) and (max-width: 900px) {
-		.side-panel { width: 100%; max-height: none; position: static; opacity: 1; transition: none; }
-		.side-panel:not(.panel-visible) { display: none; }
-		.sheet-handle-bar { display: none; }
-	}
-
-	/* ─── Mobile: full-width bottom sheet ─────────────────────────────────────── */
-	@media (max-width: 768px) {
-		.side-panel {
-			position: fixed;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			width: 100%;
-			max-height: 85vh;
-			border-radius: 20px 20px 0 0;
-			top: auto;
-			transform: translateY(105%);
-			opacity: 1;
-			transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
-			z-index: 510;
-			overflow-y: auto;
-		}
-		.side-panel.panel-visible {
-			transform: translateY(0);
-			width: 100%;
-		}
-		.sheet-handle-bar { display: flex; }
-	}
-
-	.cust-type-badge {
-		display: inline-block;
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		padding: 0.1rem 0.35rem;
-		border-radius: 4px;
-		letter-spacing: 0.03em;
-		margin-right: 0.3rem;
-	}
-	.cust-type-badge[data-type="business"] { background: #d1fae5; color: #065f46; }
-
-	/* Besichtigungen / Zusatztermine list */
-	.appt-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
-	.appt-item {
-		display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;
-		padding: 0.4rem 0.55rem; border: 1px solid var(--dt-outline-variant, #e2e8f0);
-		border-left: 3px solid #0891b2; border-radius: 8px; background: var(--dt-surface-container-lowest, #fff);
-	}
-	.appt-item-info { min-width: 0; }
-	.appt-item-edit {
-		flex: 1; min-width: 0; text-align: left; background: transparent; border: none;
-		padding: 0; margin: 0; cursor: pointer; font: inherit; color: inherit; border-radius: 6px;
-	}
-	.appt-item-edit:hover { background: var(--dt-surface-container-high, #f1f5f9); }
-	.appt-item-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-	.appt-kind { font-weight: 600; font-size: 0.8125rem; }
-	.appt-date { font-size: 0.8125rem; color: var(--dt-primary); font-variant-numeric: tabular-nums; }
-	.appt-time { font-size: 0.75rem; color: var(--dt-on-surface-variant); }
-	.appt-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; color: var(--dt-on-surface-variant); margin-top: 0.15rem; }
-	.appt-note { font-style: italic; }
-	.appt-del {
-		flex-shrink: 0; border: none; background: transparent; color: var(--dt-on-surface-variant);
-		font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 0.2rem; border-radius: 4px;
-	}
-	.appt-del:hover { color: var(--dt-error, #b91c1c); background: var(--dt-surface-container-high, #f1f5f9); }
-	.appt-add-btn { margin-top: 0.15rem; }
-</style>

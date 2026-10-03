@@ -7,6 +7,10 @@
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import { FileSpreadsheet, FileText } from 'lucide-svelte';
+	import Panel from '$lib/components/ui/Panel.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
+	import Segmented from '$lib/components/ui/Segmented.svelte';
 
 	interface Assignment {
 		inquiry_id: string;
@@ -469,309 +473,287 @@
 	}
 </script>
 
-<!-- Hours Card (7-day or monthly) -->
-<div class="card">
-	<div class="card-header">
-		<h2>Stunden</h2>
-		<div class="view-toggle">
-			<button class="toggle-btn" class:active={viewMode === '7d'} onclick={() => setViewMode('7d')}
-				>7 Tage</button
-			>
-			<button
-				class="toggle-btn"
-				class:active={viewMode === 'month'}
-				onclick={() => setViewMode('month')}>Monat</button
-			>
-			{#if viewMode === 'month'}
-				<input type="month" bind:value={selectedMonth} onchange={onHoursMonthChange} class="month-input" />
+<!-- Von / Bis / Pause cells, shared by Umzüge, Termine and Zusatztermine. In payroll-edit
+     mode they edit the payroll override (pdraft); otherwise the recorded times (draft). -->
+{#snippet timeCells(key: string, draft: TimeDraft | undefined, pdraft: PayrollDraft | undefined, payrollAllowed: boolean)}
+	{#each ['clock_in', 'clock_out'] as const as f (f)}
+		<td class="px-1.5 py-1.5" onclick={(e) => e.stopPropagation()}>
+			{#if payrollEditMode}
+				{#if payrollAllowed && pdraft}
+					<input
+						type="text"
+						inputmode="numeric"
+						pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+						placeholder="HH:MM"
+						maxlength="5"
+						aria-label={f === 'clock_in' ? 'Von' : 'Bis'}
+						class="num h-7 w-16 rounded-xs border border-line bg-transparent px-1.5 text-center text-[13px] outline-none hover:border-line-strong focus:border-fg disabled:opacity-40"
+						disabled={pdraft.deactivated}
+						bind:value={pdraft[f]}
+					/>
+				{/if}
+			{:else if draft}
+				<input
+					type="text"
+					inputmode="numeric"
+					pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+					placeholder="HH:MM"
+					maxlength="5"
+					aria-label={f === 'clock_in' ? 'Von' : 'Bis'}
+					class="num h-7 w-16 rounded-xs border border-line bg-transparent px-1.5 text-center text-[13px] outline-none hover:border-line-strong focus:border-fg disabled:opacity-40 {draft.saving ? 'opacity-50' : ''}"
+					bind:value={draft[f]}
+					onblur={() => saveTime(key)}
+				/>
+			{/if}
+		</td>
+	{/each}
+	<td class="px-1.5 py-1.5" onclick={(e) => e.stopPropagation()}>
+		{#if payrollEditMode}
+			{#if payrollAllowed && pdraft}
+				<input
+					type="text"
+					inputmode="decimal"
+					placeholder="0"
+					maxlength="5"
+					aria-label="Pause (h)"
+					class="num h-7 w-16 rounded-xs border border-line bg-transparent px-1.5 text-center text-[13px] outline-none hover:border-line-strong focus:border-fg disabled:opacity-40"
+					disabled={pdraft.deactivated}
+					value={breakMinutesToHours(pdraft.break_minutes)}
+					onblur={(e) => {
+						pdraft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value);
+					}}
+				/>
+			{/if}
+		{:else if draft}
+			<input
+				type="text"
+				inputmode="decimal"
+				placeholder="0"
+				maxlength="5"
+				aria-label="Pause (h)"
+				class="num h-7 w-16 rounded-xs border border-line bg-transparent px-1.5 text-center text-[13px] outline-none hover:border-line-strong focus:border-fg disabled:opacity-40 {draft.saving ? 'opacity-50' : ''}"
+				value={breakMinutesToHours(draft.break_minutes)}
+				onblur={(e) => {
+					draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value);
+					saveTime(key);
+				}}
+			/>
+		{/if}
+	</td>
+{/snippet}
+
+{#snippet employeeTimes(clockIn: string | null, clockOut: string | null, breakMin: number | null)}
+	<td class="num px-1.5 py-1.5 text-xs text-faint">{clockIn ? fmtTimestamp(clockIn) : '—'}</td>
+	<td class="num px-1.5 py-1.5 text-xs text-faint">{clockOut ? fmtTimestamp(clockOut) : '—'}</td>
+	<td class="num px-1.5 py-1.5 text-xs text-faint">{breakMin != null ? `${breakMinutesToHours(breakMin) || '0'} h` : '—'}</td>
+{/snippet}
+
+{#snippet activeToggle(pdraft: PayrollDraft | undefined)}
+	{#if payrollEditMode}
+		<td class="px-3 py-1.5" onclick={(e) => e.stopPropagation()}>
+			{#if pdraft}
+				<input
+					type="checkbox"
+					class="size-4 accent-[var(--accent)]"
+					checked={!pdraft.deactivated}
+					onchange={(e) => (pdraft.deactivated = !e.currentTarget.checked)}
+					title="Tag in Abrechnung aktiv"
+					aria-label="Tag in Abrechnung aktiv"
+				/>
+			{/if}
+		</td>
+	{/if}
+{/snippet}
+
+<div class="flex min-w-0 flex-col gap-3.5">
+	<Panel title="Stunden">
+		{#snippet actions()}
+			<Segmented
+				size="sm"
+				label="Zeitraum"
+				options={[
+					{ value: '7d', label: '7 Tage' },
+					{ value: 'month', label: 'Monat' }
+				]}
+				value={viewMode}
+				onchange={(v) => setViewMode(v)}
+			/>
+		{/snippet}
+
+		{#if viewMode === 'month'}
+			<div class="mb-4 flex flex-wrap items-center gap-2">
+				<input
+					type="month"
+					aria-label="Monat"
+					bind:value={selectedMonth}
+					onchange={onHoursMonthChange}
+					class="h-8 rounded-sm border border-line-strong bg-panel px-2 text-[13px] outline-none focus:border-fg"
+				/>
 				{#if payrollEditMode}
-					<button
-						class="btn btn-sm btn-primary-sm"
-						onclick={savePayroll}
-						disabled={savingPayroll}
-						title="Anpassungen speichern und Bearbeitungsmodus verlassen"
-					>
-						{savingPayroll ? 'Speichern…' : 'Speichern & Beenden'}
-					</button>
-					<button class="btn btn-sm" onclick={cancelPayrollEdit} disabled={savingPayroll}>
-						Abbrechen
-					</button>
+					<Button size="sm" variant="solid" onclick={savePayroll} disabled={savingPayroll} title="Anpassungen speichern und Bearbeitungsmodus verlassen">
+						{savingPayroll ? 'Speichern …' : 'Speichern & beenden'}
+					</Button>
+					<Button size="sm" variant="ghost" onclick={cancelPayrollEdit} disabled={savingPayroll}>Abbrechen</Button>
 				{:else}
-					<button
-						class="btn btn-sm"
+					<Button
+						size="sm"
 						onclick={enterPayrollEdit}
 						disabled={!hoursSummary?.all_days_confirmed}
-						title={hoursSummary?.all_days_confirmed
-							? 'Stunden für die Abrechnung bearbeiten'
-							: 'Erst möglich, wenn alle Tage Von/Bis-Zeiten haben'}
+						title={hoursSummary?.all_days_confirmed ? 'Stunden für die Abrechnung bearbeiten' : 'Erst möglich, wenn alle Tage Von/Bis-Zeiten haben'}
 					>
-						Bearbeiten
-					</button>
-					<button
-						class="btn btn-sm export-btn"
-						onclick={exportStundenzettel}
-						disabled={exportingXlsx}
-						title="Stundenzettel als XLSX herunterladen"
-					>
-						{#if exportingXlsx}
-							…
-						{:else}
-							<FileSpreadsheet size={14} />
-						{/if}
-					</button>
-					<button
-						class="btn btn-sm export-btn"
-						onclick={exportStundenzettelPdf}
-						disabled={exportingPdf}
-						title="Stundenzettel als PDF herunterladen"
-					>
-						{#if exportingPdf}
-							…
-						{:else}
-							<FileText size={14} />
-						{/if}
-					</button>
+						Für Abrechnung bearbeiten
+					</Button>
+					<Button size="icon-sm" onclick={exportStundenzettel} disabled={exportingXlsx} title="Stundenzettel als XLSX herunterladen" aria-label="Stundenzettel XLSX">
+						{#if exportingXlsx}…{:else}<FileSpreadsheet size={14} />{/if}
+					</Button>
+					<Button size="icon-sm" onclick={exportStundenzettelPdf} disabled={exportingPdf} title="Stundenzettel als PDF herunterladen" aria-label="Stundenzettel PDF">
+						{#if exportingPdf}…{:else}<FileText size={14} />{/if}
+					</Button>
 					{#if hasAdjustments}
-						<button
-							class="btn btn-sm btn-danger-sm"
-							onclick={() => { showCleanupDialog = true; }}
+						<Button
+							size="sm"
+							variant="danger"
+							onclick={() => {
+								showCleanupDialog = true;
+							}}
 							title="Anpassungen endgültig übernehmen und Stundenkonto leeren (destruktiv)"
 						>
 							Stundenkonto säubern
-						</button>
+						</Button>
 					{/if}
 				{/if}
-			{/if}
-		</div>
-	</div>
-	{#if hoursSummary}
-		{@const paid = payrollEditMode ? livePaid : hoursSummary.paid_total}
-		{@const worked = payrollEditMode ? liveWorked : hoursSummary.worked_total}
-		{@const account = payrollEditMode ? liveAccount : hoursSummary.hour_account}
-		<div class="hours-summary">
-			<div class="hours-row">
-				<span class="hours-label">Ziel</span>
-				<span class="hours-value">{hoursSummary.target_hours} h</span>
 			</div>
-			{#if viewMode === 'month'}
-				<div class="hours-row muted">
-					<span class="hours-label">Gearbeitet</span>
-					<span class="hours-value">{worked.toFixed(1)} h</span>
-				</div>
-			{/if}
-			<div class="hours-row">
-				<span class="hours-label">{viewMode === 'month' ? 'Bezahlt' : 'Ist'}</span>
-				<span class="hours-value">{paid.toFixed(1)} h</span>
-			</div>
-			<div class="progress-bar">
-				<div class="progress-fill actual" style="width: {progressPct(paid, hoursSummary.target_hours)}%"
-				></div>
-			</div>
-			{#if viewMode === 'month'}
-				<div class="hours-row account-row">
-					<span class="hours-label">Stundenkonto</span>
-					<span class="hours-value">{account >= 0 ? '+' : ''}{account.toFixed(1)} h</span>
-				</div>
-			{/if}
-			<div class="hours-row muted">
-				<span>{hoursSummary.assignment_count} Einsaetze</span>
-			</div>
-		</div>
-	{:else}
-		<div class="empty-state">
-			{viewMode === '7d' ? 'Keine Einsaetze in den naechsten 7 Tagen.' : 'Keine Daten fuer diesen Monat.'}
-		</div>
-	{/if}
-</div>
+		{/if}
 
-<!-- Assignments Table -->
-<div class="card full-width">
-	<div class="card-header">
-		<h2>Einsaetze</h2>
-	</div>
-	{#if hoursSummary && (hoursSummary.assignments.length > 0 || hoursSummary.calendar_items?.length > 0 || hoursSummary.appointments?.length > 0)}
-		<div class="table-wrapper">
-			<table class="data-table">
-				<thead>
-					<tr>
-						{#if payrollEditMode}<th class="time-col">Aktiv</th>{/if}
-						<th>Datum</th>
-						<th>Beschreibung</th>
-						<th>Details</th>
-						<th class="time-col">Von</th>
-						<th class="time-col">Bis</th>
-						<th class="time-col">Pause (h)</th>
-						<th class="num">{payrollEditMode ? 'Bezahlt (h)' : 'Ist (h)'}</th>
-						<th class="time-col muted-col">MA-Von</th>
-						<th class="time-col muted-col">MA-Bis</th>
-						<th class="time-col muted-col">MA-Pause</th>
-						<th>Status</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each hoursSummary.assignments as a}
-						{@const key = `inq:${a.inquiry_id}:${a.booking_date ?? ''}`}
-						{@const draft = timeDrafts[key]}
-						{@const pdraft = payrollDrafts[key]}
-						{@const inactive = payrollEditMode ? pdraft?.deactivated : a.deactivated}
-						<tr
-							class="clickable-row"
-							class:inactive-row={inactive}
-							onclick={() => { if (!payrollEditMode && a.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${a.inquiry_id}`); }}
-						>
-							{#if payrollEditMode}
-								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if pdraft}
-										<input type="checkbox" checked={!pdraft.deactivated} onchange={(e) => (pdraft.deactivated = !e.currentTarget.checked)} title="Tag in Abrechnung aktiv" />
-									{/if}
+		{#if hoursSummary}
+			{@const paid = payrollEditMode ? livePaid : hoursSummary.paid_total}
+			{@const worked = payrollEditMode ? liveWorked : hoursSummary.worked_total}
+			{@const account = payrollEditMode ? liveAccount : hoursSummary.hour_account}
+			<div class="flex flex-col gap-3">
+				<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+					<div class="flex flex-col gap-1">
+						<span class="label-xs text-faint">{viewMode === 'month' ? 'Bezahlt' : 'Ist'}</span>
+						<span class="num text-2xl font-medium">{paid.toFixed(1)}<span class="text-sm text-faint"> h</span></span>
+					</div>
+					<div class="flex flex-col gap-1">
+						<span class="label-xs text-faint">Ziel</span>
+						<span class="num text-2xl font-medium text-muted">{hoursSummary.target_hours}<span class="text-sm text-faint"> h</span></span>
+					</div>
+					{#if viewMode === 'month'}
+						<div class="flex flex-col gap-1">
+							<span class="label-xs text-faint">Gearbeitet</span>
+							<span class="num text-2xl font-medium text-muted">{worked.toFixed(1)}<span class="text-sm text-faint"> h</span></span>
+						</div>
+						<div class="flex flex-col gap-1">
+							<span class="label-xs text-faint">Stundenkonto</span>
+							<span class="num text-2xl font-medium {account > 0 ? 'text-ok' : account < 0 ? 'text-danger' : ''}"
+								>{account >= 0 ? '+' : ''}{account.toFixed(1)}<span class="text-sm text-faint"> h</span></span
+							>
+						</div>
+					{/if}
+				</div>
+				<div class="h-1.5 overflow-hidden rounded-full bg-sunk">
+					<div class="h-full bg-accent" style="width: {progressPct(paid, hoursSummary.target_hours)}%"></div>
+				</div>
+				<span class="num text-xs text-faint">{hoursSummary.assignment_count} Einsätze</span>
+			</div>
+		{:else}
+			<p class="text-[13px] text-faint">{viewMode === '7d' ? 'Keine Einsätze in den nächsten 7 Tagen.' : 'Keine Daten für diesen Monat.'}</p>
+		{/if}
+	</Panel>
+
+	<Panel title="Einsätze" bodyClass="p-0">
+		{#if hoursSummary && (hoursSummary.assignments.length > 0 || hoursSummary.calendar_items?.length > 0 || hoursSummary.appointments?.length > 0)}
+			<div class="overflow-x-auto">
+				<table class="w-full min-w-[960px] border-collapse text-sm">
+					<thead>
+						<tr class="label-xs border-b border-line text-faint">
+							{#if payrollEditMode}<th class="px-3 py-2 text-left font-normal">Aktiv</th>{/if}
+							<th class="px-3 py-2 text-left font-normal">Datum</th>
+							<th class="px-3 py-2 text-left font-normal">Beschreibung</th>
+							<th class="px-3 py-2 text-left font-normal">Details</th>
+							<th class="px-1.5 py-2 text-left font-normal">Von</th>
+							<th class="px-1.5 py-2 text-left font-normal">Bis</th>
+							<th class="px-1.5 py-2 text-left font-normal">Pause (h)</th>
+							<th class="px-3 py-2 text-right font-normal">{payrollEditMode ? 'Bezahlt' : 'Ist'} (h)</th>
+							<th class="px-1.5 py-2 text-left font-normal" title="vom Mitarbeiter erfasst">MA-Von</th>
+							<th class="px-1.5 py-2 text-left font-normal">MA-Bis</th>
+							<th class="px-1.5 py-2 text-left font-normal">MA-Pause</th>
+							<th class="px-3 py-2 text-left font-normal">Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each hoursSummary.assignments as a (`inq:${a.inquiry_id}:${a.booking_date ?? ''}`)}
+							{@const key = `inq:${a.inquiry_id}:${a.booking_date ?? ''}`}
+							{@const pdraft = payrollDrafts[key]}
+							{@const inactive = payrollEditMode ? pdraft?.deactivated : a.deactivated}
+							<tr
+								class="cursor-pointer border-b border-line hover:bg-sunk/60 {inactive ? 'text-faint line-through' : ''}"
+								onclick={() => {
+									if (!payrollEditMode && a.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${a.inquiry_id}`);
+								}}
+							>
+								{@render activeToggle(pdraft)}
+								<td class="num px-3 py-1.5 text-[13px] whitespace-nowrap">{a.booking_date ? formatDate(a.booking_date) : '—'}</td>
+								<td class="px-3 py-1.5 font-medium">{a.customer_name ?? '—'}</td>
+								<td class="px-3 py-1.5 text-[13px] text-muted">{a.origin_city && a.destination_city ? `${a.origin_city} → ${a.destination_city}` : '—'}</td>
+								{@render timeCells(key, timeDrafts[key], pdraft, true)}
+								<td class="num px-3 py-1.5 text-right font-medium">
+									{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : ((a.paid_hours ?? a.actual_hours)?.toFixed(1) ?? '—')}
 								</td>
-							{/if}
-							<td>{a.booking_date ? formatDate(a.booking_date) : '—'}</td>
-							<td>{a.customer_name ?? '—'}</td>
-							<td>
-								{#if a.origin_city && a.destination_city}
-									{a.origin_city} → {a.destination_city}
-								{:else}
-									—
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if payrollEditMode}
-									{#if pdraft}
-										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_in} />
-									{/if}
-								{:else if draft}
-									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_in} onblur={() => saveTime(key)} />
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if payrollEditMode}
-									{#if pdraft}
-										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_out} />
-									{/if}
-								{:else if draft}
-									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_out} onblur={() => saveTime(key)} />
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if payrollEditMode}
-									{#if pdraft}
-										<input type="text" inputmode="decimal" class="break-input" placeholder="0" maxlength="5" disabled={pdraft.deactivated} value={breakMinutesToHours(pdraft.break_minutes)} onblur={(e) => { pdraft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); }} />
-									{/if}
-								{:else if draft}
-									<input type="text" inputmode="decimal" class="break-input" class:saving={draft.saving} placeholder="0" maxlength="5" value={breakMinutesToHours(draft.break_minutes)} onblur={(e) => { draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); saveTime(key); }} />
-								{/if}
-							</td>
-							<td class="num">{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : (a.paid_hours ?? a.actual_hours)?.toFixed(1) ?? '—'}</td>
-							<td class="time-col muted-col">{a.employee_clock_in ? fmtTimestamp(a.employee_clock_in) : '—'}</td>
-							<td class="time-col muted-col">{a.employee_clock_out ? fmtTimestamp(a.employee_clock_out) : '—'}</td>
-							<td class="time-col muted-col">{a.employee_break_minutes != null ? `${breakMinutesToHours(a.employee_break_minutes) || '0'} h` : '—'}</td>
-							<td><StatusBadge status={a.status} /></td>
-						</tr>
-					{/each}
-					{#each (hoursSummary.calendar_items ?? []) as ci}
-						{@const key = `ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`}
-						{@const draft = timeDrafts[key]}
-						{@const pdraft = payrollDrafts[key]}
-						{@const inactive = payrollEditMode ? pdraft?.deactivated : ci.deactivated}
-						<tr
-							class="clickable-row item-row"
-							class:inactive-row={inactive}
-							onclick={() => { if (!payrollEditMode && !window.getSelection()?.toString()) goto(`/admin/calendar-items/${ci.calendar_item_id}`); }}
-						>
-							{#if payrollEditMode}
-								<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-									{#if pdraft}
-										<input type="checkbox" checked={!pdraft.deactivated} onchange={(e) => (pdraft.deactivated = !e.currentTarget.checked)} title="Tag in Abrechnung aktiv" />
-									{/if}
+								{@render employeeTimes(a.employee_clock_in, a.employee_clock_out, a.employee_break_minutes)}
+								<td class="px-3 py-1.5"><StatusBadge status={a.status} /></td>
+							</tr>
+						{/each}
+						{#each hoursSummary.calendar_items ?? [] as ci (`ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`)}
+							{@const key = `ci:${ci.calendar_item_id}:${ci.scheduled_date ?? ''}`}
+							{@const pdraft = payrollDrafts[key]}
+							{@const inactive = payrollEditMode ? pdraft?.deactivated : ci.deactivated}
+							<tr
+								class="cursor-pointer border-b border-line hover:bg-sunk/60 {inactive ? 'text-faint line-through' : ''}"
+								onclick={() => {
+									if (!payrollEditMode && !window.getSelection()?.toString()) goto(`/admin/calendar-items/${ci.calendar_item_id}`);
+								}}
+							>
+								{@render activeToggle(pdraft)}
+								<td class="num px-3 py-1.5 text-[13px] whitespace-nowrap">{ci.scheduled_date ? formatDate(ci.scheduled_date) : '—'}</td>
+								<td class="px-3 py-1.5"><Badge tone="info" class="mr-1.5">Termin</Badge><span class="font-medium">{ci.title}</span></td>
+								<td class="px-3 py-1.5 text-[13px] text-muted">{ci.location ?? '—'}</td>
+								{@render timeCells(key, timeDrafts[key], pdraft, true)}
+								<td class="num px-3 py-1.5 text-right font-medium">
+									{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : ((ci.paid_hours ?? ci.actual_hours)?.toFixed(1) ?? '—')}
 								</td>
-							{/if}
-							<td>{ci.scheduled_date ? formatDate(ci.scheduled_date) : '—'}</td>
-							<td>
-								<span class="item-badge">Termin</span>
-								{ci.title}
-							</td>
-							<td>{ci.location ?? '—'}</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if payrollEditMode}
-									{#if pdraft}
-										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_in} />
-									{/if}
-								{:else if draft}
-									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_in} onblur={() => saveTime(key)} />
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if payrollEditMode}
-									{#if pdraft}
-										<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" disabled={pdraft.deactivated} bind:value={pdraft.clock_out} />
-									{/if}
-								{:else if draft}
-									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_out} onblur={() => saveTime(key)} />
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if payrollEditMode}
-									{#if pdraft}
-										<input type="text" inputmode="decimal" class="break-input" placeholder="0" maxlength="5" disabled={pdraft.deactivated} value={breakMinutesToHours(pdraft.break_minutes)} onblur={(e) => { pdraft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); }} />
-									{/if}
-								{:else if draft}
-									<input type="text" inputmode="decimal" class="break-input" class:saving={draft.saving} placeholder="0" maxlength="5" value={breakMinutesToHours(draft.break_minutes)} onblur={(e) => { draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); saveTime(key); }} />
-								{/if}
-							</td>
-							<td class="num">{payrollEditMode ? (pdraft ? paidHoursForDraft(pdraft).toFixed(1) : '—') : (ci.paid_hours ?? ci.actual_hours)?.toFixed(1) ?? '—'}</td>
-							<td class="time-col muted-col">{ci.employee_clock_in ? fmtTimestamp(ci.employee_clock_in) : '—'}</td>
-							<td class="time-col muted-col">{ci.employee_clock_out ? fmtTimestamp(ci.employee_clock_out) : '—'}</td>
-							<td class="time-col muted-col">{ci.employee_break_minutes != null ? `${breakMinutesToHours(ci.employee_break_minutes) || '0'} h` : '—'}</td>
-							<td><StatusBadge status={ci.status} /></td>
-						</tr>
-					{/each}
-					{#each (hoursSummary.appointments ?? []) as ap}
-						{@const key = `appt:${ap.inquiry_id ?? ''}:${ap.appointment_id}`}
-						{@const draft = timeDrafts[key]}
-						<!-- Paid Zusatztermine have no payroll-override layer yet: no Aktiv
-						     toggle, paid = worked, times stay inline-editable. -->
-						<tr
-							class="clickable-row appt-row"
-							onclick={() => { if (!payrollEditMode && ap.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${ap.inquiry_id}`); }}
-						>
-							{#if payrollEditMode}<td class="time-cell"></td>{/if}
-							<td>{ap.scheduled_date ? formatDate(ap.scheduled_date) : '—'}</td>
-							<td>
-								<span class="appt-badge">Zusatztermin</span>
-								{ap.customer_name ?? ap.kind}
-							</td>
-							<td>{ap.location ?? '—'}</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if !payrollEditMode && draft}
-									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_in} onblur={() => saveTime(key)} />
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if !payrollEditMode && draft}
-									<input type="text" inputmode="numeric" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" placeholder="HH:MM" maxlength="5" class="time-input" class:saving={draft.saving} bind:value={draft.clock_out} onblur={() => saveTime(key)} />
-								{/if}
-							</td>
-							<td class="time-cell" onclick={(e) => e.stopPropagation()}>
-								{#if !payrollEditMode && draft}
-									<input type="text" inputmode="decimal" class="break-input" class:saving={draft.saving} placeholder="0" maxlength="5" value={breakMinutesToHours(draft.break_minutes)} onblur={(e) => { draft.break_minutes = breakHoursToMinutes((e.target as HTMLInputElement).value); saveTime(key); }} />
-								{/if}
-							</td>
-							<td class="num">{(ap.paid_hours ?? ap.actual_hours)?.toFixed(1) ?? '—'}</td>
-							<td class="time-col muted-col">{ap.employee_clock_in ? fmtTimestamp(ap.employee_clock_in) : '—'}</td>
-							<td class="time-col muted-col">{ap.employee_clock_out ? fmtTimestamp(ap.employee_clock_out) : '—'}</td>
-							<td class="time-col muted-col">{ap.employee_break_minutes != null ? `${breakMinutesToHours(ap.employee_break_minutes) || '0'} h` : '—'}</td>
-							<td><StatusBadge status={ap.status} /></td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	{:else}
-		<div class="empty-state">
-			{viewMode === '7d' ? 'Keine Einsaetze in den naechsten 7 Tagen.' : 'Keine Einsaetze in diesem Monat.'}
-		</div>
-	{/if}
+								{@render employeeTimes(ci.employee_clock_in, ci.employee_clock_out, ci.employee_break_minutes)}
+								<td class="px-3 py-1.5"><StatusBadge status={ci.status} /></td>
+							</tr>
+						{/each}
+						{#each hoursSummary.appointments ?? [] as ap (`appt:${ap.inquiry_id ?? ''}:${ap.appointment_id}`)}
+							{@const key = `appt:${ap.inquiry_id ?? ''}:${ap.appointment_id}`}
+							<!-- Paid Zusatztermine have no payroll-override layer yet: no Aktiv toggle,
+							     paid = worked, times stay inline-editable outside payroll mode. -->
+							<tr
+								class="cursor-pointer border-b border-line hover:bg-sunk/60"
+								onclick={() => {
+									if (!payrollEditMode && ap.inquiry_id && !window.getSelection()?.toString()) goto(`/admin/inquiries/${ap.inquiry_id}`);
+								}}
+							>
+								{#if payrollEditMode}<td></td>{/if}
+								<td class="num px-3 py-1.5 text-[13px] whitespace-nowrap">{ap.scheduled_date ? formatDate(ap.scheduled_date) : '—'}</td>
+								<td class="px-3 py-1.5"><Badge tone="warn" class="mr-1.5">Zusatztermin</Badge><span class="font-medium">{ap.customer_name ?? ap.kind}</span></td>
+								<td class="px-3 py-1.5 text-[13px] text-muted">{ap.location ?? '—'}</td>
+								{@render timeCells(key, timeDrafts[key], undefined, false)}
+								<td class="num px-3 py-1.5 text-right font-medium">{(ap.paid_hours ?? ap.actual_hours)?.toFixed(1) ?? '—'}</td>
+								{@render employeeTimes(ap.employee_clock_in, ap.employee_clock_out, ap.employee_break_minutes)}
+								<td class="px-3 py-1.5"><StatusBadge status={ap.status} /></td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			<p class="px-4 py-6 text-[13px] text-faint">{viewMode === '7d' ? 'Keine Einsätze in den nächsten 7 Tagen.' : 'Keine Einsätze in diesem Monat.'}</p>
+		{/if}
+	</Panel>
 </div>
 
 <ConfirmationDialog
@@ -782,273 +764,3 @@
 	loading={cleaningUp}
 	onConfirm={cleanupStundenkonto}
 />
-
-<style>
-	.card {
-		padding: 1.25rem;
-		box-shadow: none;
-	}
-
-	.card.full-width {
-		grid-column: 1 / -1;
-	}
-
-	.card-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
-	}
-
-	.card-header h2 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: var(--dt-on-surface);
-		margin: 0;
-	}
-
-	.view-toggle {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		flex-wrap: wrap;
-	}
-
-	.toggle-btn {
-		padding: 0.25rem 0.6rem;
-		font-size: 0.8125rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface-variant);
-		cursor: pointer;
-		transition: background var(--dt-transition), color var(--dt-transition);
-	}
-
-	.toggle-btn.active {
-		background: var(--dt-primary);
-		color: var(--dt-on-primary);
-	}
-
-	.toggle-btn:hover:not(.active) {
-		background: var(--dt-surface-container);
-	}
-
-	.export-btn {
-		padding: 0.25rem 0.5rem;
-		color: var(--dt-on-surface-variant);
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.export-btn:hover:not(:disabled) {
-		background: var(--dt-surface-container);
-		color: var(--dt-on-surface);
-	}
-
-	.month-input {
-		padding: 0.375rem 0.5rem;
-		background: var(--dt-surface-container-high);
-		border: none;
-		border-radius: var(--dt-radius-sm);
-		font-size: 0.875rem;
-		color: var(--dt-on-surface);
-		outline: none;
-	}
-
-	.hours-summary {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.hours-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		font-size: 0.875rem;
-	}
-
-	.hours-label {
-		color: var(--dt-on-surface-variant);
-		font-weight: 500;
-	}
-
-	.hours-value {
-		font-weight: 600;
-		font-variant-numeric: tabular-nums;
-		color: var(--dt-on-surface);
-	}
-
-	.hours-row.muted {
-		color: var(--dt-on-surface-variant);
-		font-size: 0.8125rem;
-		margin-top: 0.25rem;
-	}
-
-	.account-row .hours-value {
-		font-weight: 600;
-	}
-
-	.progress-bar {
-		height: 8px;
-		background: var(--dt-surface-container-high);
-		border-radius: 4px;
-		overflow: hidden;
-	}
-
-	.progress-fill {
-		height: 100%;
-		border-radius: 4px;
-		transition: width var(--dt-transition-panel);
-	}
-
-	.progress-fill.actual {
-		background: #34d399;
-	}
-
-	.table-wrapper {
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.data-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.875rem;
-	}
-
-	.data-table th {
-		text-align: left;
-		padding: 0.75rem;
-		background: var(--dt-surface-container-high);
-		color: var(--dt-on-surface-variant);
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.data-table td {
-		padding: 0.75rem;
-		color: var(--dt-on-surface);
-	}
-
-	.data-table tbody tr:nth-child(even) td {
-		background: var(--dt-surface-container-low);
-	}
-
-	.data-table .num {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.clickable-row {
-		cursor: pointer;
-		transition: background var(--dt-transition);
-	}
-
-	.clickable-row:hover td {
-		background: var(--dt-surface-container) !important;
-	}
-
-	.item-row td {
-		background: rgba(252, 96, 24, 0.04);
-	}
-
-	.item-row:hover td {
-		background: rgba(252, 96, 24, 0.08) !important;
-	}
-
-	.item-badge {
-		display: inline-block;
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		background: var(--dt-secondary-container);
-		color: var(--dt-on-secondary-container);
-		padding: 0.1rem 0.35rem;
-		border-radius: var(--dt-radius-sm);
-		margin-right: 0.35rem;
-		vertical-align: middle;
-	}
-
-	.appt-row td {
-		background: rgba(8, 145, 178, 0.05);
-	}
-
-	.appt-row:hover td {
-		background: rgba(8, 145, 178, 0.1) !important;
-	}
-
-	.appt-badge {
-		display: inline-block;
-		font-size: 0.65rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		background: #cffafe;
-		color: #155e75;
-		padding: 0.1rem 0.35rem;
-		border-radius: var(--dt-radius-sm);
-		margin-right: 0.35rem;
-		vertical-align: middle;
-	}
-
-	.time-col {
-		text-align: center;
-		white-space: nowrap;
-	}
-
-	.muted-col {
-		color: #94a3b8;
-		font-size: 0.8125rem;
-	}
-
-	.time-cell {
-		padding: 0.25rem 0.5rem;
-	}
-
-	.time-input,
-	.break-input {
-		padding: 0.25rem 0.375rem;
-		font-size: 0.8125rem;
-		background: var(--dt-surface-container-high);
-		border: 1px solid transparent;
-		border-radius: var(--dt-radius-sm);
-		color: var(--dt-on-surface);
-		outline: none;
-		width: 100%;
-		min-width: 0;
-		font-variant-numeric: tabular-nums;
-		transition: border-color var(--dt-transition), opacity var(--dt-transition);
-	}
-
-	.time-input:focus,
-	.break-input:focus {
-		border-color: var(--dt-primary);
-		background: var(--dt-surface-container);
-	}
-
-	.time-input.saving,
-	.break-input.saving {
-		opacity: 0.5;
-	}
-
-	.break-input {
-		width: 5rem;
-	}
-
-	.empty-state {
-		padding: 2rem;
-	}
-
-	/* Payroll edit mode: deactivated (soft-deleted) day. */
-	.inactive-row {
-		opacity: 0.45;
-		text-decoration: line-through;
-	}
-	.inactive-row :global(input) {
-		text-decoration: none;
-	}
-</style>

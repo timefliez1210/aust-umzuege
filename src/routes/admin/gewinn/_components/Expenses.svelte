@@ -243,9 +243,12 @@
 									>
 								{/if}
 							{/if}
-							<Button variant="ghost" size="icon-sm" class="hover:text-danger" aria-label="Löschen" title="Löschen" onclick={() => remove(e)} disabled={busy}
-								><Trash2 size={15} /></Button
-							>
+							<!-- A Storno goes together with its original: delete that one. -->
+							{#if !e.storno_of}
+								<Button variant="ghost" size="icon-sm" class="hover:text-danger" aria-label="Löschen" title="Löschen" onclick={() => remove(e)} disabled={busy}
+									><Trash2 size={15} /></Button
+								>
+							{/if}
 						</span>
 					</td>
 				</tr>

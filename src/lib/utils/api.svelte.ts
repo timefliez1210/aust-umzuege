@@ -44,19 +44,21 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
 		headers['Authorization'] = `Bearer ${auth.token}`;
 	}
 
-	if (body !== undefined && !(body instanceof FormData)) {
+	// FormData and files (Blob) go as they are; everything else as JSON.
+	const raw = body instanceof FormData || body instanceof Blob;
+	if (body !== undefined && !raw) {
 		headers['Content-Type'] = 'application/json';
 	}
 
 	const fetchOptions: RequestInit = {
 		...rest,
 		headers,
-		body: body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined
+		body: raw ? (body as BodyInit) : body !== undefined ? JSON.stringify(body) : undefined
 	};
 
 	// Multipart uploads (photos/videos) can legitimately take minutes on slow
 	// connections — don't kill them with the default 15s JSON-request timeout.
-	const timeout = body instanceof FormData ? 300_000 : undefined;
+	const timeout = raw ? 300_000 : undefined;
 
 	let res = await fetchWithTimeout(`${API_BASE}${path}`, fetchOptions, timeout);
 

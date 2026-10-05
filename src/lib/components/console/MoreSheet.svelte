@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { ChevronRight, StickyNote, Flag, LogOut } from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import CountBadge from '$lib/components/ui/CountBadge.svelte';
 	import TenantMark from './TenantMark.svelte';

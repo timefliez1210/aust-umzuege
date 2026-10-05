@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { apiFetch } from '$lib/utils/api.svelte';
 	import { LogIn, ArrowLeft } from 'lucide-svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import TenantMark from '$lib/components/console/TenantMark.svelte';
 	import ThemeButton from '$lib/components/console/ThemeButton.svelte';
 	import Button from '$lib/components/ui/Button.svelte';

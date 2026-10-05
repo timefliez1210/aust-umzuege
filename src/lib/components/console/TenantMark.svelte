@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let { class: className }: { class?: string } = $props();

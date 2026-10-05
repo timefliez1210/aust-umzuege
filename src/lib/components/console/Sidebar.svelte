@@ -13,7 +13,7 @@
 	/** Desktop navigation (≥ lg). Phones get TabBar + MoreSheet instead. */
 	let { onLogout }: { onLogout: () => void } = $props();
 
-	const groups = $derived(navFor(auth.user?.role));
+	const groups = $derived(navFor(auth.user?.role, auth.user?.superuser));
 	const initials = $derived(
 		(auth.user?.name ?? 'A')
 			.split(/\s+/)

@@ -16,7 +16,8 @@ import {
 	Truck,
 	Flag,
 	Settings,
-	LayoutGrid
+	LayoutGrid,
+	Building2
 } from 'lucide-svelte';
 
 /** Keys of `GET /admin/nav-badges`. */
@@ -35,6 +36,8 @@ export interface NavItem {
 	hot?: boolean;
 	badgeLabel?: (n: number) => string;
 	adminOnly?: boolean;
+	/** Only for platform superusers (the "Firmen" tab). */
+	superuserOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -118,16 +121,18 @@ export const NAV: NavGroup[] = [
 		label: 'System',
 		items: [
 			{ href: '/admin/reports', label: 'Feedback', hint: 'Gemeldete Fehler & Wünsche', icon: Flag, adminOnly: true },
-			{ href: '/admin/settings', label: 'Einstellungen', hint: 'Firma, Preise, Benutzer', icon: Settings }
+			{ href: '/admin/settings', label: 'Einstellungen', hint: 'Firma, Preise, Benutzer', icon: Settings },
+			{ href: '/admin/platform', label: 'Firmen', hint: 'Mandanten anlegen (Plattform)', icon: Building2, superuserOnly: true }
 		]
 	}
 ];
 
-/** Navigation as the given role sees it. */
-export function navFor(role: string | undefined): NavGroup[] {
-	return NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || role === 'admin') })).filter(
-		(g) => g.items.length > 0
-	);
+/** Navigation as the given role (and platform-superuser flag) sees it. */
+export function navFor(role: string | undefined, superuser = false): NavGroup[] {
+	return NAV.map((g) => ({
+		...g,
+		items: g.items.filter((i) => (!i.adminOnly || role === 'admin') && (!i.superuserOnly || superuser))
+	})).filter((g) => g.items.length > 0);
 }
 
 /** Exact match for the home page, prefix match for every section. */

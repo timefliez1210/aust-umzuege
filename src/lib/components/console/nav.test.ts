@@ -50,3 +50,12 @@ describe('console navigation', () => {
 		for (const h of TAB_HREFS) expect(all).toContain(h);
 	});
 });
+
+describe('platform tab', () => {
+	it('shows "Firmen" only to platform superusers', () => {
+		const all = (role: string, su: boolean) => navFor(role, su).flatMap((g) => g.items.map((i) => i.href));
+		expect(all('admin', false)).not.toContain('/admin/platform');
+		expect(all('buerokraft', false)).not.toContain('/admin/platform');
+		expect(all('admin', true)).toContain('/admin/platform');
+	});
+});

@@ -15,7 +15,7 @@
 	let { onLogout }: { onLogout: () => void } = $props();
 
 	const groups = $derived(
-		navFor(auth.user?.role)
+		navFor(auth.user?.role, auth.user?.superuser)
 			.map((g) => ({ ...g, items: g.items.filter((i) => !TAB_HREFS.includes(i.href)) }))
 			.filter((g) => g.items.length > 0)
 	);

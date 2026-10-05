@@ -12,7 +12,7 @@
 	const tabActive = $derived(tabs.some((t) => isActive(t.href, $page.url.pathname)));
 	/** Everything that isn't a tab — its counters roll up onto "Mehr". */
 	const moreCount = $derived(
-		navFor(auth.user?.role)
+		navFor(auth.user?.role, auth.user?.superuser)
 			.flatMap((g) => g.items)
 			.filter((i) => !TAB_HREFS.includes(i.href) && i.hot)
 			.reduce((n, i) => n + navBadges.get(i.badge), 0)

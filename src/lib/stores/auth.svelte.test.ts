@@ -6,7 +6,7 @@ const REFRESH_KEY = 'aust_refresh_token';
 const USER_KEY = 'aust_user';
 
 /** Builds an unsigned JWT whose payload auth.login() decodes for the user profile. */
-function fakeJwt(payload: Record<string, string>): string {
+function fakeJwt(payload: Record<string, unknown>): string {
 	const b64 = (o: unknown) =>
 		btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 	return `${b64({ alg: 'none' })}.${b64(payload)}.sig`;
@@ -44,7 +44,7 @@ describe('auth.login', () => {
 		expect(auth.token).toBe(token);
 		expect(localStorage.getItem(TOKEN_KEY)).toBe(token);
 		expect(localStorage.getItem(REFRESH_KEY)).toBe('r1');
-		expect(auth.user).toEqual({ email: 'alex@aust.de', name: 'Alex Aust', role: 'admin' });
+		expect(auth.user).toEqual({ email: 'alex@aust.de', name: 'Alex Aust', role: 'admin', superuser: false });
 		expect(JSON.parse(localStorage.getItem(USER_KEY)!)).toEqual(auth.user);
 	});
 
@@ -80,7 +80,17 @@ describe('auth.login', () => {
 			jsonResponse({ access_token: fakeJwt({}), refresh_token: 'r', token_type: 'Bearer', expires_in: 1 })
 		);
 		await auth.login('plain@user.de', 'pw');
-		expect(auth.user).toEqual({ email: 'plain@user.de', name: 'plain@user.de', role: 'admin' });
+		expect(auth.user).toEqual({ email: 'plain@user.de', name: 'plain@user.de', role: 'admin', superuser: false });
+	});
+
+	it('reads the platform-superuser flag from the su claim', async () => {
+		const token = fakeJwt({ email: 'chef@aust.de', role: 'admin', su: true });
+		globalThis.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ access_token: token, refresh_token: 'r', token_type: 'Bearer', expires_in: 3600 })
+		}) as unknown as typeof fetch;
+		await auth.login('chef@aust.de', 'pw');
+		expect(auth.user?.superuser).toBe(true);
 	});
 });
 

@@ -5,7 +5,7 @@
 	import CreateInquiryFromEmailModal from './_components/CreateInquiryFromEmailModal.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Notice from '$lib/components/ui/Notice.svelte';

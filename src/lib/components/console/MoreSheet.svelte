@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { ChevronRight, StickyNote, Flag, LogOut } from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import CountBadge from '$lib/components/ui/CountBadge.svelte';
 	import TenantMark from './TenantMark.svelte';
@@ -15,7 +15,7 @@
 	let { onLogout }: { onLogout: () => void } = $props();
 
 	const groups = $derived(
-		navFor(auth.user?.role)
+		navFor(auth.user?.role, auth.user?.superuser)
 			.map((g) => ({ ...g, items: g.items.filter((i) => !TAB_HREFS.includes(i.href)) }))
 			.filter((g) => g.items.length > 0)
 	);

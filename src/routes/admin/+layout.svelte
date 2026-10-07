@@ -2,7 +2,7 @@
 	import '../../styles/console.css';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant, loadTenant } from '$lib/tenant.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Toast from '$lib/components/admin/Toast.svelte';
@@ -33,6 +33,10 @@
 			delete html.dataset.console;
 			delete html.dataset.theme;
 		};
+	});
+
+	$effect(() => {
+		loadTenant();
 	});
 
 	$effect(() => {

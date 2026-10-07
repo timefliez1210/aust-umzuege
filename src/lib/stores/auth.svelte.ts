@@ -9,6 +9,8 @@ export interface AuthUser {
 	email: string;
 	name: string;
 	role: string;
+	/** Platform superuser (`su` claim) — shows the "Firmen" tab. The API re-checks. */
+	superuser?: boolean;
 }
 
 interface LoginResponse {
@@ -118,9 +120,10 @@ class AuthStore {
 			const payload = parseJwtPayload(data.access_token);
 			if (payload) {
 				this.user = {
-					email: payload.email || email,
-					name: payload.name || email,
-					role: payload.role || 'admin'
+					email: String(payload.email || email),
+					name: String(payload.name || email),
+					role: String(payload.role || 'admin'),
+					superuser: payload.su === true
 				};
 				saveToStorage(USER_KEY, this.user);
 			}
@@ -217,7 +220,7 @@ class AuthStore {
  * @returns Parsed payload object as a string-keyed record, or null if the token
  *          is malformed or base64 decoding/JSON parsing fails
  */
-function parseJwtPayload(token: string): Record<string, string> | null {
+function parseJwtPayload(token: string): Record<string, unknown> | null {
 	try {
 		const parts = token.split('.');
 		if (parts.length !== 3) return null;

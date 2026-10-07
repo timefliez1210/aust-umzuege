@@ -32,7 +32,7 @@
 	let inquiries = $state<InquiryHit[]>([]);
 	let searching = $state(false);
 
-	const items = $derived(navFor(auth.user?.role).flatMap((g) => g.items));
+	const items = $derived(navFor(auth.user?.role, auth.user?.superuser).flatMap((g) => g.items));
 	const q = $derived(query.trim().toLowerCase());
 	const pages = $derived(
 		q ? items.filter((i) => `${i.label} ${i.hint}`.toLowerCase().includes(q)) : items

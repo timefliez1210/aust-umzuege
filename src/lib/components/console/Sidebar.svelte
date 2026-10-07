@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { StickyNote, Flag, LogOut } from 'lucide-svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import CountBadge from '$lib/components/ui/CountBadge.svelte';
 	import TenantMark from './TenantMark.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
@@ -13,7 +13,7 @@
 	/** Desktop navigation (≥ lg). Phones get TabBar + MoreSheet instead. */
 	let { onLogout }: { onLogout: () => void } = $props();
 
-	const groups = $derived(navFor(auth.user?.role));
+	const groups = $derived(navFor(auth.user?.role, auth.user?.superuser));
 	const initials = $derived(
 		(auth.user?.name ?? 'A')
 			.split(/\s+/)

@@ -10,7 +10,7 @@ stay correct everywhere.
 | What | Where |
 |---|---|
 | Tokens, light/dark, Tailwind `@theme`, calendar entry colours | `src/styles/console.css` |
-| Tenant name, initials and accent colour | `src/lib/tenant.ts` |
+| Tenant name, initials and accent colour | `src/lib/tenant.svelte.ts` (Aust defaults, confirmed by `GET /api/v1/tenant`) |
 | Theme store (`light` / `dark` / `system`, localStorage `aust_theme`) | `src/lib/stores/theme.svelte.ts` + pre-paint script in `src/app.html` |
 | Shell: sidebar, phone tab bar, "Mehr" sheet, ⌘K palette, notes/feedback panels | `src/lib/components/console/` (`nav.ts` is the single nav source) |
 | Primitives | `src/lib/components/ui/` |

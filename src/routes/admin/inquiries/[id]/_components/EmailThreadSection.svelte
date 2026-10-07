@@ -2,7 +2,7 @@
 	import Panel from '$lib/components/ui/Panel.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
-	import { tenant } from '$lib/tenant';
+	import { tenant } from '$lib/tenant.svelte';
 	import { apiGet, apiPost, apiPatch, apiPreview, formatDateTime } from "$lib/utils/api.svelte";
 	import { showToast } from "$lib/components/admin/Toast.svelte";
 	import { Save, Send, Pencil, RotateCcw, X, Paperclip } from "lucide-svelte";

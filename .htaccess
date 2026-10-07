@@ -6,11 +6,17 @@ AddDefaultCharset UTF-8
 
 RewriteEngine On
 
-# 301 redirects for old/wrong URLs indexed by Google
-Redirect 301 /leistungen/haushaltsaufloesungen https://www.aust-umzuege.de/leistungen/haushaltsaufloesung
-Redirect 301 /kalkulator https://www.aust-umzuege.de/kostenloses-angebot
-Redirect 301 /rechtliches/datenschutz https://www.aust-umzuege.de/datenschutz
-Redirect 301 /rechtliches/impressum https://www.aust-umzuege.de/impressum
+# 301 redirects for old/wrong URLs indexed by Google (pre-2026 site, many with
+# trailing slash). RewriteRule instead of mod_alias Redirect: runs before the
+# https/www and trailing-slash rules below, so every variant resolves in one hop.
+RewriteRule ^leistungen/haushaltsaufloesungen/?$ https://www.aust-umzuege.de/leistungen/haushaltsaufloesung [R=301,L]
+RewriteRule ^leistungen/fern-und-ueberseeumzuege/?$ https://www.aust-umzuege.de/leistungen/fern-ueberseeumzug [R=301,L]
+RewriteRule ^leistungen/demontage-der-moebel/?$ https://www.aust-umzuege.de/leistungen/montage [R=301,L]
+RewriteRule ^ratgeber/moebel-einlagern-kosten-optionen-tipps/?$ https://www.aust-umzuege.de/ratgeber/moebel-einlagern [R=301,L]
+RewriteRule ^ratgeber/umzug-mit-kinderen/?$ https://www.aust-umzuege.de/ratgeber/umzug-mit-kindern [R=301,L]
+RewriteRule ^kalkulator(/.*)?$ https://www.aust-umzuege.de/kostenloses-angebot [R=301,L]
+RewriteRule ^rechtliches/datenschutz/?$ https://www.aust-umzuege.de/datenschutz [R=301,L]
+RewriteRule ^rechtliches/impressum/?$ https://www.aust-umzuege.de/impressum [R=301,L]
 
 # Force HTTPS + www in a single redirect (avoids double-hop chain)
 RewriteCond %{HTTPS} off [OR]

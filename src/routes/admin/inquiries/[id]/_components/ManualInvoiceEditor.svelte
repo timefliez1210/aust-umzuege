@@ -1,9 +1,10 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
-	import { apiPatch } from '$lib/utils/api.svelte';
+	import { apiGet, apiPatch } from '$lib/utils/api.svelte';
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { formatEuro } from '$lib/utils/format';
 	import { Plus, X, Save } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 
 	/**
 	 * A single hand-edited invoice line item as sent to the backend.
@@ -32,7 +33,9 @@
 	 *          Menge (e.g. 12,5 hours) and Einzelpreis (netto) — with live totals.
 	 *          On save it PATCHes `{ line_items }`, switching the invoice into manual
 	 *          mode so the server renders these lines instead of recomputing from the
-	 *          offer. Returns the updated invoice via onSaved.
+	 *          offer. Returns the updated invoice via onSaved. A not-yet-manual invoice
+	 *          starts from its current positions (KVA lines + Zusatzleistungen), loaded
+	 *          from GET …/invoices/{id}/line-items.
 	 *
 	 * @prop inquiryId - Parent inquiry UUID
 	 * @prop invoice   - The full invoice being edited
@@ -53,6 +56,8 @@
 		description: string;
 		quantity: string;
 		unitPriceEur: string;
+		/** Bemerkung carried over from the KVA — not editable here, but kept on save. */
+		remark?: string | null;
 	}
 
 	/** Parse a German/English decimal string ("12,5" or "12.5") to a number, or 0. */
@@ -61,16 +66,17 @@
 		return isNaN(v) ? 0 : v;
 	}
 
-	function seedRows(): DraftRow[] {
-		if (invoice.is_manual && invoice.line_items.length > 0) {
-			return invoice.line_items.map((it) => ({
-				description: it.description,
-				quantity: String(it.quantity).replace('.', ','),
-				unitPriceEur: (it.unit_price_cents / 100).toFixed(2).replace('.', ',')
-			}));
-		}
-		// Not yet manual: seed one row carrying the current netto total as a starting
-		// point Alex can rewrite into an hours breakdown.
+	function toDraft(items: ManualLineItem[]): DraftRow[] {
+		return items.map((it) => ({
+			description: it.description,
+			quantity: String(it.quantity).replace('.', ','),
+			unitPriceEur: (it.unit_price_cents / 100).toFixed(2).replace('.', ','),
+			remark: it.remark ?? null
+		}));
+	}
+
+	/** Fallback when the positions can't be loaded: one row carrying the netto total. */
+	function lumpSumRow(): DraftRow[] {
 		return [
 			{
 				description: '',
@@ -80,8 +86,32 @@
 		];
 	}
 
-	let rows = $state<DraftRow[]>(seedRows());
+	/** Rows the editor opens with — read once; the editor owns the draft after that. */
+	function initialRows(): DraftRow[] {
+		return invoice.is_manual ? toDraft(invoice.line_items) : [];
+	}
+
+	const seed = initialRows();
+	let rows = $state<DraftRow[]>(seed);
+	let loading = $state(seed.length === 0);
 	let saving = $state(false);
+
+	// Not yet manual: start from the positions the invoice prints today (KVA lines
+	// plus Zusatzleistungen), so Alex edits, renames or deletes instead of retyping.
+	onMount(() => {
+		if (!loading) return;
+		apiGet<ManualLineItem[]>(`/api/v1/inquiries/${inquiryId}/invoices/${invoice.id}/line-items`)
+			.then((items) => {
+				rows = items.length > 0 ? toDraft(items) : lumpSumRow();
+			})
+			.catch(() => {
+				rows = lumpSumRow();
+				showToast('Positionen aus dem KVA konnten nicht geladen werden', 'error');
+			})
+			.finally(() => {
+				loading = false;
+			});
+	});
 
 	function addRow() {
 		rows = [...rows, { description: '', quantity: '1', unitPriceEur: '' }];
@@ -106,7 +136,8 @@
 			.map((r) => ({
 				description: r.description.trim(),
 				quantity: num(r.quantity),
-				unit_price_cents: Math.round(num(r.unitPriceEur) * 100)
+				unit_price_cents: Math.round(num(r.unitPriceEur) * 100),
+				remark: r.remark || null
 			}));
 
 		if (items.length === 0) {
@@ -141,6 +172,10 @@
 			class="text-right">Betrag</span
 		><span></span>
 	</div>
+
+	{#if loading}
+		<p class="text-[13px] text-muted">Positionen aus dem KVA werden geladen …</p>
+	{/if}
 
 	{#each rows as row, idx (idx)}
 		<div class="grid grid-cols-[minmax(0,1fr)_32px] gap-2 sm:grid-cols-[minmax(0,1fr)_80px_120px_100px_32px] sm:items-center">
@@ -177,7 +212,7 @@
 
 	<div class="flex justify-end gap-2">
 		<Button size="sm" onclick={onCancel} disabled={saving}>Abbrechen</Button>
-		<Button size="sm" variant="solid" onclick={save} disabled={saving}>
+		<Button size="sm" variant="solid" onclick={save} disabled={saving || loading}>
 			<Save size={13} />
 			{saving ? 'Speichere …' : 'Speichern & PDF erzeugen'}
 		</Button>

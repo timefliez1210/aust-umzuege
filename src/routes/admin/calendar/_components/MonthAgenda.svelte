@@ -3,6 +3,7 @@
 	import { formatTime } from '$lib/utils/format';
 	import type { CalendarDay } from '$lib/utils/calendar';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import type {
 		InquiryItem,
 		CalendarItem,
@@ -90,31 +91,34 @@
 				{:else}
 					{#each entries as entry, ei (ei)}
 						{#if entry.type === 'inquiry'}
-							<button class="block w-full rounded-sm px-3 py-2 text-left active:brightness-95 {inquiryEntryClass(entry.item.status)}" onclick={(e) => openInquiryPanel(e, entry.item)}>
+							<div role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLElement).click()} class="block w-full cursor-pointer rounded-sm px-3 py-2 text-left active:brightness-95 {inquiryEntryClass(entry.item.status)}" onclick={(e) => openInquiryPanel(e, entry.item)}>
 								<span class="flex items-center justify-between gap-2">
 									<span class="num text-xs opacity-75">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
 									<StatusBadge status={entry.item.status} />
 								</span>
 								<span class="mt-0.5 block truncate text-sm font-semibold">{truncate(entry.item.customer_name, 40)}</span>
+								<PhoneLink phone={entry.item.customer_phone} class="text-xs" />
 								{#if entry.item.departure_address || entry.item.arrival_address}
 									<span class="block truncate text-xs opacity-75">{entry.item.departure_address || '?'} → {entry.item.arrival_address || '?'}</span>
 								{/if}
 								{#if entry.item.employees_assigned}
 									<span class="mt-0.5 flex items-center gap-1 text-xs opacity-75"><Users size={11} /> {entry.item.employees_assigned}</span>
 								{/if}
-							</button>
+							</div>
 						{:else if entry.type === 'appointment'}
-							<button class="block w-full rounded-sm px-3 py-2 text-left active:brightness-95 entry-appt" onclick={(e) => onAppointmentClick(e, entry.item)}>
+							<div role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLElement).click()} class="block w-full cursor-pointer rounded-sm px-3 py-2 text-left active:brightness-95 entry-appt" onclick={(e) => onAppointmentClick(e, entry.item)}>
 								<span class="flex items-center justify-between gap-2 text-xs">
 									{#if entry.item.start_time}<span class="num opacity-75">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>{/if}
 									<span class="font-medium">{apptKindLabel(entry.item.kind)}</span>
 								</span>
 								<span class="mt-0.5 block truncate text-sm font-semibold">{truncate(entry.item.customer_name, 40)}</span>
+								<PhoneLink phone={entry.item.customer_phone} class="text-xs" />
 								{#if entry.item.assignee_name}<span class="flex items-center gap-1 text-xs opacity-75"><User size={11} /> {entry.item.assignee_name}</span>{/if}
-							</button>
+							</div>
 						{:else if entry.type === 'schedule-termin'}
-							<button
-								class="block w-full rounded-sm px-3 py-2 text-left active:brightness-95 {termineEntryClass(entry.item.category)}"
+							<div
+								role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLElement).click()}
+								class="block w-full cursor-pointer rounded-sm px-3 py-2 text-left active:brightness-95 {termineEntryClass(entry.item.category)}"
 								onclick={(e) =>
 									openTerminPanel(e, {
 										id: entry.item.calendar_item_id,
@@ -122,6 +126,8 @@
 										category: entry.item.category,
 										location: entry.item.location,
 										description: entry.item.description ?? null,
+										customer_name: entry.item.customer_name ?? null,
+										customer_phone: entry.item.customer_phone ?? null,
 										scheduled_date: dateStr,
 										start_time: entry.item.start_time,
 										end_time: entry.item.end_time ?? null,
@@ -131,16 +137,18 @@
 							>
 								<span class="num text-xs opacity-75">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
 								<span class="mt-0.5 block truncate text-sm font-semibold">{truncate(entry.item.title, 40)}</span>
+								{#if entry.item.customer_name}<span class="block truncate text-xs opacity-75">{entry.item.customer_name}</span>{/if}
+								<PhoneLink phone={entry.item.customer_phone} class="text-xs" />
 								{#if entry.item.location}<span class="flex items-center gap-1 truncate text-xs opacity-75"><MapPin size={11} /> {entry.item.location}</span>{/if}
 								{#if entry.item.employees_assigned}<span class="flex items-center gap-1 text-xs opacity-75"><Users size={11} /> {entry.item.employees_assigned}</span>{/if}
-							</button>
+							</div>
 						{:else}
 							<!-- 'termin' type: never produced by buildDayEntries, kept for type completeness -->
-							<button class="block w-full rounded-sm px-3 py-2 text-left active:brightness-95 {termineEntryClass(entry.item.category)}" onclick={(e) => openTerminPanel(e, entry.item)}>
+							<div role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLElement).click()} class="block w-full cursor-pointer rounded-sm px-3 py-2 text-left active:brightness-95 {termineEntryClass(entry.item.category)}" onclick={(e) => openTerminPanel(e, entry.item)}>
 								<span class="num text-xs opacity-75">{formatTime(entry.item.start_time)}{entry.item.end_time ? '–' + formatTime(entry.item.end_time) : ''}</span>
 								<span class="mt-0.5 block truncate text-sm font-semibold">{truncate(entry.item.title, 40)}</span>
 								{#if entry.item.location}<span class="flex items-center gap-1 truncate text-xs opacity-75"><MapPin size={11} /> {entry.item.location}</span>{/if}
-							</button>
+							</div>
 						{/if}
 					{/each}
 				{/if}

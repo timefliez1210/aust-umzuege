@@ -38,6 +38,7 @@ export interface CalendarItem {
 	status: string;
 	customer_id?: string | null;
 	customer_name?: string | null;
+	customer_phone?: string | null;
 	customer_type?: string | null;
 	company_name?: string | null;
 }
@@ -57,6 +58,9 @@ export interface ScheduleCalendarItem {
 	total_days?: number | null;
 	day_notes?: string | null;
 	description?: string | null;
+	/** Linked customer, if the Termin has one. */
+	customer_name?: string | null;
+	customer_phone?: string | null;
 }
 
 /** Per-day lightweight appointment (Besichtigung etc.) from the schedule API. */
@@ -65,6 +69,7 @@ export interface ScheduleAppointment {
 	inquiry_id: string;
 	kind: string;
 	customer_name: string | null;
+	customer_phone?: string | null;
 	start_time: string | null;
 	end_time: string | null;
 	assignee_name: string | null;

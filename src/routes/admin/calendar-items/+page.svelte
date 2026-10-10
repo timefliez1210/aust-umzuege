@@ -8,6 +8,7 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import Stepper from '$lib/components/ui/Stepper.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
@@ -29,6 +30,8 @@
 		duration_hours: number;
 		status: string;
 		created_at: string;
+		customer_name?: string | null;
+		customer_phone?: string | null;
 	}
 
 	const CATEGORY_LABELS: Record<string, string> = {
@@ -192,9 +195,10 @@
 {:else}
 	<ul class="divide-y divide-line rounded-md border border-line bg-panel">
 		{#each items as item (item.id)}
-			<li>
-				<a
-					href="/admin/calendar-items/{item.id}"
+			<!-- Stretched link: the title's <a> covers the whole row (after:inset-0), so the
+			     row stays one big link while the phone number can be its own tel: link. -->
+			<li class="relative">
+				<div
 					class="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-sunk/60 sm:grid-cols-[92px_110px_minmax(0,1fr)_auto_auto]"
 				>
 					<span class="num flex flex-col text-[13px]">
@@ -205,14 +209,15 @@
 						>{item.start_time ? item.start_time.slice(0, 5) : '—'}{item.end_time ? ' – ' + item.end_time.slice(0, 5) : ''}</span
 					>
 					<span class="flex min-w-0 flex-col">
-						<span class="truncate text-sm font-medium">{item.title}</span>
+						<a href="/admin/calendar-items/{item.id}" class="truncate text-sm font-medium after:absolute after:inset-0">{item.title}</a>
 						<span class="truncate text-xs text-faint">
-							{CATEGORY_LABELS[item.category] ?? item.category}{item.location ? ` · ${item.location}` : ''}
+							{CATEGORY_LABELS[item.category] ?? item.category}{item.location ? ` · ${item.location}` : ''}{item.customer_name ? ` · ${item.customer_name}` : ''}
 						</span>
+						<PhoneLink phone={item.customer_phone} class="relative z-[1] self-start text-xs text-muted" />
 					</span>
 					<span class="num hidden text-right text-xs text-muted sm:block">{item.duration_hours.toFixed(1)} h</span>
 					<Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge>
-				</a>
+				</div>
 			</li>
 		{/each}
 	</ul>

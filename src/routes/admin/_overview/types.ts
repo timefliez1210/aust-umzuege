@@ -31,6 +31,7 @@ export interface Overview {
 		date: string;
 		start_time: string;
 		customer_name: string | null;
+		customer_phone?: string | null;
 		departure_address: string | null;
 		arrival_address: string | null;
 		volume_m3: number | null;

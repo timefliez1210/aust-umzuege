@@ -16,6 +16,7 @@
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Notice from '$lib/components/ui/Notice.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import CalendarSidePanel from './CalendarSidePanel.svelte';
 	import { SERVICE_TYPE_LABELS, SERVICE_ADDRESS_CONFIG } from '$lib/utils/constants';
 	import KnownAddressPicker from '$lib/components/admin/KnownAddressPicker.svelte';
@@ -1360,8 +1361,13 @@
 						{@const weekDayLabel = new Date(wy, wm - 1, wd).toLocaleDateString('de-DE', { weekday: 'short' })}
 						{@const wPublicHol = publicHolidayMap.get(dateStr)}
 						{@const wSchoolHol = schoolHolidayMap.get(dateStr)}
-						<button
-							class="flex min-h-40 min-w-0 flex-col gap-1.5 p-2 text-left transition-colors md:min-h-[60dvh]
+						<!-- A div, not a <button>: the entries inside carry tap-to-call links, and
+						     interactive content inside a <button> is invalid / swallowed by browsers. -->
+						<div
+							role="button"
+							tabindex="0"
+							onkeydown={(e) => e.target === e.currentTarget && e.key === 'Enter' && openDayPanel(sched ?? null, null, dateStr)}
+							class="flex min-h-40 min-w-0 cursor-pointer flex-col gap-1.5 p-2 text-left transition-colors md:min-h-[60dvh]
 								{wPublicHol ? 'bg-danger/8' : wSchoolHol ? 'bg-warn/8' : overbooked ? 'bg-danger/5' : 'bg-panel'}
 								{isToday ? 'shadow-[inset_0_2px_0_var(--accent)]' : ''}
 								{dragOverDate === dateStr ? 'bg-accent/10 outline-2 -outline-offset-2 outline-accent outline-dashed' : ''}"
@@ -1401,6 +1407,7 @@
 												<StatusBadge status={entry.item.status} />
 											</span>
 											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.customer_name ?? '—'}</span>
+											<PhoneLink phone={entry.item.customer_phone} class="text-[11px]" />
 											{#if entry.item.departure_address || entry.item.arrival_address}
 												<span class="block text-[11px] leading-snug opacity-80">{entry.item.departure_address || '?'} → {entry.item.arrival_address || '?'}</span>
 											{/if}
@@ -1451,6 +1458,7 @@
 												<span class="font-medium">{apptKindLabel(entry.item.kind)}</span>
 											</span>
 											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.customer_name ?? '—'}</span>
+											<PhoneLink phone={entry.item.customer_phone} class="text-[11px]" />
 											{#if entry.item.assignee_name}<span class="flex items-center gap-1 text-[11px] opacity-80"><User size={11} />{entry.item.assignee_name}</span>{/if}
 											{#if entry.item.location}<span class="flex items-center gap-1 text-[11px] opacity-80"><MapPin size={11} />{entry.item.location}</span>{/if}
 											{#if entry.item.notes}<span class="mt-1 block text-[11px] italic opacity-70">{truncate(entry.item.notes, 70)}</span>{/if}
@@ -1462,6 +1470,8 @@
 											category: entry.item.category,
 											location: entry.item.location,
 											description: entry.item.description ?? null,
+											customer_name: entry.item.customer_name ?? null,
+											customer_phone: entry.item.customer_phone ?? null,
 											scheduled_date: dateStr,
 											start_time: entry.item.start_time,
 											end_time: entry.item.end_time ?? null,
@@ -1484,6 +1494,8 @@
 												<span class="font-medium">{CATEGORY_LABELS[entry.item.category] ?? entry.item.category}</span>
 											</span>
 											<span class="mt-0.5 block truncate text-[13px] font-semibold">{entry.item.title}</span>
+											{#if entry.item.customer_name}<span class="block truncate text-[11px] opacity-80">{entry.item.customer_name}</span>{/if}
+											<PhoneLink phone={entry.item.customer_phone} class="text-[11px]" />
 											{#if entry.item.location}<span class="flex items-center gap-1 text-[11px] opacity-80"><MapPin size={11} />{entry.item.location}</span>{/if}
 											{#if entry.item.employee_names}<span class="flex items-start gap-1 text-[11px] opacity-80"><Users size={11} class="mt-0.5 shrink-0" />{entry.item.employee_names}</span>{/if}
 										</div>
@@ -1491,7 +1503,7 @@
 								{/each}
 								{#if allEntries.length === 0}<span class="text-xs text-faint">—</span>{/if}
 							</span>
-						</button>
+						</div>
 					{/each}
 				</div>
 			{:else}
@@ -1521,8 +1533,11 @@
 										{@const startH = parseInt((entry.item.start_time || '06:00').slice(0, 2))}
 										{@const endH = parseInt((entry.item.end_time || String(startH + 1).padStart(2, '0') + ':00').slice(0, 2))}
 										{#if startH === hour}
-											<button
-												class="z-[1] flex min-w-32 flex-1 flex-col items-start gap-0.5 rounded-sm px-2.5 py-1.5 text-left hover:brightness-95 {entry.type === 'inquiry'
+											<div
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLElement).click()}
+												class="z-[1] flex min-w-32 flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-sm px-2.5 py-1.5 text-left hover:brightness-95 {entry.type === 'inquiry'
 													? inquiryEntryClass(entry.item.status)
 													: entry.type === 'appointment'
 														? 'entry-appt'
@@ -1539,6 +1554,8 @@
 															category: sci.category,
 															location: sci.location,
 															description: sci.description ?? null,
+															customer_name: sci.customer_name ?? null,
+															customer_phone: sci.customer_phone ?? null,
 															scheduled_date: dayViewDate,
 															start_time: sci.start_time ?? '',
 															end_time: sci.end_time ?? null,
@@ -1560,10 +1577,16 @@
 															? apptKindLabel(entry.item.kind)
 															: entry.item.title}</span
 												>
+												{#if entry.type === 'appointment' && entry.item.customer_name}
+													<span class="truncate text-[11px] opacity-80">{entry.item.customer_name}</span>
+												{:else if entry.type === 'schedule-termin' && entry.item.customer_name}
+													<span class="truncate text-[11px] opacity-80">{entry.item.customer_name}</span>
+												{/if}
+												<PhoneLink phone={entry.item.customer_phone} class="text-[11px]" />
 												{#if entry.type === 'inquiry' && entry.item.employee_names}
 													<span class="flex items-center gap-1 text-[11px] opacity-80"><Users size={11} />{entry.item.employee_names}</span>
 												{/if}
-											</button>
+											</div>
 										{/if}
 									{/each}
 								</div>

@@ -161,6 +161,8 @@
 								category: (mdEntry.item as ScheduleCalendarItem).category,
 								location: (mdEntry.item as ScheduleCalendarItem).location,
 								description: (mdEntry.item as ScheduleCalendarItem).description ?? null,
+								customer_name: (mdEntry.item as ScheduleCalendarItem).customer_name ?? null,
+								customer_phone: (mdEntry.item as ScheduleCalendarItem).customer_phone ?? null,
 								scheduled_date: dateStr,
 								start_time: mdEntry.item.start_time,
 								end_time: mdEntry.item.end_time ?? null,
@@ -213,7 +215,7 @@
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<span
 							class="block w-full cursor-pointer overflow-hidden rounded-xs px-1 py-0.5 text-[10.5px] leading-snug font-medium text-ellipsis whitespace-nowrap hover:brightness-95 active:cursor-grabbing active:opacity-60 whitespace-normal {inquiryEntryClass(entry.item.status)}"
-							title="{entry.item.customer_name ?? ''}{entry.item.departure_address || entry.item.arrival_address
+							title="{entry.item.customer_name ?? ''}{entry.item.customer_phone ? ' · ☎ ' + entry.item.customer_phone : ''}{entry.item.departure_address || entry.item.arrival_address
 								? ' · ' + (entry.item.departure_address || '?') + ' → ' + (entry.item.arrival_address || '?')
 								: ''}"
 							draggable="true"
@@ -250,7 +252,7 @@
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<span
 							class="block w-full cursor-pointer overflow-hidden rounded-xs px-1 py-0.5 text-[10.5px] leading-snug font-medium text-ellipsis whitespace-nowrap hover:brightness-95 active:cursor-grabbing active:opacity-60 entry-appt"
-							title="{apptKindLabel(entry.item.kind)}: {entry.item.customer_name ?? ''}{entry.item.assignee_name ? ' · ' + entry.item.assignee_name : ''}"
+							title="{apptKindLabel(entry.item.kind)}: {entry.item.customer_name ?? ''}{entry.item.customer_phone ? ' · ☎ ' + entry.item.customer_phone : ''}{entry.item.assignee_name ? ' · ' + entry.item.assignee_name : ''}"
 							draggable="true"
 							ondragstart={(e) => onEntryDragStart(e, entry.item.appointment_id, 'appointment', dateStr, 1, entry.item.inquiry_id)}
 							onclick={(e) => onAppointmentClick(e, entry.item)}
@@ -278,6 +280,8 @@
 									category: entry.item.category,
 									location: entry.item.location,
 									description: entry.item.description ?? null,
+									customer_name: entry.item.customer_name ?? null,
+									customer_phone: entry.item.customer_phone ?? null,
 									scheduled_date: dateStr,
 									start_time: entry.item.start_time,
 									end_time: entry.item.end_time ?? null,
@@ -294,6 +298,8 @@
 									category: entry.item.category,
 									location: entry.item.location,
 									description: entry.item.description ?? null,
+									customer_name: entry.item.customer_name ?? null,
+									customer_phone: entry.item.customer_phone ?? null,
 									scheduled_date: dateStr,
 									start_time: entry.item.start_time,
 									end_time: entry.item.end_time ?? null,

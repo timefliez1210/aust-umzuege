@@ -3,6 +3,7 @@
 	import { apiGet, formatDate, formatEuro } from '$lib/utils/api.svelte';
 	import DataTable from '$lib/components/admin/DataTable.svelte';
 	import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import { untrack } from 'svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import FilterTabs from '$lib/components/ui/FilterTabs.svelte';
@@ -12,6 +13,7 @@
 	interface Order {
 		id: string;
 		customer_name: string | null;
+		customer_phone?: string | null;
 		customer_email: string;
 		origin_city: string | null;
 		destination_city: string | null;
@@ -145,6 +147,7 @@
 			<span class="flex items-start justify-between gap-3">
 				<span class="flex min-w-0 flex-col">
 					<span class="truncate font-semibold">{o.customer_name || o.customer_email}</span>
+					<PhoneLink phone={o.customer_phone} class="self-start text-xs text-muted" />
 					<span class="truncate text-[13px] text-muted">
 						{#if o.origin_city && o.destination_city}{o.origin_city} → {o.destination_city}{:else}—{/if}
 					</span>
@@ -164,6 +167,7 @@
 			<td>
 				<div class="font-medium">{o.customer_name || o.customer_email}</div>
 				{#if o.customer_name}<div class="text-xs text-faint">{o.customer_email}</div>{/if}
+				<PhoneLink phone={o.customer_phone} class="text-xs text-muted" />
 			</td>
 			<td>
 				{#if o.origin_city && o.destination_city}

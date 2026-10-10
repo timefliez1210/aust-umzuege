@@ -10,6 +10,7 @@
 	import CapacityEditor from './_components/CapacityEditor.svelte';
 	import ConfirmationDialog from '$lib/components/admin/ConfirmationDialog.svelte';
 	import EmployeeAssignmentPanel from '$lib/components/admin/EmployeeAssignmentPanel.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -1377,7 +1378,8 @@
 					duration_hours: 0,
 					status: 'scheduled' as const,
 					customer_id: null as string | null,
-					customer_name: null as string | null
+					customer_name: ci.customer_name ?? null,
+					customer_phone: ci.customer_phone ?? null
 				}))}
 				{@const dayAppts = ds.appointments ?? []}
 
@@ -1418,6 +1420,7 @@
 								<StatusBadge status={inq.status} />
 							</span>
 							<span class="num text-xs opacity-75">{formatTime(inq.start_time)} – {formatTime(inq.end_time)}</span>
+							<PhoneLink phone={inq.customer_phone} class="self-start text-xs" />
 							{#if inq.departure_address || inq.arrival_address}
 								<span class="text-xs opacity-80">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</span>
 							{/if}
@@ -1433,6 +1436,8 @@
 								<span class="text-xs font-medium">{CATEGORY_LABELS[ci.category] ?? ci.category}</span>
 							</span>
 							<span class="num text-xs opacity-75">{formatTime(ci.start_time)}{ci.end_time ? ' – ' + formatTime(ci.end_time) : ''}</span>
+							{#if ci.customer_name}<span class="text-xs opacity-80">{ci.customer_name}</span>{/if}
+							<PhoneLink phone={ci.customer_phone} class="self-start text-xs" />
 							{#if ci.location}<span class="flex items-center gap-1 text-xs opacity-80"><MapPin size={11} />{ci.location}</span>{/if}
 							<a href="/admin/calendar-items/{ci.id}" class="flex items-center gap-1 self-start text-xs opacity-75 hover:underline"><ExternalLink size={11} /> Detail öffnen</a>
 						</div>
@@ -1445,6 +1450,7 @@
 								</button>
 							</span>
 							{#if ap.start_time}<span class="num text-xs opacity-75">{formatTime(ap.start_time)}{ap.end_time ? ' – ' + formatTime(ap.end_time) : ''}</span>{/if}
+							<PhoneLink phone={ap.customer_phone} class="self-start text-xs" />
 							{#if ap.assignee_name || ap.location}
 								<span class="flex flex-wrap items-center gap-2 text-xs opacity-80">
 									{#if ap.assignee_name}<span class="flex items-center gap-1"><User size={11} />{ap.assignee_name}</span>{/if}
@@ -1462,7 +1468,7 @@
 				{#snippet contact()}
 					<dl class="-my-1.5">
 						<KeyValue label="E-Mail">{#if inq.customer_email}<a href="mailto:{inq.customer_email}" class="hover:underline">{inq.customer_email}</a>{:else}—{/if}</KeyValue>
-						<KeyValue label="Telefon">{#if inq.customer_phone}<a href="tel:{inq.customer_phone}" class="num hover:underline">{inq.customer_phone}</a>{:else}—{/if}</KeyValue>
+						<KeyValue label="Telefon">{#if inq.customer_phone}<PhoneLink phone={inq.customer_phone} icon={false} />{:else}—{/if}</KeyValue>
 						{#if inq.departure_address || inq.arrival_address}
 							<KeyValue label="Route">{inq.departure_address || '?'} → {inq.arrival_address || '?'}</KeyValue>
 						{/if}
@@ -1615,6 +1621,7 @@
 							{#if ci.customer_type === 'business'}<Badge>Gewerbe</Badge>{/if}
 							<span class="font-medium">{ci.customer_name}</span>
 							{#if ci.company_name}<span class="text-xs text-muted">({ci.company_name})</span>{/if}
+							<PhoneLink phone={ci.customer_phone} class="text-[13px]" />
 						</div>
 					{/if}
 					<div class="flex flex-wrap gap-1.5">
@@ -1744,7 +1751,7 @@
 							{#if apptInquiry?.customer?.phone || apptInquiry?.customer?.email}
 								<KeyValue label="Kontakt">
 									{#if apptInquiry.customer.phone}
-										<a href="tel:{apptInquiry.customer.phone}" class="num hover:underline">{apptInquiry.customer.phone}</a>
+										<PhoneLink phone={apptInquiry.customer.phone} icon={false} />
 									{:else}
 										<a href="mailto:{apptInquiry.customer.email}" class="hover:underline">{apptInquiry.customer.email}</a>
 									{/if}

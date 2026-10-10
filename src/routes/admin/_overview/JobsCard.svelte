@@ -2,6 +2,7 @@
 	import Card from '$lib/components/ui/Card.svelte';
 	import CardHeader from '$lib/components/ui/CardHeader.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { formatTime } from '$lib/utils/format';
 	import type { Overview } from './types';
@@ -48,6 +49,7 @@
 							{/if}
 						</span>
 						<span class="truncate text-[13px] text-muted">{city(j.departure_address)} → {city(j.arrival_address)}</span>
+						<PhoneLink phone={j.customer_phone} class="relative z-10 self-start text-xs text-muted" />
 						<span class="flex items-center justify-between gap-2">
 							<span class="num text-xs text-faint">{j.volume_m3 ? `${Math.round(j.volume_m3)} m³` : ''}</span>
 							<span class="flex gap-1">

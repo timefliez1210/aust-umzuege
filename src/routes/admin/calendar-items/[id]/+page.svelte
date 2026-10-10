@@ -14,6 +14,7 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import PhoneLink from '$lib/components/ui/PhoneLink.svelte';
 	import Segmented from '$lib/components/ui/Segmented.svelte';
 
 	interface CalendarItemDetail {
@@ -30,6 +31,7 @@
 		created_at: string;
 		customer_id: string | null;
 		customer_name: string | null;
+		customer_phone?: string | null;
 		employee_notes: string | null;
 		employees: EmployeeAssignment[];
 	}
@@ -195,7 +197,7 @@
 		savingCustomer = true;
 		try {
 			const updated = await apiPatch<CalendarItemDetail>(`/api/v1/admin/calendar-items/${data.id}`, { customer_id: customerId });
-			data = { ...data, customer_id: updated.customer_id, customer_name: updated.customer_name };
+			data = { ...data, customer_id: updated.customer_id, customer_name: updated.customer_name, customer_phone: updated.customer_phone };
 			customerMode = 'view';
 			customerSearch = '';
 			customerResults = [];
@@ -237,7 +239,7 @@
 		savingCustomer = true;
 		try {
 			const updated = await apiPatch<CalendarItemDetail>(`/api/v1/admin/calendar-items/${data.id}`, { remove_customer: true });
-			data = { ...data, customer_id: updated.customer_id, customer_name: updated.customer_name };
+			data = { ...data, customer_id: updated.customer_id, customer_name: updated.customer_name, customer_phone: updated.customer_phone };
 			showToast('Kunde entfernt', 'success');
 		} catch (e) { showToast((e as Error).message, 'error'); }
 		finally { savingCustomer = false; }
@@ -310,6 +312,7 @@
 							<a href="/admin/customers/{data.customer_id}" class="min-w-0 flex-1 truncate text-sm font-medium hover:underline">
 								{data.customer_name ?? data.customer_id}
 							</a>
+							<PhoneLink phone={data.customer_phone} class="text-[13px] text-muted" />
 							<Button variant="ghost" size="icon-sm" aria-label="Kunde entfernen" title="Kunde entfernen" onclick={removeCustomer} disabled={savingCustomer}>
 								<X size={14} />
 							</Button>

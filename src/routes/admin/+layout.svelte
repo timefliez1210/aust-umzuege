@@ -15,6 +15,7 @@
 	import TenantMark from '$lib/components/console/TenantMark.svelte';
 	import SearchButton from '$lib/components/console/SearchButton.svelte';
 	import ThemeButton from '$lib/components/console/ThemeButton.svelte';
+	import OfflineBanner from '$lib/components/console/OfflineBanner.svelte';
 	import { navBadges } from '$lib/components/console/navBadges.svelte';
 
 	let { children } = $props();
@@ -66,6 +67,7 @@
 		<Sidebar onLogout={handleLogout} />
 
 		<div class="flex min-w-0 flex-1 flex-col">
+			<OfflineBanner />
 			<!-- Phones: slim bar with the company, search and theme. Navigation is the tab bar. -->
 			<header
 				class="sticky top-0 z-[300] flex h-14 items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 backdrop-blur lg:hidden"

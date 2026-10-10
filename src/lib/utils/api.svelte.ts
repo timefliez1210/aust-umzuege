@@ -1,5 +1,6 @@
 import { auth } from '$lib/stores/auth.svelte';
 import { fetchWithTimeout } from './fetchTimeout';
+export { NetworkError } from './fetchTimeout';
 
 export const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.aufraeumhelden.com';
 

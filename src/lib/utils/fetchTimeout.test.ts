@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fetchWithTimeout } from './fetchTimeout';
+import { fetchWithTimeout, NetworkError, RETRY_DELAYS_MS } from './fetchTimeout';
 
 describe('fetchWithTimeout', () => {
 	it('returns response when fetch resolves within timeout', async () => {
@@ -44,30 +44,78 @@ describe('fetchWithTimeout', () => {
 		expect(capturedSignal?.aborted).toBe(false);
 	});
 
-	it('aborts fetch when timeout is exceeded', async () => {
-		globalThis.fetch = vi.fn().mockImplementation(() =>
-			new Promise((_resolve, reject) => {
-				// never resolves — simulates a hanging server
-				setTimeout(() => {
-					reject(new DOMException('The operation was aborted.', 'AbortError'));
-				}, 50);
-			})
+	/** fetch mock that hangs until its AbortSignal fires, like a stalled connection. */
+	function hangingFetch() {
+		return vi.fn().mockImplementation(
+			(_url, opts) =>
+				new Promise((_resolve, reject) => {
+					(opts?.signal as AbortSignal).addEventListener('abort', () =>
+						reject(new DOMException('Fetch is aborted', 'AbortError'))
+					);
+				})
 		);
+	}
 
-		await expect(fetchWithTimeout('https://example.com/api', {}, 10)).rejects.toThrow('The operation was aborted');
+	it('turns a timed-out write into a German NetworkError without retrying', async () => {
+		globalThis.fetch = hangingFetch();
+
+		const err = await fetchWithTimeout('https://example.com/api', { method: 'PATCH' }, 10).catch((e) => e);
+		expect(err).toBeInstanceOf(NetworkError);
+		expect(err.kind).toBe('timeout');
+		expect(err.message).toContain('evtl. nicht gespeichert');
+		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 
-	it('uses a custom timeout when provided', async () => {
-		globalThis.fetch = vi.fn().mockImplementation(() =>
-			new Promise((_resolve, reject) => {
-				setTimeout(() => {
-					reject(new DOMException('The operation was aborted.', 'AbortError'));
-				}, 200);
-			})
-		);
+	it('retries a timed-out read and succeeds on the next attempt', async () => {
+		vi.useFakeTimers();
+		try {
+			const ok = new Response('{}', { status: 200 });
+			const hang = hangingFetch();
+			globalThis.fetch = vi
+				.fn()
+				.mockImplementationOnce((u, o) => hang(u, o))
+				.mockResolvedValueOnce(ok);
 
-		// With a 50ms timeout, the fetch should be aborted before the 200ms fake resolve
-		await expect(fetchWithTimeout('https://example.com/api', {}, 50)).rejects.toThrow('The operation was aborted');
+			const p = fetchWithTimeout('https://example.com/api', {}, 10);
+			await vi.advanceTimersByTimeAsync(10 + RETRY_DELAYS_MS[0]);
+			await expect(p).resolves.toBe(ok);
+			expect(fetch).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('gives up on a read after all retries', async () => {
+		vi.useFakeTimers();
+		try {
+			globalThis.fetch = hangingFetch();
+			const p = fetchWithTimeout('https://example.com/api', {}, 10).catch((e) => e);
+			await vi.advanceTimersByTimeAsync(10 * 3 + RETRY_DELAYS_MS.reduce((a, b) => a + b, 0));
+			const err = await p;
+			expect(err).toBeInstanceOf(NetworkError);
+			expect(err.message).toContain('nicht geladen');
+			expect(fetch).toHaveBeenCalledTimes(1 + RETRY_DELAYS_MS.length);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('maps a dropped connection (TypeError) to an offline/timeout NetworkError', async () => {
+		globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Load failed'));
+		const err = await fetchWithTimeout('https://example.com/api', { method: 'POST' }, 1000).catch((e) => e);
+		expect(err).toBeInstanceOf(NetworkError);
+		expect(fetch).toHaveBeenCalledTimes(1);
+	});
+
+	it('passes a caller abort through untouched and does not retry', async () => {
+		globalThis.fetch = hangingFetch();
+		const ctrl = new AbortController();
+		const p = fetchWithTimeout('https://example.com/api', { signal: ctrl.signal }, 10_000).catch((e) => e);
+		ctrl.abort();
+		const err = await p;
+		expect(err).not.toBeInstanceOf(NetworkError);
+		expect(err.name).toBe('AbortError');
+		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 
 	it('clears the timeout when fetch resolves quickly', async () => {

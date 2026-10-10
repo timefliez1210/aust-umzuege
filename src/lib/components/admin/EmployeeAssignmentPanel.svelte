@@ -529,7 +529,9 @@
 	/>
 {/snippet}
 
-<div class="flex flex-col gap-3">
+<!-- Container queries, not viewport breakpoints: the panel also lives in the narrow calendar
+     side panel on a wide screen, where the desktop grid squeezed names under the time inputs. -->
+<div class="@container flex flex-col gap-3">
 	<div class="flex items-center justify-between gap-3">
 		<h4 class="text-sm font-medium">Zugewiesen <span class="num text-faint">({assignments.length})</span></h4>
 		{#if !showAddForm}
@@ -546,13 +548,13 @@
 	{:else if entityType !== 'calendar_item'}
 		{#if isMultiDay}
 			<div class="rounded-sm border border-line">
-				<div class="label-xs hidden grid-cols-[minmax(0,1fr)_60px_100px] gap-3 border-b border-line px-3 py-2 text-faint sm:grid">
+				<div class="label-xs hidden grid-cols-[minmax(0,1fr)_60px_100px] gap-3 border-b border-line px-3 py-2 text-faint @lg:grid">
 					<span>Name</span><span class="text-right">Tage</span><span class="text-right">Stunden Ist</span>
 				</div>
 				{#each employeeSummaries() as emp (emp.employee_id)}
-					<div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-line px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(0,1fr)_60px_100px]">
+					<div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-line px-3 py-2 text-sm last:border-b-0 @lg:grid-cols-[minmax(0,1fr)_60px_100px]">
 						<span class="font-medium">{emp.first_name} {emp.last_name[0]}.</span>
-						<span class="num text-right text-muted"><span class="sm:hidden">Tage </span>{emp.day_count}</span>
+						<span class="num text-right text-muted"><span class="@lg:hidden">Tage </span>{emp.day_count}</span>
 						<span class="text-right">
 							{#if emp.total_hours != null}{@render hours(emp.total_hours)}{:else}<span class="text-faint">—</span>{/if}
 						</span>
@@ -571,19 +573,19 @@
 			</div>
 		{:else}
 			<div class="rounded-sm border border-line">
-				<div class="label-xs hidden grid-cols-[minmax(0,1fr)_auto_80px_36px] gap-3 border-b border-line px-3 py-2 text-faint sm:grid">
+				<div class="label-xs hidden grid-cols-[minmax(0,1fr)_auto_80px_36px] gap-3 border-b border-line px-3 py-2 text-faint @lg:grid">
 					<span>Name</span><span>Von–Bis</span><span>Pause (h)</span><span></span>
 				</div>
 				{#each assignments as emp (emp.employee_id)}
 					{@const derived = deriveActualHours(emp.clock_in, emp.clock_out, emp.break_minutes ?? 0)}
 					<div
-						class="grid grid-cols-[minmax(0,1fr)_36px] items-center gap-x-3 gap-y-2 border-b border-line px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_80px_36px] {inquerySaving ===
+						class="grid grid-cols-[minmax(0,1fr)_36px] items-center gap-x-3 gap-y-2 border-b border-line px-3 py-2 last:border-b-0 @lg:grid-cols-[minmax(0,1fr)_auto_80px_36px] {inquerySaving ===
 						emp.employee_id
 							? 'opacity-60'
 							: ''}"
 					>
 						<span class="text-sm font-medium">{emp.first_name} {emp.last_name[0]}.</span>
-						<span class="flex items-center gap-1.5 max-sm:order-3 max-sm:col-span-2">
+						<span class="flex items-center gap-1.5 @max-lg:order-3 @max-lg:col-span-2">
 							{@render cell(
 								'inq-time',
 								fmtTime(emp.clock_in),
@@ -605,7 +607,7 @@
 									derived,
 									true
 								)}{/if}
-							<span class="ml-auto flex items-center gap-1.5 text-xs text-faint sm:hidden">
+							<span class="ml-auto flex items-center gap-1.5 text-xs text-faint @lg:hidden">
 								Pause
 								{@render cell(
 									'inq-break',
@@ -616,7 +618,7 @@
 								)}
 							</span>
 						</span>
-						<span class="hidden sm:block">
+						<span class="hidden @lg:block">
 							{@render cell(
 								'inq-break',
 								breakMinutesToHours(emp.break_minutes ?? 0),
@@ -627,7 +629,7 @@
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							class="hover:text-danger max-sm:order-2"
+							class="hover:text-danger @max-lg:order-2"
 							aria-label="Entfernen"
 							onclick={() => openRemoveDialog(emp.employee_id, `${emp.first_name} ${emp.last_name}`)}
 						>

@@ -48,6 +48,13 @@
 	let createError = $state('');
 	let createLoading = $state(false);
 
+	// Records already created by an earlier, partly failed attempt. A retry reuses
+	// them instead of creating a second customer / inquiry (report 84713361: a
+	// failed photo upload after the inquiry existed made "Erneut" create a duplicate).
+	let createdCustomerId: string | null = null;
+	let createdRecipientId: string | null = null;
+	let createdInquiryId = $state<string | null>(null);
+
 	// Customer selection
 	let customerMode = $state<'existing' | 'new'>('existing');
 	let customerSearch = $state('');
@@ -332,7 +339,9 @@
 		try {
 			// If creating a new customer, do that first
 			let customerId: string;
-			if (customerMode === 'new') {
+			if (customerMode === 'new' && createdCustomerId) {
+				customerId = createdCustomerId;
+			} else if (customerMode === 'new') {
 				const newCustomer = await apiPost<{ id: string }>('/api/v1/admin/customers', {
 					email: newCustomerEmail.trim() || null,
 					name: newCustomerName.trim() || null,
@@ -342,6 +351,7 @@
 					company_name: customerType === 'business' ? newCustomerCompanyName.trim() || null : null,
 				});
 				customerId = newCustomer.id;
+				createdCustomerId = newCustomer.id;
 			} else {
 				customerId = selectedCustomer!.id;
 			}
@@ -379,7 +389,9 @@
 			if (customerType === 'business' && newCustomerCompanyName.trim()) {
 				body.company_name = newCustomerCompanyName.trim();
 			}
-			if (!bookingForSelf && recipientLastName.trim()) {
+			if (!bookingForSelf && recipientLastName.trim() && createdRecipientId) {
+				body.recipient_id = createdRecipientId;
+			} else if (!bookingForSelf && recipientLastName.trim()) {
 				// Create a recipient customer record, then set recipient_id
 				const recipientRes = await apiPost<{ id: string }>('/api/v1/admin/customers', {
 					email: recipientEmail.trim() || `recipient-${Date.now()}@aufraeumhelden.com`,
@@ -389,6 +401,7 @@
 					salutation: recipientSalutation || null,
 				});
 				body.recipient_id = recipientRes.id;
+				createdRecipientId = recipientRes.id;
 			}
 			if ((showBilling || customerType === 'business') && billingStreet.trim() && billingCity.trim()) {
 				body.billing_address = {
@@ -406,8 +419,11 @@
 				if (itemSummary.trim()) body.items_list = itemSummary.trim();
 			}
 
-			// 1. Create the inquiry
-			const res = await apiPost<{ id: string }>('/api/v1/inquiries', body);
+			// 1. Create the inquiry (once — a retry after a failed upload only re-uploads)
+			if (!createdInquiryId) {
+				createdInquiryId = (await apiPost<{ id: string }>('/api/v1/inquiries', body)).id;
+			}
+			const res = { id: createdInquiryId };
 
 			// 2. If photos mode, upload images to depth estimation endpoint
 			if (volumeMode === 'photos' && photoFiles.length > 0) {
@@ -433,10 +449,24 @@
 			open = false;
 			onCreated(res.id);
 		} catch (e: unknown) {
-			createError = (e instanceof Error ? e.message : null) || 'Fehler beim Erstellen';
+			const msg = (e instanceof Error ? e.message : null) || 'Fehler beim Erstellen';
+			createError = createdInquiryId
+				? `Anfrage wurde angelegt, aber der Upload ist fehlgeschlagen: ${msg} Erneut klicken lädt nur die Dateien hoch.`
+				: msg;
 		} finally {
 			createLoading = false;
 		}
+	}
+
+	/** True once anything was typed or picked — closing would then lose it. */
+	function hasInput(): boolean {
+		return (
+			!!selectedCustomer ||
+			[newCustomerEmail, newCustomerName, newCustomerPhone, originStreet, originCity, destStreet, destCity, itemSummary, extraNotes, preferredDate]
+				.some((v) => v.trim() !== '') ||
+			photoFiles.length > 0 ||
+			videoFiles.length > 0
+		);
 	}
 
 	/**
@@ -448,6 +478,16 @@
 	 *          of an inline page panel.
 	 */
 	function handleClose() {
+		if (createLoading) return;
+		// The modal is unmounted on close, so a stray tap on the backdrop (or Esc)
+		// used to throw away a half-filled inquiry without a word.
+		if (createdInquiryId) {
+			// Already created — don't strand it; open it instead.
+			open = false;
+			onCreated(createdInquiryId);
+			return;
+		}
+		if (hasInput() && !confirm('Eingaben verwerfen? Die Anfrage wurde noch nicht angelegt.')) return;
 		open = false;
 	}
 </script>

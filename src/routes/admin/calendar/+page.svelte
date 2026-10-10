@@ -382,8 +382,44 @@
 	const _now = new Date();
 	let dayViewDate = $state(`${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`);
 
-	/** The most relevant date for the current view — used by FAB to pre-fill the create form. */
-	let currentContextDate = $derived(viewMode === 'day' ? dayViewDate : todayStr);
+	/**
+	 * The most relevant date for the current view — pre-fills the create forms
+	 * opened from the mobile + button (the date stays editable in the form).
+	 * Day view: the day shown. Week/month: today if it is on screen, else the
+	 * first day of the period being looked at.
+	 */
+	let currentContextDate = $derived.by(() => {
+		if (viewMode === 'day') return dayViewDate;
+		if (viewMode === 'week') return weekDays.includes(todayStr) ? todayStr : weekDays[0];
+		const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+		return todayStr.startsWith(monthPrefix) ? todayStr : `${monthPrefix}-01`;
+	});
+
+	/**
+	 * Switching to the day view lands on today — or on the day picked in the
+	 * side panel, if one is open — instead of whatever day was last looked at.
+	 *
+	 * Called by: Template (Ansicht segmented control)
+	 */
+	function onViewModeChange(mode: 'month' | 'week' | 'day') {
+		if (mode !== 'day') return;
+		dayViewDate = panelSelection?.kind === 'day' ? panelSelection.date : todayStr;
+	}
+
+	/** Whether today is on screen — hides the "Heute" button when it would do nothing. */
+	let showingToday = $derived(
+		viewMode === 'day'
+			? dayViewDate === todayStr
+			: viewMode === 'week'
+				? weekDays.includes(todayStr)
+				: todayStr.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)
+	);
+
+	/** Jumps the current view back to today. */
+	function goToday() {
+		currentDate = new Date();
+		dayViewDate = todayStr;
+	}
 
 	/**
 	 * Navigates the day view to the previous day.
@@ -1039,6 +1075,7 @@
 		if (qiAddrCfg.showDestination && !qiAddrCfg.optionalDestination && (!qiDestStreet.trim() || !qiDestCity.trim())) { quickCreateError = `${qiAddrCfg.destinationLabel} (Straße, Stadt) erforderlich`; return; }
 		if (qiCustomerMode === 'existing' && !qiCustomerId) { quickCreateError = 'Bitte einen Kunden auswählen'; return; }
 		if (qiCustomerMode === 'new' && !qiName.trim() && !qiEmail.trim() && !qiPhone.trim()) { quickCreateError = 'Bitte mindestens Name, E-Mail oder Telefon angeben'; return; }
+		if (!quickCreateDate) { quickCreateError = 'Datum fehlt'; return; }
 		quickCreateError = '';
 		quickCreateLoading = true;
 		try {
@@ -1110,6 +1147,7 @@
 	async function submitQuickTermin() {
 		if (!qtTitle.trim()) { quickCreateError = 'Titel ist erforderlich'; return; }
 		if (!qtStartTime) { quickCreateError = 'Startzeit ist erforderlich'; return; }
+		if (!quickCreateDate) { quickCreateError = 'Datum fehlt'; return; }
 		quickCreateError = '';
 		quickCreateLoading = true;
 		try {
@@ -1270,6 +1308,7 @@
 				{ value: 'day', label: 'Tag' }
 			]}
 			bind:value={viewMode}
+			onchange={onViewModeChange}
 		/>
 	{/snippet}
 </PageHeader>
@@ -1296,6 +1335,9 @@
 					ondragover={(e) => onNavDragOver(e, 'next')}
 					ondragleave={onNavDragLeave}><ChevronRight size={18} /></button
 				>
+				{#if !showingToday}
+					<button class="inline-flex h-9 items-center rounded-sm border border-line-strong px-3 text-sm hover:bg-sunk" onclick={goToday}>Heute</button>
+				{/if}
 				<h2 class="ml-2 text-lg font-semibold tracking-tight sm:text-xl">
 					{viewMode === 'month' ? monthName : viewMode === 'week' ? weekLabel : dayViewLabel()}
 				</h2>
@@ -1662,6 +1704,8 @@
 {/if}
 
 {#snippet inquiryBody()}
+	<Field label="Umzugsdatum *" for="qi-date"><Input id="qi-date" type="date" bind:value={quickCreateDate} required /></Field>
+
 	<div class="flex flex-col gap-2">
 		<span class="label-xs text-faint">Auftragsart *</span>
 		<div class="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -1756,6 +1800,7 @@
 {#snippet terminBody()}
 	<Field label="Titel *" for="qt-title"><Input id="qt-title" bind:value={qtTitle} placeholder="z. B. Fahrerschulung" /></Field>
 	<div class="grid grid-cols-2 gap-3">
+		<Field label="Datum *" for="qt-date" class="col-span-2"><Input id="qt-date" type="date" bind:value={quickCreateDate} required /></Field>
 		<Field label="Kategorie" for="qt-cat">
 			<Input id="qt-cat" list="cal-categories" bind:value={qtCategory} placeholder="Intern, Umzug, eigene …" />
 			<datalist id="cal-categories">
@@ -1873,9 +1918,9 @@
 {/snippet}
 
 {#if quickCreateMode === 'inquiry'}
-	{@render dialog(`Neue Anfrage — ${quickCreateDate}`, inquiryBody, submitQuickInquiry, 'Anfrage erstellen', true)}
+	{@render dialog('Neue Anfrage', inquiryBody, submitQuickInquiry, 'Anfrage erstellen', true)}
 {:else if quickCreateMode === 'termin'}
-	{@render dialog(`Neuer Termin — ${quickCreateDate}`, terminBody, submitQuickTermin, 'Termin erstellen')}
+	{@render dialog('Neuer Termin', terminBody, submitQuickTermin, 'Termin erstellen')}
 {:else if quickCreateMode === 'appointment'}
 	{@render dialog('Besichtigung / Zusatztermin', appointmentBody, submitQuickAppointment, 'Anlegen')}
 {/if}

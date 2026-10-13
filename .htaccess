@@ -17,6 +17,8 @@ RewriteRule ^ratgeber/umzug-mit-kinderen/?$ https://www.aust-umzuege.de/ratgeber
 RewriteRule ^kalkulator(/.*)?$ https://www.aust-umzuege.de/kostenloses-angebot [R=301,L]
 RewriteRule ^rechtliches/datenschutz/?$ https://www.aust-umzuege.de/datenschutz [R=301,L]
 RewriteRule ^rechtliches/impressum/?$ https://www.aust-umzuege.de/impressum [R=301,L]
+# Every KVA prints www.aust-umzuege.de/rechtliches/agbs — the page lives at /agb.
+RewriteRule ^(rechtliches/agbs?|agbs)/?$ https://www.aust-umzuege.de/agb [R=301,L]
 
 # Force HTTPS + www in a single redirect (avoids double-hop chain)
 RewriteCond %{HTTPS} off [OR]

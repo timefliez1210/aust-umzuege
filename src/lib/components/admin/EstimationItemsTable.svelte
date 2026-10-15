@@ -7,6 +7,7 @@
 	import { sortItems, filterItemsByPhotoIndex } from '$lib/utils/sorting';
 	import { computeTotalVolume } from '$lib/utils/volume';
 	import { Save, X, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { dismissOnBackdrop } from '$lib/utils/dismissOnBackdrop';
 
 	// ---------------------------------------------------------------------------
 	// Interfaces
@@ -784,9 +785,7 @@
 	<div
 		class="fixed inset-0 z-[620] flex items-stretch justify-center bg-black/70 sm:p-4"
 		role="presentation"
-		onclick={(e) => {
-			if (e.target === e.currentTarget) closePhotoDetail();
-		}}
+		use:dismissOnBackdrop={closePhotoDetail}
 	>
 		<div class="flex w-full max-w-6xl flex-col overflow-hidden border border-line bg-panel text-fg shadow-2xl sm:rounded-md">
 			<div class="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2">
@@ -886,9 +885,7 @@
 		<div
 			class="fixed inset-0 z-[620] flex items-center justify-center bg-black/85 p-4"
 			role="presentation"
-			onclick={(e) => {
-				if (e.target === e.currentTarget) closeReview();
-			}}
+			use:dismissOnBackdrop={closeReview}
 		>
 			<button
 				class="absolute top-3 right-3 inline-flex size-11 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"

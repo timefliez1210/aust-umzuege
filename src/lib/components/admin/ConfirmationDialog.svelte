@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Loader } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { dismissOnBackdrop } from '$lib/utils/dismissOnBackdrop';
 	/**
 	 * A reusable confirmation dialog that replaces inline `confirm()` calls.
 	 *
@@ -76,7 +77,7 @@
 		class="fixed inset-0 z-[650] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
 		role="presentation"
 		data-backdrop
-		onclick={handleCancel}
+		use:dismissOnBackdrop={handleCancel}
 		onkeydown={(e) => e.key === 'Escape' && handleCancel()}
 		tabindex="-1"
 	>

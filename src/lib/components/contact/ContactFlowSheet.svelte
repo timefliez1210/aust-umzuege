@@ -6,6 +6,7 @@
 	import { API_BASE } from '$lib/utils/api.svelte';
 	import { PHONE_HREF, PHONE_DISPLAY } from './constants';
 	import ContactFlowCard from './ContactFlowCard.svelte';
+	import { dismissOnBackdrop } from '$lib/utils/dismissOnBackdrop';
 
 	let open = $derived(contactFlow.mode !== null);
 	let mode = $derived(contactFlow.mode);
@@ -97,10 +98,6 @@
 		openContactFlow(m);
 	}
 
-	function onBackdrop(e: MouseEvent) {
-		if (e.target === e.currentTarget) closeContactFlow();
-	}
-
 	async function submitCallback() {
 		const res = await fetch(`${API_BASE}/api/v1/flash-contact`, {
 			method: 'POST',
@@ -155,7 +152,7 @@
 
 {#if open}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div class="backdrop" role="presentation" onclick={onBackdrop}>
+	<div class="backdrop" role="presentation" use:dismissOnBackdrop={closeContactFlow}>
 		<div
 			class="sheet"
 			role="dialog"

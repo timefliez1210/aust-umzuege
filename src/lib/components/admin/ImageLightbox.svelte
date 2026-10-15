@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight, X } from 'lucide-svelte';
+	import { dismissOnBackdrop } from '$lib/utils/dismissOnBackdrop';
 
 	let {
 		imageUrl = null,
@@ -105,18 +106,13 @@
 	 *
 	 * @param e - The MouseEvent from the backdrop click listener
 	 */
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === e.currentTarget) {
-			onclose();
-		}
-	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 <!-- "backdrop" class: test hook for the outside click. -->
-<div class="backdrop fixed inset-0 z-[700] flex items-center justify-center bg-black/90 p-4" role="presentation" onclick={handleBackdropClick}>
+<div class="backdrop fixed inset-0 z-[700] flex items-center justify-center bg-black/90 p-4" role="presentation" use:dismissOnBackdrop={onclose}>
 	<button
 		class="absolute top-3 right-3 inline-flex size-11 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
 		onclick={onclose}

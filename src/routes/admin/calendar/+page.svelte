@@ -3,6 +3,7 @@
 	import { showToast } from '$lib/components/admin/Toast.svelte';
 	import { buildCalendar } from '$lib/utils/calendar';
 	import { draggable } from '$lib/utils/draggable';
+	import { dismissOnBackdrop } from '$lib/utils/dismissOnBackdrop';
 	import { formatTime, normalizeTimeInput } from '$lib/utils/format';
 	import { DEFAULT_START_TIME, DEFAULT_END_TIME } from '$lib/utils/time';
 	import { calculateBruttoCents } from '$lib/utils/pricing';
@@ -1267,9 +1268,7 @@
 {#snippet dialog(title: string, body: import('svelte').Snippet, submit: () => void, submitLabel: string, wide = false)}
 	<div
 		class="fixed inset-0 z-[600] flex items-end justify-center bg-black/30 sm:items-center sm:bg-black/10 sm:p-4"
-		onclick={(e) => {
-			if (e.target === e.currentTarget) quickCreateMode = null;
-		}}
+		use:dismissOnBackdrop={() => (quickCreateMode = null)}
 		onkeydown={(e) => {
 			if (e.key === 'Escape') quickCreateMode = null;
 		}}

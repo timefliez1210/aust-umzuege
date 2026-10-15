@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { X } from 'lucide-svelte';
 	import { cn } from '$lib/utils/cn';
+	import { dismissOnBackdrop } from '$lib/utils/dismissOnBackdrop';
 
 	/**
 	 * In-place modal for forms that are mounted with `{#if}`: bottom sheet on phones,
@@ -31,12 +32,6 @@
 	const widths = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl', xl: 'sm:max-w-5xl' };
 	const titleId = `modal-${Math.random().toString(36).slice(2, 9)}`;
 	let panel: HTMLDivElement | undefined = $state();
-	/**
-	 * Whether the current press started on the backdrop itself. A drag that begins
-	 * inside the panel (selecting text) and is released over the backdrop fires its
-	 * click on the backdrop — that must not close the modal (report 573d50f9).
-	 */
-	let pressedOnBackdrop = false;
 
 	$effect(() => {
 		panel?.focus();
@@ -52,11 +47,7 @@
 	class="fixed inset-0 z-[600] flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
 	role="presentation"
 	data-backdrop
-	onpointerdown={(e) => (pressedOnBackdrop = e.target === e.currentTarget)}
-	onclick={(e) => {
-		if (pressedOnBackdrop && e.target === e.currentTarget) onclose();
-		pressedOnBackdrop = false;
-	}}
+	use:dismissOnBackdrop={onclose}
 	onkeydown={(e) => e.key === 'Escape' && onclose()}
 >
 	<div

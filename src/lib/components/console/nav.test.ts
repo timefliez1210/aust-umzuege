@@ -19,6 +19,7 @@ describe('console navigation', () => {
 			'/admin/kva-buch',
 			'/admin/rechnungsausgangsbuch',
 			'/admin/gewinn',
+			'/admin/conversion',
 			'/admin/customers',
 			'/admin/employees',
 			'/admin/vehicles',

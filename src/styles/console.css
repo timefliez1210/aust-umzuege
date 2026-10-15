@@ -47,6 +47,15 @@ html[data-console] {
 	--fg-rgb: 12, 12, 13;
 	--danger-rgb: 196, 41, 27;
 
+	/* Categorical chart series, fixed order (validated for colour-blind separation
+	 * in both themes). Colour follows the entity — never re-cycle by rank. */
+	--series-1: #2a78d6;
+	--series-2: #eb6834;
+	--series-3: #1baf7a;
+	--series-4: #eda100;
+	--series-5: #e87ba4;
+	--series-6: #008300;
+
 	color-scheme: light;
 	background: var(--bg);
 	color: var(--fg);
@@ -71,6 +80,12 @@ html[data-console][data-theme='dark'] {
 	--accent-text: var(--accent);
 	--fg-rgb: 242, 242, 243;
 	--danger-rgb: 255, 106, 91;
+	--series-1: #3987e5;
+	--series-2: #d95926;
+	--series-3: #199e70;
+	--series-4: #c98500;
+	--series-5: #d55181;
+	--series-6: #008300;
 	color-scheme: dark;
 }
 
@@ -93,6 +108,12 @@ html[data-console][data-theme='dark'] {
 	--color-accent: var(--accent);
 	--color-accent-ink: var(--accent-ink);
 	--color-accent-text: var(--accent-text);
+	--color-series-1: var(--series-1);
+	--color-series-2: var(--series-2);
+	--color-series-3: var(--series-3);
+	--color-series-4: var(--series-4);
+	--color-series-5: var(--series-5);
+	--color-series-6: var(--series-6);
 
 	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;

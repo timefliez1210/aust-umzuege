@@ -11,6 +11,7 @@ import {
 	BookMarked,
 	BookOpen,
 	TrendingUp,
+	Funnel,
 	Users,
 	UserCheck,
 	Truck,
@@ -106,7 +107,8 @@ export const NAV: NavGroup[] = [
 				hint: 'Rechnungsausgangsbuch',
 				icon: BookOpen
 			},
-			{ href: '/admin/gewinn', label: 'Gewinn', hint: 'Rohertrag, Ausgaben, Löhne', icon: TrendingUp, adminOnly: true }
+			{ href: '/admin/gewinn', label: 'Gewinn', hint: 'Rohertrag, Ausgaben, Löhne', icon: TrendingUp, adminOnly: true },
+			{ href: '/admin/conversion', label: 'Conversion', hint: 'Kanäle, Abschlussquote, Absprünge', icon: Funnel, adminOnly: true }
 		]
 	},
 	{

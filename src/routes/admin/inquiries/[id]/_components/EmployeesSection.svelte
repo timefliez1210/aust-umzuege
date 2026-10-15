@@ -48,6 +48,16 @@
 	 */
 	let showEmployeeCard = $derived(employeeStatuses.includes(status));
 
+	/**
+	 * One entry per employee for the Reisekosten buttons.
+	 *
+	 * Purpose: `employees` holds one row per employee per job day, so a multi-day
+	 * job repeats every employee_id — keying the each-block on it crashed the page.
+	 */
+	let uniqueEmployees = $derived(
+		[...new Map((employees ?? []).map((e) => [e.employee_id, e])).values()]
+	);
+
 	// Travel expense download state
 	let downloadingTravelExpense = $state(false);
 
@@ -82,7 +92,7 @@
 					<Check bind:checked={hasPauschale} onchange={onFieldBlur}>Verpflegungspauschale (Reisekosten)</Check>
 					{#if hasPauschale}
 						<div class="flex flex-wrap gap-1.5">
-							{#each employees ?? [] as emp (emp.employee_id)}
+							{#each uniqueEmployees as emp (emp.employee_id)}
 								<Button size="xs" onclick={() => downloadTravelExpense(emp.employee_id)} disabled={downloadingTravelExpense}>
 									{downloadingTravelExpense ? 'Laden …' : `Reisekosten: ${emp.first_name} ${emp.last_name[0]}.`}
 								</Button>
